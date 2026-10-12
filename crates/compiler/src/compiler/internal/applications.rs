@@ -13,7 +13,6 @@ use oxc_ast::ast::{
     ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement, TSNamespaceDeclarationBody,
     VariableDeclarationKind,
 };
-use oxc_ast_visit::Visit;
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
@@ -296,7 +295,6 @@ pub fn create<'c, 'a>(
             .iter()
             .map(|candidate| (candidate.binding.start, Arc::clone(&candidate.name)))
             .collect(),
-        deferred: 0,
         evaluation: false,
         member_bindings: &member_bindings,
         referenced_definitions: FxHashSet::default(),
@@ -305,10 +303,9 @@ pub fn create<'c, 'a>(
             .map(|candidate| (Arc::clone(&candidate.name), Vec::new()))
             .collect(),
         semantic,
-        types: 0,
     };
 
-    walker.visit_program(program);
+    walker.scan();
 
     Some(Applications {
         candidates,
@@ -323,15 +320,11 @@ pub fn create<'c, 'a>(
 struct Walker<'s, 'a> {
     ancestors: Vec<AstKind<'a>>,
     candidates: FxHashMap<u32, Arc<str>>,
-    /// Entered functions, classes, and namespaces, counted so a read checks them in constant time.
-    deferred: usize,
     evaluation: bool,
     member_bindings: &'s FxHashMap<u32, Arc<str>>,
     referenced_definitions: FxHashSet<Arc<str>>,
     references: FxHashMap<Arc<str>, Vec<Read<'a>>>,
     semantic: &'s Semantic<'a>,
-    /// Entered type contexts, counted so a read checks them in constant time.
-    types: usize,
 }
 
 /// Whether evaluation of a node's contents waits for a later call or declaration.
@@ -356,82 +349,82 @@ const TYPE_CONTEXTS: [fn(&AstKind<'_>) -> bool; 6] = [
     |kind| matches!(kind, AstKind::TSTypeParameterDeclaration(_)),
 ];
 
-impl<'a> Visit<'a> for Walker<'_, 'a> {
-    fn enter_node(&mut self, kind: AstKind<'a>) {
-        self.ancestors.push(kind);
-        self.deferred += usize::from(defers(&kind));
-        self.types += usize::from(TYPE_CONTEXTS.iter().any(|test| test(&kind)));
+impl Walker<'_, '_> {
+    /// Reads identifiers in entry order from the semantic node list. Parents come from its links,
+    /// and a candidate read alone rebuilds its full ancestor path.
+    fn scan(&mut self) {
+        let semantic = self.semantic;
+        let nodes = semantic.nodes();
 
-        let name = match kind {
-            AstKind::IdentifierReference(identifier) => Some(identifier.name.as_str()),
-            AstKind::BindingIdentifier(identifier) => Some(identifier.name.as_str()),
-            AstKind::IdentifierName(identifier) => Some(identifier.name.as_str()),
-            AstKind::LabelIdentifier(identifier) => Some(identifier.name.as_str()),
-            _ => None,
-        };
+        for node in nodes.iter() {
+            let kind = node.kind();
+            let name = match kind {
+                AstKind::IdentifierReference(identifier) => Some(identifier.name.as_str()),
+                AstKind::BindingIdentifier(identifier) => Some(identifier.name.as_str()),
+                AstKind::IdentifierName(identifier) => Some(identifier.name.as_str()),
+                AstKind::LabelIdentifier(identifier) => Some(identifier.name.as_str()),
+                _ => None,
+            };
 
-        if name == Some("eval") {
-            self.evaluation = true;
-        }
+            if name == Some("eval") {
+                self.evaluation = true;
+            }
 
-        let AstKind::IdentifierReference(identifier) = kind else {
-            return;
-        };
-        let parent = self
-            .ancestors
-            .len()
-            .checked_sub(2)
-            .and_then(|index| self.ancestors.get(index));
+            let AstKind::IdentifierReference(identifier) = kind else {
+                continue;
+            };
+            let id = node.id();
+            let parent = (nodes.parent_id(id) != id).then(|| nodes.parent_kind(id));
 
-        if parent.is_some_and(|parent| !scope::is_value_reference(*parent)) || self.types > 0 {
-            return;
-        }
+            if parent.is_some_and(|parent| !scope::is_value_reference(parent))
+                || nodes
+                    .ancestor_kinds(id)
+                    .any(|ancestor| TYPE_CONTEXTS.iter().any(|test| test(&ancestor)))
+            {
+                continue;
+            }
 
-        let scope = scope::scope_of(self.semantic, kind.node_id());
-        let Some(binding) = scope::lookup(self.semantic, &identifier.name, scope, Mode::Value)
-        else {
-            return;
-        };
-        // ScopeTracker reports the binding identifier for variables and namespaces.
-        let id = self.semantic.scoping().symbol_span(binding.symbol);
+            let scope = scope::scope_of(semantic, kind.node_id());
+            let Some(binding) = scope::lookup(semantic, &identifier.name, scope, Mode::Value)
+            else {
+                continue;
+            };
+            // ScopeTracker reports the binding identifier for variables and namespaces.
+            let declared = semantic.scoping().symbol_span(binding.symbol);
 
-        if let Some(member) = self.member_bindings.get(&id.start) {
-            self.referenced_definitions.insert(Arc::clone(member));
-        }
+            if let Some(member) = self.member_bindings.get(&declared.start) {
+                self.referenced_definitions.insert(Arc::clone(member));
+            }
 
-        let Some(name) = self.candidates.get(&id.start) else {
-            return;
-        };
-        let deferred = self.deferred > 0;
-        let count = self.ancestors.len();
-        let parent = count
-            .checked_sub(2)
-            .and_then(|index| self.ancestors.get(index))
-            .copied();
-        let grandparent = count
-            .checked_sub(3)
-            .and_then(|index| self.ancestors.get(index))
-            .copied();
-        let read = Read {
-            deferred,
-            grandparent,
-            parent,
-            span: identifier.span,
-            terminal: terminal(&self.ancestors),
-        };
+            let Some(name) = self.candidates.get(&declared.start) else {
+                continue;
+            };
 
-        // Only reads whose name still names the candidate bind its applications.
-        if *identifier.name == **name
-            && let Some(reads) = self.references.get_mut(name)
-        {
-            reads.push(read);
-        }
-    }
+            // Only reads whose name still names the candidate bind its applications.
+            if *identifier.name != **name {
+                continue;
+            }
 
-    fn leave_node(&mut self, _: AstKind<'a>) {
-        if let Some(kind) = self.ancestors.pop() {
-            self.deferred -= usize::from(defers(&kind));
-            self.types -= usize::from(TYPE_CONTEXTS.iter().any(|test| test(&kind)));
+            self.ancestors.clear();
+            self.ancestors.extend(nodes.ancestor_kinds(id));
+            self.ancestors.reverse();
+            self.ancestors.push(kind);
+
+            let count = self.ancestors.len();
+            let read = Read {
+                deferred: self.ancestors.iter().any(defers),
+                grandparent: count
+                    .checked_sub(3)
+                    .and_then(|index| self.ancestors.get(index))
+                    .copied(),
+                parent,
+                span: identifier.span,
+                terminal: terminal(&self.ancestors),
+            };
+
+            if let Some(reads) = self.references.get_mut(name) {
+                reads.push(read);
+            }
         }
     }
 }

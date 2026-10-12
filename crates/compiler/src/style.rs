@@ -261,27 +261,27 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
         if name.is_empty() {
             validator.report(
                 Code::InvalidStructure,
-                &[Arc::clone(&name)],
+                &[Arc::clone(name)],
                 "Style names must not be empty.",
             );
         }
 
         let mappings = theme.and_then(|theme| theme.metadata.contract.shorthands.as_ref());
-        let authored: Vec<(Arc<str>, Data)> = validator
-            .entries(&style, &[Arc::clone(&name)])
+        let authored: Vec<(&Arc<str>, &Data)> = validator
+            .entries(style, &[Arc::clone(name)])
             .into_iter()
-            .filter(|(key, value)| &**key != "targets" || !value.is_undefined())
+            .filter(|(key, value)| &***key != "targets" || !value.is_undefined())
             .collect();
         let target = authored
             .iter()
-            .find(|(key, _)| &**key == "targets")
-            .map(|(_, value)| value.clone());
+            .find(|(key, _)| &***key == "targets")
+            .map(|(_, value)| *value);
 
         if let Some(target) = target {
             if context.target_branch {
                 validator.report(
                     Code::InvalidStructure,
-                    &[Arc::clone(&name), "targets".into()],
+                    &[Arc::clone(name), "targets".into()],
                     "Target branches cannot contain nested target branches.",
                 );
                 continue;
@@ -289,13 +289,16 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
 
             let result = (|| -> std::result::Result<Arc<NamedStyle>, Error> {
                 let mut branches = Targets::default();
-                let target_path = [Arc::clone(&name), Arc::from("targets")];
+                let target_path = [Arc::clone(name), Arc::from("targets")];
 
-                for (key, input) in validator.entries(&target, &target_path) {
+                for (key, input) in validator.entries(target, &target_path) {
+                    // Target branches are rare, so they keep owned entries.
+                    let (key, input) = (Arc::clone(key), input.clone());
+
                     if !matches!(&*key, "android" | "ios" | "native" | "web") {
                         validator.report(
                             Code::InvalidStructure,
-                            &[Arc::clone(&name), "targets".into(), Arc::clone(&key)],
+                            &[Arc::clone(name), "targets".into(), Arc::clone(&key)],
                             "Unknown style target.",
                         );
                         continue;
@@ -325,14 +328,14 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                         };
 
                         match define_with(
-                            &Data::from(Object::from_entries([(Arc::clone(&name), input)])),
+                            &Data::from(Object::from_entries([(Arc::clone(name), input)])),
                             &nested,
                         ) {
                             Ok(definition) => branches.web = definition.styles.into_iter().next(),
                             Err(Error::Style(diagnostics)) => {
                                 for diagnostic in diagnostics {
                                     let mut path =
-                                        vec![Arc::clone(&name), "targets".into(), "web".into()];
+                                        vec![Arc::clone(name), "targets".into(), "web".into()];
                                     path.extend(diagnostic.path.into_iter().skip(1));
                                     validator.report(diagnostic.code, &path, &diagnostic.message);
                                 }
@@ -340,7 +343,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                             Err(error) => return Err(error),
                         }
                     } else {
-                        let path = [Arc::clone(&name), Arc::from("targets"), Arc::clone(&key)];
+                        let path = [Arc::clone(name), Arc::from("targets"), Arc::clone(&key)];
 
                         validator.entries(&input, &path);
 
@@ -364,8 +367,8 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                 let shared = Object::from_entries(
                     authored
                         .iter()
-                        .filter(|(key, _)| &**key != "targets")
-                        .cloned(),
+                        .filter(|(key, _)| &***key != "targets")
+                        .map(|(key, value)| (Arc::clone(key), (*value).clone())),
                 );
                 let nested = Context {
                     locations: Cow::Borrowed(&context.locations),
@@ -375,7 +378,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                 };
                 let shared = define_with(
                     &Data::from(Object::from_entries([(
-                        Arc::clone(&name),
+                        Arc::clone(name),
                         Data::from(shared),
                     )])),
                     &nested,
@@ -396,7 +399,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                 Err(Error::Style(diagnostics)) => validator.diagnostics.extend(diagnostics),
                 Err(error) => validator.report(
                     Code::InvalidStructure,
-                    &[Arc::clone(&name), "targets".into()],
+                    &[Arc::clone(name), "targets".into()],
                     &error.text(),
                 ),
             }
@@ -404,22 +407,22 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
             continue;
         }
 
-        let mut properties: Vec<(Arc<str>, Data, Arc<str>)> = Vec::new();
+        // Authored values stay borrowed; only typography presets add owned ones.
+        let mut properties: Vec<(Arc<str>, Cow<'_, Data>, &Arc<str>)> =
+            Vec::with_capacity(authored.len());
 
-        for (property, input) in &authored {
+        for (property, input) in authored.iter().copied() {
             if &**property != "typography" {
                 match mappings.and_then(|mappings| mappings.get(property)) {
                     Some(targets) => {
-                        properties.extend(targets.iter().map(|target| {
-                            (Arc::clone(target), input.clone(), Arc::clone(property))
-                        }));
+                        properties.extend(
+                            targets
+                                .iter()
+                                .map(|target| (Arc::clone(target), Cow::Borrowed(input), property)),
+                        );
                     }
                     None => {
-                        properties.push((
-                            Arc::clone(property),
-                            input.clone(),
-                            Arc::clone(property),
-                        ));
+                        properties.push((Arc::clone(property), Cow::Borrowed(input), property));
                     }
                 }
                 continue;
@@ -430,7 +433,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
             if matches!(parsed, Some(Parsed::Invalid)) {
                 validator.report(
                     Code::InvalidValue,
-                    &[Arc::clone(&name), Arc::clone(property)],
+                    &[Arc::clone(name), Arc::clone(property)],
                     "Value markers require \" !custom\" followed by optional \" !important\", or \" !important\" alone.",
                 );
                 continue;
@@ -446,7 +449,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
             if typography::entries(theme, &path, &[], false).is_empty() {
                 validator.report(
                     Code::InvalidValue,
-                    &[Arc::clone(&name), Arc::clone(property)],
+                    &[Arc::clone(name), Arc::clone(property)],
                     "Expected a named typography set from the bound theme.",
                 );
                 continue;
@@ -456,7 +459,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
             let explicit: Vec<Arc<str>> = authored
                 .iter()
                 .flat_map(|(property, _)| {
-                    match mappings.and_then(|mappings| mappings.get(property)) {
+                    match mappings.and_then(|mappings| mappings.get(*property)) {
                         Some(targets) => targets.to_vec(),
                         None => vec![Arc::clone(property)],
                     }
@@ -467,7 +470,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
             properties.extend(
                 typography::entries(theme, &path, &explicit, important)
                     .into_iter()
-                    .map(|(field, value)| (field, value, Arc::clone(property))),
+                    .map(|(field, value)| (field, Cow::Owned(value), property)),
             );
         }
 
@@ -476,14 +479,16 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
             let blocks: Vec<(Arc<str>, Data)> = authored
                 .iter()
                 .flat_map(|(key, input)| {
-                    if &**key == "typography" {
+                    if &***key == "typography" {
                         properties
                             .iter()
-                            .filter(|(_, _, original)| original == key)
-                            .map(|(property, value, _)| (Arc::clone(property), value.clone()))
+                            .filter(|(_, _, original)| **original == **key)
+                            .map(|(property, value, _)| {
+                                (Arc::clone(property), value.clone().into_owned())
+                            })
                             .collect::<Vec<_>>()
                     } else {
-                        vec![(Arc::clone(key), input.clone())]
+                        vec![(Arc::clone(key), (*input).clone())]
                     }
                 })
                 .collect();
@@ -539,7 +544,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                         theme,
                     };
                     let style = define_with(
-                        &Data::from(Object::from_entries([(Arc::clone(&name), body)])),
+                        &Data::from(Object::from_entries([(Arc::clone(name), body)])),
                         &nested,
                     )?
                     .styles
@@ -576,7 +581,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                                 }
 
                                 let rename = |path: &[Arc<str>]| {
-                                    let mut next = vec![Arc::clone(&name), Arc::clone(&key)];
+                                    let mut next = vec![Arc::clone(name), Arc::clone(&key)];
                                     next.extend(path.iter().skip(1).cloned());
                                     next
                                 };
@@ -593,28 +598,28 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
                     }
                     Err(error) => validator.report(
                         Code::InvalidStructure,
-                        &[Arc::clone(&name), Arc::clone(&key)],
+                        &[Arc::clone(name), Arc::clone(&key)],
                         &error.text(),
                     ),
                 }
             }
 
             output.push(Arc::new(NamedStyle {
-                name: Arc::clone(&name),
+                name: Arc::clone(name),
                 rules: Some(rules),
                 ..NamedStyle::default()
             }));
             continue;
         }
 
-        let mut declarations: Vec<Declaration> = Vec::new();
+        let mut declarations: Vec<Declaration> = Vec::with_capacity(properties.len());
 
-        for (property, input, authored_property) in properties {
+        for (property, input, authored_property) in &properties {
             validator.declarations(
-                &name,
-                &property,
-                &input,
-                &authored_property,
+                name,
+                property,
+                input,
+                authored_property,
                 theme,
                 &mut declarations,
             );
@@ -622,7 +627,7 @@ fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
 
         output.push(Arc::new(NamedStyle {
             declarations,
-            name,
+            name: Arc::clone(name),
             ..NamedStyle::default()
         }));
     }
@@ -717,7 +722,7 @@ impl Validator<'_> {
         });
     }
 
-    fn entries(&mut self, value: &Data, path: &[Arc<str>]) -> Vec<(Arc<str>, Data)> {
+    fn entries<'d>(&mut self, value: &'d Data, path: &[Arc<str>]) -> Vec<(&'d Arc<str>, &'d Data)> {
         let Data::Object(object) = value else {
             self.report(
                 Code::InvalidStructure,
@@ -740,7 +745,7 @@ impl Validator<'_> {
 
         for (key, property) in object.properties() {
             match property {
-                Property::Value(value) => result.push((Arc::clone(key), value.clone())),
+                Property::Value(value) => result.push((key, value)),
                 Property::Accessor => {
                     let mut next = path.to_vec();
                     next.push(Arc::clone(key));
@@ -765,39 +770,40 @@ impl Validator<'_> {
         theme: Option<&Theme>,
         output: &mut Vec<Declaration>,
     ) {
-        let path = [Arc::clone(name), Arc::clone(authored)];
-        let inputs: Vec<Data> = match input {
+        // Diagnostics alone read the path, so valid declarations never build it.
+        let path = || [Arc::clone(name), Arc::clone(authored)];
+        let inputs: &[Data] = match input {
             Data::Array(items) => {
                 if items.is_empty() {
                     self.report(
                         Code::InvalidValue,
-                        &path,
+                        &path(),
                         "Fallback arrays must be nonempty.",
                     );
                     return;
                 }
 
-                items.iter().cloned().collect()
+                items
             }
-            other => vec![other.clone()],
+            other => std::slice::from_ref(other),
         };
 
         for entry in inputs {
-            if let Data::Object(object) = &entry
+            if let Data::Object(object) = entry
                 && matches!(object.get("variable"), Some(Data::Bool(true)))
             {
                 self.report(
                     Code::InvalidStructure,
-                    &path,
+                    &path(),
                     "Invalid compiler binding reference.",
                 );
                 continue;
             }
 
-            let parsed = value::parse(&entry, key);
+            let parsed = value::parse(entry, key);
 
             if matches!(parsed, Some(Parsed::Invalid)) {
-                self.report(Code::InvalidValue, &path, MARKERS);
+                self.report(Code::InvalidValue, &path(), MARKERS);
                 continue;
             }
 
@@ -840,7 +846,7 @@ impl Validator<'_> {
             {
                 self.report(
                     Code::InvalidValue,
-                    &path,
+                    &path(),
                     "Variable value is incompatible with this property.",
                 );
                 continue;
@@ -855,7 +861,7 @@ impl Validator<'_> {
             {
                 self.report(
                     Code::InvalidValue,
-                    &path,
+                    &path(),
                     "Expected a configured token or a CSS value with the \" !custom\" suffix.",
                 );
                 continue;

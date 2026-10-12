@@ -51,19 +51,27 @@ struct Input {
     composition: Option<Composition>,
     module_id: String,
     source: String,
+    /// Options followed by a NUL and the source, as `Transform.compile` sends them.
     text: String,
 }
 
 fn read(path: &str) -> Input {
     let text = std::fs::read_to_string(path).expect("transform input");
-    let value: Value = serde_json::from_str(&text).expect("JSON input");
+    let mut value: Value = serde_json::from_str(&text).expect("JSON input");
     let field = |name: &str| value.get(name).and_then(Value::as_str).map(str::to_owned);
+    let composition = field("composition").and_then(|value| Composition::parse(&value));
+    let module_id = field("moduleId").unwrap_or_default();
+    let source = field("source").unwrap_or_default();
+
+    if let Some(object) = value.as_object_mut() {
+        object.remove("source");
+    }
 
     Input {
-        composition: field("composition").and_then(|value| Composition::parse(&value)),
-        module_id: field("moduleId").unwrap_or_default(),
-        source: field("source").unwrap_or_default(),
-        text,
+        composition,
+        module_id,
+        text: format!("{value}\0{source}"),
+        source,
     }
 }
 

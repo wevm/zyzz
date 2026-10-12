@@ -19,7 +19,6 @@ use oxc_ast::ast::{
     ObjectProperty, PropertyKind, Statement, TSNamespaceDeclaration, TSNamespaceDeclarationBody,
     VariableDeclarationKind, VariableDeclarator,
 };
-use oxc_ast_visit::Visit;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
@@ -136,19 +135,27 @@ enum Node<'a> {
 }
 
 struct Collector<'s, 'a> {
-    ancestors: Vec<AstKind<'a>>,
     bindings: FxHashMap<u32, &'a Expression<'a>>,
     namespaces: FxHashMap<u32, Members<'a>>,
     nodes: Vec<Node<'a>>,
     selector_keys: &'s FxHashSet<u32>,
 }
 
-impl<'a> Visit<'a> for Collector<'_, 'a> {
-    fn enter_node(&mut self, kind: AstKind<'a>) {
-        let parent = self.ancestors.last().copied();
+impl<'a> Collector<'_, 'a> {
+    /// Records nodes in entry order from the semantic node list, which also holds each node's
+    /// parent, so no walk is needed.
+    fn scan(&mut self, semantic: &oxc_semantic::Semantic<'a>) {
+        let nodes = semantic.nodes();
 
-        self.ancestors.push(kind);
+        for node in nodes.iter() {
+            let parent =
+                (node.id() != nodes.parent_id(node.id())).then(|| nodes.parent_kind(node.id()));
 
+            self.enter(node.kind(), parent);
+        }
+    }
+
+    fn enter(&mut self, kind: AstKind<'a>, parent: Option<AstKind<'a>>) {
         match kind {
             AstKind::ObjectProperty(property)
                 if self.selector_keys.contains(&property.key.span().start) =>
@@ -175,10 +182,6 @@ impl<'a> Visit<'a> for Collector<'_, 'a> {
             }
             _ => {}
         }
-    }
-
-    fn leave_node(&mut self, _: AstKind<'a>) {
-        self.ancestors.pop();
     }
 }
 
@@ -612,14 +615,13 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
     }
 
     let mut collector = Collector {
-        ancestors: Vec::new(),
         bindings: FxHashMap::default(),
         namespaces: FxHashMap::default(),
         nodes: Vec::new(),
         selector_keys: options.selector_keys,
     };
 
-    collector.visit_program(program);
+    collector.scan(&parsed.semantic);
 
     let Collector {
         bindings,

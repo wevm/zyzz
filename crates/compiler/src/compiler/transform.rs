@@ -14,7 +14,6 @@ use oxc_ast::ast::{
     Argument, ArrayExpressionElement, BindingPattern, Expression, ImportDeclarationSpecifier,
     ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, Statement,
 };
-use oxc_ast_visit::Visit;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smallvec::SmallVec;
@@ -161,20 +160,40 @@ struct Applied {
 }
 
 struct Walker<'w, 'a> {
-    ancestors: Vec<AstKind<'a>>,
     applications: FxHashMap<u32, Applied>,
     calls: &'w FxHashMap<u32, &'w Call<'a>>,
     definitions: FxHashMap<u32, &'a ObjectExpression<'a>>,
+    /// Spans of identifiers spelled like an import's local name or a generated `__zyzz` helper,
+    /// the only names the rewrite looks up.
     identifiers: FxHashMap<&'a str, Vec<Span>>,
+    /// Local names of the module's imports.
+    imports: FxHashSet<&'a str>,
     unused_selections: FxHashSet<u32>,
 }
 
-impl<'a> Visit<'a> for Walker<'_, 'a> {
-    fn enter_node(&mut self, kind: AstKind<'a>) {
-        let parent = self.ancestors.last().copied();
+impl<'a> Walker<'_, 'a> {
+    fn identifier(&mut self, name: &'a str, span: Span) {
+        if name.starts_with("__zyzz") || self.imports.contains(name) {
+            self.identifiers.entry(name).or_default().push(span);
+        }
+    }
+}
 
-        self.ancestors.push(kind);
+impl<'a> Walker<'_, 'a> {
+    /// Records nodes in entry order from the semantic node list, which also holds each node's
+    /// parent, so no walk is needed.
+    fn scan(&mut self, semantic: &oxc_semantic::Semantic<'a>) {
+        let nodes = semantic.nodes();
 
+        for node in nodes.iter() {
+            let id = node.id();
+            let parent = (nodes.parent_id(id) != id).then(|| nodes.parent_kind(id));
+
+            self.enter(node.kind(), parent);
+        }
+    }
+
+    fn enter(&mut self, kind: AstKind<'a>, parent: Option<AstKind<'a>>) {
         match kind {
             AstKind::VariableDeclarator(declarator) => {
                 if let (Some(init), BindingPattern::ObjectPattern(pattern)) = (&declarator.init, &declarator.id)
@@ -199,17 +218,17 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                     parent,
                     Some(AstKind::JSXOpeningElement(_) | AstKind::JSXClosingElement(_) | AstKind::JSXMemberExpression(_))
                 ) {
-                    self.identifiers.entry(identifier.name.as_str()).or_default().push(identifier.span);
+                    self.identifier(identifier.name.as_str(), identifier.span);
                 }
             }
             AstKind::BindingIdentifier(identifier) => {
-                self.identifiers.entry(identifier.name.as_str()).or_default().push(identifier.span);
+                self.identifier(identifier.name.as_str(), identifier.span);
             }
             AstKind::IdentifierName(identifier) => {
-                self.identifiers.entry(identifier.name.as_str()).or_default().push(identifier.span);
+                self.identifier(identifier.name.as_str(), identifier.span);
             }
             AstKind::LabelIdentifier(identifier) => {
-                self.identifiers.entry(identifier.name.as_str()).or_default().push(identifier.span);
+                self.identifier(identifier.name.as_str(), identifier.span);
             }
             AstKind::CallExpression(node) => {
                 let Some(call) = self.calls.get(&node.span.start).filter(|call| call.end == node.span.end) else {
@@ -244,10 +263,6 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
             }
             _ => {}
         }
-    }
-
-    fn leave_node(&mut self, _: AstKind<'a>) {
-        self.ancestors.pop();
     }
 }
 
@@ -492,7 +507,11 @@ fn declaration_starts(
 }
 
 /// Decodes `\hex ` escapes in a class selector, as `/\\([0-9a-f]+) ?/gi` replacements do.
-fn unescape(selector: &str) -> String {
+fn unescape(selector: &str) -> Cow<'_, str> {
+    if !selector.contains('\\') {
+        return Cow::Borrowed(selector);
+    }
+
     let mut output = String::with_capacity(selector.len());
     let mut rest = selector;
 
@@ -518,7 +537,7 @@ fn unescape(selector: &str) -> String {
     }
 
     output.push_str(rest);
-    output
+    Cow::Owned(output)
 }
 
 /// Lists declarations in emitted order, through conditions and segments.
@@ -641,16 +660,26 @@ pub fn compile<'a>(
         .iter()
         .map(|call| (call.start, call))
         .collect();
+    let imports: FxHashSet<&str> = program
+        .body
+        .iter()
+        .filter_map(|statement| match statement {
+            Statement::ImportDeclaration(import) => import.specifiers.as_ref(),
+            _ => None,
+        })
+        .flatten()
+        .map(|specifier| specifier.local().name.as_str())
+        .collect();
     let mut walker = Walker {
-        ancestors: Vec::new(),
         applications: FxHashMap::default(),
         calls: &calls_by_start,
         definitions: FxHashMap::default(),
         identifiers: FxHashMap::default(),
+        imports,
         unused_selections: FxHashSet::default(),
     };
 
-    walker.visit_program(program);
+    walker.scan(&parsed.semantic);
 
     let local_applications = applications::create(
         program,
@@ -828,7 +857,14 @@ pub fn compile<'a>(
             .get(application.start as usize..application.callee_end as usize)
             .unwrap_or_default();
         let replacement = if application.initialized {
-            format!("({{{key}:{class_name}}})")
+            let mut replacement = String::with_capacity(key.len() + class_name.len() + 5);
+
+            replacement.push_str("({");
+            replacement.push_str(key);
+            replacement.push(':');
+            replacement.push_str(&class_name);
+            replacement.push_str("})");
+            replacement
         } else {
             // Keep a callable guard so bundlers also keep failures before initialization.
             format!("({callee}?{{{key}:{class_name}}}:{callee}())")
@@ -1358,17 +1394,13 @@ impl<'a> Generator<'_, 'a> {
 
         for call in &extracted.calls {
             if let Some(end) = erased.get(&call.name) {
-                let html = if call.output == Some(ThemeOutput::Html) {
-                    "<'html'>"
+                let annotation = if call.output == Some(ThemeOutput::Html) {
+                    ": import('zyzz').style.ReturnType<'html'>"
                 } else {
-                    ""
+                    ": import('zyzz').style.ReturnType"
                 };
 
-                module.overwrite(
-                    *end,
-                    call.start,
-                    &format!(": import('zyzz').style.ReturnType{html}"),
-                )?;
+                module.overwrite(*end, call.start, annotation)?;
             }
         }
 
@@ -1397,7 +1429,13 @@ impl<'a> Generator<'_, 'a> {
             let html = call.output == Some(ThemeOutput::Html);
             let key = if html { "class" } else { "className" };
             let class_name = self.class(&call.name);
-            let props = format!("{{{key}:{class_name}}}");
+            let mut props = String::with_capacity(key.len() + class_name.len() + 3);
+
+            props.push('{');
+            props.push_str(key);
+            props.push(':');
+            props.push_str(&class_name);
+            props.push('}');
             let compose_html = html && prepared_html.contains(&call.name);
 
             if compose_html {
@@ -2442,7 +2480,9 @@ impl<'a> Generator<'_, 'a> {
             memchr::memchr_iter(b'\n', prefix.as_bytes()).count() + 1
         };
         let mut declaration_owners: FxHashMap<&str, FxHashSet<usize>> = FxHashMap::default();
-        let mut rules: Vec<String> = Vec::new();
+        // Rules whose selector needs no rewrite stay borrowed from the emitted text.
+        let mut rules: Vec<Cow<'_, str>> = Vec::new();
+        let mut openers: FxHashMap<usize, usize> = FxHashMap::default();
         let generated = |column: u32, line: usize| Position {
             column,
             line: u32::try_from(line).unwrap_or(u32::MAX),
@@ -2462,7 +2502,7 @@ impl<'a> Generator<'_, 'a> {
             .filter(|_| !scoped.is_empty())
         {
             let line = index + 1 + prefix_lines;
-            let mut openers: FxHashMap<usize, usize> = FxHashMap::default();
+            openers.clear();
             let condition_starts = declaration_starts(rule, true, Some(&mut openers));
             let selector_start = condition_starts
                 .iter()
@@ -2478,7 +2518,7 @@ impl<'a> Generator<'_, 'a> {
             };
             let name = unescape(rule.get(selector_start + 1..brace).unwrap_or_default());
 
-            if let Some(owner) = linked_owners.get(name.as_str()) {
+            if let Some(owner) = linked_owners.get(&*name) {
                 map.set_source_content(&owner.module_id, Some(&owner.source));
                 map.add_mapping(&Mapping {
                     generated: generated(0, line),
@@ -2486,18 +2526,18 @@ impl<'a> Generator<'_, 'a> {
                     original: Some(end_of(&owner.source, owner.call.start)),
                     source: Some(&owner.module_id),
                 });
-                rules.push(rule.to_owned());
+                rules.push(Cow::Borrowed(rule));
                 continue;
             }
 
-            if let Some((start, owner)) = theme_owners.get(name.as_str()) {
+            if let Some((start, owner)) = theme_owners.get(&*name) {
                 map.add_mapping(&Mapping {
                     generated: generated(0, line),
                     name: Some(owner),
                     original: Some(lines.position(*start)),
                     source: Some(module_id),
                 });
-                rules.push(rule.to_owned());
+                rules.push(Cow::Borrowed(rule));
                 continue;
             }
 
@@ -2507,7 +2547,7 @@ impl<'a> Generator<'_, 'a> {
                 || scheme::CLASSES.iter().any(|(_, class)| *class == name)
             {
                 unmapped(&mut map, line);
-                rules.push(rule.to_owned());
+                rules.push(Cow::Borrowed(rule));
                 continue;
             }
 
@@ -2522,12 +2562,12 @@ impl<'a> Generator<'_, 'a> {
                             .any(|class| rule.contains(&format!(".{class}{{")))))
             {
                 unmapped(&mut map, line);
-                rules.push(rule.to_owned());
+                rules.push(Cow::Borrowed(rule));
                 continue;
             }
 
             let selector = format!(".{}", class_name::selector(&name));
-            let Some(call) = owners.get(name.as_str()).copied() else {
+            let Some(call) = owners.get(&*name).copied() else {
                 return Err(message("Emitted CSS rule has no owning style."));
             };
             let selector_column = utf16_column(rule, selector_start);
@@ -2626,10 +2666,16 @@ impl<'a> Generator<'_, 'a> {
                 cursor = start + text.len();
             }
 
-            rules.push(format!(
-                "{}{selector}{body}",
-                rule.get(..selector_start).unwrap_or_default()
-            ));
+            rules.push(
+                if rule.get(selector_start..brace) == Some(selector.as_str()) {
+                    Cow::Borrowed(rule)
+                } else {
+                    Cow::Owned(format!(
+                        "{}{selector}{body}",
+                        rule.get(..selector_start).unwrap_or_default()
+                    ))
+                },
+            );
         }
 
         let rules = rules.join("\n");

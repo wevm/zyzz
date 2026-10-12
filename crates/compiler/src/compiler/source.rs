@@ -7,6 +7,7 @@
 //! error does.
 
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::sync::Arc;
 
 use indexmap::IndexMap;
@@ -390,35 +391,69 @@ struct Walker<'w, 'p, 'a> {
     recipes: FxHashSet<u32>,
     reporter: &'w mut Reporter<'p>,
     themes: Option<&'w mut Themes<'a>>,
-    /// Entered type subtrees, counted so a read checks them in constant time.
+    /// Type subtrees enclosing the identifier being read.
     typed: usize,
-    types: Vec<bool>,
     variables: &'w Variables<'a>,
 }
 
-impl<'a> Visit<'a> for Walker<'_, '_, 'a> {
-    fn enter_node(&mut self, kind: AstKind<'a>) {
-        let parent = self.ancestors.last().copied();
-        let typed = type_node(kind, parent);
+impl<'a> Walker<'_, '_, 'a> {
+    /// Reads every identifier in entry order with the ancestors a full walk would have entered.
+    /// The semantic node list holds nodes in that order with parent links, so only identifiers
+    /// are visited.
+    fn scan(&mut self) {
+        let nodes = self.parsed.semantic.nodes();
+        let mut chain: Vec<AstKind<'a>> = Vec::new();
 
-        self.ancestors.push(kind);
-        self.types.push(typed);
-        self.typed += usize::from(typed);
+        for node in nodes.iter() {
+            let kind = node.kind();
 
-        if self.fatal.is_none()
-            && let Err(error) = self.read(kind, parent)
-        {
-            self.fatal = Some(error);
+            if !matches!(
+                kind,
+                AstKind::IdentifierReference(_) | AstKind::BindingIdentifier(_)
+            ) {
+                continue;
+            }
+
+            // A failure ends reading; later nodes would only be entered.
+            if self.fatal.is_some() {
+                break;
+            }
+
+            chain.clear();
+            chain.extend(nodes.ancestor_kinds(node.id()));
+            chain.reverse();
+            chain.push(kind);
+            self.typed = chain
+                .iter()
+                .enumerate()
+                .filter(|(index, ancestor)| {
+                    type_node(
+                        **ancestor,
+                        index
+                            .checked_sub(1)
+                            .and_then(|parent| chain.get(parent))
+                            .copied(),
+                    )
+                })
+                .count();
+
+            std::mem::swap(&mut self.ancestors, &mut chain);
+
+            let parent = self
+                .ancestors
+                .len()
+                .checked_sub(2)
+                .and_then(|index| self.ancestors.get(index))
+                .copied();
+
+            if let Err(error) = self.read(kind, parent) {
+                self.fatal = Some(error);
+            }
+
+            std::mem::swap(&mut self.ancestors, &mut chain);
         }
     }
 
-    fn leave_node(&mut self, _: AstKind<'a>) {
-        self.ancestors.pop();
-        self.typed -= usize::from(self.types.pop().unwrap_or_default());
-    }
-}
-
-impl<'a> Walker<'_, '_, 'a> {
     fn read(&mut self, kind: AstKind<'a>, parent: Option<AstKind<'a>>) -> Result<()> {
         let semantic = &self.parsed.semantic;
         let lookup = |name: &str| {
@@ -733,8 +768,30 @@ struct Module<'m, 'a> {
     offsets: &'m Utf16Index,
     selectors: &'m selectors::Selectors<'m, 'a>,
     statics: &'m Static<'a>,
+    strings: &'m Strings<'a>,
     styles: &'m [Arc<NamedStyle>],
     variables: &'m Variables<'a>,
+}
+
+/// Authored keys and values of one extraction, so each repeated spelling shares one allocation.
+#[derive(Default)]
+struct Strings<'a> {
+    table: RefCell<FxHashMap<&'a str, Arc<str>>>,
+}
+
+impl<'a> Strings<'a> {
+    fn get(&self, text: &'a str) -> Arc<str> {
+        let mut table = self.table.borrow_mut();
+
+        if let Some(shared) = table.get(text) {
+            return Arc::clone(shared);
+        }
+
+        let shared: Arc<str> = Arc::from(text);
+
+        table.insert(text, Arc::clone(&shared));
+        shared
+    }
 }
 
 /// Converts one call's literal body into style data, reporting unsupported syntax.
@@ -954,7 +1011,10 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 (Some(variable), _, _) => Arc::from(variable.reference.name.as_str()),
                 (None, Some(condition), _) => Arc::clone(condition),
                 (None, None, Some(query)) => Arc::clone(query),
-                (None, None, None) => Arc::from(property_key(&property.key).unwrap_or_default()),
+                (None, None, None) => match property_key(&property.key) {
+                    Some(Cow::Borrowed(key)) => self.module.strings.get(key),
+                    key => Arc::from(key.unwrap_or_default()),
+                },
             };
 
             if values.has(&key) {
@@ -1292,7 +1352,9 @@ impl<'a> Converter<'_, '_, '_, 'a> {
             }
         } else {
             match node {
-                Expression::StringLiteral(literal) => Data::string(literal.value.as_str()),
+                Expression::StringLiteral(literal) => {
+                    Data::String(self.module.strings.get(literal.value.as_str()))
+                }
                 Expression::NumericLiteral(literal) => Data::Number(literal.value),
                 Expression::UnaryExpression(unary)
                     if matches!(
@@ -1981,11 +2043,10 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         reporter: &mut reporter,
         themes: themes.as_mut(),
         typed: 0,
-        types: Vec::new(),
         variables: &variables,
     };
 
-    walker.visit_program(program);
+    walker.scan();
 
     let Walker {
         fatal,
@@ -2133,6 +2194,8 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     for call in &pending {
         *name_counts.entry(style_name(call)).or_default() += 1;
     }
+
+    let strings = Strings::default();
 
     for (index, call) in pending.iter().copied().enumerate() {
         let explicit = match identifiers::explicit(call, 1) {
@@ -2336,6 +2399,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             offsets: &parsed.offsets,
             selectors: &selectors,
             statics: &statics,
+            strings: &strings,
             styles: &styles,
             variables: &variables,
         };
@@ -2964,10 +3028,19 @@ fn labels(calls: &[Call<'_>], styles: &[Arc<NamedStyle>]) -> style::Labels {
         let label = match call {
             Some(call) => style::Label {
                 name: match &call.css_name {
-                    Some(css_name) if !css_name.is_empty() => Arc::from(format!(
-                        "{css_name}{}",
-                        style.name.get(call.name.len()..).unwrap_or_default()
-                    )),
+                    Some(css_name) if !css_name.is_empty() => {
+                        let suffix = style.name.get(call.name.len()..).unwrap_or_default();
+
+                        if suffix.is_empty() {
+                            Arc::clone(css_name)
+                        } else {
+                            let mut name = String::with_capacity(css_name.len() + suffix.len());
+
+                            name.push_str(css_name);
+                            name.push_str(suffix);
+                            Arc::from(name)
+                        }
+                    }
                     _ => Arc::clone(&style.name),
                 },
                 namespace: call.css_namespace.clone(),

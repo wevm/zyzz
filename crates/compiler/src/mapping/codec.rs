@@ -141,9 +141,18 @@ impl Encoder {
     /// Appends `count` segments after a mapped one, each one generated and original column
     /// further along the same lines, as unedited text maps unit by unit.
     pub fn advance(&mut self, count: i64) {
-        // Deltas of one column, zero sources, and zero lines encode as `CAAC`.
-        for _ in 0..count {
-            self.output.push_str(",CAAC");
+        // Deltas of one column, zero sources, and zero lines encode as `CAAC`, so runs append
+        // whole blocks of repeated segments.
+        let mut remaining = usize::try_from(count).unwrap_or_default();
+
+        self.output.reserve(remaining * UNIT.len());
+
+        while remaining > 0 {
+            let units = remaining.min(RUN.len() / UNIT.len());
+
+            self.output
+                .push_str(RUN.get(..units * UNIT.len()).unwrap_or_default());
+            remaining -= units;
         }
 
         self.column += count;
@@ -155,6 +164,12 @@ impl Encoder {
         self.output
     }
 }
+
+/// One segment one column after the previous, on the same source and line.
+const UNIT: &str = ",CAAC";
+
+/// Repeated [`UNIT`] segments appended a block at a time.
+const RUN: &str = ",CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC";
 
 /// Appends one signed integer as base64 VLQ digits.
 fn write_integer(output: &mut String, value: i64) {

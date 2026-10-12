@@ -16,8 +16,7 @@ use oxc_ast::ast::{
     VariableDeclarationKind,
 };
 use oxc_ast::builder::AstBuilder;
-use oxc_ast_visit::Visit;
-use oxc_semantic::Semantic;
+use oxc_semantic::{NodeId, Semantic};
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxHashMap, FxHashSet};
 use smallvec::SmallVec;
@@ -138,7 +137,6 @@ pub fn collect<'a>(
 
     let mut collector = Collector {
         absent: FxHashSet::default(),
-        ancestors: Vec::new(),
         references: FxHashMap::default(),
         semantic,
         type_references: FxHashMap::default(),
@@ -148,7 +146,7 @@ pub fn collect<'a>(
         allocator,
     };
 
-    collector.visit_program(program);
+    collector.scan();
 
     let Collector {
         absent,
@@ -181,7 +179,6 @@ pub fn collect<'a>(
 struct Collector<'s, 'a> {
     absent: FxHashSet<u32>,
     allocator: &'a Allocator,
-    ancestors: Vec<AstKind<'a>>,
     references: FxHashMap<u32, u32>,
     semantic: &'s Semantic<'a>,
     type_references: FxHashMap<u32, u32>,
@@ -190,10 +187,18 @@ struct Collector<'s, 'a> {
     values: &'s FxHashMap<u32, &'a Expression<'a>>,
 }
 
-impl<'a> Visit<'a> for Collector<'_, 'a> {
-    fn enter_node(&mut self, kind: AstKind<'a>) {
-        self.ancestors.push(kind);
+impl<'a> Collector<'_, 'a> {
+    /// Collects in entry order from the semantic node list, which holds every node with its
+    /// parent, so only declarations and references are visited.
+    fn scan(&mut self) {
+        let nodes = self.semantic.nodes();
 
+        for node in nodes.iter() {
+            self.enter(node.kind(), node.id());
+        }
+    }
+
+    fn enter(&mut self, kind: AstKind<'a>, id: NodeId) {
         match kind {
             AstKind::TSTypeAliasDeclaration(alias) if alias.type_parameters.is_none() => {
                 self.types
@@ -242,18 +247,12 @@ impl<'a> Visit<'a> for Collector<'_, 'a> {
                     }
                 }
             }
-            AstKind::IdentifierReference(identifier) => self.reference(identifier),
+            AstKind::IdentifierReference(identifier) => self.reference(identifier, id),
             _ => {}
         }
     }
 
-    fn leave_node(&mut self, _: AstKind<'a>) {
-        self.ancestors.pop();
-    }
-}
-
-impl<'a> Collector<'_, 'a> {
-    fn reference(&mut self, identifier: &'a IdentifierReference<'a>) {
+    fn reference(&mut self, identifier: &'a IdentifierReference<'a>, id: NodeId) {
         let binding = scope::resolve(self.semantic, identifier);
 
         // Distinguish unbound references from nodes that are not references.
@@ -268,9 +267,10 @@ impl<'a> Collector<'_, 'a> {
             return;
         };
 
-        if self
-            .ancestors
-            .iter()
+        let nodes = self.semantic.nodes();
+
+        if nodes
+            .ancestor_kinds(id)
             .any(|ancestor| matches!(ancestor, AstKind::TSTypeQuery(_)))
         {
             return;
@@ -291,10 +291,15 @@ impl<'a> Collector<'_, 'a> {
             return;
         }
 
+        // Usages list the enclosing path from the program to the reference itself.
+        let mut ancestors: Vec<AstKind<'a>> = nodes.ancestor_kinds(id).collect();
+
+        ancestors.reverse();
+        ancestors.push(nodes.kind(id));
         self.usages
             .entry(binding.start())
             .or_default()
-            .push(self.ancestors.clone());
+            .push(ancestors);
     }
 }
 
@@ -1101,7 +1106,15 @@ impl<'a> Static<'a> {
         opaque: &FxHashSet<u32>,
         omit_undefined: bool,
     ) -> Result<&'a Expression<'a>> {
-        if opaque.contains(&node.span().start) {
+        // Literals resolve to themselves, and an opaque node is returned unchanged either way.
+        if matches!(
+            node,
+            Expression::BooleanLiteral(_)
+                | Expression::NullLiteral(_)
+                | Expression::NumericLiteral(_)
+                | Expression::StringLiteral(_)
+        ) || opaque.contains(&node.span().start)
+        {
             return Ok(node);
         }
 

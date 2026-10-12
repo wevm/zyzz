@@ -165,6 +165,8 @@ pub fn create<'c, 'a>(
     }
 
     let mut candidates: Vec<Candidate<'c, 'a>> = Vec::new();
+    // Lookups find bindings by name, so only these names can read a candidate or a member.
+    let mut names: FxHashSet<&'a str> = FxHashSet::default();
 
     for statement in &program.body {
         if let Statement::TSNamespaceDeclaration(namespace) = statement
@@ -216,6 +218,7 @@ pub fn create<'c, 'a>(
                     members.insert(Arc::from(identifier.name.as_str()), call);
                     ends.insert(Arc::clone(&call.name), end);
                     bindings.push((identifier.span.start, Arc::clone(&call.name)));
+                    names.insert(identifier.name.as_str());
                 }
             }
 
@@ -224,6 +227,7 @@ pub fn create<'c, 'a>(
             }
 
             if valid && !members.is_empty() {
+                names.insert(namespace.id.name.as_str());
                 candidates.push(Candidate {
                     binding: namespace.id.span,
                     direct: None,
@@ -300,6 +304,7 @@ pub fn create<'c, 'a>(
                 }
             }
 
+            names.insert(identifier.name.as_str());
             candidates.push(Candidate {
                 binding: identifier.span,
                 direct,
@@ -323,6 +328,7 @@ pub fn create<'c, 'a>(
             .collect(),
         evaluation: false,
         member_bindings: &member_bindings,
+        names,
         referenced_definitions: FxHashSet::default(),
         references: candidates
             .iter()
@@ -356,6 +362,8 @@ struct Walker<'s, 'a> {
     candidates: FxHashMap<u32, Arc<str>>,
     evaluation: bool,
     member_bindings: &'s FxHashMap<u32, Arc<str>>,
+    /// Names of candidates and namespace members.
+    names: FxHashSet<&'a str>,
     referenced_definitions: FxHashSet<Arc<str>>,
     references: FxHashMap<Arc<str>, Vec<Read<'a>>>,
     semantic: &'s Semantic<'a>,
@@ -409,6 +417,11 @@ impl Walker<'_, '_> {
             let AstKind::IdentifierReference(identifier) = kind else {
                 continue;
             };
+
+            if !self.names.contains(identifier.name.as_str()) {
+                continue;
+            }
+
             let id = node.id();
             let parent = (nodes.parent_id(id) != id).then(|| nodes.parent_kind(id));
 

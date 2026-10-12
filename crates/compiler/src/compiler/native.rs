@@ -31,7 +31,8 @@ use crate::error::{Error, Result};
 use crate::internal::recipe;
 use crate::internal::theme::Definition;
 use crate::js::{self, Record};
-use crate::mapping::magic_string::{MagicString, MapOptions};
+use crate::mapping::edits::Edits;
+use crate::mapping::magic_string::MapOptions;
 use crate::react_native::internal::scalar;
 use crate::react_native::style_sheet::{self, Schemes, Table, Tables};
 use crate::react_native::variants;
@@ -166,7 +167,7 @@ pub fn compile<'a>(
 
     let mut rewriter = Rewriter {
         edits: Vec::new(),
-        module: MagicString::new(source),
+        module: Edits::new(source),
         parsed,
     };
     let mut styles_by_name: FxHashMap<&str, Vec<Arc<NamedStyle>>> = FxHashMap::default();
@@ -260,19 +261,16 @@ pub fn compile<'a>(
         });
     }
 
-    let map = rewriter
-        .module
-        .generate_map(&MapOptions {
-            hires: true,
-            include_content: true,
-            source: Some(options.module_id),
-        })
-        .to_json();
+    let (code, map) = rewriter.module.finish(&MapOptions {
+        hires: true,
+        include_content: true,
+        source: Some(options.module_id),
+    });
 
     Ok(Output {
-        code: rewriter.module.to_string(),
+        code,
         edits: rewriter.edits,
-        map,
+        map: map.to_json(),
         recipes: javascript_order(compiler.recipes),
     })
 }
@@ -431,7 +429,7 @@ impl Names<'_> {
 /// Source replacements, recorded both in the rewritten module and as adapter edits.
 struct Rewriter<'r, 'a> {
     edits: Vec<Edit>,
-    module: MagicString<'a>,
+    module: Edits<'a>,
     parsed: &'r Parsed<'a>,
 }
 

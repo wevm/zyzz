@@ -31,6 +31,7 @@ use crate::error::{Error, Result};
 use crate::internal::token::{Composition, CssOutput};
 use crate::internal::{identity, scheme};
 use crate::js::{self, Utf16Index};
+use crate::mapping::edits::Edits;
 use crate::mapping::gen_mapping::{EncodedSourceMap, GenMapping, Mapping, Position};
 use crate::mapping::magic_string::{MagicString, MapOptions};
 use crate::runtime::recipe as runtime;
@@ -654,11 +655,11 @@ pub fn compile<'a>(
         check_portable(extracted, &mut portable_names)?;
     }
 
-    let mut module = MagicString::new(source);
+    let mut module = Edits::new(source);
     let program = parsed.program;
 
     for call in &extracted.contribution_calls {
-        module.overwrite(call.start, call.end, &contribution_text(call, typed))?;
+        module.overwrite(call.start, call.end, contribution_text(call, typed))?;
     }
 
     let calls_by_start: FxHashMap<u32, &Call<'a>> = extracted
@@ -896,20 +897,19 @@ pub fn compile<'a>(
         include_content: true,
         source: Some(module_id),
     };
-    let map = if portable {
-        MagicString::new(source).generate_map(&map_options)
+    let (code, map) = if portable {
+        (
+            source.to_owned(),
+            MagicString::new(source).generate_map(&map_options),
+        )
     } else {
-        module.generate_map(&map_options)
+        module.finish(&map_options)
     };
     let (css, css_map) = rewrite_namespaces(&css, &extracted.namespaces, css_map)?;
 
     Ok(Output {
         classes,
-        code: if portable {
-            source.to_owned()
-        } else {
-            module.to_string()
-        },
+        code,
         css,
         css_map,
         map: write_module_map(&map, module_id, options.placeholder),
@@ -1307,7 +1307,7 @@ impl<'a> Generator<'_, 'a> {
 
     fn rewrite(
         &self,
-        module: &mut MagicString<'a>,
+        module: &mut Edits<'a>,
         walker: &Walker<'_, 'a>,
         local: Option<&applications::Definitions>,
         found: &[Application],
@@ -1356,7 +1356,7 @@ impl<'a> Generator<'_, 'a> {
             module.overwrite(
                 call.start,
                 call.end,
-                &format!("{}.create({slot})", state.variables),
+                format!("{}.create({slot})", state.variables),
             )?;
         }
 
@@ -1793,7 +1793,7 @@ impl<'a> Generator<'_, 'a> {
     /// Replaces theme and configuration calls with their compiled scope props.
     fn themes(
         &self,
-        module: &mut MagicString<'a>,
+        module: &mut Edits<'a>,
         walker: &Walker<'_, 'a>,
         state: &mut State,
     ) -> Result<()> {
@@ -1808,7 +1808,7 @@ impl<'a> Generator<'_, 'a> {
                 String::new()
             };
 
-            module.overwrite(call.start, call.end, &format!("({props}{assertion})"))?;
+            module.overwrite(call.start, call.end, format!("({props}{assertion})"))?;
         }
 
         Ok(())
@@ -2003,7 +2003,7 @@ impl<'a> Generator<'_, 'a> {
     }
 
     /// Replaces bound authoring aliases with values that keep their inferred types.
-    fn aliases(&self, module: &mut MagicString<'a>) -> Result<()> {
+    fn aliases(&self, module: &mut Edits<'a>) -> Result<()> {
         for alias in &self.extracted.theme_aliases {
             let call = &alias.call;
             let kind = match &call.type_text {
@@ -2019,7 +2019,7 @@ impl<'a> Generator<'_, 'a> {
                         .get(call.start as usize..call.end as usize)
                         .unwrap_or_default();
 
-                    module.overwrite(call.start, call.end, &format!("({text} as {kind})"))?;
+                    module.overwrite(call.start, call.end, format!("({text} as {kind})"))?;
                 }
 
                 continue;
@@ -2068,7 +2068,7 @@ impl<'a> Generator<'_, 'a> {
                 (true, false) => format!(" as unknown as {kind}['{member}']"),
             };
 
-            module.overwrite(call.start, call.end, &format!("({value}{assertion})"))?;
+            module.overwrite(call.start, call.end, format!("({value}{assertion})"))?;
         }
 
         Ok(())
@@ -2078,7 +2078,7 @@ impl<'a> Generator<'_, 'a> {
     /// remaining code reads.
     fn imports(
         &self,
-        module: &mut MagicString<'a>,
+        module: &mut Edits<'a>,
         walker: &Walker<'_, 'a>,
         program: &Program<'a>,
     ) -> Result<()> {
@@ -2125,7 +2125,7 @@ impl<'a> Generator<'_, 'a> {
 
         for reference in &extracted.static_theme_references {
             if !replaced(&replacements, reference.start, reference.end) {
-                module.overwrite(reference.start, reference.end, &quote(&reference.value))?;
+                module.overwrite(reference.start, reference.end, quote(&reference.value))?;
             }
         }
 
@@ -2134,7 +2134,7 @@ impl<'a> Generator<'_, 'a> {
                 module.overwrite(
                     reference.start,
                     reference.end,
-                    &json_class(&self.emitted.vars, &reference.name),
+                    json_class(&self.emitted.vars, &reference.name),
                 )?;
             }
         }
@@ -2244,7 +2244,7 @@ impl<'a> Generator<'_, 'a> {
                 module.overwrite(
                     node.span.start,
                     node.source.span.start,
-                    &format!("import {} from ", text.join(", ")),
+                    format!("import {} from ", text.join(", ")),
                 )?;
             } else {
                 // Preserve the import source, attributes, and untouched specifier spelling.
@@ -2270,7 +2270,7 @@ impl<'a> Generator<'_, 'a> {
     /// Imports the runtime helpers the rewritten module reads.
     fn runtime_import(
         &self,
-        module: &mut MagicString<'a>,
+        module: &mut Edits<'a>,
         program: &Program<'a>,
         state: &State,
     ) -> Result<()> {
@@ -2303,7 +2303,7 @@ impl<'a> Generator<'_, 'a> {
         );
 
         if !state.compositions.is_empty() {
-            module.append_left(offset, &format!("\n{}\n", state.compositions.join("\n")))?;
+            module.append_left(offset, format!("\n{}\n", state.compositions.join("\n")))?;
         }
 
         let names: Vec<String> = [
@@ -2337,7 +2337,7 @@ impl<'a> Generator<'_, 'a> {
 
         module.append_left(
             offset,
-            &format!("\nimport {{ {} }} from 'zyzz/runtime';\n", names.join(", ")),
+            format!("\nimport {{ {} }} from 'zyzz/runtime';\n", names.join(", ")),
         )?;
 
         Ok(())

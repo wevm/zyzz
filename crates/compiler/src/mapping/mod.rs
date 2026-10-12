@@ -6,6 +6,7 @@
 //! non-ASCII sources match the JavaScript libraries byte for byte.
 
 pub mod codec;
+pub mod edits;
 pub mod gen_mapping;
 pub mod magic_string;
 pub mod trace_mapping;

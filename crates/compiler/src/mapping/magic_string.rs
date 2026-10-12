@@ -67,6 +67,21 @@ pub struct SourceMap {
 }
 
 impl SourceMap {
+    /// The map of one edited source, as `magic-string` generates it.
+    pub(crate) fn new(original: &str, mappings: String, options: &MapOptions<'_>) -> Self {
+        Self {
+            mappings,
+            names: Vec::new(),
+            // `getRelativePath("", source)` splits on both separators and joins with `/`.
+            sources: vec![options.source.map_or_else(String::new, |source| {
+                source.split(['/', '\\']).collect::<Vec<_>>().join("/")
+            })],
+            sources_content: options
+                .include_content
+                .then(|| vec![Some(original.to_owned())]),
+        }
+    }
+
     /// Serializes like `map.toString()`, which is `JSON.stringify(map)`.
     pub fn to_json(&self) -> String {
         let mut output = String::from("{\"version\":3,\"sources\":[");
@@ -424,17 +439,7 @@ impl<'a> MagicString<'a> {
 
         self.write_mappings(&mut mappings, Some(0));
 
-        SourceMap {
-            mappings: mappings.encoder.finish(),
-            names: Vec::new(),
-            // `getRelativePath("", source)` splits on both separators and joins with `/`.
-            sources: vec![options.source.map_or_else(String::new, |source| {
-                source.split(['/', '\\']).collect::<Vec<_>>().join("/")
-            })],
-            sources_content: options
-                .include_content
-                .then(|| vec![Some(self.original.to_owned())]),
-        }
+        SourceMap::new(self.original, mappings.finish(), options)
     }
 
     /// Appends the mappings of every chunk. Without a source index, chunks only advance columns.
@@ -719,14 +724,14 @@ impl Locator {
 }
 
 /// Mappings encoded in generated order, as `magic-string`'s `Mappings` class builds them.
-struct Mappings {
+pub(crate) struct Mappings {
     column: i64,
     encoder: codec::Encoder,
     hires: bool,
 }
 
 impl Mappings {
-    fn new(hires: bool) -> Self {
+    pub(crate) fn new(hires: bool) -> Self {
         Self {
             column: 0,
             encoder: codec::Encoder::default(),
@@ -740,7 +745,7 @@ impl Mappings {
     }
 
     /// Maps replaced content to the start of its original range, once per generated line.
-    fn add_edit(&mut self, source: i64, content: &str, line: i64, column: i64) {
+    pub(crate) fn add_edit(&mut self, source: i64, content: &str, line: i64, column: i64) {
         if content.is_empty() {
             return;
         }
@@ -769,7 +774,7 @@ impl Mappings {
     }
 
     /// Maps original text unit by unit, or only at line starts without `hires`.
-    fn add_unedited(&mut self, source: i64, text: &str, mut line: i64, mut column: i64) {
+    pub(crate) fn add_unedited(&mut self, source: i64, text: &str, mut line: i64, mut column: i64) {
         for (index, text) in text.split('\n').enumerate() {
             if index > 0 {
                 line += 1;
@@ -797,7 +802,7 @@ impl Mappings {
     }
 
     /// Moves the generated position past inserted text.
-    fn advance(&mut self, text: &str) {
+    pub(crate) fn advance(&mut self, text: &str) {
         if text.is_empty() {
             return;
         }
@@ -817,6 +822,11 @@ impl Mappings {
         }
 
         self.column += i64::try_from(js::utf16_len(last)).unwrap_or(i64::MAX);
+    }
+
+    /// Returns the encoded mappings.
+    pub(crate) fn finish(self) -> String {
+        self.encoder.finish()
     }
 }
 

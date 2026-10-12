@@ -1,6 +1,6 @@
 /**
  * Encodes `Css.compile` input as the Rust compiler's JSON wire format and decodes its result.
- * The format is documented in `crates/zyzz_compiler/src/wire.rs`.
+ * The format is documented in `crates/compiler/src/wire.rs`.
  * @module
  */
 import * as Binding from '../../internal/Binding.js'

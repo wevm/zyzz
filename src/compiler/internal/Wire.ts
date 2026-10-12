@@ -1,6 +1,6 @@
 /**
  * Decodes Rust `source.extract` results into the frozen data `Source.extract` returns.
- * The format is documented in `crates/zyzz_compiler/src/compiler/internal/wire.rs`.
+ * The format is documented in `crates/compiler/src/compiler/internal/wire.rs`.
  * @module
  */
 import * as Authoring from '../../internal/Authoring.js'

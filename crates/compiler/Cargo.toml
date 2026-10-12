@@ -1,0 +1,130 @@
+[package]
+name = "compiler"
+description = "Pure, deterministic Zyzz source extraction, CSS emission, and module rewriting."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[features]
+default = ["compiler"]
+# Source extraction, module rewriting, and React Native emission. Web CSS emission and the wire
+# format need none of these parsers, so browser builds disable the feature.
+compiler = [
+  "dep:css",
+  "dep:lightningcss",
+  "dep:oxc_allocator",
+  "dep:oxc_ast",
+  "dep:oxc_ast_visit",
+  "dep:oxc_diagnostics",
+  "dep:oxc_ecmascript",
+  "dep:oxc_index",
+  "dep:oxc_parser",
+  "dep:oxc_semantic",
+  "dep:parcel_selectors",
+  "dep:parcel_sourcemap",
+]
+
+[dependencies]
+compact_str = { workspace = true }
+css = { workspace = true, optional = true }
+indexmap = { workspace = true }
+lightningcss = { workspace = true, features = ["sourcemap"], optional = true }
+memchr = { workspace = true }
+oxc_allocator = { workspace = true, optional = true }
+oxc_ast = { workspace = true, optional = true }
+oxc_ast_visit = { workspace = true, optional = true }
+oxc_diagnostics = { workspace = true, optional = true }
+oxc_ecmascript = { workspace = true, optional = true }
+oxc_index = { workspace = true, optional = true }
+oxc_parser = { workspace = true, optional = true }
+oxc_semantic = { workspace = true, optional = true }
+oxc_span = { workspace = true }
+oxc_syntax = { workspace = true }
+parcel_selectors = { workspace = true, optional = true }
+parcel_sourcemap = { workspace = true, optional = true }
+rustc-hash = { workspace = true }
+# Arc deserialization keeps wire strings shared; float_roundtrip parses numbers exactly.
+serde = { workspace = true, features = ["rc"] }
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+smallvec = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+
+[[example]]
+name = "extract_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "native_compile_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "native_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "source_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "themes_replay"
+required-features = ["compiler"]
+
+[[example]]
+name = "transform_bench"
+required-features = ["compiler"]
+
+[[test]]
+name = "compiler"
+required-features = ["compiler"]
+
+[[test]]
+name = "contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "css_validation"
+required-features = ["compiler"]
+
+[[test]]
+name = "extract"
+required-features = ["compiler"]
+
+[[test]]
+name = "graph"
+required-features = ["compiler"]
+
+[[test]]
+name = "native"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_bindings"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_graph"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_media"
+required-features = ["compiler"]
+
+[[test]]
+name = "native_vars"
+required-features = ["compiler"]
+
+[[test]]
+name = "react_native"
+required-features = ["compiler"]
+
+[[test]]
+name = "themes"
+required-features = ["compiler"]
+
+[lints]
+workspace = true

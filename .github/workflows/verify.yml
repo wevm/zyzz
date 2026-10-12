@@ -94,9 +94,9 @@ jobs:
       - name: Lint crates
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Lint the web-only compiler
-        run: cargo clippy --package zyzz_compiler --no-default-features --all-targets -- -D warnings
+        run: cargo clippy --package compiler --no-default-features --all-targets -- -D warnings
       - name: Lint the WebAssembly build
-        run: cargo clippy --package zyzz_wasm --target wasm32-wasip1 -- -D warnings
+        run: cargo clippy --package wasm --target wasm32-wasip1 -- -D warnings
       - name: Test crates
         run: cargo test --workspace
     timeout-minutes: 30

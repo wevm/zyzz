@@ -1,5 +1,5 @@
 /**
- * Generates the `zyzz_css_syntax` lexer dictionaries from css-tree's runtime data.
+ * Generates the `css` crate lexer dictionaries from css-tree's runtime data.
  * css-tree bundles mdn-data with its own patch. The Rust crate stores the same definition
  * strings and parses them lazily. `--check` fails when a checked-in table differs from the
  * regenerated one.
@@ -42,7 +42,7 @@ type LexerInternals = {
 }
 
 const root = Path.resolve(import.meta.dirname, '..')
-const output = Path.join(root, 'crates/zyzz_css_syntax/src/generated')
+const output = Path.join(root, 'crates/css/src/generated')
 const check = process.argv.includes('--check')
 const version = (
   (await import(import.meta.resolve('css-tree/package.json'), {

@@ -1,0 +1,27 @@
+[package]
+name = "binding"
+description = "Node-API adapter that exposes the Zyzz compiler to JavaScript hosts."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { workspace = true }
+napi-derive = { workspace = true }
+serde_json = { workspace = true }
+compiler = { workspace = true }
+
+[target.'cfg(not(any(target_env = "musl", target_family = "wasm")))'.dependencies]
+mimalloc = { workspace = true }
+
+[build-dependencies]
+napi-build = { workspace = true }
+
+[lints]
+workspace = true

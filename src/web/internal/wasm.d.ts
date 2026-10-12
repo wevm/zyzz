@@ -4,6 +4,6 @@
  * @module
  */
 declare module '#wasm' {
-  /** The `zyzz_wasm` web build, base64 encoded. */
+  /** The `crates/wasm` web build, base64 encoded. */
   export const base64: string
 }

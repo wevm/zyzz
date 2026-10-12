@@ -30,7 +30,7 @@ export class TrapError extends Error {
 /**
  * Compiles and instantiates the module without awaiting, so synchronous APIs can call it.
  * A trap leaves Rust state undefined, so the next call starts a fresh instance.
- * @param bytes - The `zyzz_wasm` module.
+ * @param bytes - The `crates/wasm` module.
  * @returns The instance's operations.
  */
 export function instantiate(bytes: BufferSource): Instance {

@@ -12,6 +12,8 @@ version = "0.0.0"
 
 [workspace.dependencies]
 compact_str = "0.9"
+compiler = { path = "crates/compiler" }
+css = { path = "crates/css" }
 indexmap = "2"
 insta = "1"
 lightningcss = { version = "=1.0.0-alpha.72", default-features = false, features = ["visitor"] }
@@ -36,8 +38,6 @@ rustc-hash = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 smallvec = { version = "1", features = ["const_generics", "union"] }
-zyzz_compiler = { path = "crates/zyzz_compiler" }
-zyzz_css_syntax = { path = "crates/zyzz_css_syntax" }
 
 [workspace.lints.rust]
 absolute_paths_not_starting_with_crate = "warn"

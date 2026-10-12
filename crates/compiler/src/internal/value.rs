@@ -91,7 +91,8 @@ fn parse_text(input: &str, property: &str) -> Option<Parsed> {
             % 2
             == 1
     };
-    let mut marker = input.rfind('!');
+    // Values are short, so a byte scan beats `memrchr`'s setup.
+    let mut marker = bytes.iter().rposition(|byte| *byte == b'!');
 
     while let Some(index) = marker {
         let suffix = lexical::normalize(input.get(index + 1..).unwrap_or_default());
@@ -104,7 +105,9 @@ fn parse_text(input: &str, property: &str) -> Option<Parsed> {
         marker = if index == 0 {
             None
         } else {
-            input.get(..index).and_then(|before| before.rfind('!'))
+            bytes
+                .get(..index)
+                .and_then(|before| before.iter().rposition(|byte| *byte == b'!'))
         };
     }
 

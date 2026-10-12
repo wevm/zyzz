@@ -803,10 +803,10 @@ impl<'a> Strings<'a> {
     }
 }
 
-/// Converts one call's literal body into style data, reporting unsupported syntax.
 /// An authored property path. Most paths hold a definition name and one key.
 type Path = SmallVec<[Arc<str>; 4]>;
 
+/// Converts one call's literal body into style data, reporting unsupported syntax.
 struct Converter<'c, 'm, 'p, 'a> {
     call: &'a CallExpression<'a>,
     condition_keys: FxHashMap<String, Span>,

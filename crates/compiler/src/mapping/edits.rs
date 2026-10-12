@@ -22,11 +22,12 @@ struct Insertion {
     right: bool,
 }
 
-/// One replaced or removed original range.
+/// One replaced or removed original range. Ranges stay sorted as edits arrive in any order, so
+/// their text lives apart to keep insertions small.
 #[derive(Debug)]
 struct Range {
-    /// Replacement text, empty for a removal.
-    content: String,
+    /// Index of the replacement text in [`Edits::contents`], empty for a removal.
+    content: u32,
     /// Exclusive original end.
     end: u32,
     /// Position among all recorded edits.
@@ -40,6 +41,8 @@ struct Range {
 /// A module under edit.
 #[derive(Debug)]
 pub struct Edits<'a> {
+    /// Replacement texts of `ranges`, in call order.
+    contents: Vec<String>,
     /// Insertions in call order.
     insertions: Vec<Insertion>,
     /// The chunk-based editor, once an edit needs it.
@@ -54,6 +57,7 @@ impl<'a> Edits<'a> {
     /// Starts editing a string.
     pub fn new(original: &'a str) -> Self {
         Self {
+            contents: Vec::new(),
             insertions: Vec::new(),
             module: None,
             original,
@@ -186,13 +190,14 @@ impl<'a> Edits<'a> {
                 self.ranges.insert(
                     position,
                     Range {
-                        content,
+                        content: u32::try_from(self.contents.len()).unwrap_or(u32::MAX),
                         end,
                         order,
                         removed,
                         start,
                     },
                 );
+                self.contents.push(content);
 
                 return Ok(());
             }
@@ -218,6 +223,7 @@ impl<'a> Edits<'a> {
         let original = self.original;
         let insertions = std::mem::take(&mut self.insertions);
         let ranges = std::mem::take(&mut self.ranges);
+        let contents = std::mem::take(&mut self.contents);
 
         self.module.get_or_insert_with(|| {
             let mut module = MagicString::new(original);
@@ -240,10 +246,13 @@ impl<'a> Edits<'a> {
                     (Some(_), None) => replay_insertion(&mut module, insertions.next()),
                     (_, Some(_)) => {
                         if let Some(range) = ranges.next() {
+                            let content = contents
+                                .get(range.content as usize)
+                                .map_or("", String::as_str);
                             let _ = if range.removed {
                                 module.remove(range.start, range.end)
                             } else {
-                                module.overwrite(range.start, range.end, &range.content)
+                                module.overwrite(range.start, range.end, content)
                             };
                         }
                     }
@@ -280,11 +289,7 @@ impl<'a> Edits<'a> {
 
         let mut code = String::with_capacity(
             original.len()
-                + self
-                    .ranges
-                    .iter()
-                    .map(|range| range.content.len())
-                    .sum::<usize>()
+                + self.contents.iter().map(String::len).sum::<usize>()
                 + insertions
                     .iter()
                     .map(|insertion| insertion.content.len())
@@ -319,9 +324,13 @@ impl<'a> Edits<'a> {
                 locator.unedited(&mut code, &mut mappings, cursor, range.start);
 
                 let (line, column) = locator.locate(range.start);
+                let content = self
+                    .contents
+                    .get(range.content as usize)
+                    .map_or("", String::as_str);
 
-                code.push_str(&range.content);
-                mappings.add_edit(0, &range.content, line, column);
+                code.push_str(content);
+                mappings.add_edit(0, content, line, column);
                 cursor = range.end;
             }
         }

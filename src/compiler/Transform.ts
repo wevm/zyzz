@@ -34,17 +34,9 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   // Untyped callers can pass other values, which the engine reads from JSON as before.
   if (typeof options.source !== 'string')
-    return Results.module(
-      Results.call<Results.Module>('transform.compile', {
-        ...input,
-        source: options.source,
-      }),
-    )
+    return Results.transform({ ...input, source: options.source })
 
-  return Results.module(
-    Results.source<Results.Module>('transform.compile', input, options.source),
-    options.source,
-  )
+  return Results.transform(input, options.source)
 }
 
 /** Source transform contracts. */

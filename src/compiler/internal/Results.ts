@@ -26,15 +26,12 @@ type Failure = {
 }
 
 /** One module's transform output as the engine encodes it. */
-export type Module = {
-  readonly classes: Readonly<Record<string, string>>
+export type Module = Records & {
   readonly code: string
   readonly css: string
   readonly cssMap: Mapping.EncodedSourceMap
   readonly map: Transform.compile.ReturnType['map']
-  readonly rules: Readonly<Record<string, string>>
   readonly shared?: readonly ThemeRules.Resource[] | undefined
-  readonly units: readonly (readonly [string, boolean, string])[]
   readonly vars: Readonly<Record<string, string>>
 }
 
@@ -51,6 +48,13 @@ export type NativeOutput = {
   readonly edits: readonly Edits.Edit[]
   readonly map: string
   readonly recipes: Readonly<Record<string, unknown>>
+}
+
+/** A module's class, rule, and unit records as the engine encodes them. */
+type Records = {
+  readonly classes: Readonly<Record<string, string>>
+  readonly rules: Readonly<Record<string, string>>
+  readonly units: readonly (readonly [string, boolean, string])[]
 }
 
 /** One rendered stylesheet as the engine encodes it. */
@@ -91,21 +95,34 @@ export function call<result>(operation: string, input: unknown): result {
 }
 
 /**
- * Runs an operation on JSON input plus one module source. JSON text never holds a raw NUL, so
- * the source follows one and crosses without escaping.
- * @param operation - Operation name, such as `transform.compile`.
- * @param input - Options, without the source.
+ * Runs `transform.compile`. JSON text never holds a raw NUL, so a string source follows one and
+ * crosses without escaping. The engine writes the module's records after one, and they decode
+ * when first read.
+ * @param input - Options, with the source when it is not a string.
  * @param source - Module text.
- * @returns The parsed result.
+ * @returns The output `Transform.compile` returns.
  * @throws {Source.ExtractError} For source the compiler does not support.
  * @throws {Css.CompileError} For CSS emission failures.
  */
-export function source<result>(
-  operation: string,
+export function transform(
   input: unknown,
-  source: string,
-): result {
-  return decode(Engine.call(operation, `${JSON.stringify(input)}\0${source}`))
+  source?: string | undefined,
+): Transform.compile.ReturnType {
+  const json = JSON.stringify(input)
+  const text = Engine.call(
+    'transform.compile',
+    source === undefined ? json : `${json}\0${source}`,
+  )
+  const split = text.indexOf('\0')
+
+  // Failures write no records, and decoding throws them.
+  if (split === -1) return module(decode<Module>(text), source)
+
+  return module(
+    decode<Omit<Module, keyof Records>>(text.slice(0, split)),
+    source,
+    text.slice(split + 1),
+  )
 }
 
 /**
@@ -262,13 +279,17 @@ export function graph(
 }
 
 /**
- * Rebuilds one module's frozen transform output.
- * @param value - The encoded module.
+ * Rebuilds one module's frozen transform output. Records decode when first read, so a module
+ * whose classes, rules, and units are never read skips their parsing.
+ * @param value - The encoded module, with its records unless `records` holds them.
+ * @param source - Module text the engine left out of the maps' `sourcesContent`.
+ * @param records - The encoded records, which `transform.compile` writes apart.
  * @returns The output `Transform.compile` returns.
  */
 export function module(
-  value: Module,
+  value: Omit<Module, keyof Records> & Partial<Records>,
   source?: string | undefined,
+  records?: string | undefined,
 ): Transform.compile.ReturnType {
   // The engine writes `0` for content the caller supplied separately, so it crosses once.
   if (source !== undefined)
@@ -279,6 +300,13 @@ export function module(
         if (contents![index] === 0) contents![index] = source
     }
 
+  let decoded: Records | undefined =
+    records === undefined ? (value as Records) : undefined
+  let classes: Transform.compile.ReturnType['classes'] | undefined
+  let rules: Transform.compile.ReturnType[typeof ClassName.rules] | undefined
+  let units: Transform.compile.ReturnType[typeof ClassName.units] | undefined
+  const read = () => (decoded ??= JSON.parse(records!) as Records)
+
   const result = {
     ...(value.shared
       ? {
@@ -288,11 +316,9 @@ export function module(
         }
       : {}),
     // Parsed records are fresh, so they freeze in place rather than as copies.
-    [ClassName.rules]: Object.freeze(value.rules),
-    [ClassName.units]: new Map(
-      value.units.map(([key, borrowed, name]) => [key, { borrowed, name }]),
-    ),
-    classes: Object.freeze(value.classes),
+    get classes() {
+      return (classes ??= Object.freeze(read().classes))
+    },
     code: value.code,
     css: value.css,
     cssMap: value.cssMap,
@@ -300,8 +326,22 @@ export function module(
     vars: Object.freeze(Object.setPrototypeOf(value.vars, null)),
   }
 
-  Object.defineProperty(result, ClassName.rules, { enumerable: false })
-  Object.defineProperty(result, ClassName.units, { enumerable: false })
+  Object.defineProperties(result, {
+    [ClassName.rules]: {
+      enumerable: false,
+      get: () => (rules ??= Object.freeze(read().rules)),
+    },
+    [ClassName.units]: {
+      enumerable: false,
+      get: () =>
+        (units ??= new Map(
+          read().units.map(([key, borrowed, name]) => [
+            key,
+            { borrowed, name },
+          ]),
+        )),
+    },
+  })
 
   return Object.freeze(result) as Transform.compile.ReturnType
 }

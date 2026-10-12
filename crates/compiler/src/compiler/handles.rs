@@ -246,7 +246,15 @@ fn write_resource(output: &mut String, resource: &Resource) {
 }
 
 /// Appends one module's transform output. Map content equal to `placeholder` is written as `0`.
-pub fn write_module(output: &mut String, module: &transform::Output, placeholder: Option<&str>) {
+///
+/// With `deferred`, the class, rule, and unit records follow the module after a NUL, which JSON
+/// text never holds, so a host can decode them only when read.
+pub fn write_module(
+    output: &mut String,
+    module: &transform::Output,
+    placeholder: Option<&str>,
+    deferred: bool,
+) {
     // Escapes and record keys add little beyond the text fields, which dominate the result.
     output.reserve(
         module.code.len()
@@ -265,15 +273,14 @@ pub fn write_module(output: &mut String, module: &transform::Output, placeholder
                 .sum::<usize>()
             + 1024,
     );
-    output.push_str("{\"classes\":");
-    write_record(
-        output,
-        module
-            .classes
-            .iter()
-            .map(|(name, value)| (&**name, value.as_str())),
-    );
-    output.push_str(",\"code\":");
+    output.push('{');
+
+    if !deferred {
+        write_classes(output, module);
+        output.push(',');
+    }
+
+    output.push_str("\"code\":");
     js::write_string(output, &module.code);
     output.push_str(",\"css\":");
     js::write_string(output, &module.css);
@@ -281,14 +288,11 @@ pub fn write_module(output: &mut String, module: &transform::Output, placeholder
     module.css_map.write_json(output, placeholder);
     output.push_str(",\"map\":");
     output.push_str(&module.map);
-    output.push_str(",\"rules\":");
-    write_record(
-        output,
-        module
-            .rules
-            .iter()
-            .map(|(name, rule)| (name.as_str(), rule.as_str())),
-    );
+
+    if !deferred {
+        output.push(',');
+        write_rules(output, module);
+    }
 
     if let Some(resources) = &module.shared {
         output.push_str(",\"shared\":[");
@@ -339,7 +343,56 @@ pub fn write_module(output: &mut String, module: &transform::Output, placeholder
         output.push(']');
     }
 
-    output.push_str(",\"units\":[");
+    if !deferred {
+        output.push(',');
+        write_units(output, module);
+    }
+
+    output.push_str(",\"vars\":");
+    write_record(
+        output,
+        module
+            .vars
+            .iter()
+            .map(|(name, value)| (&**name, value.as_str())),
+    );
+    output.push('}');
+
+    if deferred {
+        output.push_str("\0{");
+        write_classes(output, module);
+        output.push(',');
+        write_rules(output, module);
+        output.push(',');
+        write_units(output, module);
+        output.push('}');
+    }
+}
+
+fn write_classes(output: &mut String, module: &transform::Output) {
+    output.push_str("\"classes\":");
+    write_record(
+        output,
+        module
+            .classes
+            .iter()
+            .map(|(name, value)| (&**name, value.as_str())),
+    );
+}
+
+fn write_rules(output: &mut String, module: &transform::Output) {
+    output.push_str("\"rules\":");
+    write_record(
+        output,
+        module
+            .rules
+            .iter()
+            .map(|(name, rule)| (name.as_str(), rule.as_str())),
+    );
+}
+
+fn write_units(output: &mut String, module: &transform::Output) {
+    output.push_str("\"units\":[");
 
     for (index, (key, decision)) in module.units.iter().enumerate() {
         if index > 0 {
@@ -357,15 +410,7 @@ pub fn write_module(output: &mut String, module: &transform::Output, placeholder
         output.push(']');
     }
 
-    output.push_str("],\"vars\":");
-    write_record(
-        output,
-        module
-            .vars
-            .iter()
-            .map(|(name, value)| (&**name, value.as_str())),
-    );
-    output.push('}');
+    output.push(']');
 }
 
 fn write_edits(output: &mut String, edits: &[Edit]) {
@@ -451,7 +496,7 @@ pub fn write_output(result: &Output, written: Option<&FxHashMap<Arc<str>, Compil
             match module {
                 _ if same => output.push('0'),
                 Compiled::Native(module) => write_native_module(output, module),
-                Compiled::Web(module) => write_module(output, module, None),
+                Compiled::Web(module) => write_module(output, module, None, false),
             }
         },
     );
@@ -758,7 +803,7 @@ pub fn transform(input: &Value, separate: Option<&str>) -> Result<String> {
             },
     );
 
-    write_module(&mut written, &output, separate);
+    write_module(&mut written, &output, separate, true);
 
     Ok(written)
 }

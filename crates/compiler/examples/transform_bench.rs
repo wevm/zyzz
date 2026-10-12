@@ -192,7 +192,7 @@ fn main() {
         let (writing, _) = time(|| {
             let mut written = String::new();
 
-            handles::write_module(&mut written, &output, None);
+            handles::write_module(&mut written, &output, None, true);
             std::hint::black_box(written);
         });
         let (total, _) = time(|| {

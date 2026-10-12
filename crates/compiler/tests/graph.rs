@@ -105,6 +105,17 @@ mod create {
 mod transform {
     use super::api;
 
+    /// A `transform.compile` result's module and the records that follow it after a NUL.
+    fn compile(input: &str) -> (serde_json::Value, String) {
+        let output = api::call("transform.compile", input);
+        let (module, records) = output.split_once('\0').unwrap_or((&output, ""));
+
+        (
+            serde_json::from_str(module).unwrap_or_default(),
+            records.to_owned(),
+        )
+    }
+
     #[test]
     fn invalid_output_modes() {
         insta::assert_snapshot!(
@@ -115,35 +126,30 @@ mod transform {
             @r#"{"error":{"name":"Css.CompileError","diagnostics":[{"code":"invalid_output","message":"cssOutput must be atomic or grouped.","path":["cssOutput"]}],"message":"[\"cssOutput\"]: cssOutput must be atomic or grouped."}}"#
         );
 
-        let output: serde_json::Value = serde_json::from_str(&api::call(
-            "transform.compile",
+        let (output, _) = compile(
             r#"{"composition":"mixed","moduleId":"card.ts","source":"import {style} from 'zyzz';export const card=style({color:'red'});"}"#,
-        ))
-        .unwrap_or_default();
+        );
 
         insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
     }
 
     #[test]
     fn separate_sources() {
-        let output: serde_json::Value = serde_json::from_str(&api::call(
-            "transform.compile",
+        let (output, records) = compile(
             "{\"moduleId\":\"card.ts\"}\0import {style} from 'zyzz';export const card=style({color:'red'});",
-        ))
-        .unwrap_or_default();
+        );
 
         insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
         insta::assert_snapshot!(output["map"]["sourcesContent"], @"[0]");
         insta::assert_snapshot!(output["cssMap"]["sourcesContent"], @"[0]");
+        insta::assert_snapshot!(records, @r#"{"classes":{"style-1slxe42dbli7u-45":"z-text-red z-style-bgXhTU-card"},"rules":{"z-text-red":"color:red;"},"units":[]}"#);
     }
 
     #[test]
     fn variable_slots() {
-        let output: serde_json::Value = serde_json::from_str(&api::call(
-            "transform.compile",
+        let (output, _) = compile(
             r#"{"moduleId":"library.ts","source":"import {variable} from 'zyzz';export const gap=variable('length');"}"#,
-        ))
-        .unwrap_or_default();
+        );
 
         insta::assert_snapshot!(output["code"].as_str().unwrap_or_default(), @r#"
 

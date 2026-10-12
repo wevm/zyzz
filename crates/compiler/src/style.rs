@@ -239,10 +239,12 @@ pub fn define(styles: &Data, options: &Options<'_>) -> Result<Definition> {
 }
 
 /// Validates top-level declarations of styles without a theme, as [`define`] validates them.
+#[cfg(feature = "compiler")]
 pub(crate) struct Declarer {
     validator: Validator<'static>,
 }
 
+#[cfg(feature = "compiler")]
 impl Declarer {
     pub(crate) fn new() -> Self {
         Self {

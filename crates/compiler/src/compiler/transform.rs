@@ -1459,14 +1459,21 @@ impl<'a> Generator<'_, 'a> {
             };
             let html = call.output == Some(ThemeOutput::Html);
             let key = if html { "class" } else { "className" };
-            let class_name = self.class(&call.name);
-            let mut props = String::with_capacity(key.len() + class_name.len() + 3);
+            // Unread definitions hold no composition, recipe, or slots, and their replacement
+            // reads no class list.
+            let (class_name, props) = if unread.contains_key(&call.name) {
+                (String::new(), String::new())
+            } else {
+                let class_name = self.class(&call.name);
+                let mut props = String::with_capacity(key.len() + class_name.len() + 3);
 
-            props.push('{');
-            props.push_str(key);
-            props.push(':');
-            props.push_str(&class_name);
-            props.push('}');
+                props.push('{');
+                props.push_str(key);
+                props.push(':');
+                props.push_str(&class_name);
+                props.push('}');
+                (class_name, props)
+            };
             let compose_html = html && prepared_html.contains(&call.name);
 
             if compose_html {

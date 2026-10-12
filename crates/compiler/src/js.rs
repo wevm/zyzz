@@ -328,6 +328,32 @@ const fn escapes(word: u64) -> u64 {
     found & HIGH
 }
 
+/// Appends an integer in decimal, as `String(value)` spells it.
+pub fn write_index(output: &mut String, value: u32) {
+    let mut digits = [0_u8; 10];
+    let mut start = digits.len();
+    let mut rest = value;
+
+    loop {
+        start -= 1;
+
+        if let Some(digit) = digits.get_mut(start) {
+            // A remainder of ten is one decimal digit.
+            *digit = b'0' + u8::try_from(rest % 10).unwrap_or_default();
+        }
+
+        rest /= 10;
+
+        if rest == 0 {
+            break;
+        }
+    }
+
+    for digit in digits.get(start..).unwrap_or_default() {
+        output.push(char::from(*digit));
+    }
+}
+
 /// Appends encoded source map mappings quoted like `JSON.stringify(value)`. Base64 digits and the
 /// `,` and `;` separators never need escapes.
 pub fn write_mappings(output: &mut String, mappings: &str) {

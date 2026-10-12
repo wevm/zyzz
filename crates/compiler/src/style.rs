@@ -238,6 +238,37 @@ pub fn define(styles: &Data, options: &Options<'_>) -> Result<Definition> {
     define_with(styles, &context)
 }
 
+/// Validates top-level declarations of styles without a theme, as [`define`] validates them.
+pub(crate) struct Declarer {
+    validator: Validator<'static>,
+}
+
+impl Declarer {
+    pub(crate) fn new() -> Self {
+        Self {
+            validator: Validator {
+                diagnostics: Vec::new(),
+                locations: &[],
+                references: FxHashMap::default(),
+            },
+        }
+    }
+
+    /// Appends the declarations one property produces. Returns `false` when validation reports
+    /// a diagnostic, which only [`define`] reports with its location.
+    pub(crate) fn declare(
+        &mut self,
+        name: &Arc<str>,
+        property: &Arc<str>,
+        input: &Data,
+        output: &mut Vec<Declaration>,
+    ) -> bool {
+        self.validator
+            .declarations(name, property, input, property, None, output);
+        self.validator.diagnostics.is_empty()
+    }
+}
+
 fn define_with(styles: &Data, context: &Context<'_>) -> Result<Definition> {
     let theme = context.theme;
 

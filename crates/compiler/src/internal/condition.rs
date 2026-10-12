@@ -18,9 +18,8 @@ pub fn is(key: &str) -> bool {
     }
 
     // Property names start with neither prefix and nest nothing, so they skip the scan.
-    if !matches!(key.as_bytes().first(), Some(b':' | b'@'))
-        && memchr::memchr(b'&', key.as_bytes()).is_none()
-    {
+    // Keys are short, so the slice search beats `memchr`'s dispatch.
+    if !matches!(key.as_bytes().first(), Some(b':' | b'@')) && !key.as_bytes().contains(&b'&') {
         return false;
     }
 

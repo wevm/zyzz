@@ -222,12 +222,25 @@ impl Object {
         self.set(key.into(), Property::Accessor);
     }
 
+    /// Inserts a value under a key the object does not hold yet, which skips the search for an
+    /// existing property.
+    pub fn insert_new(&mut self, key: Arc<str>, value: Data) {
+        debug_assert!(!self.has(&key), "the key is new");
+
+        self.place(key, Property::Value(value));
+    }
+
     fn set(&mut self, key: Arc<str>, property: Property) {
         if let Some(entry) = self.entries.iter_mut().find(|(name, _)| *name == key) {
             entry.1 = property;
             return;
         }
 
+        self.place(key, property);
+    }
+
+    /// Adds a new property in JavaScript order: array indexes ascending, then insertion order.
+    fn place(&mut self, key: Arc<str>, property: Property) {
         match js::array_index(&key) {
             Some(index) => {
                 let position = self

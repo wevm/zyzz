@@ -910,6 +910,111 @@ impl<'a> Converter<'_, '_, '_, 'a> {
             .and_then(|theme| theme.metadata.contract.shorthands.as_ref())
     }
 
+    /// Defines a flat object of literal strings and numbers without a theme, as [`Self::object`]
+    /// and [`Self::define`] would. Anything else, and any declaration that reports a diagnostic,
+    /// returns `None` for the general conversion.
+    fn literal(
+        &self,
+        argument: &'a ObjectExpression<'a>,
+        name: &Arc<str>,
+    ) -> Option<style::Definition> {
+        if self.theme.is_some() || self.themes.is_some() || self.dynamic.is_some() {
+            return None;
+        }
+
+        let module = self.module;
+        let mut declarer = style::Declarer::new();
+        let mut keys: SmallVec<[&str; 16]> = SmallVec::new();
+        let mut declarations: Vec<style::Declaration> =
+            Vec::with_capacity(argument.properties.len());
+
+        for entry in &argument.properties {
+            let ObjectPropertyKind::ObjectProperty(property) = entry else {
+                return None;
+            };
+
+            if property.kind != PropertyKind::Init
+                || property.method
+                || property.computed
+                || property.shorthand
+            {
+                return None;
+            }
+
+            let start = property.key.span().start;
+
+            if module.selectors.conditions.contains_key(&start)
+                || module.variables.references.contains_key(&start)
+                || module.contributions.query_keys.contains_key(&start)
+            {
+                return None;
+            }
+
+            let (
+                PropertyKey::StaticIdentifier(_) | PropertyKey::StringLiteral(_),
+                Some(Cow::Borrowed(key)),
+            ) = (&property.key, property_key(&property.key))
+            else {
+                return None;
+            };
+
+            if matches!(key, "selectors" | "targets" | "typography" | "vars")
+                || condition::is(key)
+                || keys.contains(&key)
+            {
+                return None;
+            }
+
+            keys.push(key);
+
+            let value = unwrap(&property.value);
+            let span = value.span();
+
+            if module.variables.references.contains_key(&span.start)
+                || module.contributions.references.contains_key(&span.start)
+            {
+                return None;
+            }
+
+            let input = match value {
+                Expression::StringLiteral(literal) => {
+                    Data::String(module.strings.get(literal.value.as_str()))
+                }
+                Expression::NumericLiteral(literal) => Data::Number(literal.value),
+                Expression::UnaryExpression(unary)
+                    if matches!(
+                        unary.operator,
+                        UnaryOperator::UnaryNegation | UnaryOperator::UnaryPlus
+                    ) =>
+                {
+                    let Expression::NumericLiteral(literal) = &unary.argument else {
+                        return None;
+                    };
+
+                    Data::Number(if unary.operator == UnaryOperator::UnaryNegation {
+                        -literal.value
+                    } else {
+                        literal.value
+                    })
+                }
+                _ => return None,
+            };
+
+            if !declarer.declare(name, &module.strings.get(key), &input, &mut declarations) {
+                return None;
+            }
+        }
+
+        Some(style::Definition {
+            labels: None,
+            styles: vec![Arc::new(NamedStyle {
+                declarations,
+                name: Arc::clone(name),
+                ..NamedStyle::default()
+            })],
+        })
+    }
+
     /// Converts a literal style object.
     fn object(&mut self, argument: &'a ObjectExpression<'a>, prefix: &[Arc<str>]) -> Data {
         let mut values = Object::new();
@@ -1060,7 +1165,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 let nested = [prefix, &[Arc::clone(&key)]].concat();
                 let value = self.object(input, &nested);
 
-                values.insert(key, value);
+                values.insert_new(key, value);
                 continue;
             }
 
@@ -1072,7 +1177,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 let nested = [prefix, &[Arc::clone(&key)]].concat();
                 let value = self.native(&property.value, &nested, 0);
 
-                values.insert(key, value);
+                values.insert_new(key, value);
                 continue;
             }
 
@@ -1097,7 +1202,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 let nested = [prefix, &[Arc::clone(&key)]].concat();
                 let value = self.object(input, &nested);
 
-                values.insert(key, value);
+                values.insert_new(key, value);
                 continue;
             }
 
@@ -1114,7 +1219,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 targets.as_deref().unwrap_or(std::slice::from_ref(&key)),
             );
 
-            values.insert(key, value);
+            values.insert_new(key, value);
         }
 
         if let Some(Data::String(typography)) = values.get("typography") {
@@ -2218,7 +2323,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let call_names: Vec<String> = pending
         .iter()
         .map(|call| {
-            let mut name = String::new();
+            let mut name = String::with_capacity(32);
 
             names::write(&parsed.semantic, call, &mut name);
             name
@@ -2420,10 +2525,15 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
                 _ => None,
             },
         };
-        let name: Arc<str> = Arc::from(format!(
-            "style-{namespace}-{}",
-            parsed.utf16(call.span.start)
-        ));
+        let name: Arc<str> = {
+            let mut name = String::with_capacity(namespace.len() + 18);
+
+            name.push_str("style-");
+            name.push_str(&namespace);
+            name.push('-');
+            js::write_index(&mut name, parsed.utf16(call.span.start));
+            Arc::from(name)
+        };
         let module = Module {
             allocator,
             bodies: &bodies,
@@ -2455,8 +2565,12 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             typography: FxHashMap::default(),
             typography_queries: FxHashMap::default(),
         };
-        let values = match (entries, body_argument) {
-            (None, Some(object)) => Some(converter.object(object, &[])),
+        let literal = match (entries, body_argument) {
+            (None, Some(object)) => converter.literal(object, &name),
+            _ => None,
+        };
+        let values = match (entries, body_argument, &literal) {
+            (None, Some(object), None) => Some(converter.object(object, &[])),
             _ => None,
         };
 
@@ -2474,9 +2588,10 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
                 return Ok(None);
             }
 
-            let (definition, body) = match (composite, values, body_argument) {
-                (Some(composite), _, _) => (composite.definition, composite.body),
-                (None, Some(values), Some(body)) => (converter.define(values, &name)?, body),
+            let (definition, body) = match (composite, literal, values, body_argument) {
+                (Some(composite), _, _, _) => (composite.definition, composite.body),
+                (None, Some(definition), _, Some(body)) => (definition, body),
+                (None, None, Some(values), Some(body)) => (converter.define(values, &name)?, body),
                 _ => return Ok(None),
             };
 

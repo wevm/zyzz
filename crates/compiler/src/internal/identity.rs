@@ -82,15 +82,23 @@ pub fn name(value: &str) -> String {
 
 /// Appends a value encoded like [`name`].
 pub fn write_name(output: &mut String, value: &str) {
-    for character in value.chars() {
-        if character.is_ascii_alphanumeric() {
-            output.push(character);
-        } else {
-            output.push('_');
-            output.push_str(&js::radix(u64::from(u32::from(character)), 16));
-            output.push('_');
-        }
+    let mut rest = value;
+
+    // Runs of ASCII letters and digits copy whole, so only other characters are encoded.
+    while let Some(index) = rest.bytes().position(|byte| !byte.is_ascii_alphanumeric()) {
+        output.push_str(rest.get(..index).unwrap_or_default());
+
+        let Some(character) = rest.get(index..).and_then(|after| after.chars().next()) else {
+            break;
+        };
+
+        output.push('_');
+        output.push_str(&js::radix(u64::from(u32::from(character)), 16));
+        output.push('_');
+        rest = rest.get(index + character.len_utf8()..).unwrap_or_default();
     }
+
+    output.push_str(rest);
 }
 
 /// Converts an explicit id into a contract identity.

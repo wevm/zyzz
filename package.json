@@ -5,7 +5,7 @@
     "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
     "build": "pnpm build:binding && pnpm build:package",
-    "build:binding": "napi build --platform --release --package-json-path crates/binding/package.json --manifest-path crates/binding/Cargo.toml --output-dir binding --no-js && node scripts/build-wasm.ts",
+    "build:binding": "node scripts/build-binding.ts && node scripts/build-wasm.ts",
     "build:binding:test": "napi build --platform --profile binding-test --package-json-path crates/binding/package.json --manifest-path crates/binding/Cargo.toml --output-dir binding --no-js && node scripts/build-wasm.ts",
     "build:binding:wasi": "napi build --platform --release --target wasm32-wasip1-threads --package-json-path crates/binding/package.json --manifest-path crates/binding/Cargo.toml --output-dir binding/wasi",
     "build:package": "zile && node scripts/build-default-theme.ts && node scripts/build-native-adapter.ts",

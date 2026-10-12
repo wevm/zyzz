@@ -60,7 +60,7 @@ export default defineConfig({
 })
 ```
 
-Discovery compiles every module that calls an imported function, since the function can contribute global styles. Its imports resolve through Vite, so development can optimize their packages as new dependencies. Exclude modules that run outside the application, such as server entries.
+Discovery compiles every module that calls an imported function, since the function can contribute global styles. Exclude modules that run outside the application, such as a server entry that imports build output before it exists.
 
 Modules named `vite.config.*`, `vitest.config.*`, or `vitest.workspace.*` are always excluded. Other `*.config.*` modules remain source, since application configuration such as `theme.config.ts` can define styles.
 

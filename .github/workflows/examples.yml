@@ -54,8 +54,10 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build library
         run: pnpm build
       - name: Link workspace binaries

@@ -44,8 +44,6 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
-        with:
-          rust: 'true'
       - name: Install browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
       - name: Measure baseline
@@ -62,8 +60,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install candidate dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Measure candidate
         run: |
           pnpm build
@@ -97,8 +97,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
       - name: Build package
@@ -135,8 +137,6 @@ jobs:
       - name: Install baseline dependencies
         if: github.event_name != 'push'
         uses: ./.github/actions/install-dependencies
-        with:
-          rust: 'true'
       - name: Benchmark baseline on this runner
         if: github.event_name != 'push'
         id: baseline
@@ -163,8 +163,10 @@ jobs:
       - name: Install dependencies
         id: dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Record benchmark environment
         run: |
           mkdir -p bench/results
@@ -340,8 +342,10 @@ jobs:
       - name: Install dependencies
         id: dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Record render environment
         run: |
           mkdir -p bench/results/render-environment

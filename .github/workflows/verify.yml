@@ -14,8 +14,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build compiler binding
         run: pnpm build:binding:test
       - name: Upload compiler binding
@@ -36,8 +38,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build package
         run: pnpm build
     timeout-minutes: 30
@@ -87,8 +91,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Lint crates
@@ -109,8 +115,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
         with:
-          rust: 'true'
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Download compiler binding
         uses: actions/download-artifact@v4
         with:

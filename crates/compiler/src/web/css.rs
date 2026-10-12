@@ -343,11 +343,13 @@ struct Compiler<'a> {
     selectors: FxHashMap<String, Arc<str>>,
     serialized: FxHashMap<usize, Rc<str>>,
     themes: Option<Themes>,
+    /// Reused buffer for the body of the unit being named.
+    unit_body: String,
+    /// Reused key buffer for `unit_names` lookups.
+    unit_key: String,
     /// Shared units already named in this compilation, keyed by namespace and body, with whether
     /// a repeat has refreshed the unit's naming decision.
     unit_names: FxHashMap<String, (String, bool)>,
-    /// Reused key buffer for `unit_names` lookups.
-    unit_key: String,
 }
 
 fn composition(style: &NamedStyle, options: &Options<'_>) -> Composition {
@@ -1096,8 +1098,10 @@ impl<'a> Compiler<'a> {
                 }
             }
 
+            let mut body = std::mem::take(&mut self.unit_body);
+
             for domain in order {
-                let mut body = String::new();
+                body.clear();
 
                 for (index, current) in prepared.domains.iter().enumerate() {
                     if *current == domain {
@@ -1105,8 +1109,10 @@ impl<'a> Compiler<'a> {
                     }
                 }
 
-                self.unit(state, body, units);
+                self.unit(state, &body, units);
             }
+
+            self.unit_body = body;
 
             return;
         }
@@ -1148,18 +1154,18 @@ impl<'a> Compiler<'a> {
                 body.push_str(&item.value);
             }
 
-            self.unit(state, body, units);
+            self.unit(state, &body, units);
         }
     }
 
     /// Names one shared declaration unit and records its rule.
-    fn unit(&mut self, state: &mut Application<'a>, body: String, units: &mut Units<'_>) {
+    fn unit(&mut self, state: &mut Application<'a>, body: &str, units: &mut Units<'_>) {
         let namespace = state.css_namespace.as_deref();
 
         self.unit_key.clear();
         self.unit_key.push_str(namespace.unwrap_or_default());
         self.unit_key.push('\n');
-        self.unit_key.push_str(&body);
+        self.unit_key.push_str(body);
 
         // A repeated unit whose rule still holds its body keeps its name. Only its first repeat
         // can change the naming decision, which then reports the registered name as borrowed.
@@ -1170,7 +1176,7 @@ impl<'a> Compiler<'a> {
                 .is_some_and(|existing| *existing == body)
         {
             if !*refreshed {
-                units.name(&body, namespace);
+                units.name(body, namespace);
                 *refreshed = true;
             }
 
@@ -1178,7 +1184,7 @@ impl<'a> Compiler<'a> {
             return;
         }
 
-        let identity = units.name(&body, namespace);
+        let identity = units.name(body, namespace);
 
         match self.unit_names.get_mut(self.unit_key.as_str()) {
             Some(entry) => *entry = (identity.clone(), true),
@@ -1196,7 +1202,7 @@ impl<'a> Compiler<'a> {
             self.collision(state.name);
         }
 
-        self.rules.insert(identity.clone(), body);
+        self.rules.insert(identity.clone(), body.to_owned());
         state.names.push(identity);
     }
 }
@@ -1239,6 +1245,7 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
         selectors: FxHashMap::default(),
         serialized: FxHashMap::default(),
         themes: None,
+        unit_body: String::new(),
         unit_key: String::new(),
         unit_names: FxHashMap::default(),
     };
@@ -1313,6 +1320,13 @@ fn run<'a>(
     // Every later pass reads these, so each top-level declaration is serialized once, in the
     // order that registers its tokens.
     let mut prepared: Vec<Prepared> = Vec::with_capacity(styles.len());
+    let default_mode = options.css_output.unwrap_or(CssOutput::Atomic);
+    // Only grouped styles read shared group bodies, and only combinable styles write ordered
+    // ones, so modules of isolated atomic styles skip the analysis.
+    let grouped = styles
+        .iter()
+        .any(|style| style.css_output.unwrap_or(default_mode) == CssOutput::Grouped);
+    let sharing = grouped || styles.iter().any(|style| !isolated(style, options));
 
     for style in styles {
         let count = style.declarations.len();
@@ -1332,6 +1346,10 @@ fn run<'a>(
                 .ends
                 .push(u32::try_from(entry.text.len()).unwrap_or(u32::MAX));
             entry.domains.push(key);
+
+            if !sharing {
+                continue;
+            }
 
             let text = entry.text.get(start..).unwrap_or_default();
             let index = domains
@@ -1384,10 +1402,10 @@ fn run<'a>(
         }
     }
 
-    let default_mode = options.css_output.unwrap_or(CssOutput::Atomic);
     let mut occurrences: FxHashMap<u32, usize> = FxHashMap::default();
 
-    for entry in &prepared {
+    // Grouped styles alone count domain occurrences.
+    for entry in prepared.iter().filter(|_| grouped) {
         for key in &entry.domains {
             *occurrences.entry(*key).or_default() += 1;
         }

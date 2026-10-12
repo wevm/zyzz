@@ -1130,6 +1130,11 @@ impl<'a> Variables<'a> {
             return Ok(true);
         }
 
+        // Every link starts from a declaration, so a module without one reads no variables.
+        if self.resolver.declarations.is_empty() {
+            return Ok(false);
+        }
+
         let ancestors = estree_ancestors(ancestors);
         let parent = ancestors
             .len()

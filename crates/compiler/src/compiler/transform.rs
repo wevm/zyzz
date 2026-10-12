@@ -562,20 +562,26 @@ fn collect_conditions(style: &NamedStyle, conditions: &mut Vec<Arc<str>>) {
 }
 
 /// Converts a camelCase property into its kebab-case CSS name followed by `:`.
-fn declaration_text(property: &str) -> String {
-    let mut text = String::with_capacity(property.len() + 4);
+/// Whether text starts with a property's kebab-case name and a colon, as `name:` declares it.
+fn declares(text: &str, property: &str) -> bool {
+    let mut rest = text.as_bytes().iter();
 
-    for character in property.chars() {
-        if character.is_ascii_uppercase() {
-            text.push('-');
-            text.push(character.to_ascii_lowercase());
-        } else {
-            text.push(character);
+    for byte in property.bytes() {
+        if byte.is_ascii_uppercase() {
+            if rest.next() != Some(&b'-') || rest.next() != Some(&byte.to_ascii_lowercase()) {
+                return false;
+            }
+        } else if rest.next() != Some(&byte) {
+            return false;
         }
     }
 
-    text.push(':');
-    text
+    rest.next() == Some(&b':')
+}
+
+/// The byte length of a property's kebab-case name and its colon.
+fn declaration_length(property: &str) -> usize {
+    property.len() + property.bytes().filter(u8::is_ascii_uppercase).count() + 1
 }
 
 /// One-based lines and UTF-16 columns of source offsets.
@@ -2639,12 +2645,12 @@ impl<'a> Generator<'_, 'a> {
                     continue;
                 }
 
-                let text = declaration_text(&declaration.property);
+                let property = &*declaration.property;
                 let Some(start) = starts.iter().copied().find(|start| {
                     *start >= cursor
                         && body
                             .get(*start..)
-                            .is_some_and(|rest| rest.starts_with(&text))
+                            .is_some_and(|rest| declares(rest, property))
                 }) else {
                     continue;
                 };
@@ -2663,7 +2669,7 @@ impl<'a> Generator<'_, 'a> {
                     original: Some(lines.position(*location)),
                     source: Some(module_id),
                 });
-                cursor = start + text.len();
+                cursor = start + declaration_length(property);
             }
 
             rules.push(
@@ -2797,15 +2803,6 @@ fn locations(
             continue;
         }
 
-        let authored: Vec<u32> = match value {
-            Expression::ArrayExpression(array) => array
-                .elements
-                .iter()
-                .filter(|element| !matches!(element, ArrayExpressionElement::Elision(_)))
-                .map(|element| element.span().start)
-                .collect(),
-            _ => vec![property.span.start],
-        };
         let count = call
             .shorthands
             .as_ref()
@@ -2813,7 +2810,16 @@ fn locations(
             .map_or(1, |names| names.len());
 
         for _ in 0..count {
-            output.extend(&authored);
+            match value {
+                Expression::ArrayExpression(array) => output.extend(
+                    array
+                        .elements
+                        .iter()
+                        .filter(|element| !matches!(element, ArrayExpressionElement::Elision(_)))
+                        .map(|element| element.span().start),
+                ),
+                _ => output.push(property.span.start),
+            }
         }
     }
 }

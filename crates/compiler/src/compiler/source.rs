@@ -395,8 +395,6 @@ struct Walker<'w, 'p, 'a> {
     themes: Option<&'w mut Themes<'a>>,
     /// The identifier being read.
     node: NodeId,
-    /// Type subtrees enclosing the identifier being read.
-    typed: usize,
     variables: &'w Variables<'a>,
 }
 
@@ -422,18 +420,9 @@ impl<'a> Walker<'_, '_, 'a> {
                 break;
             }
 
-            // Ancestors run innermost first; each one's parent follows it.
-            let mut child = kind;
-            let mut parent = None;
-            let mut typed = 0;
+            let parent =
+                (nodes.parent_id(node.id()) != node.id()).then(|| nodes.parent_kind(node.id()));
 
-            for ancestor in nodes.ancestor_kinds(node.id()) {
-                parent = parent.or(Some(ancestor));
-                typed += usize::from(type_node(child, Some(ancestor)));
-                child = ancestor;
-            }
-
-            self.typed = typed + usize::from(type_node(child, None));
             self.node = node.id();
             self.ancestors.clear();
 
@@ -441,6 +430,22 @@ impl<'a> Walker<'_, '_, 'a> {
                 self.fatal = Some(error);
             }
         }
+    }
+
+    /// Whether a type subtree encloses the identifier being read. Ancestors run innermost first,
+    /// and each one's parent follows it.
+    fn typed(&self, kind: AstKind<'a>) -> bool {
+        let mut child = kind;
+
+        for ancestor in self.parsed.semantic.nodes().ancestor_kinds(self.node) {
+            if type_node(child, Some(ancestor)) {
+                return true;
+            }
+
+            child = ancestor;
+        }
+
+        type_node(child, None)
     }
 
     /// Fills the current identifier's ancestors, outermost first and ending with it, for the
@@ -505,7 +510,7 @@ impl<'a> Walker<'_, '_, 'a> {
         };
 
         // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
-        if self.typed > 0 {
+        if self.typed(kind) {
             return Ok(());
         }
 
@@ -2190,7 +2195,6 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         reporter: &mut reporter,
         node: NodeId::DUMMY,
         themes: themes.as_mut(),
-        typed: 0,
         variables: &variables,
     };
 

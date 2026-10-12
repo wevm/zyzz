@@ -172,10 +172,12 @@ pub fn create<'c, 'a>(
         if let Statement::TSNamespaceDeclaration(namespace) = statement
             && let TSNamespaceDeclarationBody::TSModuleBlock(block) = &namespace.body
         {
-            let mut members = Members::default();
+            let mut members = Members::with_capacity_and_hasher(block.body.len(), FxBuildHasher);
             let mut ends = crate::js::Record::new();
-            let mut bindings = Vec::new();
+            let mut bindings = Vec::with_capacity(block.body.len());
             let mut valid = true;
+
+            names.reserve(block.body.len());
 
             'members: for member in &block.body {
                 let Statement::ExportDeclaration(export) = member else {
@@ -330,9 +332,15 @@ pub fn create<'c, 'a>(
         member_bindings: &member_bindings,
         names,
         referenced_definitions: FxHashSet::default(),
+        // A namespace's members are usually each read once.
         references: candidates
             .iter()
-            .map(|candidate| (Arc::clone(&candidate.name), Vec::new()))
+            .map(|candidate| {
+                (
+                    Arc::clone(&candidate.name),
+                    Vec::with_capacity(candidate.members.len()),
+                )
+            })
             .collect(),
         semantic,
         typed: FxHashSet::default(),
@@ -400,18 +408,26 @@ impl Walker<'_, '_> {
         let semantic = self.semantic;
         let nodes = semantic.nodes();
 
+        // An identifier spells `eval` literally or with an escape, so other sources skip the check.
+        let source = semantic.source_text().as_bytes();
+        let spelled = memchr::memmem::find(source, b"eval").is_some()
+            || memchr::memmem::find(source, b"\\u").is_some();
+
         for node in nodes.iter() {
             let kind = node.kind();
-            let name = match kind {
-                AstKind::IdentifierReference(identifier) => Some(identifier.name.as_str()),
-                AstKind::BindingIdentifier(identifier) => Some(identifier.name.as_str()),
-                AstKind::IdentifierName(identifier) => Some(identifier.name.as_str()),
-                AstKind::LabelIdentifier(identifier) => Some(identifier.name.as_str()),
-                _ => None,
-            };
 
-            if name == Some("eval") {
-                self.evaluation = true;
+            if spelled {
+                let name = match kind {
+                    AstKind::IdentifierReference(identifier) => Some(identifier.name.as_str()),
+                    AstKind::BindingIdentifier(identifier) => Some(identifier.name.as_str()),
+                    AstKind::IdentifierName(identifier) => Some(identifier.name.as_str()),
+                    AstKind::LabelIdentifier(identifier) => Some(identifier.name.as_str()),
+                    _ => None,
+                };
+
+                if name == Some("eval") {
+                    self.evaluation = true;
+                }
             }
 
             let AstKind::IdentifierReference(identifier) = kind else {

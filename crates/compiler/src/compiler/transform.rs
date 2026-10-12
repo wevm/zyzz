@@ -790,11 +790,16 @@ pub fn compile<'a>(
     };
     // Styles applied only alone to DOM elements, or inside cx, never meet another style's
     // classes, so atomic ones share rules like independent styles.
-    let combined: FxHashSet<&str> = found
-        .iter()
-        .filter(|application| !application.terminal && !composing(application))
-        .map(|application| &*application.name)
-        .collect();
+    let mut combined: FxHashSet<&str> =
+        FxHashSet::with_capacity_and_hasher(found.len(), FxBuildHasher);
+
+    combined.extend(
+        found
+            .iter()
+            .filter(|application| !application.terminal && !composing(application))
+            .map(|application| &*application.name),
+    );
+
     let standalone: FxHashSet<Arc<str>> = local
         .iter()
         .flat_map(|local| local.values.keys())
@@ -900,12 +905,19 @@ pub fn compile<'a>(
         generator.rewrite(&mut module, &walker, local.as_ref(), &found, &folded_starts)?;
 
     // The first call of each definition decides its output, as a search in source order would.
+    // Without HTML output every application reads `className`.
     let mut outputs: FxHashMap<&str, bool> = FxHashMap::default();
 
-    for call in &extracted.calls {
-        outputs
-            .entry(&call.name)
-            .or_insert(call.output == Some(ThemeOutput::Html));
+    if extracted
+        .calls
+        .iter()
+        .any(|call| call.output == Some(ThemeOutput::Html))
+    {
+        for call in &extracted.calls {
+            if !outputs.contains_key(&*call.name) {
+                outputs.insert(&call.name, call.output == Some(ThemeOutput::Html));
+            }
+        }
     }
 
     for application in &folded {

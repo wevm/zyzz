@@ -255,12 +255,28 @@ pub fn write_module(
     placeholder: Option<&str>,
     deferred: bool,
 ) {
-    // Escapes and record keys add little beyond the text fields, which dominate the result.
+    // One reservation covers every field, so the result never regrows and copies itself. Code
+    // escapes its quotes, which the margin covers.
+    let css_map = &module.css_map;
     output.reserve(
         module.code.len()
+            + module.code.len() / 8
             + module.css.len() * 2
             + module.map.len()
-            + module.css_map.mappings.len()
+            + css_map.mappings.len()
+            + css_map
+                .names
+                .iter()
+                .map(|name| name.len() + 3)
+                .sum::<usize>()
+            + css_map
+                .sources_content
+                .iter()
+                .flatten()
+                .flatten()
+                .filter(|content| placeholder != Some(content.as_str()))
+                .map(|content| content.len() + content.len() / 8)
+                .sum::<usize>()
             + module
                 .classes
                 .iter()
@@ -270,6 +286,11 @@ pub fn write_module(
                 .rules
                 .iter()
                 .map(|(name, rule)| name.len() + rule.len() + 6)
+                .sum::<usize>()
+            + module
+                .units
+                .iter()
+                .map(|(key, decision)| key.len() + decision.name.len() + 16)
                 .sum::<usize>()
             + 1024,
     );
@@ -791,17 +812,8 @@ pub fn transform(input: &Value, separate: Option<&str>) -> Result<String> {
         &parsed,
         None,
     )?;
-    // Both maps embed the source unless the host restores it.
-    let mut written = String::with_capacity(
-        output.code.len()
-            + output.map.len()
-            + output.css.len() * 2
-            + if separate.is_some() {
-                0
-            } else {
-                source.len() * 2
-            },
-    );
+    // The writer reserves the whole result at once.
+    let mut written = String::new();
 
     write_module(&mut written, &output, separate, true);
 

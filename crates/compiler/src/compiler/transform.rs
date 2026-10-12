@@ -879,6 +879,16 @@ pub fn compile<'a>(
         let callee = source
             .get(application.start as usize..application.callee_end as usize)
             .unwrap_or_default();
+
+        // A read of the folded object's own key is its class list.
+        if application.initialized
+            && let Some(read) = application.class_read
+            && read.html == html
+        {
+            module.overwrite(application.start, read.end, class_name)?;
+            continue;
+        }
+
         let replacement = if application.initialized {
             let mut replacement = String::with_capacity(key.len() + class_name.len() + 5);
 

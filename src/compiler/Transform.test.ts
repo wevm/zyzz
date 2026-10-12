@@ -11158,7 +11158,7 @@ describe('performance', () => {
       expect(output.code).toMatchInlineSnapshot(`
         "
               declare namespace styles {export const card: import('zyzz').style.ReturnType;export const label: import('zyzz').style.ReturnType}
-              export const classes=[({className:"z-iFQJXQ-styles-card-text-0"}).className,({className:"z-iFQJXQ-styles-label-text-0"}).className]"
+              export const classes=["z-iFQJXQ-styles-card-text-0","z-iFQJXQ-styles-label-text-0"]"
       `)
       expect(consumer.classes).toMatchInlineSnapshot(`
         [
@@ -11166,6 +11166,35 @@ describe('performance', () => {
           "z-iFQJXQ-styles-label-text-0",
         ]
       `)
+    })
+
+    test('folds class reads into class lists and keeps other uses of the object', async () => {
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
+      const card=style({color:'red'});
+      export const read=card().className;
+      export const reads=[card().className,\`\${card().className} extra\`];
+      export function write(){card().className='replaced'}
+      export const optional=card()?.className;
+      export const other=card().style`)
+
+      // Plain reads fold, while writes, optional reads, and other members keep the object.
+      expect(output.code).toMatchInlineSnapshot(`
+        "import {style} from 'zyzz';
+              const card=(1 as unknown as import('zyzz').style.ReturnType);
+              export const read="z-text-red";
+              export const reads=["z-text-red",\`\${"z-text-red"} extra\`];
+              export function write(){(card?{className:"z-text-red"}:card()).className='replaced'}
+              export const optional=({className:"z-text-red"})?.className;
+              export const other=({className:"z-text-red"}).style"
+      `)
+      expect(consumer.read).toMatchInlineSnapshot(`"z-text-red"`)
+      expect(consumer.reads).toMatchInlineSnapshot(`
+        [
+          "z-text-red",
+          "z-text-red extra",
+        ]
+      `)
+      expect(consumer.optional).toMatchInlineSnapshot(`"z-text-red"`)
     })
 
     test('keeps guarded definitions without repeating their class lists', async () => {
@@ -11185,9 +11214,9 @@ describe('performance', () => {
               export let failed=false;
               try {apply()} catch(error){failed=error instanceof TypeError}
               namespace styles {export const card=(1 as unknown as import('zyzz').style.ReturnType);export const label=(1 as unknown as import('zyzz').style.ReturnType)}
-              export const classes=[({className:"z-iFQJXQ-styles-label-text-0"}).className]
+              export const classes=["z-iFQJXQ-styles-label-text-0"]
               const button=(void 0 as unknown as import('zyzz').style.ReturnType);
-              export const padding=({className:"z-p-2px"}).className"
+              export const padding="z-p-2px""
       `)
       expect(consumer.failed).toMatchInlineSnapshot(`true`)
       expect(consumer.apply()).toMatchInlineSnapshot(`

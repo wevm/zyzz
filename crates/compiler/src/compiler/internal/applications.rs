@@ -12,7 +12,7 @@ use oxc_ast::AstKind;
 use oxc_ast::ast::{
     Declaration, Expression, JSXAttributeItem, JSXAttributeName, JSXElementName,
     ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement, TSNamespaceDeclarationBody,
-    VariableDeclarationKind,
+    UnaryOperator, VariableDeclarationKind,
 };
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
@@ -26,6 +26,8 @@ use crate::compiler::source::Call;
 pub struct Application {
     /// End of the callee expression.
     pub callee_end: u32,
+    /// A plain read of the applied class list, as in `styles.card().className`.
+    pub class_read: Option<ClassRead>,
     /// End of the call.
     pub end: u32,
     /// Whether every evaluation follows the definition's initialization.
@@ -36,6 +38,15 @@ pub struct Application {
     pub start: u32,
     /// Whether the application is the only class source of a DOM element.
     pub terminal: bool,
+}
+
+/// A `.className` or `.class` read of an application's result, used only as a value.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ClassRead {
+    /// End of the member expression.
+    pub end: u32,
+    /// Whether the read names `class`, the key of HTML output.
+    pub html: bool,
 }
 
 /// A namespace whose members can be erased.
@@ -85,6 +96,8 @@ struct Read<'a> {
     parent: Option<AstKind<'a>>,
     /// Parent of the identifier's member expression, when the parent is one.
     grandparent: Option<AstKind<'a>>,
+    /// The two ancestors above the grandparent, which hold an application's class read.
+    outer: [Option<AstKind<'a>>; 2],
     span: Span,
     terminal: bool,
 }
@@ -425,6 +438,12 @@ impl Walker<'_, '_> {
                     .checked_sub(3)
                     .and_then(|index| self.ancestors.get(index))
                     .copied(),
+                outer: [4, 5].map(|depth| {
+                    count
+                        .checked_sub(depth)
+                        .and_then(|index| self.ancestors.get(index))
+                        .copied()
+                }),
                 parent,
                 span: identifier.span,
                 terminal: terminal(&self.ancestors),
@@ -435,6 +454,55 @@ impl Walker<'_, '_> {
             }
         }
     }
+}
+
+/// The `.className` or `.class` member of a call, when its parent only reads its value.
+fn class_read(call: Span, [member, parent]: [Option<AstKind<'_>>; 2]) -> Option<ClassRead> {
+    let Some(AstKind::StaticMemberExpression(member)) = member else {
+        return None;
+    };
+
+    if member.optional || member.object.span() != call {
+        return None;
+    }
+
+    let html = match member.property.name.as_str() {
+        "class" => true,
+        "className" => false,
+        _ => return None,
+    };
+    let span = member.span;
+    // Writes, calls, deletions, and grouped expressions keep the object.
+    let value = match parent? {
+        AstKind::ArrayExpression(_)
+        | AstKind::AwaitExpression(_)
+        | AstKind::BinaryExpression(_)
+        | AstKind::ConditionalExpression(_)
+        | AstKind::ExportDefaultDeclaration(_)
+        | AstKind::ExpressionStatement(_)
+        | AstKind::JSXExpressionContainer(_)
+        | AstKind::LogicalExpression(_)
+        | AstKind::ReturnStatement(_)
+        | AstKind::SequenceExpression(_)
+        | AstKind::SpreadElement(_)
+        | AstKind::TemplateLiteral(_)
+        | AstKind::TSAsExpression(_)
+        | AstKind::TSSatisfiesExpression(_) => true,
+        AstKind::AssignmentExpression(assignment) => assignment.right.span() == span,
+        AstKind::CallExpression(call) => call.callee.span() != span,
+        AstKind::NewExpression(call) => call.callee.span() != span,
+        AstKind::ObjectProperty(property) => !property.computed && property.value.span() == span,
+        AstKind::UnaryExpression(unary) => unary.operator != UnaryOperator::Delete,
+        AstKind::VariableDeclarator(declarator) => {
+            declarator.init.as_ref().map(GetSpan::span) == Some(span)
+        }
+        _ => false,
+    };
+
+    value.then_some(ClassRead {
+        end: span.end,
+        html,
+    })
 }
 
 /// A static member read `object.name` of a reference.
@@ -484,8 +552,14 @@ impl<'c, 'a> Applications<'c, 'a> {
                 continue;
             }
 
-            let (call, callee, application) = if let Some(direct) = candidate.direct {
-                (Some(direct), reference.span, reference.parent)
+            let [above, outermost] = reference.outer;
+            let (call, callee, application, read) = if let Some(direct) = candidate.direct {
+                (
+                    Some(direct),
+                    reference.span,
+                    reference.parent,
+                    [reference.grandparent, above],
+                )
             } else {
                 let (name, member) = member_name(reference.parent, reference.span)?;
 
@@ -493,6 +567,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                     candidate.members.get(name).copied(),
                     member,
                     reference.grandparent,
+                    [above, outermost],
                 )
             };
 
@@ -515,6 +590,7 @@ impl<'c, 'a> Applications<'c, 'a> {
 
             applications.push(Application {
                 callee_end: callee.end,
+                class_read: class_read(span, read),
                 end: span.end,
                 initialized: !reference.deferred
                     && reference.span.start >= candidate.ready

@@ -1179,7 +1179,8 @@ export const { style } = defineConfig({ composition: 'independent' })
               'utf8',
             )
 
-            return /className:"([^"]+)"/.exec(code)![1]!
+            // The folded class read is the module's class list.
+            return /export const \w+ = "([^"]+)"/.exec(code)![1]!
           }),
         )
 

@@ -18,8 +18,7 @@ pub fn is(key: &str) -> bool {
     }
 
     // Property names start with neither prefix and nest nothing, so they skip the scan.
-    // Keys are short, so the slice search beats `memchr`'s dispatch.
-    if !matches!(key.as_bytes().first(), Some(b':' | b'@')) && !key.as_bytes().contains(&b'&') {
+    if !matches!(key.as_bytes().first(), Some(b':' | b'@')) && !ampersand(key.as_bytes()) {
         return false;
     }
 
@@ -40,6 +39,41 @@ pub fn is(key: &str) -> bool {
             ) || after.starts_with("/*")
         })
     })
+}
+
+/// Whether bytes hold `&`. Keys are short, so a word-at-a-time scan beats the `memchr` dispatch
+/// slice search performs.
+fn ampersand(bytes: &[u8]) -> bool {
+    const ONES: u64 = 0x0101_0101_0101_0101;
+    const HIGHS: u64 = 0x8080_8080_8080_8080;
+
+    // A word has a zero byte exactly where it held `&`.
+    let found = |word: u64| {
+        let word = word ^ (ONES * u64::from(b'&'));
+
+        word.wrapping_sub(ONES) & !word & HIGHS != 0
+    };
+    let mut chunks = bytes.chunks_exact(8);
+
+    for chunk in &mut chunks {
+        let mut word = [0; 8];
+
+        word.copy_from_slice(chunk);
+
+        if found(u64::from_le_bytes(word)) {
+            return true;
+        }
+    }
+
+    // Padding zeros never read as `&`.
+    let remainder = chunks.remainder();
+    let mut rest = [0; 8];
+
+    if let Some(slot) = rest.get_mut(..remainder.len()) {
+        slot.copy_from_slice(remainder);
+    }
+
+    found(u64::from_le_bytes(rest))
 }
 
 /// Whether a selector key contains an unquoted, uncommented `&`.

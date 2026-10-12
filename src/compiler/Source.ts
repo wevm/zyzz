@@ -297,6 +297,8 @@ export declare namespace extract {
       ThemeCall,
       'end' | 'name' | 'start'
     >[]
+    /** Resolved authoring exports when extracted as part of a source graph, absent from a direct call. */
+    readonly themeExports?: Readonly<Record<string, object>> | undefined
     /** Stable scope keys and validated local theme definitions. */
     readonly vars: Readonly<Record<string, Theme.Definition>>
   }

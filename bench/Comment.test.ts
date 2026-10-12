@@ -133,7 +133,7 @@ describe('benchmark comment', () => {
 
         🟢 Zyzz passes the framework gate in all 11 workloads.
 
-        Every workload compiles from fresh compiler state, including Lightning CSS minification and esbuild client bundling. Lower is better, and bold marks the best result in each row.
+        Every workload compiles from fresh compiler state, including Lightning CSS minification and esbuild client bundling. Lower is better, bold marks the best result in each row, and the ratio beside each competitor compares its result with Zyzz.
 
         ## Compile Time
 
@@ -141,17 +141,17 @@ describe('benchmark comment', () => {
 
         | Workload | Zyzz | Panda CSS | StyleX | Tailwind | Tamagui | vanilla-extract | Zyzz vs. Best Competitor |
         | :--- | ---: | ---: | ---: | ---: | ---: | ---: | :--- |
-        | 3 Components | **1.00** | 1.25 | 1.50 | 1.75 | 2.00 | 2.25 | 🟢 1.25× faster than Panda CSS |
-        | 1,000 Components: Repeated Styles | **2.00** | 2.25 | 2.50 | 2.75 | 3.00 | 3.25 | 🟢 1.13× faster than Panda CSS |
-        | 1,000 Components: Unique Padding | **3.00** | 3.25 | 3.50 | 3.75 | 4.00 | 4.25 | 🟢 1.08× faster than Panda CSS |
-        | 100 Components: Partial Sharing | **4.00** | 4.25 | 4.50 | 4.75 | 5.00 | 5.25 | 🟢 1.06× faster than Panda CSS |
-        | 100 Components: Reused Palette | **5.00** | 5.25 | 5.50 | 5.75 | 6.00 | 6.25 | 🟢 1.05× faster than Panda CSS |
-        | 100 Components: Independent Values | **6.00** | 6.25 | 6.50 | 6.75 | 7.00 | 7.25 | 🟢 1.04× faster than Panda CSS |
-        | 100 Components: Sparse Properties | **7.00** | 7.25 | 7.50 | 7.75 | 8.00 | 8.25 | 🟢 1.04× faster than Panda CSS |
-        | 60 Components: Mixed Shapes | **8.00** | 8.25 | 8.50 | 8.75 | 9.00 | 9.25 | 🟢 1.03× faster than Panda CSS |
-        | 300 Components: Application Scale | **9.00** | 9.25 | 9.50 | 9.75 | 10.00 | 10.25 | 🟢 1.03× faster than Panda CSS |
-        | Themes: 10 Components | **10.25** | 10.50 | 10.75 | 11.00 | 11.25 | 11.50 | 🟢 1.02× faster than Panda CSS |
-        | Themes: 100 Components | **11.25** | 11.50 | 11.75 | 12.00 | 12.25 | 12.50 | 🟢 1.02× faster than Panda CSS |
+        | 3 Components | **1.00** | 1.25&nbsp;(1.25×) | 1.50&nbsp;(1.50×) | 1.75&nbsp;(1.75×) | 2.00&nbsp;(2.00×) | 2.25&nbsp;(2.25×) | 🟢 1.25× faster than Panda CSS |
+        | 1,000 Components: Repeated Styles | **2.00** | 2.25&nbsp;(1.13×) | 2.50&nbsp;(1.25×) | 2.75&nbsp;(1.38×) | 3.00&nbsp;(1.50×) | 3.25&nbsp;(1.63×) | 🟢 1.13× faster than Panda CSS |
+        | 1,000 Components: Unique Padding | **3.00** | 3.25&nbsp;(1.08×) | 3.50&nbsp;(1.17×) | 3.75&nbsp;(1.25×) | 4.00&nbsp;(1.33×) | 4.25&nbsp;(1.42×) | 🟢 1.08× faster than Panda CSS |
+        | 100 Components: Partial Sharing | **4.00** | 4.25&nbsp;(1.06×) | 4.50&nbsp;(1.13×) | 4.75&nbsp;(1.19×) | 5.00&nbsp;(1.25×) | 5.25&nbsp;(1.31×) | 🟢 1.06× faster than Panda CSS |
+        | 100 Components: Reused Palette | **5.00** | 5.25&nbsp;(1.05×) | 5.50&nbsp;(1.10×) | 5.75&nbsp;(1.15×) | 6.00&nbsp;(1.20×) | 6.25&nbsp;(1.25×) | 🟢 1.05× faster than Panda CSS |
+        | 100 Components: Independent Values | **6.00** | 6.25&nbsp;(1.04×) | 6.50&nbsp;(1.08×) | 6.75&nbsp;(1.13×) | 7.00&nbsp;(1.17×) | 7.25&nbsp;(1.21×) | 🟢 1.04× faster than Panda CSS |
+        | 100 Components: Sparse Properties | **7.00** | 7.25&nbsp;(1.04×) | 7.50&nbsp;(1.07×) | 7.75&nbsp;(1.11×) | 8.00&nbsp;(1.14×) | 8.25&nbsp;(1.18×) | 🟢 1.04× faster than Panda CSS |
+        | 60 Components: Mixed Shapes | **8.00** | 8.25&nbsp;(1.03×) | 8.50&nbsp;(1.06×) | 8.75&nbsp;(1.09×) | 9.00&nbsp;(1.13×) | 9.25&nbsp;(1.16×) | 🟢 1.03× faster than Panda CSS |
+        | 300 Components: Application Scale | **9.00** | 9.25&nbsp;(1.03×) | 9.50&nbsp;(1.06×) | 9.75&nbsp;(1.08×) | 10.00&nbsp;(1.11×) | 10.25&nbsp;(1.14×) | 🟢 1.03× faster than Panda CSS |
+        | Themes: 10 Components | **10.25** | 10.50&nbsp;(1.02×) | 10.75&nbsp;(1.05×) | 11.00&nbsp;(1.07×) | 11.25&nbsp;(1.10×) | 11.50&nbsp;(1.12×) | 🟢 1.02× faster than Panda CSS |
+        | Themes: 100 Components | **11.25** | 11.50&nbsp;(1.02×) | 11.75&nbsp;(1.04×) | 12.00&nbsp;(1.07×) | 12.25&nbsp;(1.09×) | 12.50&nbsp;(1.11×) | 🟢 1.02× faster than Panda CSS |
 
         ## CSS Size
 
@@ -159,17 +159,17 @@ describe('benchmark comment', () => {
 
         | Workload | Zyzz | Panda CSS | StyleX | Tailwind | Tamagui | vanilla-extract | Zyzz vs. Best Competitor |
         | :--- | ---: | ---: | ---: | ---: | ---: | ---: | :--- |
-        | 3 Components | **100** | 110 | 120 | 130 | 140 | 150 | 🟢 10 B smaller than Panda CSS |
-        | 1,000 Components: Repeated Styles | **200** | 210 | 220 | 230 | 240 | 250 | 🟢 10 B smaller than Panda CSS |
-        | 1,000 Components: Unique Padding | **300** | 310 | 320 | 330 | 340 | 350 | 🟢 10 B smaller than Panda CSS |
-        | 100 Components: Partial Sharing | **400** | 410 | 420 | 430 | 440 | 450 | 🟢 10 B smaller than Panda CSS |
-        | 100 Components: Reused Palette | **500** | 510 | 520 | 530 | 540 | 550 | 🟢 10 B smaller than Panda CSS |
-        | 100 Components: Independent Values | **600** | 610 | 620 | 630 | 640 | 650 | 🟢 10 B smaller than Panda CSS |
-        | 100 Components: Sparse Properties | **700** | 710 | 720 | 730 | 740 | 750 | 🟢 10 B smaller than Panda CSS |
-        | 60 Components: Mixed Shapes | **800** | 810 | 820 | 830 | 840 | 850 | 🟢 10 B smaller than Panda CSS |
-        | 300 Components: Application Scale | **900** | 910 | 920 | 930 | 940 | 950 | 🟢 10 B smaller than Panda CSS |
-        | Themes: 10 Components | **1,010** | 1,020 | 1,030 | 1,040 | 1,050 | 1,060 | 🟢 10 B smaller than Panda CSS |
-        | Themes: 100 Components | **1,110** | 1,120 | 1,130 | 1,140 | 1,150 | 1,160 | 🟢 10 B smaller than Panda CSS |
+        | 3 Components | **100** | 110&nbsp;(1.10×) | 120&nbsp;(1.20×) | 130&nbsp;(1.30×) | 140&nbsp;(1.40×) | 150&nbsp;(1.50×) | 🟢 10 B smaller than Panda CSS |
+        | 1,000 Components: Repeated Styles | **200** | 210&nbsp;(1.05×) | 220&nbsp;(1.10×) | 230&nbsp;(1.15×) | 240&nbsp;(1.20×) | 250&nbsp;(1.25×) | 🟢 10 B smaller than Panda CSS |
+        | 1,000 Components: Unique Padding | **300** | 310&nbsp;(1.03×) | 320&nbsp;(1.07×) | 330&nbsp;(1.10×) | 340&nbsp;(1.13×) | 350&nbsp;(1.17×) | 🟢 10 B smaller than Panda CSS |
+        | 100 Components: Partial Sharing | **400** | 410&nbsp;(1.02×) | 420&nbsp;(1.05×) | 430&nbsp;(1.07×) | 440&nbsp;(1.10×) | 450&nbsp;(1.13×) | 🟢 10 B smaller than Panda CSS |
+        | 100 Components: Reused Palette | **500** | 510&nbsp;(1.02×) | 520&nbsp;(1.04×) | 530&nbsp;(1.06×) | 540&nbsp;(1.08×) | 550&nbsp;(1.10×) | 🟢 10 B smaller than Panda CSS |
+        | 100 Components: Independent Values | **600** | 610&nbsp;(1.02×) | 620&nbsp;(1.03×) | 630&nbsp;(1.05×) | 640&nbsp;(1.07×) | 650&nbsp;(1.08×) | 🟢 10 B smaller than Panda CSS |
+        | 100 Components: Sparse Properties | **700** | 710&nbsp;(1.01×) | 720&nbsp;(1.03×) | 730&nbsp;(1.04×) | 740&nbsp;(1.06×) | 750&nbsp;(1.07×) | 🟢 10 B smaller than Panda CSS |
+        | 60 Components: Mixed Shapes | **800** | 810&nbsp;(1.01×) | 820&nbsp;(1.02×) | 830&nbsp;(1.04×) | 840&nbsp;(1.05×) | 850&nbsp;(1.06×) | 🟢 10 B smaller than Panda CSS |
+        | 300 Components: Application Scale | **900** | 910&nbsp;(1.01×) | 920&nbsp;(1.02×) | 930&nbsp;(1.03×) | 940&nbsp;(1.04×) | 950&nbsp;(1.06×) | 🟢 10 B smaller than Panda CSS |
+        | Themes: 10 Components | **1,010** | 1,020&nbsp;(1.01×) | 1,030&nbsp;(1.02×) | 1,040&nbsp;(1.03×) | 1,050&nbsp;(1.04×) | 1,060&nbsp;(1.05×) | 🟢 10 B smaller than Panda CSS |
+        | Themes: 100 Components | **1,110** | 1,120&nbsp;(1.01×) | 1,130&nbsp;(1.02×) | 1,140&nbsp;(1.03×) | 1,150&nbsp;(1.04×) | 1,160&nbsp;(1.05×) | 🟢 10 B smaller than Panda CSS |
 
         ## JS Size
 
@@ -177,17 +177,17 @@ describe('benchmark comment', () => {
 
         | Workload | Zyzz | Panda CSS | StyleX | Tailwind | Tamagui | vanilla-extract | Zyzz vs. Best Competitor |
         | :--- | ---: | ---: | ---: | ---: | ---: | ---: | :--- |
-        | 3 Components | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 1,000 Components: Repeated Styles | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 1,000 Components: Unique Padding | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 100 Components: Partial Sharing | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 100 Components: Reused Palette | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 100 Components: Independent Values | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 100 Components: Sparse Properties | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 60 Components: Mixed Shapes | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | 300 Components: Application Scale | 50 | 51 | 52 | 53 | 54 | **40** | 🔴 10 B larger than vanilla-extract |
-        | Themes: 10 Components | 51 | 52 | 53 | 54 | 55 | **40** | 🔴 11 B larger than vanilla-extract |
-        | Themes: 100 Components | 51 | 52 | 53 | 54 | 55 | **40** | 🔴 11 B larger than vanilla-extract |
+        | 3 Components | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 1,000 Components: Repeated Styles | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 1,000 Components: Unique Padding | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 100 Components: Partial Sharing | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 100 Components: Reused Palette | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 100 Components: Independent Values | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 100 Components: Sparse Properties | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 60 Components: Mixed Shapes | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | 300 Components: Application Scale | 50 | 51&nbsp;(1.02×) | 52&nbsp;(1.04×) | 53&nbsp;(1.06×) | 54&nbsp;(1.08×) | **40**&nbsp;(0.80×) | 🔴 10 B larger than vanilla-extract |
+        | Themes: 10 Components | 51 | 52&nbsp;(1.02×) | 53&nbsp;(1.04×) | 54&nbsp;(1.06×) | 55&nbsp;(1.08×) | **40**&nbsp;(0.78×) | 🔴 11 B larger than vanilla-extract |
+        | Themes: 100 Components | 51 | 52&nbsp;(1.02×) | 53&nbsp;(1.04×) | 54&nbsp;(1.06×) | 55&nbsp;(1.08×) | **40**&nbsp;(0.78×) | 🔴 11 B larger than vanilla-extract |
 
         ## Notes
 

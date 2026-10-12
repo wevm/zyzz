@@ -103,7 +103,7 @@ function comment(summary: Check.Summary): string {
 
   return [
     status,
-    'Every workload compiles from fresh compiler state, including Lightning CSS minification and esbuild client bundling. Lower is better, and bold marks the best result in each row.',
+    'Every workload compiles from fresh compiler state, including Lightning CSS minification and esbuild client bundling. Lower is better, bold marks the best result in each row, and the ratio beside each competitor compares its result with Zyzz.',
     ...metrics.map((metric) => table({ columns, metric, summary })),
     '## Notes',
     [
@@ -132,17 +132,19 @@ function table(options: table.Options): string {
       return `| ${workload.title} | n/a | ${columns.map(() => 'n/a').join(' | ')} | Missing measurements |`
 
     const best = Math.min(...[zyzz, ...measured].map(metric.value))
+    const baseline = metric.value(zyzz)
+    const format = (value: number) =>
+      value === best ? `**${metric.format(value)}**` : metric.format(value)
+    // A non-breaking space keeps each ratio on its result's line in narrow tables.
     const cell = (result: Result | undefined) => {
       if (!result) return 'n/a'
 
       const value = metric.value(result)
 
-      return value === best
-        ? `**${metric.format(value)}**`
-        : metric.format(value)
+      return `${format(value)}&nbsp;(${(value / baseline).toFixed(2)}×)`
     }
 
-    return `| ${workload.title} | ${cell(zyzz)} | ${others.map(cell).join(' | ')} | ${compare({ metric, others: measured, zyzz })} |`
+    return `| ${workload.title} | ${format(baseline)} | ${others.map(cell).join(' | ')} | ${compare({ metric, others: measured, zyzz })} |`
   })
 
   return [

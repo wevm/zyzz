@@ -166,6 +166,8 @@ const dynamic = style((values: { width: \`\${number}px\` }) => ({
   width: values.width,
 }))
 dynamic({ width: '12px' })
+// A rejected declaration leaves this application without diagnostics.
+pane()
 `
     let version = 0
     const snapshots = new Map<string, Ts.IScriptSnapshot>()
@@ -1576,6 +1578,8 @@ dynamic({ width: '12px' })
         "unset",
         "none",
         "block",
+        "-webkit-box",
+        "-webkit-inline-box",
         "block flex",
         "block flow",
         "block flow list-item",
@@ -1690,7 +1694,7 @@ dynamic({ width: '12px' })
           [
             {
               "code": 2322,
-              "message": "Type '"invalid-display"' is not assignable to type '("invalid-display" & Reference<"*">) | ("invalid-display" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["block", "block flex", "block flow", "block flow list-item", ... 106 more ..., "table-row-group"]; }> | \`\${string} !custom\` | Reference<...>>, ...Atom<...>[]])'.",
+              "message": "Type '"invalid-display"' is not assignable to type '("invalid-display" & Reference<"*">) | ("invalid-display" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["-webkit-box", "-webkit-inline-box", "block", "block flex", ... 108 more ..., "table-row-group"]; }> | \`\${string} !custom\` | Reference<...>>, ...Atom<...>[]])'.",
               "span": "display",
             },
           ]
@@ -2311,6 +2315,17 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
       )
     })
 
+    test('rejects template keys outside selectors at the key', () => {
+      expect(() =>
+        Source.extract({
+          moduleId: 'root.ts',
+          source: `import {style} from 'zyzz'; const card=style({}); style({[\`\${card}:hover &\`]:{color:'red'}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: root.ts:57: Template selector keys require a selectors object.]`,
+      )
+    })
+
     test('keeps lexical aliases and deduplicated definitions distinct', () => {
       const result = Graph.compile({
         modules: {
@@ -2345,9 +2360,7 @@ const card=style({}); export const label=style((values:{opacity:number})=>({sele
       })
       expect(result.modules['dynamic.ts']!.code).toMatchInlineSnapshot(`
         "
-        import { Props as __zyzzProps } from 'zyzz/runtime';
-
-        const card=__zyzzProps.create({className:"z-style-RPENcp-card"}); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-RPENcp-label-opacity-0 z-style-RPENcp-label"+" "+external:"z-RPENcp-label-opacity-0 z-style-RPENcp-label",style:{...input.vars,...style,"--z-RPENcp-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
+        const card=(void 0 as unknown as import('zyzz').style.ReturnType); export const label=(((input:Parameters<import('zyzz').style.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-RPENcp-label-opacity-0 z-style-RPENcp-label"+" "+external:"z-RPENcp-label-opacity-0 z-style-RPENcp-label",style:{...input.vars,...style,"--z-RPENcp-label-opacity":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{opacity:number}>);"
       `)
       expect(() =>
         Source.extract({

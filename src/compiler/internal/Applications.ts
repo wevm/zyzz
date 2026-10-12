@@ -1,6 +1,7 @@
 /** Finds nonescaping local static callables whose applications can become props. @module */
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
+import * as Expression from './Expression.js'
 import * as Scope from './Scope.js'
 import type * as Source from '../Source.js'
 
@@ -158,6 +159,8 @@ export function create(
   if (!candidates.length) return undefined
 
   const lexical = new Set<Ast.Node>()
+  // Extraction resolves these reads and rewrites their definitions, so none run.
+  const resolved = new Set<Ast.Node>()
   // Reads inside functions, classes, or namespaces may run before initialization.
   const deferred = new Set<Ast.Node>()
   const terminals = new Set<Ast.Node>()
@@ -200,6 +203,7 @@ export function create(
       ) {
         lexical.add(node)
         if (terminal(ancestors)) terminals.add(node)
+        if (extracted(ancestors, definitions)) resolved.add(node)
         if (
           ancestors.some((node) =>
             [
@@ -240,7 +244,7 @@ export function create(
     const called = new Set<string>()
 
     for (const reference of references.get(declaration.id.name) ?? []) {
-      if (reference === declaration.id) continue
+      if (reference === declaration.id || resolved.has(reference)) continue
 
       let callee: Ast.Node = reference
       let call = direct
@@ -490,6 +494,58 @@ export declare namespace create {
     /** Includes recipe/value applications while preserving their runtime calls. */
     readonly dynamic?: boolean | undefined
   }
+}
+
+// Matches a selector interpolation or composition entry inside a definition, which
+// extraction resolves statically. Computed keys elsewhere in a definition fail extraction.
+function extracted(
+  path: readonly Ast.Node[],
+  definitions: ReadonlyMap<number, Source.Call>,
+): boolean {
+  let index = path.length - 1
+  const member = path[index - 1]
+  if (
+    member?.type === 'MemberExpression' &&
+    member.object === path[index] &&
+    !member.computed
+  )
+    index--
+
+  // Type assertions around a node keep the same read.
+  function parent() {
+    const node = path[index]!
+    while (index > 0 && Expression.unwrap(path[index - 1]!) === node) index--
+    return path[--index]
+  }
+
+  function definition(node: Ast.Node | undefined) {
+    return (
+      node?.type === 'CallExpression' &&
+      definitions.get(node.start)?.end === node.end
+    )
+  }
+
+  const container = parent()
+
+  if (container?.type === 'ArrayExpression') {
+    const call = parent()
+    return (
+      call?.type === 'CallExpression' &&
+      definition(call) &&
+      !!call.arguments[0] &&
+      Expression.unwrap(call.arguments[0]) === container
+    )
+  }
+
+  if (container?.type !== 'TemplateLiteral') return false
+
+  const property = parent()
+  return (
+    property?.type === 'Property' &&
+    property.computed &&
+    Expression.unwrap(property.key) === container &&
+    path.slice(0, index).some(definition)
+  )
 }
 
 // Matches a no-argument application spread onto, or read as the class of, a DOM element.

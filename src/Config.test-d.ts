@@ -3,7 +3,13 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config as PublicConfig, defineConfig, Style } from 'zyzz'
+import {
+  Config as PublicConfig,
+  defineConfig,
+  defineVars,
+  extendVars,
+  Style,
+} from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
@@ -188,6 +194,49 @@ describe('create', () => {
     // @ts-expect-error Reserved styling fields cannot be callback slots.
     style((values: { style: string }) => ({ color: values.style }))
     style((values: { alpha: number }) => ({ opacity: values.alpha }))
+  })
+
+  test('composes configured definitions with variable sets and shorthands', () => {
+    const base = defineVars({
+      color: { content: { primary: { dark: '#fff', light: '#000' } } },
+      spacing: { none: '0px', sm: '4px' },
+    })
+    const inverse = extendVars(base, {
+      color: { content: { primary: { dark: '#000', light: '#fff' } } },
+    })
+    const { style } = PublicConfig.create({
+      cssOutput: 'atomic',
+      defaultVars: 'base',
+      id: 'composition',
+      shorthands: { paddingHorizontal: ['paddingLeft', 'paddingRight'] },
+      vars: { base, inverse },
+    })
+    const label = style({ color: 'content.primary', paddingHorizontal: 'sm' })
+    const composed = style([label, { margin: 'none' }])
+    const nested = style([composed, label, { paddingHorizontal: 'none' }])
+
+    expectTypeOf(composed()).toEqualTypeOf(label())
+    expectTypeOf(nested({ className: 'external' })).toEqualTypeOf(label())
+    // @ts-expect-error Literal entries accept only configured tokens.
+    style([label, { margin: '7px' }])
+    // @ts-expect-error Configured shorthands keep their token domains.
+    style([label, { paddingHorizontal: 'missing' }])
+  })
+
+  test('types rejected definitions as static styles', () => {
+    const { style } = PublicConfig.create({ vars: { spacing: { md: '8px' } } })
+    const card = style({
+      // @ts-expect-error The diagnostic stays on the untokenized declaration.
+      padding: '7px',
+    })
+    const dynamic = style((values: { width: `${number}px` }) => ({
+      width: `${values.width} !custom`,
+    }))
+
+    expectTypeOf(card()).toEqualTypeOf(style({ padding: 'md' })())
+    expectTypeOf(dynamic({ width: '8px' })).toEqualTypeOf(card())
+    // @ts-expect-error Valid callbacks still require their values.
+    dynamic()
   })
 
   test('preserves token domains in grouped styles from destructured helpers', () => {

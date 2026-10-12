@@ -1133,7 +1133,7 @@ describe('Vars API page', () => {
 
 describe('Values API page', () => {
   test('compiles each value example as authored', async () => {
-    const [properties] = await examples('values', 'Properties')
+    const [properties, clamp] = await examples('values', 'Properties')
     const [lengths] = await examples('values', 'Lengths')
     const [colors] = await examples('values', 'Colors')
     const [numbers] = await examples('values', 'Numbers')
@@ -1147,6 +1147,12 @@ describe('Values API page', () => {
     expect(css(properties!.source)).toMatchInlineSnapshot(`
       ".z-3oDDjY-label--webkit-user-select-0{-webkit-user-select:none;}
       .z-3oDDjY-label-user-select-1{user-select:none;}"
+    `)
+    expect(css(clamp!.source)).toMatchInlineSnapshot(`
+      ".z-display--webkit-box{display:-webkit-box;}
+      .z--webkit-box-orient-vertical{-webkit-box-orient:vertical;}
+      .z--webkit-line-clamp-3{-webkit-line-clamp:3;}
+      .z-overflow-hidden{overflow:hidden;}"
     `)
     expect(css(lengths!.source)).toMatchInlineSnapshot(`
       ".z-h-100dvh{height:100dvh;}
@@ -1255,7 +1261,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(81)
+    expect(files).toHaveLength(82)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

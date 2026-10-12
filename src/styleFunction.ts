@@ -65,7 +65,11 @@ export function style<
       ? [options?: style.DefinitionOptions]
       : [invalid: never, unavailable: never]
     : [invalid: never, unavailable: never]
-): style.Dynamic<values>
+  // TypeScript types a call that matches no overload with this signature. Other
+  // inputs leave `callback` at its constraint, so their definitions stay static.
+): ((...args: never[]) => unknown) extends callback
+  ? style.ReturnType
+  : style.Dynamic<values>
 export function style<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<Style.Accepted<styles, {}, true>> &

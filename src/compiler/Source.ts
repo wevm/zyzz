@@ -860,7 +860,18 @@ export function extract(options: extract.Options): extract.ReturnType {
         ) {
           report(
             'unsupported_syntax',
-            'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.',
+            (() => {
+              const key =
+                property.type === 'Property' && property.computed
+                  ? Expression.unwrap(property.key)
+                  : undefined
+
+              // Template keys with an & target are selectors outside their group.
+              return key?.type === 'TemplateLiteral' &&
+                key.quasis.some((quasi) => quasi.value.raw.includes('&'))
+                ? 'Template selector keys require a selectors object.'
+                : 'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.'
+            })(),
             property,
           )
           continue

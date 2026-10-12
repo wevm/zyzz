@@ -9,10 +9,11 @@ import * as Contracts from '../node/internal/Contracts.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
+import { existsSync } from 'node:fs'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
-import { isBuiltin } from 'node:module'
+import { createRequire, isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Snapshot from '../node/internal/Snapshot.js'
@@ -23,6 +24,7 @@ import type {
   Environment,
   Plugin,
   Rollup,
+  UserConfig,
   ViteDevServer,
 } from 'vite'
 import * as Graph from '../compiler/Graph.js'
@@ -78,8 +80,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
   const identities = new Map<string, string>()
+  const exclusions = new Map<string, boolean>()
   const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   let directories: readonly string[]
+  let filter: (id: unknown) => boolean
+  let optimizeRuntime = false
   let root: string
 
   function snapshot(environment: Environment) {
@@ -156,8 +161,24 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       Path.isAbsolute(id) &&
       sourceRoot(id) !== undefined &&
       /\.[cm]?[jt]sx?$/.test(id) &&
-      !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(id)
+      !/\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/.test(id) &&
+      !excluded(id)
     )
+  }
+
+  /** Matches excluded files inside source directories. Package files never match, so packed contracts stay readable. */
+  function excluded(id: string) {
+    const file = id.split(/[?#]/)[0]!
+    let value = exclusions.get(file)
+
+    // Vite's filter recompiles each glob per call, and every compile checks each import.
+    if (value === undefined) {
+      value =
+        Path.isAbsolute(file) && sourceRoot(file) !== undefined && !filter(file)
+      exclusions.set(file, value)
+    }
+
+    return value
   }
 
   function sourceRoot(file: string) {
@@ -579,6 +600,13 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           await visit(resolved.id)
           continue
         }
+
+        // An excluded source stays a runtime import instead of deriving a package contract.
+        if (excluded(resolved.id)) {
+          resolutions[specifier] = null
+          continue
+        }
+
         if (resolved.external || !eligible(resolved.id)) {
           const physical = resolved.id.split('?')[0]!.split('#')[0]!
           const contract =
@@ -705,7 +733,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             continue
 
           const resolved = await resolve(specifier, file)
-          if (!resolved || (!resolved.external && eligible(resolved.id)))
+          if (
+            !resolved ||
+            (!resolved.external && eligible(resolved.id)) ||
+            excluded(resolved.id)
+          )
             continue
 
           if (resource(specifier) || resource(resolved.id)) continue
@@ -1250,7 +1282,13 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     config: {
       order: 'post',
-      handler(config) {
+      handler(config, env) {
+        // Ordered after other config hooks, so plugin-provided aliases are visible.
+        optimizeRuntime =
+          env.command === 'serve' &&
+          options.compiler !== false &&
+          installed(config)
+
         if (native) return
         // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
         return {
@@ -1277,6 +1315,32 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             },
           },
         }
+      },
+    },
+    configEnvironment: {
+      // Plugins without enforce settle their environment options first.
+      order: 'post',
+      handler(name, config) {
+        if (!optimizeRuntime) return
+
+        const optimizeDeps = config.optimizeDeps ?? {}
+        const consumer =
+          config.consumer ?? (name === 'client' ? 'client' : 'server')
+
+        // Vite defaults server environments to noDiscovery. An include list there
+        // would create an explicit optimizer that otherwise never exists.
+        if (optimizeDeps.noDiscovery ?? consumer === 'server') return
+        if (
+          optimizeDeps.include?.includes(runtime) ||
+          optimizeDeps.exclude?.some((id) => id === 'zyzz' || id === runtime)
+        )
+          return
+
+        // Vite scans authored source, so the runtime import that compilation
+        // adds first appears while a request transforms a module. Discovering
+        // it then re-runs the optimizer, and modules loaded before the re-run
+        // can keep a separate copy of a shared dependency such as React.
+        return { optimizeDeps: { include: [runtime] } }
       },
     },
     configureServer(server) {
@@ -1315,6 +1379,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           }),
         )),
       ]
+
+      // Portable build adapters share this module and do not require Vite.
+      const { createFilter } = await import('vite')
+      const patterns = [...configFiles, ...(options.exclude ?? [])]
+
+      filter = createFilter(null, patterns, { resolve: root })
+      exclusions.clear()
+
       if (native) return
       const lightning = (config.css.lightningcss ??= {})
       lightning.include =
@@ -1736,6 +1808,47 @@ type Lookups = {
   resolutions: Map<string, ReturnType<Host['resolve']>>
 }
 
+/**
+ * Whether `zyzz/runtime` resolves inside node_modules from the Vite root. Vite
+ * optimizes a discovered import only there, so linked and aliased copies stay
+ * source modules beside the other entrypoints.
+ */
+function installed(config: UserConfig) {
+  const aliases = config.resolve?.alias ?? {}
+  const entries = Array.isArray(aliases)
+    ? aliases
+    : Object.entries(aliases).map(([find, replacement]) => ({
+        find,
+        replacement,
+      }))
+
+  // Matches Vite's alias semantics: a string entry covers its subpaths.
+  if (
+    entries.some((entry) =>
+      typeof entry.find === 'string'
+        ? runtime === entry.find || runtime.startsWith(`${entry.find}/`)
+        : entry.find.test(runtime),
+    )
+  )
+    return false
+
+  try {
+    const require = createRequire(
+      Path.join(Path.resolve(config.root ?? ''), 'package.json'),
+    )
+
+    // Vite keeps a symlinked package at its node_modules path, which Node dereferences.
+    if (config.resolve?.preserveSymlinks)
+      return (require.resolve.paths('zyzz') ?? []).some((directory) =>
+        existsSync(Path.join(directory, 'zyzz/package.json')),
+      )
+
+    return require.resolve(runtime).split(Path.sep).includes('node_modules')
+  } catch {
+    return false
+  }
+}
+
 // Vite forwards `scan` to `resolveId` hooks but leaves it out of its public types.
 type ScanOptions = NonNullable<
   Parameters<DevEnvironment['pluginContainer']['resolveId']>[2]
@@ -1754,7 +1867,14 @@ function resolver(environment: DevEnvironment): Host['resolve'] {
     environment.pluginContainer.resolveId(source, importer, scan)
 }
 
+// Vite and Vitest load their own configuration modules, which application code never imports.
+const configFiles = [
+  '**/vite.config.*',
+  '**/vitest.config.*',
+  '**/vitest.workspace.*',
+]
 const prefix = '\0zyzz:'
+const runtime = 'zyzz/runtime'
 const sharedId = `${prefix}shared.css`
 
 function cssId(file: string) {
@@ -1767,6 +1887,13 @@ export declare namespace zyzz {
   type Options = {
     /** False retains authored calls and requires explicit identities where needed. */
     readonly compiler?: boolean | undefined
+    /**
+     * Source modules left out of discovery and transforms. Globs resolve against the
+     * Vite root unless they start with `**`, and regular expressions test absolute paths.
+     * Imports of excluded modules stay runtime imports. Vite and Vitest configuration
+     * modules are always excluded.
+     */
+    readonly exclude?: readonly (RegExp | string)[] | undefined
     /** Additional source directories, absolute or relative to the Vite root. */
     readonly include?: readonly string[] | undefined
     /** Native context captured at creation. Disables CSS delivery and initialization scripts. */

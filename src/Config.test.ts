@@ -479,6 +479,8 @@ const dynamic = style((values: { width: \`\${number}px\` }) => ({
   alignItems: 'center',
 }))
 dynamic({ width: '12px' })
+// A rejected declaration leaves this application without diagnostics.
+pane()
 `
     let version = 0
     const snapshots = new Map<string, Ts.IScriptSnapshot>()

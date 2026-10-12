@@ -133,6 +133,8 @@ namespace styles {
 
 Specificity follows the authored selector, so wrap a selector in `:where()` to lower it. Express state through data and ARIA attributes. Callback values apply only in selectors that target the styled element, since their private custom properties live on it.
 
+Template keys apply only inside `selectors`, so top-level keys remain declarations, pseudo keys, and at-rules. An interpolation names an earlier definition directly, as `${card}`, or through its namespace, as `${styles.card}`.
+
 ### styles.vars
 
 - **Type:** ``{ [variable: `--${string}`]: string | number }{:ts}``

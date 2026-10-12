@@ -42,6 +42,28 @@ export default defineConfig({
 })
 ```
 
+### options.exclude
+
+- **Type:** `readonly (RegExp | string)[]{:ts}`
+- **Default:** `[]{:ts}`
+
+Source modules left out of discovery and transforms. Globs resolve against the Vite root unless they start with `**`, and regular expressions test absolute paths. Excluded modules contribute no CSS, and imports of them stay runtime imports.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Leaves a Node server entry and component stories uncompiled
+  plugins: [zyzz({ exclude: ['server.mjs', /\.stories\.tsx?$/] })],
+})
+```
+
+Discovery compiles every module that calls an imported function, since the function can contribute global styles. Exclude modules that run outside the application, such as a server entry that imports build output before it exists.
+
+Modules named `vite.config.*`, `vitest.config.*`, or `vitest.workspace.*` are always excluded. Other `*.config.*` modules remain source, since application configuration such as `theme.config.ts` can define styles.
+
 ### options.include
 
 - **Type:** `readonly string[]{:ts}`
@@ -176,6 +198,29 @@ export default defineConfig({
   // [!code hl:2]
   // An ECMAScript build target needs a separate browser CSS target
   build: { cssTarget: ['chrome123', 'safari18'], target: 'es2022' },
+  plugins: [zyzz()],
+})
+```
+
+## Dependency Optimization
+
+Compiled modules import `zyzz/runtime`, which Vite's dependency scan cannot find in authored source. The development server adds it to `optimizeDeps.include` in each environment that discovers dependencies, so serving the first compiled module does not re-run the optimizer.
+
+Environments that set `optimizeDeps.noDiscovery`, as Vite's default SSR environment does, keep their explicit lists. So do configurations that exclude `zyzz` or `zyzz/runtime`, and linked or aliased copies outside `node_modules`, which Vite serves as source. Output from `compiler: false` imports no runtime.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  environments: {
+    // [!code hl:5]
+    // Pre-bundles zyzz/runtime with the server's discovered dependencies
+    ssr: {
+      optimizeDeps: { noDiscovery: false },
+      resolve: { noExternal: true },
+    },
+  },
   plugins: [zyzz()],
 })
 ```

@@ -680,6 +680,23 @@ impl<'a> Walker<'_, '_, 'a> {
     }
 }
 
+/// Whether an expression is an object of uncomputed keys whose values are all string or numeric
+/// literals.
+fn flat(value: &Expression<'_>) -> bool {
+    let Expression::ObjectExpression(object) = value else {
+        return false;
+    };
+
+    object.properties.iter().all(|property| {
+        matches!(property, ObjectPropertyKind::ObjectProperty(property)
+        if !property.computed
+            && matches!(
+                property.value,
+                Expression::StringLiteral(_) | Expression::NumericLiteral(_)
+            ))
+    })
+}
+
 /// Collects the key starts of properties inside `selectors` objects.
 struct SelectorKeys<'k> {
     keys: &'k mut FxHashSet<u32>,
@@ -2244,6 +2261,12 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
                     composed.push(entry);
                 }
             }
+        }
+
+        // Selector keys sit inside nested objects, which flat literal bodies lack.
+        if flat(value) {
+            normalized.insert(call.span.start, Ok(value));
+            continue;
         }
 
         let mut keys = SelectorKeys {

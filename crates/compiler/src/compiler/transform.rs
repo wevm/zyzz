@@ -514,6 +514,25 @@ fn declaration_starts(
     }
 }
 
+/// Splits a class list at each space, as `split(' ')` does. Lists are short, so a byte scan beats
+/// the `memchr` dispatch a `char` pattern performs for every name.
+fn split_spaces(list: &str) -> impl Iterator<Item = &str> {
+    let bytes = list.as_bytes();
+    let mut start = Some(0);
+
+    std::iter::from_fn(move || {
+        let from = start?;
+        let end = bytes
+            .get(from..)?
+            .iter()
+            .position(|byte| *byte == b' ')
+            .map(|offset| from + offset);
+
+        start = end.map(|end| end + 1);
+        list.get(from..end.unwrap_or(bytes.len()))
+    })
+}
+
 /// The brace of a rule whose selector is one unescaped class and whose body opens no other
 /// block, as [`declaration_starts`] would find it.
 fn simple_block(rule: &str) -> Option<usize> {
@@ -2447,17 +2466,20 @@ impl<'a> Generator<'_, 'a> {
 
         map.set_source_content(module_id, Some(source));
 
-        let mut owners: FxHashMap<&str, &Call<'a>> = FxHashMap::default();
+        let mut owners: FxHashMap<&str, &Call<'a>> =
+            FxHashMap::with_capacity_and_hasher(emitted.rules.len(), FxBuildHasher);
 
         for call in &extracted.calls {
-            for name in emitted
-                .classes
-                .get(&call.name)
-                .map(String::as_str)
-                .unwrap_or_default()
-                .split(' ')
-            {
-                owners.entry(name).or_insert(call);
+            for name in split_spaces(
+                emitted
+                    .classes
+                    .get(&call.name)
+                    .map(String::as_str)
+                    .unwrap_or_default(),
+            ) {
+                if !owners.contains_key(name) {
+                    owners.insert(name, call);
+                }
             }
         }
 

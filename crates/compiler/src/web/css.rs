@@ -8,6 +8,7 @@
 
 use std::borrow::Cow;
 use std::fmt::Write as _;
+use std::hash::BuildHasher as _;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -1325,9 +1326,22 @@ fn run<'a>(
     let mut property_ids: Vec<usize> =
         Vec::with_capacity(styles.iter().map(|style| style.declarations.len()).sum());
 
+    // Extraction shares one allocation per spelling, so most properties resolve by address.
+    let mut addresses: FxHashMap<*const u8, usize> = FxHashMap::default();
+
     for style in styles {
         for declaration in &style.declarations {
-            property_ids.push(properties.insert_full(&declaration.property, ()).0);
+            let address = declaration.property.as_ptr();
+            let id = if let Some(id) = addresses.get(&address) {
+                *id
+            } else {
+                let id = properties.insert_full(&declaration.property, ()).0;
+
+                addresses.insert(address, id);
+                id
+            };
+
+            property_ids.push(id);
         }
 
         for rule in style.rules.iter().flatten() {
@@ -1551,6 +1565,9 @@ fn run<'a>(
     let mut explicit_bodies: FxHashMap<Arc<str>, String> = FxHashMap::default();
     let mut explicit_modes: FxHashSet<(Arc<str>, &'static str)> = FxHashSet::default();
     let mut applications: FxHashMap<String, String> = FxHashMap::default();
+    // Applications of styles without rules key on their prepared text, which `prepared` keeps,
+    // and point at the class list of the first such application.
+    let mut flat_applications: FxHashMap<(&str, &str), usize> = FxHashMap::default();
     let mut key = String::with_capacity(256);
     let mut plain = true;
 
@@ -1593,8 +1610,13 @@ fn run<'a>(
             }
         }
 
+        let applied = explicit.is_none() && independent;
+        let flat = prepared
+            .get(index)
+            .filter(|_| applied && style.rules.is_none())
+            .map(|entry| (mode.as_str(), entry.text.as_str()));
         // The key buffer is reused across styles; it ends with the style's nested body.
-        let application = (explicit.is_none() && independent).then(|| {
+        let application = (applied && flat.is_none()).then(|| {
             key.clear();
             key.push_str(mode.as_str());
             key.push(':');
@@ -1607,18 +1629,21 @@ fn run<'a>(
 
             let offset = key.len();
 
-            match prepared.get(index).filter(|_| style.rules.is_none()) {
-                Some(entry) => key.push_str(&entry.text),
-                None => compiler.write_nested(&mut key, style),
-            }
-
+            compiler.write_nested(&mut key, style);
             offset
         });
+        let repeated = match flat {
+            Some(flat) => flat_applications
+                .get(&flat)
+                .and_then(|index| classes.get_index(*index))
+                .map(|(_, class)| class.clone()),
+            None => application
+                .and_then(|_| applications.get(key.as_str()))
+                .cloned(),
+        };
 
-        if application.is_some()
-            && let Some(class) = applications.get(key.as_str())
-        {
-            classes.insert(Arc::clone(&style.name), class.clone());
+        if let Some(class) = repeated {
+            classes.insert(Arc::clone(&style.name), class);
             continue;
         }
 
@@ -1669,9 +1694,10 @@ fn run<'a>(
                     compiler.emit(&mut state, shared, "shared", false, mode, None);
                     compiler.emit(&mut state, local, "style", false, mode, None);
                 } else {
-                    let body = match application {
-                        Some(offset) => key.get(offset..).unwrap_or_default().to_owned(),
-                        None => compiler.nested(style),
+                    let body = match (flat, application) {
+                        (Some((_, text)), _) => text.to_owned(),
+                        (None, Some(offset)) => key.get(offset..).unwrap_or_default().to_owned(),
+                        (None, None) => compiler.nested(style),
                     };
 
                     compiler.emit(&mut state, body, "style", false, mode, None);
@@ -1684,13 +1710,22 @@ fn run<'a>(
         }
 
         let mut list = String::with_capacity(state.names.iter().map(|name| name.len() + 1).sum());
+        // Class lists are short, so a scan of earlier names dedupes them. Comparing hashes first
+        // leaves a string comparison for equal names alone.
+        let hashes: SmallVec<[u64; 16]> = state
+            .names
+            .iter()
+            .map(|name| FxBuildHasher.hash_one(&**name))
+            .collect();
 
-        // Class lists are short, so a scan of earlier names dedupes them without hashing.
         for (index, name) in state.names.iter().enumerate() {
-            if state
-                .names
-                .get(..index)
-                .is_some_and(|earlier| earlier.contains(name))
+            let hash = hashes.get(index).copied().unwrap_or_default();
+
+            if hashes
+                .iter()
+                .zip(&state.names)
+                .take(index)
+                .any(|(earlier, previous)| *earlier == hash && previous == name)
             {
                 continue;
             }
@@ -1707,7 +1742,11 @@ fn run<'a>(
             applications.insert(key.clone(), list.clone());
         }
 
-        classes.insert(Arc::clone(&style.name), list);
+        let (position, _) = classes.insert_full(Arc::clone(&style.name), list);
+
+        if let Some(flat) = flat {
+            flat_applications.insert(flat, position);
+        }
     }
 
     if !compiler.diagnostics.is_empty() {

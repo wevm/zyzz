@@ -1213,7 +1213,7 @@ impl<'a> Compiler<'a> {
                 .is_some_and(|(_, existing)| *existing == body)
         {
             if !unit.refreshed {
-                units.name(body, namespace);
+                units.name(&self.unit_key, namespace);
                 unit.refreshed = true;
             }
 
@@ -1221,7 +1221,7 @@ impl<'a> Compiler<'a> {
             return;
         }
 
-        let identity = units.name(body, namespace);
+        let identity = units.name(&self.unit_key, namespace);
 
         if self
             .rules
@@ -1567,7 +1567,8 @@ fn run<'a>(
     let mut applications: FxHashMap<String, String> = FxHashMap::default();
     // Applications of styles without rules key on their prepared text, which `prepared` keeps,
     // and point at the class list of the first such application.
-    let mut flat_applications: FxHashMap<(&str, &str), usize> = FxHashMap::default();
+    let mut flat_applications: FxHashMap<(&str, &str), usize> =
+        FxHashMap::with_capacity_and_hasher(styles.len(), FxBuildHasher);
     let mut key = String::with_capacity(256);
     let mut plain = true;
 

@@ -309,7 +309,6 @@ impl Registry {
     /// Names units for one compilation, whose qualifier keeps new names distinct.
     pub fn scope(&mut self, owner: &str, qualifier: &str, visible: Visibility) -> Units<'_> {
         Units {
-            key: String::new(),
             owner: owner.into(),
             qualifier: qualifier.into(),
             registry: self,
@@ -322,8 +321,6 @@ impl Registry {
 /// One compilation's unit names over a borrowed registry.
 #[derive(Debug)]
 pub struct Units<'a> {
-    /// Reused lookup key of the unit being named.
-    key: String,
     owner: Box<str>,
     qualifier: Box<str>,
     registry: &'a mut Registry,
@@ -332,27 +329,20 @@ pub struct Units<'a> {
 }
 
 impl Units<'_> {
-    /// Names a declaration unit, reusing a visible earlier name for an equal body.
-    pub fn name(&mut self, body: &str, namespace: Option<&str>) -> String {
-        self.key.clear();
-        self.key.push_str(namespace.unwrap_or_default());
-        self.key.push('\n');
-        self.key.push_str(body);
-
+    /// Names a declaration unit, reusing a visible earlier name for an equal body. The key is
+    /// the namespace and the body joined by a line break.
+    pub fn name(&mut self, key: &str, namespace: Option<&str>) -> String {
         // A repeated body keeps its name. Its first naming registered it, so a visible registry
         // now reports the name as borrowed, as a fresh lookup would.
-        if let Some(decision) = self.used.get_mut(self.key.as_str()) {
-            decision.borrowed = self.registry.borrow(&self.key, &self.visible).is_some();
+        if let Some(decision) = self.used.get_mut(key) {
+            decision.borrowed = self.registry.borrow(key, &self.visible).is_some();
 
             return decision.name.clone();
         }
 
         // Every distinct body consumes a slot, so own names never depend on reuse.
         let index = self.used.len();
-        let borrowed = self
-            .registry
-            .borrow(&self.key, &self.visible)
-            .map(str::to_owned);
+        let borrowed = self.registry.borrow(key, &self.visible).map(str::to_owned);
         let is_borrowed = borrowed.is_some();
         // The underscore keeps unit names apart from readable names and anonymous scopes.
         let name = borrowed.unwrap_or_else(|| {
@@ -370,9 +360,9 @@ impl Units<'_> {
             name
         });
 
-        self.registry.insert(&self.key, &name, &self.owner);
+        self.registry.insert(key, &name, &self.owner);
         self.used.insert(
-            self.key.as_str().into(),
+            key.into(),
             Decision {
                 borrowed: is_borrowed,
                 name: name.clone(),

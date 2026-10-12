@@ -509,15 +509,21 @@ describe('zyzz', () => {
       await page.goto(server.resolvedUrls!.local[0]!)
       await page.waitForLoadState('networkidle')
       await page.locator('#state').fill('retained')
+      const initial = await page.locator('#card11').getAttribute('class')
       await Watch.write({
         path: Path.join(root, 'theme.ts'),
         source: files['theme.ts']!.replace("'red'", "'blue'"),
       })
-      await page.waitForFunction(
-        () =>
-          getComputedStyle(document.querySelector('#card11')!).color ===
-          'rgb(0, 0, 255)',
-      )
+      // Class names carry token fallbacks, so the theme scope turns cards blue before
+      // the entry re-executes with renamed classes.
+      await page.waitForFunction((initial) => {
+        const card = document.querySelector('#card11')!
+
+        return (
+          card.className !== initial &&
+          getComputedStyle(card).color === 'rgb(0, 0, 255)'
+        )
+      }, initial)
       expect(
         await page
           .locator('#card0')
@@ -525,7 +531,10 @@ describe('zyzz', () => {
       ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
       expect(
         await page.locator('#scope').getAttribute('data-renders'),
-      ).toMatchInlineSnapshot('"1"')
+      ).toMatchInlineSnapshot('"2"')
+      expect(await page.locator('#state').inputValue()).toMatchInlineSnapshot(
+        '"retained"',
+      )
       await Watch.write({
         path: Path.join(root, 'card0.ts'),
         source: files['card0.ts']!.replace('0.5', '0.75'),

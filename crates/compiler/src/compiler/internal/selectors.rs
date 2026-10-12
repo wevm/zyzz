@@ -189,6 +189,18 @@ impl<'a> Collector<'_, 'a> {
     }
 }
 
+/// Whether a value can resolve to a style: only calls, identifiers, and member reads do, as
+/// [`Resolver::target`] follows them.
+fn resolves(value: &Expression<'_>) -> bool {
+    matches!(
+        unwrap(value),
+        Expression::CallExpression(_)
+            | Expression::Identifier(_)
+            | Expression::StaticMemberExpression(_)
+            | Expression::ComputedMemberExpression(_)
+    )
+}
+
 /// An empty theme definition, as `Theme.define({})` creates for each style reference.
 fn empty_definition() -> Result<Arc<theme::Definition>> {
     theme::define(&Data::from(Object::new()), None).map(Arc::new)
@@ -587,6 +599,8 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
     }
 
     let mut exposed: FxHashMap<Address, Vec<Exposure<'a>>> = FxHashMap::default();
+    // Only calls, identifiers, and member reads resolve to styles.
+    let mut resolvable = false;
 
     for (name, local) in &public_names {
         if let Some(link) = imported_names.get(local) {
@@ -594,6 +608,7 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
         }
 
         if let Some(value) = names.get(local) {
+            resolvable |= resolves(value);
             exposed
                 .entry(value.address())
                 .or_default()
@@ -607,6 +622,7 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
 
     for (name, values) in &public_namespaces {
         for (member, value) in values {
+            resolvable |= resolves(value);
             exposed
                 .entry(value.address())
                 .or_default()
@@ -614,7 +630,7 @@ pub fn scan<'s, 'a>(parsed: &'s Parsed<'a>, options: Options<'s, 'a>) -> Result<
         }
     }
 
-    if options.selector_keys.is_empty() && exposed.is_empty() && options.composed.is_empty() {
+    if options.selector_keys.is_empty() && !resolvable && options.composed.is_empty() {
         return Ok(empty(exports, compositions));
     }
 

@@ -18,6 +18,14 @@ Install Chromium once with `pnpm exec playwright install chromium`.
 | `node bench/Check.ts bench/results`                                                           | Framework gate over saved results                                           |
 | `node bench/Compare.ts bench/results <baseline> <action-input>`                               | Baseline comparison report and action input                                 |
 
+Benchmark runs build the test addon, which skips link-time and profile-guided optimization. Competitor comparisons time the release addon, as CI does:
+
+```sh
+# The release addon replaces the test build for this run.
+pnpm build:binding
+ZYZZ_BINDING=prebuilt pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
+```
+
 Append `--compare <baseline.json>` to a benchmark run to compare against a saved baseline. Measure baseline and candidate sequentially on the same idle machine, save the baseline outside the checkout, and record variance with any reported delta.
 
 Diagnostic runs:

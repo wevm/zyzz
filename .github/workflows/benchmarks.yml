@@ -177,7 +177,12 @@ jobs:
           node --version > bench/results/node.txt
           pnpm --version > bench/results/pnpm.txt
           uname -a > bench/results/platform.txt
+      # Competitor comparisons time the addon a release ships, not the test build.
+      - name: Build release addon
+        run: pnpm build:binding
       - name: Run benchmarks
+        env:
+          ZYZZ_BINDING: prebuilt
         run: pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
       - name: Summarize benchmarks
         run: |
@@ -309,7 +314,7 @@ jobs:
           name: benchmarks
           path: bench/results/
           retention-days: 30
-    timeout-minutes: 50
+    timeout-minutes: 60
   benchmarks:
     name: Benchmarks
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.action != 'closed' }}

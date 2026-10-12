@@ -104,6 +104,14 @@ pub struct Encoder {
 }
 
 impl Encoder {
+    /// Starts an encoding expected to take about `capacity` bytes.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            output: String::with_capacity(capacity),
+            ..Self::default()
+        }
+    }
+
     /// Starts the next generated line.
     pub fn new_line(&mut self) {
         self.output.push(';');

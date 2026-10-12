@@ -157,7 +157,7 @@ fn compose(previous: &EncodedSourceMap, map: &str, offset: usize) -> Result<Enco
         composed.set_source_content(source, content);
     }
 
-    Ok(composed.to_encoded_map())
+    Ok(composed.into_encoded_map())
 }
 
 /// Narrows a decoded map position, which is never negative or past `u32::MAX` for parsed CSS.

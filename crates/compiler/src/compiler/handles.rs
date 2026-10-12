@@ -247,6 +247,24 @@ fn write_resource(output: &mut String, resource: &Resource) {
 
 /// Appends one module's transform output. Map content equal to `placeholder` is written as `0`.
 pub fn write_module(output: &mut String, module: &transform::Output, placeholder: Option<&str>) {
+    // Escapes and record keys add little beyond the text fields, which dominate the result.
+    output.reserve(
+        module.code.len()
+            + module.css.len() * 2
+            + module.map.len()
+            + module.css_map.mappings.len()
+            + module
+                .classes
+                .iter()
+                .map(|(name, value)| name.len() + value.len() + 6)
+                .sum::<usize>()
+            + module
+                .rules
+                .iter()
+                .map(|(name, rule)| name.len() + rule.len() + 6)
+                .sum::<usize>()
+            + 1024,
+    );
     output.push_str("{\"classes\":");
     write_record(
         output,

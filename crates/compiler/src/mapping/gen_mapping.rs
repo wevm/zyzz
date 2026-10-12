@@ -243,6 +243,23 @@ impl GenMapping {
         }
     }
 
+    /// Encodes the map like [`GenMapping::to_encoded_map`], moving its names and contents.
+    pub fn into_encoded_map(mut self) -> EncodedSourceMap {
+        while self.mappings.last().is_some_and(Vec::is_empty) {
+            self.mappings.pop();
+        }
+
+        EncodedSourceMap {
+            file: self.file.filter(|file| !file.is_empty()),
+            ignore_list: Some(Vec::new()),
+            mappings: codec::encode(&self.mappings),
+            names: self.names.array,
+            source_root: None,
+            sources: self.sources.array.into_iter().map(Some).collect(),
+            sources_content: Some(self.sources_content),
+        }
+    }
+
     /// Encodes the map, dropping trailing empty lines, as `toEncodedMap` does.
     pub fn to_encoded_map(&mut self) -> EncodedSourceMap {
         while self.mappings.last().is_some_and(Vec::is_empty) {

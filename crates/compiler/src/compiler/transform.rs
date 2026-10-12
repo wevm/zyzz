@@ -938,8 +938,15 @@ fn write_module_map(
     source: &str,
     placeholder: Option<&str>,
 ) -> String {
-    let mut output = String::from("{\"file\":");
+    let content = if placeholder == Some(source) {
+        0
+    } else {
+        source.len()
+    };
+    let mut output =
+        String::with_capacity(map.mappings.len() + module_id.len() * 2 + content + 128);
 
+    output.push_str("{\"file\":");
     js::write_string(&mut output, module_id);
     output.push_str(",\"mappings\":");
     js::write_mappings(&mut output, &map.mappings);
@@ -2732,7 +2739,7 @@ impl<'a> Generator<'_, 'a> {
             .collect::<Vec<_>>()
             .join("\n");
 
-        Ok((css, map.to_encoded_map()))
+        Ok((css, map.into_encoded_map()))
     }
 }
 

@@ -732,9 +732,14 @@ pub(crate) struct Mappings {
 
 impl Mappings {
     pub(crate) fn new(hires: bool) -> Self {
+        Self::with_capacity(hires, 0)
+    }
+
+    /// Starts mappings whose encoding is expected to take about `capacity` bytes.
+    pub(crate) fn with_capacity(hires: bool, capacity: usize) -> Self {
         Self {
             column: 0,
-            encoder: codec::Encoder::default(),
+            encoder: codec::Encoder::with_capacity(capacity),
             hires,
         }
     }
@@ -775,15 +780,22 @@ impl Mappings {
 
     /// Maps original text unit by unit, or only at line starts without `hires`.
     pub(crate) fn add_unedited(&mut self, source: i64, text: &str, mut line: i64, mut column: i64) {
-        for (index, text) in text.split('\n').enumerate() {
-            if index > 0 {
+        let mut start = 0;
+
+        // Most pieces hold no line break, so lines are found by byte search.
+        for end in memchr::memchr_iter(b'\n', text.as_bytes()).chain(std::iter::once(text.len())) {
+            if start > 0 {
                 line += 1;
                 column = 0;
                 self.new_line();
             }
 
+            let piece = text.get(start..end).unwrap_or_default();
+
+            start = end + 1;
+
             // An astral character is two code units, each with its own segment.
-            let units = i64::try_from(js::utf16_len(text)).unwrap_or(i64::MAX);
+            let units = i64::try_from(js::utf16_len(piece)).unwrap_or(i64::MAX);
 
             if units == 0 {
                 continue;
@@ -803,25 +815,18 @@ impl Mappings {
 
     /// Moves the generated position past inserted text.
     pub(crate) fn advance(&mut self, text: &str) {
-        if text.is_empty() {
+        let bytes = text.as_bytes();
+        let Some(last) = memchr::memrchr(b'\n', bytes) else {
+            self.column += i64::try_from(js::utf16_len(text)).unwrap_or(i64::MAX);
             return;
-        }
+        };
 
-        let mut lines = text.split('\n');
-        let mut last = lines.next().unwrap_or_default();
-        let mut multiline = false;
-
-        for line in lines {
+        for _ in memchr::memchr_iter(b'\n', bytes) {
             self.encoder.new_line();
-            last = line;
-            multiline = true;
         }
 
-        if multiline {
-            self.column = 0;
-        }
-
-        self.column += i64::try_from(js::utf16_len(last)).unwrap_or(i64::MAX);
+        self.column = i64::try_from(js::utf16_len(text.get(last + 1..).unwrap_or_default()))
+            .unwrap_or(i64::MAX);
     }
 
     /// Returns the encoded mappings.

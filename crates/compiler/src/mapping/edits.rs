@@ -295,7 +295,8 @@ impl<'a> Edits<'a> {
                     .map(|insertion| insertion.content.len())
                     .sum::<usize>(),
         );
-        let mut mappings = Mappings::new(hires);
+        // High-resolution mappings spend a few bytes on each unedited unit.
+        let mut mappings = Mappings::with_capacity(hires, if hires { original.len() } else { 0 });
         let mut locator = Locator::new(original);
         let mut cursor = 0;
         let mut insertions = insertions.into_iter().peekable();

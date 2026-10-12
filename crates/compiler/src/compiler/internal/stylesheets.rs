@@ -476,7 +476,7 @@ pub fn render(sections: &[Section]) -> Result<Rendered> {
     Ok(Rendered {
         assets: state.assets,
         css: chunks.join("\n"),
-        map: map.to_encoded_map(),
+        map: map.into_encoded_map(),
         owners: state.owners,
     })
 }

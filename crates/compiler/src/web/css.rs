@@ -1634,9 +1634,10 @@ fn run<'a>(
             label,
             mode,
             name: &style.name,
-            names: explicit
-                .map(|explicit| vec![Rc::from(&**explicit)])
-                .unwrap_or_default(),
+            names: match explicit {
+                Some(explicit) => vec![Rc::from(&**explicit)],
+                None => Vec::with_capacity(style.declarations.len()),
+            },
             ordinal: 0,
         };
 

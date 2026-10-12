@@ -6,7 +6,7 @@ use oxc_allocator::Allocator;
 use oxc_ast::ast::Program;
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_parser::{ParseOptions, Parser};
-use oxc_semantic::{Semantic, SemanticBuilder};
+use oxc_semantic::{Semantic, SemanticBuilder, Stats};
 use oxc_span::SourceType;
 
 use crate::compiler::internal::names;
@@ -82,10 +82,20 @@ fn parse_as<'a>(allocator: &'a Allocator, source: &'a str, source_type: SourceTy
         .with_options(options)
         .parse();
     let program = allocator.alloc(parsed.program);
+    // Counts only reserve capacity, so estimates from the source length replace the counting
+    // walk. Authored modules average more than four bytes per node.
+    let length = u32::try_from(source.len()).unwrap_or(u32::MAX);
+    let stats = Stats::new(
+        length / 4 + 16,
+        length / 128 + 4,
+        length / 64 + 16,
+        length / 16 + 16,
+    );
     // Scope resolution reads declaring nodes and node scopes from the node store.
     let semantic = SemanticBuilder::new()
         .with_build_nodes(true)
         .with_check_syntax_error(true)
+        .with_stats(stats)
         .build(program);
     let offsets = Utf16Index::new(source);
     let errors = parsed

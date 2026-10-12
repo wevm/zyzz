@@ -406,9 +406,12 @@ fn declaration_starts(
     body: &str,
     conditions: bool,
     mut openers: Option<&mut FxHashMap<usize, usize>>,
-) -> Vec<usize> {
+    starts: &mut Vec<usize>,
+) {
     let bytes = body.as_bytes();
-    let mut starts = Vec::new();
+
+    starts.clear();
+
     let mut start = 0;
     let mut depth: i32 = 0;
     let mut blocks = 0;
@@ -503,8 +506,6 @@ fn declaration_starts(
 
         index += 1;
     }
-
-    starts
 }
 
 /// Decodes `\hex ` escapes in a class selector, as `/\\([0-9a-f]+) ?/gi` replacements do.
@@ -562,7 +563,6 @@ fn collect_conditions(style: &NamedStyle, conditions: &mut Vec<Arc<str>>) {
     }
 }
 
-/// Converts a camelCase property into its kebab-case CSS name followed by `:`.
 /// Whether text starts with a property's kebab-case name and a colon, as `name:` declares it.
 fn declares(text: &str, property: &str) -> bool {
     let mut rest = text.as_bytes().iter();
@@ -583,6 +583,15 @@ fn declares(text: &str, property: &str) -> bool {
 /// The byte length of a property's kebab-case name and its colon.
 fn declaration_length(property: &str) -> usize {
     property.len() + property.bytes().filter(u8::is_ascii_uppercase).count() + 1
+}
+
+/// An owning call's authored data, read once for all of its rules.
+#[derive(Default)]
+struct Authored<'s> {
+    condition_nodes: Vec<Span>,
+    conditions: Vec<Arc<str>>,
+    declarations: Vec<&'s Declaration>,
+    locations: Vec<u32>,
 }
 
 /// One-based lines and UTF-16 columns of source offsets.
@@ -892,9 +901,10 @@ pub fn compile<'a>(
         module_id,
         (!vars.is_empty()).then_some(vars.as_slice()),
     )?;
+    // The module map writes its content from the source, so the map holds no copy.
     let map_options = MapOptions {
         hires: true,
-        include_content: true,
+        include_content: false,
         source: Some(module_id),
     };
     let (code, map) = if portable {
@@ -912,7 +922,7 @@ pub fn compile<'a>(
         code,
         css,
         css_map,
-        map: write_module_map(&map, module_id, options.placeholder),
+        map: write_module_map(&map, module_id, source, options.placeholder),
         rules: emitted.rules.clone(),
         shared: emitted.shared.clone(),
         units: emitted.units.clone(),
@@ -925,13 +935,14 @@ pub fn compile<'a>(
 fn write_module_map(
     map: &crate::mapping::magic_string::SourceMap,
     module_id: &str,
+    source: &str,
     placeholder: Option<&str>,
 ) -> String {
     let mut output = String::from("{\"file\":");
 
     js::write_string(&mut output, module_id);
     output.push_str(",\"mappings\":");
-    js::write_string(&mut output, &map.mappings);
+    js::write_mappings(&mut output, &map.mappings);
     output.push_str(",\"names\":[");
 
     for (index, name) in map.names.iter().enumerate() {
@@ -953,9 +964,10 @@ fn write_module_map(
     }
 
     output.push_str("],\"sourcesContent\":");
+    // The map's one source is the module, whose content is written from the borrowed text.
     crate::mapping::gen_mapping::write_contents(
         &mut output,
-        map.sources_content.iter().flatten().map(Option::as_deref),
+        [Some(source)].into_iter(),
         placeholder,
     );
     output.push_str(",\"version\":3}");
@@ -1186,6 +1198,11 @@ fn classes(
                 .map(|identity| (&*call.name, identity))
         })
         .collect();
+
+    // Emitted lists already hold distinct names, so only identities can change them.
+    if emitted.plain && identities.is_empty() {
+        return emitted.classes.clone();
+    }
 
     emitted
         .classes
@@ -2486,6 +2503,11 @@ impl<'a> Generator<'_, 'a> {
             memchr::memchr_iter(b'\n', prefix.as_bytes()).count() + 1
         };
         let mut declaration_owners: FxHashMap<&str, FxHashSet<usize>> = FxHashMap::default();
+        // Calls can share a start, so owners are keyed by identity.
+        let mut authored: FxHashMap<*const Call<'a>, Authored<'_>> = FxHashMap::default();
+        let mut mapped_conditions: Vec<usize> = Vec::new();
+        let mut condition_starts: Vec<usize> = Vec::new();
+        let mut starts: Vec<usize> = Vec::new();
         // Rules whose selector needs no rewrite stay borrowed from the emitted text.
         let mut rules: Vec<Cow<'_, str>> = Vec::new();
         let mut openers: FxHashMap<usize, usize> = FxHashMap::default();
@@ -2509,7 +2531,7 @@ impl<'a> Generator<'_, 'a> {
         {
             let line = index + 1 + prefix_lines;
             openers.clear();
-            let condition_starts = declaration_starts(rule, true, Some(&mut openers));
+            declaration_starts(rule, true, Some(&mut openers), &mut condition_starts);
             let selector_start = condition_starts
                 .iter()
                 .copied()
@@ -2572,12 +2594,12 @@ impl<'a> Generator<'_, 'a> {
                 continue;
             }
 
-            let selector = format!(".{}", class_name::selector(&name));
             let Some(call) = owners.get(&*name).copied() else {
                 return Err(message("Emitted CSS rule has no owning style."));
             };
+            let escaped = class_name::selector(&name);
             let selector_column = utf16_column(rule, selector_start);
-            let selector_width = u32::try_from(js::utf16_len(&selector)).unwrap_or(u32::MAX);
+            let selector_width = u32::try_from(js::utf16_len(&escaped) + 1).unwrap_or(u32::MAX);
 
             map.add_mapping(&Mapping {
                 generated: generated(selector_column, line),
@@ -2587,39 +2609,57 @@ impl<'a> Generator<'_, 'a> {
             });
 
             let body = rule.get(brace..).unwrap_or_default();
-            let Some(style) = styles.get(&*call.name) else {
-                return Err(message("Emitted CSS rule has no owning style."));
+
+            // An owner's atomic rules share its authored locations, declaration order, and
+            // conditions, so each owner reads them once.
+            let key = std::ptr::from_ref(call);
+
+            let entry = match authored.entry(key) {
+                std::collections::hash_map::Entry::Occupied(entry) => entry.into_mut(),
+                std::collections::hash_map::Entry::Vacant(vacant) => {
+                    let Some(style) = styles.get(&*call.name) else {
+                        return Err(message("Emitted CSS rule has no owning style."));
+                    };
+                    let Some(definition) =
+                        call.body.or_else(|| definitions.get(&call.start).copied())
+                    else {
+                        return Err(message("Emitted CSS rule has no authored definition."));
+                    };
+                    let mut entry = Authored::default();
+
+                    locations(
+                        definition,
+                        call,
+                        &mut entry.condition_nodes,
+                        &mut entry.locations,
+                    );
+                    entry.declarations = declarations(style);
+                    collect_conditions(style, &mut entry.conditions);
+                    vacant.insert(entry)
+                }
             };
-            let Some(definition) = call.body.or_else(|| definitions.get(&call.start).copied())
-            else {
-                return Err(message("Emitted CSS rule has no authored definition."));
-            };
-            let mut condition_nodes: Vec<Span> = Vec::new();
-            let mut authored: Vec<u32> = Vec::new();
 
-            locations(definition, call, &mut condition_nodes, &mut authored);
-
-            let ordered = declarations(style);
-            let mut conditions: Vec<Arc<str>> = Vec::new();
-
-            collect_conditions(style, &mut conditions);
-
-            let mut mapped_conditions: FxHashSet<usize> = FxHashSet::default();
+            mapped_conditions.clear();
 
             for start in &condition_starts {
                 let condition = rule
                     .get(*start..openers.get(start).copied().unwrap_or(rule.len()))
                     .unwrap_or_default();
-                let Some(index) = conditions.iter().enumerate().position(|(index, value)| {
-                    **value == *condition && !mapped_conditions.contains(&index)
-                }) else {
+                let Some(index) = entry
+                    .conditions
+                    .iter()
+                    .enumerate()
+                    .position(|(index, value)| {
+                        **value == *condition && !mapped_conditions.contains(&index)
+                    })
+                else {
                     continue;
                 };
-                let Some(node) = condition_nodes.get(index) else {
+                let Some(node) = entry.condition_nodes.get(index) else {
                     continue;
                 };
 
-                mapped_conditions.insert(index);
+                mapped_conditions.push(index);
 
                 let column = if *start > brace {
                     utf16_column(rule, *start) + selector_width
@@ -2636,11 +2676,12 @@ impl<'a> Generator<'_, 'a> {
                 });
             }
 
-            let starts = declaration_starts(body, false, None);
+            declaration_starts(body, false, None, &mut starts);
+
             let used = declaration_owners.entry(&call.name).or_default();
             let mut cursor = 1;
 
-            for (property_index, declaration) in ordered.iter().enumerate() {
+            for (property_index, declaration) in entry.declarations.iter().enumerate() {
                 if used.contains(&property_index) {
                     continue;
                 }
@@ -2655,7 +2696,7 @@ impl<'a> Generator<'_, 'a> {
                     continue;
                 };
                 // Composed packed entries can expand differently from the composite's shorthands.
-                let Some(location) = authored.get(property_index) else {
+                let Some(location) = entry.locations.get(property_index) else {
                     continue;
                 };
 
@@ -2672,16 +2713,16 @@ impl<'a> Generator<'_, 'a> {
                 cursor = start + declaration_length(property);
             }
 
-            rules.push(
-                if rule.get(selector_start..brace) == Some(selector.as_str()) {
-                    Cow::Borrowed(rule)
-                } else {
-                    Cow::Owned(format!(
-                        "{}{selector}{body}",
-                        rule.get(..selector_start).unwrap_or_default()
-                    ))
-                },
-            );
+            let authored_selector = rule.get(selector_start..brace).unwrap_or_default();
+
+            rules.push(if authored_selector.strip_prefix('.') == Some(&*escaped) {
+                Cow::Borrowed(rule)
+            } else {
+                Cow::Owned(format!(
+                    "{}.{escaped}{body}",
+                    rule.get(..selector_start).unwrap_or_default()
+                ))
+            });
         }
 
         let rules = rules.join("\n");

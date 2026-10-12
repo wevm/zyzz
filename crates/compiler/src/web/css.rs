@@ -66,6 +66,9 @@ pub struct Output {
     pub contribution_css: Option<String>,
     /// Factored CSS preserving cascade behavior, without reset or layers.
     pub css: String,
+    /// Whether every class name in [`Output::classes`] is nonempty and free of spaces, so each
+    /// list splits back into its distinct names.
+    pub plain: bool,
     /// Exact emitted rule bodies retained for graph-wide collision diagnostics.
     pub rules: IndexMap<String, String, FxBuildHasher>,
     /// Ordinary scope and style rules when contributions were supplied.
@@ -1473,6 +1476,7 @@ fn run<'a>(
     let mut explicit_modes: FxHashSet<(Arc<str>, &'static str)> = FxHashSet::default();
     let mut applications: FxHashMap<String, String> = FxHashMap::default();
     let mut key = String::with_capacity(256);
+    let mut plain = true;
 
     for (index, style) in styles.iter().enumerate() {
         let mode = style.css_output.unwrap_or(default_mode);
@@ -1505,6 +1509,7 @@ fn run<'a>(
             }
 
             explicit_bodies.insert(Arc::clone(explicit), body);
+            plain &= !explicit.is_empty() && !explicit.contains(' ');
             classes.insert(Arc::clone(&style.name), explicit.to_string());
 
             if !explicit_modes.insert((Arc::clone(explicit), mode.as_str())) {
@@ -1619,6 +1624,7 @@ fn run<'a>(
                 list.push(' ');
             }
 
+            plain &= !name.is_empty() && !name.contains(' ');
             list.push_str(name);
         }
 
@@ -1754,6 +1760,7 @@ fn run<'a>(
         classes,
         contribution_css: has_contributions.then_some(contribution_css),
         css,
+        plain,
         rules,
         scoped_css: has_contributions.then_some(scoped_css),
         shared: (!scopes.resources.is_empty()).then_some(scopes.resources),

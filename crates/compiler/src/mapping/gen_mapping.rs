@@ -86,7 +86,7 @@ impl EncodedSourceMap {
         }
 
         output.push_str(",\"mappings\":");
-        js::write_string(output, &self.mappings);
+        js::write_mappings(output, &self.mappings);
 
         if let Some(ignored) = &self.ignore_list {
             output.push_str(",\"ignoreList\":[");

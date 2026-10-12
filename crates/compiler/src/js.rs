@@ -328,6 +328,22 @@ const fn escapes(word: u64) -> u64 {
     found & HIGH
 }
 
+/// Appends encoded source map mappings quoted like `JSON.stringify(value)`. Base64 digits and the
+/// `,` and `;` separators never need escapes.
+pub fn write_mappings(output: &mut String, mappings: &str) {
+    debug_assert!(
+        mappings
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b',' | b';')),
+        "mappings hold only base64 digits and separators"
+    );
+
+    output.reserve(mappings.len() + 2);
+    output.push('"');
+    output.push_str(mappings);
+    output.push('"');
+}
+
 /// Appends a string quoted like `JSON.stringify(value)`.
 pub fn write_string(output: &mut String, value: &str) {
     output.reserve(value.len() + 2);

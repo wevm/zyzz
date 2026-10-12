@@ -335,6 +335,43 @@ namespace styles {
     `)
   })
 
+  test('lets plugins tell development scans from module imports', async () => {
+    const config = await example('vite', 'Import Resolution')
+    const path = await directory('vite-scan', {
+      ...viteApp,
+      'src/api.ts': `import { read } from './db.server'
+
+export const load = () => read()
+`,
+      'src/db.server.ts': `export const read = () => 'row'
+`,
+      'src/main.ts': `${viteApp['src/main.ts']}
+export { load } from './api.js'
+`,
+      'vite.config.ts': config.source,
+    })
+    const result = node(path, [
+      '--input-type=module',
+      '-e',
+      `import { createServer } from 'vite'
+const server = await createServer({ logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } })
+await server.listen()
+for (const file of ['src/main.ts', 'src/api.ts'])
+  console.log(file, (await fetch(server.resolvedUrls.local[0] + file)).status)
+await server.close()
+// Native handles can outlive the closed server and keep Node running.
+process.exit()`,
+    ])
+
+    // Zyzz's scan through api.ts passes, and Vite's import analysis of api.ts is denied.
+    expect(result.status).toMatchInlineSnapshot(`0`)
+    expect(result.stdout).toMatchInlineSnapshot(`
+      "src/main.ts 200
+      src/api.ts 500
+      "
+    `)
+  })
+
   test('accepts a separate browser CSS target', async () => {
     const config = await example('vite', 'Browser Targets')
     const { path, result } = await vite('vite-targets', config.source)
@@ -342,6 +379,53 @@ namespace styles {
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
       ".z-text-red{color:red}.z-p-8px{padding:8px}
+      "
+    `)
+  })
+
+  test('pre-bundles the runtime in discovering environments', async () => {
+    const config = await example('vite', 'Dependency Optimization')
+    // The package scope keeps the repository's own package from resolving zyzz.
+    const path = await directory('vite-optimize', {
+      ...viteApp,
+      'package.json': '{"private":true,"type":"module"}',
+      'vite.config.ts': config.source,
+    })
+    // Installed copies resolve the runtime inside node_modules, unlike the shared fixture link.
+    const installed = Path.join(path, 'node_modules/zyzz')
+    const packed = ChildProcess.spawnSync(
+      'npm',
+      [
+        'pack',
+        '--ignore-scripts',
+        '--offline',
+        '--json',
+        '--pack-destination',
+        path,
+      ],
+      { cwd: project, encoding: 'utf8' },
+    )
+    const archive = (JSON.parse(packed.stdout) as { filename: string }[])[0]!
+
+    await Fs.mkdir(installed, { recursive: true })
+    ChildProcess.spawnSync('tar', [
+      '-xf',
+      Path.join(path, archive.filename),
+      '-C',
+      installed,
+      '--strip-components=1',
+    ])
+
+    const result = node(path, [
+      '--input-type=module',
+      '-e',
+      "import { createServer } from 'vite'; const server = await createServer({ logLevel: 'silent' }); for (const [name, environment] of Object.entries(server.environments)) console.log(name, environment.config.optimizeDeps.include.join(',')); await server.close()",
+    ])
+
+    expect(result.status).toMatchInlineSnapshot(`0`)
+    expect(result.stdout).toMatchInlineSnapshot(`
+      "client zyzz/runtime
+      ssr zyzz/runtime
       "
     `)
   })
@@ -1470,7 +1554,7 @@ describe('integration API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 60_000 },
     )
 
-    expect(checked.length).toMatchInlineSnapshot(`34`)
+    expect(checked.length).toMatchInlineSnapshot(`36`)
     expect(result.stdout + result.stderr).toMatchInlineSnapshot(`""`)
     expect(result.status).toMatchInlineSnapshot(`0`)
   }, 120_000)

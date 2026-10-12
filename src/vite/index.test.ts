@@ -47,6 +47,39 @@ async function create(files: Readonly<Record<string, string>> = Fixture.files) {
   return { config, root }
 }
 
+/** Creates a consumer whose runtime resolves from the packed package inside node_modules. */
+async function install(files: Readonly<Record<string, string>> = {}) {
+  const root = await Fs.mkdtemp(Path.resolve('.fixture-vite-installed-'))
+  const exec = Util.promisify(ChildProcess.execFile)
+  const packed = await exec('npm', [
+    'pack',
+    '--ignore-scripts',
+    '--offline',
+    '--json',
+    '--pack-destination',
+    root,
+  ])
+  const archive = (JSON.parse(packed.stdout) as { filename: string }[])[0]!
+  const installed = Path.join(root, 'node_modules/zyzz')
+
+  await Fs.mkdir(installed, { recursive: true })
+  await exec('tar', [
+    '-xf',
+    Path.join(root, archive.filename),
+    '-C',
+    installed,
+    '--strip-components=1',
+  ])
+
+  for (const [name, content] of Object.entries({
+    ...files,
+    'package.json': '{"private":true,"type":"module"}',
+  }))
+    await Fs.writeFile(Path.join(root, name), content)
+
+  return root
+}
+
 function message(
   socket: WebSocket,
   action: () => Promise<unknown>,
@@ -1352,6 +1385,200 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('pre-bundles the installed runtime before the first client and SSR requests', async () => {
+    const root = await install({
+      'index.html':
+        '<main id="card"></main><script type="module" src="/main.ts"></script>',
+      'main.ts':
+        "import { style } from 'zyzz'\n\nexport const card = style({ color: 'red' })\n\ndocument.querySelector('#card')!.className = card().className\n",
+      'server.ts':
+        "import { style } from 'zyzz'\n\nexport const card = style({ color: 'red' })\n\nexport const className = card().className\n",
+    })
+    const server = await Vite.createServer({
+      configFile: false,
+      environments: {
+        // Worker runtimes bundle server dependencies and discover them as the client does.
+        ssr: {
+          optimizeDeps: { entries: ['server.ts'], noDiscovery: false },
+          resolve: { noExternal: true },
+        },
+      },
+      logLevel: 'silent',
+      plugins: [zyzz()],
+      root,
+      server: { host: '127.0.0.1', port: 0 },
+    })
+
+    // Settles the initial optimizer run and any re-run a request triggers.
+    async function settle(environment: Vite.DevEnvironment) {
+      const optimizer = environment.depsOptimizer!
+
+      await environment.waitForRequestsIdle()
+      await optimizer.scanProcessing
+      await Promise.all(
+        Object.values(optimizer.metadata.discovered).map(
+          (dependency) => dependency.processing,
+        ),
+      )
+
+      return optimizer.metadata
+    }
+
+    try {
+      await server.listen()
+
+      const client = server.environments.client
+      const initial = await settle(client)
+
+      expect(Object.keys(initial.optimized)).toMatchInlineSnapshot(`
+        [
+          "zyzz",
+          "zyzz/runtime",
+        ]
+      `)
+
+      const main = await fetch(
+        new URL('main.ts', server.resolvedUrls!.local[0]!),
+      )
+
+      expect(main.status).toMatchInlineSnapshot(`200`)
+      expect(
+        (await main.text()).includes(
+          '/node_modules/.vite/deps/zyzz_runtime.js?v=',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+      // A re-run replaces the optimizer metadata.
+      expect((await settle(client)) === initial).toMatchInlineSnapshot(`true`)
+
+      const ssr = server.environments.ssr
+      const initialSsr = await settle(ssr)
+
+      expect(Object.keys(initialSsr.optimized)).toMatchInlineSnapshot(`
+        [
+          "zyzz",
+          "zyzz/runtime",
+        ]
+      `)
+
+      const module = (await server.ssrLoadModule('/server.ts')) as {
+        className: string
+      }
+
+      expect(module.className).toMatchInlineSnapshot(
+        `"z-text-red z-style-Skd157-card"`,
+      )
+      expect((await settle(ssr)) === initialSsr).toMatchInlineSnapshot(`true`)
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 60_000)
+
+  test('leaves excluded, aliased, and undiscovered runtimes out of optimizeDeps.include', async () => {
+    const root = await install()
+
+    try {
+      for (const options of [
+        { optimizeDeps: { exclude: ['zyzz'] } },
+        // Aliased and linked runtimes resolve outside node_modules.
+        {
+          resolve: {
+            alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+          },
+        },
+      ]) {
+        const server = await Vite.createServer({
+          ...options,
+          configFile: false,
+          logLevel: 'silent',
+          plugins: [zyzz()],
+          root,
+        })
+
+        try {
+          expect(
+            server.environments.client.config.optimizeDeps.include,
+          ).toMatchInlineSnapshot(`[]`)
+          // The default SSR environment externalizes dependencies without discovery.
+          expect(
+            server.environments.ssr.config.optimizeDeps.include,
+          ).toMatchInlineSnapshot(`[]`)
+        } finally {
+          await server.close()
+        }
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('reads environment options that later plugins set before including the runtime', async () => {
+    const root = await install()
+    const server = await Vite.createServer({
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [
+        zyzz(),
+        {
+          // Runs after the pre-enforced Zyzz plugin in hook order.
+          configEnvironment: () => ({ optimizeDeps: { noDiscovery: true } }),
+          name: 'no-discovery',
+        },
+      ],
+      root,
+    })
+
+    try {
+      expect(
+        server.environments.client.config.optimizeDeps.include,
+      ).toMatchInlineSnapshot(`[]`)
+      expect(server.environments.client.depsOptimizer).toMatchInlineSnapshot(
+        `undefined`,
+      )
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('includes a symlinked runtime only when Vite preserves symlinks', async () => {
+    const root = await install()
+    const linked = await Fs.mkdtemp(Path.resolve('.fixture-vite-linked-'))
+    const installed = Path.join(root, 'node_modules/zyzz')
+
+    await Fs.rename(installed, Path.join(linked, 'zyzz'))
+    await Fs.symlink(Path.join(linked, 'zyzz'), installed, 'dir')
+
+    // Reads the client include list with Vite's symlink policy.
+    async function include(preserveSymlinks: boolean) {
+      const server = await Vite.createServer({
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        resolve: { preserveSymlinks },
+        root,
+      })
+
+      try {
+        return server.environments.client.config.optimizeDeps.include
+      } finally {
+        await server.close()
+      }
+    }
+
+    try {
+      expect(await include(false)).toMatchInlineSnapshot(`[]`)
+      expect(await include(true)).toMatchInlineSnapshot(`
+        [
+          "zyzz/runtime",
+        ]
+      `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+      await Fs.rm(linked, { recursive: true, force: true })
+    }
+  })
+
   test.each(['atomic', 'grouped'] as const)(
     'lazy CSS loads on demand and updates without reload in Chromium (%s)',
     async (cssOutput) => {
@@ -1875,6 +2102,105 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
       expect(css.includes('#06c')).toMatchInlineSnapshot(`true`)
       expect(css.includes('rebeccapurple')).toMatchInlineSnapshot(`false`)
     } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('resolves imports that framework transforms remove as development scans', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'loader.ts': `import { secret } from './secret'; export const load = () => secret();`,
+      'main.ts': `import { load } from './loader'; ${Fixture.files['main.ts']} void load;`,
+      'secret.ts': `export const secret = () => 'server';`,
+    })
+    const scans = new Set<boolean | undefined>()
+    const server = await Vite.createServer({
+      ...config,
+      plugins: [
+        zyzz(),
+        {
+          enforce: 'pre',
+          name: 'server-only',
+          resolveId(source, _, options) {
+            if (source !== './secret') return
+
+            // Vite forwards `scan` without declaring it on the hook options.
+            const scan = (options as { scan?: boolean }).scan
+
+            scans.add(scan)
+
+            // Like import protection, only a scan may resolve the server-only module.
+            if (!scan) this.error('Denied a server-only import')
+          },
+        },
+        {
+          name: 'server-functions',
+          transform(code, id) {
+            if (!id.endsWith('/loader.ts')) return
+
+            // Framework compilers replace server-only calls before Vite reads imports.
+            return code
+              .replace(/import \{ secret \} from ["']\.\/secret["'];?/, '')
+              .replace('secret()', `fetch('/load')`)
+          },
+        },
+      ],
+    })
+
+    try {
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      const origin = `http://127.0.0.1:${address.port}`
+
+      expect((await fetch(`${origin}/main.ts`)).status).toMatchInlineSnapshot(
+        `200`,
+      )
+      expect((await fetch(`${origin}/loader.ts`)).status).toMatchInlineSnapshot(
+        `200`,
+      )
+      expect([...scans]).toMatchInlineSnapshot(`
+        [
+          true,
+        ]
+      `)
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('keeps unreachable analysis imports out of dependency optimization', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'server.ts': `import MagicString from 'magic-string'; export const edit = (code: string) => new MagicString(code).toString();`,
+    })
+    const server = await Vite.createServer({
+      ...config,
+      cacheDir: Path.join(root, '.vite'),
+      optimizeDeps: { noDiscovery: false },
+    })
+
+    try {
+      await server.listen()
+
+      const optimizer = server.environments.client.depsOptimizer
+      if (!optimizer) throw new Error('Missing dependency optimizer')
+
+      await optimizer.scanProcessing
+
+      // The document compiles every discovered source, including server.ts.
+      expect(
+        (await fetch(server.resolvedUrls!.local[0]!)).status,
+      ).toMatchInlineSnapshot(`200`)
+      expect(Object.keys(optimizer.metadata.discovered)).toMatchInlineSnapshot(
+        `[]`,
+      )
+    } finally {
+      await server.close()
       await Fs.rm(root, { recursive: true, force: true })
     }
   })

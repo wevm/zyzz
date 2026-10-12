@@ -23,7 +23,7 @@ Current property coverage is **0 partial, 0 deferred, and 1009 supported** out o
 
 Compatibility discovery reads only property-level support statements, including historical prefixes and alternative names. Nested value features are not properties. The `custom-property` dataset key maps to `--*`. Existing MDN grammars remain authoritative. Newly discovered entries start unclassified without inheriting another property's support status.
 
-`property-supplements.json` records independently sourced grammars for compatibility-only properties and referenced gap-decoration productions. Equivalent aliases share authoring rules, while vendor-specific domains such as font smoothing remain separate. Fingerprints cover both upstream discovery metadata and supplements. Browser compatibility records establish names and browser history, not Zyzz support.
+`property-supplements.json` records independently sourced grammars for compatibility-only properties, referenced gap-decoration productions, and Compat Standard `display` keywords. Equivalent aliases share authoring rules, while vendor-specific domains such as font smoothing remain separate. Fingerprints cover both upstream discovery metadata and supplements. Browser compatibility records establish names and browser history, not Zyzz support.
 
 ## Evidence
 

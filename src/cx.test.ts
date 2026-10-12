@@ -249,6 +249,61 @@ describe('cx', () => {
     expect(position.line).toMatchInlineSnapshot('4')
   })
 
+  test('composes definitions read by selector interpolations and composition entries', async () => {
+    const compiled = Transform.compile({
+      moduleId: 'references.ts',
+      source: `import { cx, style } from 'zyzz'
+const panel = style({ color: 'rgb(255, 0, 0)' })
+const label = style({ selectors: { [\`\${panel}[data-open] &\`]: { color: 'rgb(0, 0, 255)' } } })
+export function direct() { return { label: cx(label()), panel: cx(panel()) } }
+export function namespaced() { return { badge: cx(styles.badge()), cell: cx(styles.cell()), row: cx(styles.row()) } }
+namespace styles {
+  export const row = style({ color: 'rgb(255, 0, 0)' })
+  export const cell = style({ selectors: { [\`\${styles.row}[data-open] &\`]: { color: 'rgb(0, 0, 255)' } } })
+  export const badge = style([styles.cell, { fontWeight: 700 }])
+}`,
+    })
+    const code = await Packed.bundle({
+      entry: 'references.ts',
+      modules: { 'references.ts': compiled.code },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const direct = fixture.direct()
+    const namespaced = fixture.namespaced()
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${compiled.css}</style><div class="${direct.panel.className}" data-open><span id="label" class="${direct.label.className}"></span></div><div class="${namespaced.row.className}" data-open><span id="cell" class="${namespaced.cell.className}"></span><span id="badge" class="${namespaced.badge.className}"></span></div>`,
+      )
+
+      expect(
+        await page
+          .locator('#label')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+      expect(
+        await page
+          .locator('#cell')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+      expect(
+        await page
+          .locator('#badge')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+      expect(
+        await page
+          .locator('#badge')
+          .evaluate((node) => getComputedStyle(node).fontWeight),
+      ).toMatchInlineSnapshot(`"700"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('emits only reachable nested composition groups', () => {
     const output = Source.extract({
       moduleId: 'nested.ts',

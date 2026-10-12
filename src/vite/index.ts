@@ -9,16 +9,24 @@ import * as Contracts from '../node/internal/Contracts.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
+import { existsSync } from 'node:fs'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
-import { isBuiltin } from 'node:module'
+import { createRequire, isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Snapshot from '../node/internal/Snapshot.js'
 import * as Syntax from '../compiler/internal/Syntax.js'
 import * as Scope from '../compiler/internal/Scope.js'
-import type { Environment, Plugin, Rollup, ViteDevServer } from 'vite'
+import type {
+  DevEnvironment,
+  Environment,
+  Plugin,
+  Rollup,
+  UserConfig,
+  ViteDevServer,
+} from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
 import * as ThemeRules from '../web/internal/Themes.js'
@@ -75,6 +83,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   let directories: readonly string[]
   let filter: (id: unknown) => boolean
+  let optimizeRuntime = false
   let root: string
 
   function snapshot(environment: Environment) {
@@ -1026,8 +1035,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     reads.delete(environment)
     const host: Host = {
       asset: async (file) => file,
-      resolve: (source, importer) =>
-        environment.pluginContainer.resolveId(source, importer),
+      resolve: resolver(environment),
       watch: (file) => server.watcher.add(file),
     }
     const sources = await discover(environment, host)
@@ -1221,7 +1229,13 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     config: {
       order: 'post',
-      handler(config) {
+      handler(config, env) {
+        // Ordered after other config hooks, so plugin-provided aliases are visible.
+        optimizeRuntime =
+          env.command === 'serve' &&
+          options.compiler !== false &&
+          installed(config)
+
         if (native) return
         // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
         return {
@@ -1248,6 +1262,32 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             },
           },
         }
+      },
+    },
+    configEnvironment: {
+      // Plugins without enforce settle their environment options first.
+      order: 'post',
+      handler(name, config) {
+        if (!optimizeRuntime) return
+
+        const optimizeDeps = config.optimizeDeps ?? {}
+        const consumer =
+          config.consumer ?? (name === 'client' ? 'client' : 'server')
+
+        // Vite defaults server environments to noDiscovery. An include list there
+        // would create an explicit optimizer that otherwise never exists.
+        if (optimizeDeps.noDiscovery ?? consumer === 'server') return
+        if (
+          optimizeDeps.include?.includes(runtime) ||
+          optimizeDeps.exclude?.some((id) => id === 'zyzz' || id === runtime)
+        )
+          return
+
+        // Vite scans authored source, so the runtime import that compilation
+        // adds first appears while a request transforms a module. Discovering
+        // it then re-runs the optimizer, and modules loaded before the re-run
+        // can keep a separate copy of a shared dependency such as React.
+        return { optimizeDeps: { include: [runtime] } }
       },
     },
     configureServer(server) {
@@ -1407,8 +1447,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           ? await compile(
               first,
               {
-                resolve: (source, importer) =>
-                  this.environment.pluginContainer.resolveId(source, importer),
+                resolve: resolver(this.environment),
                 watch: (file) => {
                   server.watcher.add(file)
                 },
@@ -1502,7 +1541,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const output = await compile(
         entry,
         {
-          resolve: (source, importer) => this.resolve(source, importer),
+          resolve:
+            this.environment.mode === 'dev'
+              ? resolver(this.environment)
+              : (source, importer) => this.resolve(source, importer),
           watch: (file) => this.addWatchFile(file),
           asset: async (file) => {
             const reference = this.emitFile({
@@ -1564,7 +1606,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const output = await compile(
         entry,
         {
-          resolve: (source, importer) => this.resolve(source, importer),
+          resolve:
+            this.environment.mode === 'dev'
+              ? resolver(this.environment)
+              : (source, importer) => this.resolve(source, importer),
           watch: (file) => this.addWatchFile(file),
           asset: async (file) => {
             const reference = this.emitFile({
@@ -1666,8 +1711,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           return await documentCatalogs(
             html,
             context.filename,
-            (source, importer) =>
-              environment.pluginContainer.resolveId(source, importer),
+            resolver(environment),
             state,
           )
         })()
@@ -1703,6 +1747,65 @@ type Host = {
   watch: (file: string) => void
 }
 
+/**
+ * Whether `zyzz/runtime` resolves inside node_modules from the Vite root. Vite
+ * optimizes a discovered import only there, so linked and aliased copies stay
+ * source modules beside the other entrypoints.
+ */
+function installed(config: UserConfig) {
+  const aliases = config.resolve?.alias ?? {}
+  const entries = Array.isArray(aliases)
+    ? aliases
+    : Object.entries(aliases).map(([find, replacement]) => ({
+        find,
+        replacement,
+      }))
+
+  // Matches Vite's alias semantics: a string entry covers its subpaths.
+  if (
+    entries.some((entry) =>
+      typeof entry.find === 'string'
+        ? runtime === entry.find || runtime.startsWith(`${entry.find}/`)
+        : entry.find.test(runtime),
+    )
+  )
+    return false
+
+  try {
+    const require = createRequire(
+      Path.join(Path.resolve(config.root ?? ''), 'package.json'),
+    )
+
+    // Vite keeps a symlinked package at its node_modules path, which Node dereferences.
+    if (config.resolve?.preserveSymlinks)
+      return (require.resolve.paths('zyzz') ?? []).some((directory) =>
+        existsSync(Path.join(directory, 'zyzz/package.json')),
+      )
+
+    return require.resolve(runtime).split(Path.sep).includes('node_modules')
+  } catch {
+    return false
+  }
+}
+
+// Vite forwards `scan` to `resolveId` hooks but leaves it out of its public types.
+type ScanOptions = NonNullable<
+  Parameters<DevEnvironment['pluginContainer']['resolveId']>[2]
+> & { scan: boolean }
+
+const scan: ScanOptions = { scan: true }
+
+/**
+ * Resolves imports read from source before other plugins transform their
+ * importers. Marking them as scans, as Vite's dependency scanner does, keeps the
+ * optimizer from discovering their dependencies and lets plugins tell them apart
+ * from imports that reach the module graph.
+ */
+function resolver(environment: DevEnvironment): Host['resolve'] {
+  return (source, importer) =>
+    environment.pluginContainer.resolveId(source, importer, scan)
+}
+
 // Vite and Vitest load their own configuration modules, which application code never imports.
 const configFiles = [
   '**/vite.config.*',
@@ -1710,6 +1813,7 @@ const configFiles = [
   '**/vitest.workspace.*',
 ]
 const prefix = '\0zyzz:'
+const runtime = 'zyzz/runtime'
 const sharedId = `${prefix}shared.css`
 
 function cssId(file: string) {

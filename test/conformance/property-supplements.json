@@ -1136,6 +1136,10 @@
       "syntax": "auto | discard | collapse | -webkit-legacy",
       "source": "https://drafts.csswg.org/css-overflow-4/#propdef-continue"
     },
+    "display": {
+      "syntax": "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | -webkit-box | -webkit-inline-box",
+      "source": "https://compat.spec.whatwg.org/#css-keyword-mappings"
+    },
     "flow-tolerance": {
       "syntax": "normal | <length-percentage [0,\u221e]> | infinite",
       "source": "https://drafts.csswg.org/css-grid-3/#propdef-flow-tolerance"

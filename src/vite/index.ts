@@ -9,6 +9,7 @@ import * as Contracts from '../node/internal/Contracts.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
+import { existsSync } from 'node:fs'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
@@ -1234,27 +1235,31 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
       },
     },
-    configEnvironment(name, config) {
-      if (!optimizeRuntime) return
+    configEnvironment: {
+      // Plugins without enforce settle their environment options first.
+      order: 'post',
+      handler(name, config) {
+        if (!optimizeRuntime) return
 
-      const optimizeDeps = config.optimizeDeps ?? {}
-      const consumer =
-        config.consumer ?? (name === 'client' ? 'client' : 'server')
+        const optimizeDeps = config.optimizeDeps ?? {}
+        const consumer =
+          config.consumer ?? (name === 'client' ? 'client' : 'server')
 
-      // Vite defaults server environments to noDiscovery. An include list there
-      // would create an explicit optimizer that otherwise never exists.
-      if (optimizeDeps.noDiscovery ?? consumer === 'server') return
-      if (
-        optimizeDeps.include?.includes(runtime) ||
-        optimizeDeps.exclude?.some((id) => id === 'zyzz' || id === runtime)
-      )
-        return
+        // Vite defaults server environments to noDiscovery. An include list there
+        // would create an explicit optimizer that otherwise never exists.
+        if (optimizeDeps.noDiscovery ?? consumer === 'server') return
+        if (
+          optimizeDeps.include?.includes(runtime) ||
+          optimizeDeps.exclude?.some((id) => id === 'zyzz' || id === runtime)
+        )
+          return
 
-      // Vite scans authored source, so the runtime import that compilation
-      // adds first appears while a request transforms a module. Discovering
-      // it then re-runs the optimizer, and modules loaded before the re-run
-      // can keep a separate copy of a shared dependency such as React.
-      return { optimizeDeps: { include: [runtime] } }
+        // Vite scans authored source, so the runtime import that compilation
+        // adds first appears while a request transforms a module. Discovering
+        // it then re-runs the optimizer, and modules loaded before the re-run
+        // can keep a separate copy of a shared dependency such as React.
+        return { optimizeDeps: { include: [runtime] } }
+      },
     },
     configureServer(server) {
       // Directory watches belong to the server, not module import dependencies.
@@ -1733,6 +1738,13 @@ function installed(config: UserConfig) {
     const require = createRequire(
       Path.join(Path.resolve(config.root ?? ''), 'package.json'),
     )
+
+    // Vite keeps a symlinked package at its node_modules path, which Node dereferences.
+    if (config.resolve?.preserveSymlinks)
+      return (require.resolve.paths('zyzz') ?? []).some((directory) =>
+        existsSync(Path.join(directory, 'zyzz/package.json')),
+      )
+
     return require.resolve(runtime).split(Path.sep).includes('node_modules')
   } catch {
     return false

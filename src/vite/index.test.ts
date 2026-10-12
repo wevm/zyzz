@@ -1512,6 +1512,73 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('reads environment options that later plugins set before including the runtime', async () => {
+    const root = await install()
+    const server = await Vite.createServer({
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [
+        zyzz(),
+        {
+          // Runs after the pre-enforced Zyzz plugin in hook order.
+          configEnvironment: () => ({ optimizeDeps: { noDiscovery: true } }),
+          name: 'no-discovery',
+        },
+      ],
+      root,
+    })
+
+    try {
+      expect(
+        server.environments.client.config.optimizeDeps.include,
+      ).toMatchInlineSnapshot(`[]`)
+      expect(server.environments.client.depsOptimizer).toMatchInlineSnapshot(
+        `undefined`,
+      )
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('includes a symlinked runtime only when Vite preserves symlinks', async () => {
+    const root = await install()
+    const linked = await Fs.mkdtemp(Path.resolve('.fixture-vite-linked-'))
+    const installed = Path.join(root, 'node_modules/zyzz')
+
+    await Fs.rename(installed, Path.join(linked, 'zyzz'))
+    await Fs.symlink(Path.join(linked, 'zyzz'), installed, 'dir')
+
+    // Reads the client include list with Vite's symlink policy.
+    async function include(preserveSymlinks: boolean) {
+      const server = await Vite.createServer({
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        resolve: { preserveSymlinks },
+        root,
+      })
+
+      try {
+        return server.environments.client.config.optimizeDeps.include
+      } finally {
+        await server.close()
+      }
+    }
+
+    try {
+      expect(await include(false)).toMatchInlineSnapshot(`[]`)
+      expect(await include(true)).toMatchInlineSnapshot(`
+        [
+          "zyzz/runtime",
+        ]
+      `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+      await Fs.rm(linked, { recursive: true, force: true })
+    }
+  })
+
   test.each(['atomic', 'grouped'] as const)(
     'lazy CSS loads on demand and updates without reload in Chromium (%s)',
     async (cssOutput) => {

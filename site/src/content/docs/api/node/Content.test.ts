@@ -1030,10 +1030,13 @@ describe('watch API page', () => {
     host.watch({ onResult: (event) => events.push(event) })
     await until(async () => (events.length ? true : undefined))
 
+    // An editor's atomic save replaces the file, so no build reads it half written.
+    const draft = Path.join(project.directory, 'Button.tsx.draft')
     await Fs.writeFile(
-      Path.join(project.directory, 'src/Button.tsx'),
+      draft,
       `import { style } from 'zyzz'\n\nexport const button = style({ padding: size })\n`,
     )
+    await Fs.rename(draft, Path.join(project.directory, 'src/Button.tsx'))
     const failure = await until(async () =>
       events.find((event) => 'error' in event),
     )

@@ -1,5 +1,12 @@
 # zyzz
 
+## 0.0.29
+
+### Patch Changes
+
+- b5124eb: Moved the compiler to Rust. `Css.compile`, `Source.extract`, `Transform.compile`, `Native.compile`, and `Graph` run in a native addon with byte-identical output. Browser bundles that import `Css.compile` inline a WebAssembly build of the compiler.
+- b5124eb: Omitted the module stylesheet import from Vite builds when the module emits no CSS, so a chunk without styled modules no longer links an empty stylesheet.
+
 ## 0.0.28
 
 ### Patch Changes

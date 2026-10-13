@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.30
+
+### Patch Changes
+
+- e1aee01: Fixed `zyzz build --css-only` and other shared-stylesheet hosts failing on large graphs with `Failed to convert rust String into napi string`. Graph results no longer repeat the graph's token resources and scope rules in every module, so their size stays proportional to the source instead of the module count times the theme size.
+
 ## 0.0.29
 
 ### Patch Changes

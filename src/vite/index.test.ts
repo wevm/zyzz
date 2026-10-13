@@ -2572,6 +2572,81 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
     }
   }, 30000)
 
+  test('development updates only the stylesheet a value edit changes', async () => {
+    const card = `import './fonts'; ${Fixture.files['card.ts']}`
+    // The font asset makes the served shared stylesheet differ from the compiled one.
+    const { config, root } = await create({
+      ...Fixture.files,
+      'Evidence.ttf': 'font',
+      'card.ts': card,
+      'config.ts': Fixture.files['config.ts'].replace(
+        "id:'app',",
+        "id:'app',cssOutput:'grouped',",
+      ),
+      'fonts.ts': `import {fontFace} from 'zyzz/web';fontFace({fontFamily:'Evidence',src:"url('./Evidence.ttf') format('truetype')"});`,
+    })
+    const server = await Vite.createServer(config)
+    let socket: WebSocket | undefined
+
+    try {
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      const origin = `http://127.0.0.1:${address.port}`
+      const code = await (await fetch(`${origin}/card.ts`)).text()
+      const paths = [
+        ...code.matchAll(/import\s*["']([^"']*zyzz:[^"']+\.css)["']/g),
+      ].map((match) => match[1]!)
+
+      // 1. Serve both stylesheets, as a page loading the card does.
+      for (const path of paths) await fetch(origin + path)
+
+      socket = new WebSocket(
+        `ws://127.0.0.1:${address.port}/?token=${server.config.webSocketToken}`,
+        'vite-hmr',
+      )
+      await new Promise<void>((resolve, reject) => {
+        socket!.onopen = () => resolve()
+        socket!.onerror = () => reject(new Error('WebSocket failed'))
+      })
+
+      // 2. Edit a declaration value, which leaves the card's class names and the shared stylesheet unchanged.
+      const update = await message(
+        socket,
+        () =>
+          Watch.write({
+            path: Path.join(root, 'card.ts'),
+            source: card.replace("'8px'", "'12px'"),
+          }),
+        (text) => text.includes('zyzz:'),
+      )
+      const { updates } = JSON.parse(update) as {
+        updates: { path: string; type: string }[]
+      }
+
+      expect(
+        updates.map(
+          (update) =>
+            `${update.type} ${decodeURIComponent(update.path).split('/').pop()}`,
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "js-update card.ts.css",
+        ]
+      `)
+      expect(
+        (await (await fetch(origin + paths.at(-1)!)).text()).includes('12px'),
+      ).toMatchInlineSnapshot(`true`)
+    } finally {
+      socket?.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
+
   test('Vite HMR updates rendered theme scopes in Chromium', async () => {
     const { config, root } = await create()
     const server = await Vite.createServer(config)

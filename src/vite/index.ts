@@ -70,8 +70,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const generations = new WeakMap<Environment, number>()
   let devServer: ViteDevServer | undefined
   const watching = new Set<string>()
+  // Chokidar matches its ignore patterns on every add, and each compile watches its whole closure.
+  const watched = new Set<string>()
   // Each compile reads the catalogs of every contract it saw, which rarely changes text.
   const catalogReads = new Map<string, readonly Catalogs.Catalog[]>()
+  const dependencyChains = new Map<string, readonly (readonly unknown[])[]>()
+  const edgeMemos = new WeakMap<
+    Environment,
+    { files: Map<string, Edges>; key: string }
+  >()
   // A development entry's last output, reused until a watcher event or a recompiled graph.
   const outputs = new WeakMap<
     Entry,
@@ -109,6 +116,65 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       context.addWatchFile(file)
     }
+  }
+
+  /**
+   * The packed stylesheet dependency chains of a library contract. Every compile reads each
+   * contract it reaches, and design system contracts are large, so each text parses once.
+   */
+  function stylesheetDependencies(id: string, contract: string) {
+    let value = dependencyChains.get(contract)
+    if (value) return value
+
+    const metadata = (() => {
+      try {
+        return JSON.parse(contract)
+      } catch (error) {
+        Graph.compile({ modules: {}, contracts: { [id]: contract } })
+        throw error
+      }
+    })()
+
+    value = Array.isArray(metadata?.stylesheets)
+      ? (metadata.stylesheets as readonly { dependency?: unknown }[])
+          .map((section) => section?.dependency)
+          .filter((dependency): dependency is readonly unknown[] =>
+            Array.isArray(dependency),
+          )
+      : []
+    // Rebuilt libraries leave their earlier texts behind, so the cache stays bounded.
+    if (dependencyChains.size > 256) dependencyChains.clear()
+    dependencyChains.set(contract, value)
+    return value
+  }
+
+  /**
+   * Each module's import edges in an environment, shared by every entry compile that walks the
+   * module. Added and removed files and dependency optimization change resolutions, so either
+   * starts over.
+   */
+  function importEdges(environment: Environment) {
+    const metadata =
+      environment.mode === 'dev'
+        ? (environment as DevEnvironment).depsOptimizer?.metadata
+        : undefined
+    const key = `${metadata?.browserHash}:${Object.keys(metadata?.discovered ?? {}).length}`
+    let value = edgeMemos.get(environment)
+
+    if (value?.key !== key) {
+      value = { files: new Map(), key }
+      edgeMemos.set(environment, value)
+    }
+
+    return value.files
+  }
+
+  /** Adds a compile input to the development watcher once. */
+  function watch(server: ViteDevServer, file: string) {
+    if (watched.has(file)) return
+
+    watched.add(file)
+    server.watcher.add(file)
   }
 
   function read(contract: string) {
@@ -206,6 +272,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const sourceEntrypoints = new Set<string>()
   const identities = new Map<string, string>()
   const exclusions = new Map<string, boolean>()
+  // Every compile checks each import against the source directories.
+  const roots = new Map<string, string | undefined>()
   const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   let directories: readonly string[]
   let filter: (id: unknown) => boolean
@@ -307,7 +375,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   function sourceRoot(file: string) {
-    return directories.find((directory) => {
+    if (roots.has(file)) return roots.get(file)
+
+    const root = directories.find((directory) => {
       const relative = Path.relative(directory, file)
 
       return (
@@ -317,6 +387,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         !relative.split(Path.sep).includes('node_modules')
       )
     })
+
+    roots.set(file, root)
+    return root
   }
 
   function discover(environment: Environment, host: Host) {
@@ -516,17 +589,19 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     // An edit keeps every resolution. Adding or removing a file can change where a
     // specifier resolves, and a contract derives again only when a file it read changes.
+    // Editors save through temporary files, which no specifier resolves to.
+    const resolvable =
+      event !== 'update' &&
+      /\.(?:[cm]?[jt]sx?|json|css|svelte|vue)$|(?:^|[/\\])package\.json$/.test(
+        file,
+      )
     const cache = lookups.get(environment)
 
+    // Import edges derive from resolutions and module text, which each memo compares.
+    if (resolvable) edgeMemos.delete(environment)
+
     if (cache) {
-      // Editors save through temporary files, which no specifier resolves to.
-      if (
-        event !== 'update' &&
-        /\.(?:[cm]?[jt]sx?|json|css|svelte|vue)$|(?:^|[/\\])package\.json$/.test(
-          file,
-        )
-      )
-        cache.resolutions.clear()
+      if (resolvable) cache.resolutions.clear()
 
       for (const [key, files] of cache.read)
         if (files.has(file)) {
@@ -653,6 +728,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       return value
     })()
 
+    // Full-project compiles walk afresh, as they look up afresh.
+    const memos = everything ? undefined : importEdges(entry.environment)
+
     async function resolve(source: string, importer: string) {
       if (isBuiltin(source)) return { id: source, external: true }
 
@@ -776,7 +854,28 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       modules[id] = text
 
+      const memo = memos?.get(file)
+
+      // Replaying the edges keeps the order in which modules and contracts join the compile.
+      if (memo?.text === text) {
+        imports[id] = { ...memo.resolutions }
+
+        for (const step of memo.steps) {
+          if (typeof step === 'string') {
+            await visit(step)
+            continue
+          }
+
+          const contract = await readContract(step.physical)
+          if (contract !== undefined) contracts[step.id] = contract
+        }
+
+        lazy[id] = memo.lazy
+        return
+      }
+
       const resolutions: Record<string, string | null> = Object.create(null)
+      const steps: Edges['steps'][number][] = []
 
       imports[id] = resolutions
 
@@ -847,6 +946,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         ) {
           sourceEntrypoints.add(normalize(resolved.id))
           resolutions[specifier] = sourceId(resolved.id)
+          steps.push(resolved.id)
           await visit(resolved.id)
           continue
         }
@@ -859,10 +959,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
         if (resolved.external || !eligible(resolved.id)) {
           const physical = resolved.id.split('?')[0]!.split('#')[0]!
-          const contract =
+          const readable =
             Path.isAbsolute(physical) && /\.[cm]?[jt]sx?$/.test(physical)
-              ? await readContract(physical)
-              : undefined
+
+          if (readable) steps.push({ id: resolved.id, physical })
+
+          const contract = readable ? await readContract(physical) : undefined
 
           if (contract !== undefined) {
             contracts[resolved.id] = contract
@@ -875,6 +977,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
 
         resolutions[specifier] = sourceId(resolved.id)
+        steps.push(resolved.id)
         await visit(resolved.id)
       }
 
@@ -908,6 +1011,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       }
 
       lazy[id] = targets
+      memos?.set(file, { lazy: targets, resolutions, steps, text })
     }
 
     await visit(entry.file, code)
@@ -1024,22 +1128,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       loaded.add(id)
 
-      const metadata = (() => {
-        try {
-          return JSON.parse(contracts[id]!)
-        } catch (error) {
-          Graph.compile({ modules: {}, contracts: { [id]: contracts[id]! } })
-          throw error
-        }
-      })()
-      if (!Array.isArray(metadata?.stylesheets)) return
-
-      for (const section of metadata.stylesheets) {
-        if (!Array.isArray(section?.dependency)) continue
-
+      for (const dependency of stylesheetDependencies(id, contracts[id]!)) {
         let owner = id
 
-        for (const specifier of section.dependency) {
+        for (const specifier of dependency) {
           if (
             typeof specifier !== 'string' ||
             !specifier ||
@@ -1115,6 +1207,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         configurations: new Map<string, Catalogs.Catalog>(),
         connections: staged,
         css: '',
+        graphSharedCss: '',
         sharedCss: '',
         cssMap: map,
         sharedCssMap: map,
@@ -1332,6 +1425,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       configurations,
       connections: staged,
       css: output.css,
+      // Edits compare the graph's stylesheet, which precedes asset relocation.
+      graphSharedCss: result.sharedCss ?? '',
       sharedCss: sharedOutput.css,
       sharedCssMap: sharedOutput.map,
       cssMap: {
@@ -1358,7 +1453,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     const host: Host = {
       asset: async (file) => file,
       resolve: resolver(environment),
-      watch: (file) => server.watcher.add(file),
+      watch: (file) => watch(server, file),
     }
     const sources = await discover(environment, host)
     let entry = initializers.get(environment)
@@ -1556,6 +1651,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     served: Served,
     modules: readonly EnvironmentModuleNode[],
     timestamp: number,
+    edited: string,
     deleted: string | undefined,
   ) {
     // Portable build adapters share this module and do not require Vite.
@@ -1595,13 +1691,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       if (left.code !== right.code) code.add(entry.file)
     }
 
-    const ids = new Set<string>()
+    const stylesheets = new Set<string>()
 
-    if (deleted !== undefined) ids.add(cssId(deleted))
-    if (served.shared !== undefined && served.shared !== after.sharedCss)
-      ids.add(sharedId)
-    for (const file of code) ids.add(file)
-    for (const file of css) ids.add(cssId(file))
+    if (deleted !== undefined) stylesheets.add(cssId(deleted))
+    if (
+      served.shared !== undefined &&
+      served.shared !== (after.sharedCss ?? '')
+    )
+      stylesheets.add(sharedId)
+    for (const file of css) stylesheets.add(cssId(file))
 
     // Compiled modules the edit left unchanged skip Vite's own update; other modules, such as
     // plain JavaScript or assets, keep it.
@@ -1617,8 +1715,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       }),
     )
 
-    for (const id of ids) {
-      const module = environment.moduleGraph.getModuleById(id)
+    for (const file of code) {
+      const module = environment.moduleGraph.getModuleById(file)
       if (!module) continue
 
       environment.moduleGraph.invalidateModule(
@@ -1630,11 +1728,66 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       affected.add(module)
     }
 
+    const sheets: EnvironmentModuleNode[] = []
+
+    // The edited module's stylesheet updates first, ahead of stylesheets other modules share.
+    for (const id of [...stylesheets].sort(
+      (left, right) =>
+        Number(right === cssId(edited)) - Number(left === cssId(edited)),
+    )) {
+      const module = environment.moduleGraph.getModuleById(id)
+      if (!module) continue
+
+      environment.moduleGraph.invalidateModule(
+        module,
+        new Set(),
+        timestamp,
+        true,
+      )
+      sheets.push(module)
+    }
+
+    // A stylesheet accepts its own updates and only its module imports it, so it is never within
+    // an import cycle. Vite proves that by walking every importer of the importing module, which
+    // costs each stylesheet of a shared edit the whole graph, so stylesheet-only edits send the
+    // same update directly. Edits that also change code keep Vite's single batched update.
+    if (
+      !affected.size &&
+      sheets.length &&
+      sheets.every((module) => module.isSelfAccepting)
+    ) {
+      const updates = sheets.map((module) => {
+        const path =
+          module.url.startsWith('/') || module.url.startsWith('.')
+            ? module.url
+            : `/@id/${module.url.replace('\0', '__x00__')}`
+
+        return {
+          acceptedPath: path,
+          explicitImportRequired: false,
+          isWithinCircularImport: false,
+          path,
+          timestamp,
+          type: 'js-update' as const,
+        }
+      })
+
+      environment.logger.info(
+        `hmr update ${updates.map((update) => update.path).join(', ')}`,
+        { timestamp: true },
+      )
+      environment.hot.send({ type: 'update', updates })
+      return []
+    }
+
+    for (const module of sheets) affected.add(module)
+
     return [...affected]
   }
 
   return {
     buildStart() {
+      edgeMemos.delete(this.environment)
       reads.delete(this.environment)
       lookups.delete(this.environment)
     },
@@ -1746,6 +1899,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       filter = createFilter(null, patterns, { resolve: root })
       exclusions.clear()
+      roots.clear()
 
       if (native) return
       const lightning = (config.css.lightningcss ??= {})
@@ -1838,6 +1992,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       },
     },
     async watchChange(file, change) {
+      // A removed file leaves the watcher, so a later compile that reads it again adds it again.
+      if (change.event === 'delete') watched.delete(file)
+
       await updateDiscovery(this.environment, file, change.event)
     },
     async hotUpdate({ file, modules, timestamp, type, server }) {
@@ -1873,9 +2030,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           first && type === 'update' && eligible(file)
             ? await compile(first, {
                 resolve: resolver(this.environment),
-                watch: (file) => {
-                  server.watcher.add(file)
-                },
+                watch: (file) => watch(server, file),
                 asset: async (file) => file,
               }).then(
                 () => true,
@@ -1891,6 +2046,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             served,
             modules,
             timestamp,
+            file,
             type === 'delete' ? file : undefined,
           )
       }
@@ -1914,9 +2070,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
               first,
               {
                 resolve: resolver(this.environment),
-                watch: (file) => {
-                  server.watcher.add(file)
-                },
+                watch: (file) => watch(server, file),
                 asset: async (file) => file,
               },
               undefined,
@@ -2067,7 +2221,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             )
           : css
       if (id === sharedId) {
-        servedShared.set(this.environment, output.sharedCss)
+        servedShared.set(this.environment, output.graphSharedCss)
         return {
           code: transport(output.sharedCss),
           map: JSON.stringify(output.sharedCssMap),
@@ -2075,7 +2229,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       }
 
       entry.css = output.css
-      return { code: transport(output.css), map: JSON.stringify(output.cssMap) }
+      return {
+        code: transport(output.css),
+        map: JSON.stringify(output.cssMap),
+      }
     },
     name: 'zyzz',
     resolveId(id) {
@@ -2182,6 +2339,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       },
     },
   }
+}
+
+/** One module's import edges: its resolutions and, in order, its visits and contract reads. */
+type Edges = {
+  lazy: ReadonlySet<string>
+  resolutions: Readonly<Record<string, string | null>>
+  steps: readonly (string | { id: string; physical: string })[]
+  text: string
 }
 
 type Entry = {

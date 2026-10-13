@@ -9,6 +9,8 @@ import * as Packed from '../../test/fixtures/Packed.js'
 import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Universal from '../../test/fixtures/UniversalLibrary.js'
 import * as Library from '../../test/fixtures/VariantLibrary.js'
+import * as ClassName from '../web/internal/ClassName.js'
+import * as ThemeRules from '../web/internal/Themes.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -490,6 +492,39 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       modules: { 'entry.js': 'export const value=1' },
     })
     expect(removed.sharedCss).toMatchInlineSnapshot('undefined')
+  })
+
+  test('publishes shared token resources once instead of in every module', () => {
+    const output = Graph.compile({
+      [ThemeRules.shared]: 'all',
+      compiler: false,
+      modules: {
+        'config.ts': `import { Config } from 'zyzz'; export const { style } = Config.create({ id: 'app', vars: { color: { brand: '#06c' }, spacing: { md: '8px' } } });`,
+        ...Object.fromEntries(
+          Array.from({ length: 3 }, (_, index) => [
+            `card${index}.ts`,
+            `import { style } from './config.js'; export const card = style({ color: 'brand', padding: 'md', zIndex: ${index} });`,
+          ]),
+        ),
+      },
+    })
+
+    expect(
+      Object.values(output.modules).filter(
+        (module) => module[ThemeRules.shared],
+      ).length,
+    ).toMatchInlineSnapshot(`0`)
+    expect(
+      Object.values(output.modules).flatMap((module) =>
+        Object.keys(module[ClassName.rules]).filter((name) =>
+          name.startsWith('@scope:'),
+        ),
+      ).length,
+    ).toMatchInlineSnapshot(`0`)
+
+    expect(output.sharedCss).toMatchInlineSnapshot(
+      `".z-theme-app-theme{--z-app-color-brand:#06c;--z-app-spacing-md:8px;}"`,
+    )
   })
 
   test('keeps readable variable labels distinct across modules and token paths', async () => {

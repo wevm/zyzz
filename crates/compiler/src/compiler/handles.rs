@@ -297,15 +297,30 @@ fn write_resource(output: &mut String, resource: &Resource) {
     output.push('}');
 }
 
+/// Which records a serialized web graph module carries.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum Records {
+    /// Every record, for hosts that deliver token resources beside each module's stylesheet.
+    #[default]
+    Complete,
+    /// Every record except token resources and graph scope rules. The graph's shared stylesheet
+    /// holds those once, and every module would otherwise repeat them.
+    Graph,
+    /// Code, stylesheet, maps, and scope classes, for hosts that read no records.
+    Lean,
+}
+
 /// Appends one module's transform output. Map content equal to `placeholder` is written as `0`.
 ///
 /// With `deferred`, the class, rule, and unit records follow the module after a NUL, which JSON
-/// text never holds, so a host can decode them only when read.
+/// text never holds, so a host can decode them only when read. [`Records::Graph`] leaves out
+/// token resources and scope rules, and [`Records::Lean`] is not supported here.
 pub fn write_module(
     output: &mut String,
     module: &transform::Output,
     placeholder: Option<&str>,
     deferred: bool,
+    records: Records,
 ) {
     // One reservation covers every field, so the result never regrows and copies itself. Code
     // escapes its quotes, which the margin covers.
@@ -364,10 +379,10 @@ pub fn write_module(
 
     if !deferred {
         output.push(',');
-        write_rules(output, module);
+        write_rules(output, module, records);
     }
 
-    if let Some(resources) = &module.shared {
+    if let Some(resources) = module.shared.as_ref().filter(|_| records != Records::Graph) {
         output.push_str(",\"shared\":[");
 
         for (index, resource) in resources.iter().enumerate() {
@@ -435,7 +450,7 @@ pub fn write_module(
         output.push_str("\0{");
         write_classes(output, module);
         output.push(',');
-        write_rules(output, module);
+        write_rules(output, module, records);
         output.push(',');
         write_units(output, module);
         output.push('}');
@@ -476,13 +491,15 @@ fn write_classes(output: &mut String, module: &transform::Output) {
     );
 }
 
-fn write_rules(output: &mut String, module: &transform::Output) {
+fn write_rules(output: &mut String, module: &transform::Output, records: Records) {
     output.push_str("\"rules\":");
     write_record(
         output,
         module
             .rules
             .iter()
+            // Scope rules are the graph's, which every module repeats for collision checks.
+            .filter(|(name, _)| records != Records::Graph || !name.starts_with("@scope:"))
             .map(|(name, rule)| (name.as_str(), rule.as_str())),
     );
 }
@@ -545,11 +562,11 @@ pub fn write_native_module(output: &mut String, module: &native::Output) {
 }
 
 /// Serializes a graph result. Modules whose output is the value `written` holds for their
-/// identity become `0`, and `lean` results leave out per-module records.
+/// identity become `0`, and web modules carry the given `records`.
 pub fn write_output(
     result: &Output,
     written: Option<&FxHashMap<Arc<str>, Compiled>>,
-    lean: bool,
+    records: Records,
 ) -> String {
     let mut output = String::from("{\"contracts\":");
 
@@ -596,8 +613,10 @@ pub fn write_output(
             match module {
                 _ if same => output.push('0'),
                 Compiled::Native(module) => write_native_module(output, module),
-                Compiled::Web(module) if lean => write_lean_module(output, module),
-                Compiled::Web(module) => write_module(output, module, None, false),
+                Compiled::Web(module) if records == Records::Lean => {
+                    write_lean_module(output, module);
+                }
+                Compiled::Web(module) => write_module(output, module, None, false, records),
             }
         },
     );
@@ -642,8 +661,19 @@ pub fn compile(input: &Value) -> Result<String> {
     Ok(write_output(
         &*graph::compile(&options)?,
         None,
-        options.lean,
+        records(&options),
     ))
+}
+
+/// The records a graph's hosts read from its web modules.
+fn records(options: &graph::Options) -> Records {
+    if options.lean {
+        Records::Lean
+    } else if options.entry.is_none() {
+        Records::Graph
+    } else {
+        Records::Complete
+    }
 }
 
 /// The bound on module outputs a host keeps decoded across snapshots.
@@ -656,8 +686,8 @@ pub struct Compiler {
     /// The snapshot text that produced `previous`. The graph is deterministic, so the same text
     /// answers before decoding.
     input: Option<Box<str>>,
-    /// Whether the written modules were serialized without their records.
-    lean: bool,
+    /// The records the written modules were serialized with.
+    records: Records,
     previous: Option<Arc<Output>>,
     /// The sources of the last decoded snapshot.
     sources: Option<Sources>,
@@ -705,14 +735,14 @@ impl Compiler {
                 let result = self.graph.compile(&options)?;
 
                 self.vars = vars;
-                Ok((result, options.lean))
+                Ok((result, records(&options)))
             });
 
         match result {
-            Ok((result, lean)) => {
-                // Hosts decode lean and complete modules differently, so neither reuses the other.
-                if lean != self.lean {
-                    self.lean = lean;
+            Ok((result, records)) => {
+                // Hosts decode modules with different records differently, so none reuses another.
+                if records != self.records {
+                    self.records = records;
                     self.written.clear();
                 }
 
@@ -727,7 +757,7 @@ impl Compiler {
                     return "{\"same\":true}".to_owned();
                 }
 
-                let mut written = write_output(&result, Some(&self.written), lean);
+                let mut written = write_output(&result, Some(&self.written), records);
 
                 for (id, module) in &result.modules {
                     self.written.insert(Arc::clone(id), module.clone());
@@ -933,7 +963,7 @@ pub fn transform(input: &Value, separate: Option<&str>) -> Result<String> {
     // The writer reserves the whole result at once.
     let mut written = String::new();
 
-    write_module(&mut written, &output, separate, true);
+    write_module(&mut written, &output, separate, true, Records::Complete);
 
     Ok(written)
 }

@@ -13,6 +13,12 @@ describe('zyzz', () => {
     zyzz({ include: /library/ })
   })
 
+  test('accepts excluded source patterns', () => {
+    zyzz({ exclude: ['server.mjs', /\.stories\.tsx?$/] })
+    // @ts-expect-error Exclusions are a list of globs and regular expressions.
+    zyzz({ exclude: 'server.mjs' })
+  })
+
   test('returns a Vite plugin and rejects unsupported options', () => {
     expectTypeOf(zyzz()).toEqualTypeOf<Plugin>()
 

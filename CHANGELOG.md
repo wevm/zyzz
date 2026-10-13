@@ -1,5 +1,31 @@
 # zyzz
 
+## 0.0.28
+
+### Patch Changes
+
+- 4c9609b: Fixed `cx` failing with `Composition requires statically known local style applications` when a selector interpolation or composition entry also read an applied definition, such as `${styles.row}:hover &` inside `namespace styles`. Template selector keys outside `selectors` now report that they require a selectors object at the key.
+- cc75c18: Allowed `style` to compose earlier static definitions and literal objects from an array, such as `style([button, focusRing, { color: 'white' }])`. Entries compile in order into one definition with its own rules on web and native targets.
+- 4c9609b: Accepted the Compat Standard `display` keywords `-webkit-box` and `-webkit-inline-box`, which `WebkitBoxOrient` and `WebkitLineClamp` require to truncate text after a number of lines.
+  
+  ```ts
+  const excerpt = style({
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 3,
+    overflow: 'hidden',
+  })
+  ```
+- 4c9609b: Fixed `style` objects and arrays with an invalid declaration typing their definition as a dynamic style. TypeScript now reports only the invalid declaration instead of also reporting `Expected 1 arguments, but got 0` at every application.
+- 6cd5ae9: Added `exclude` to the Vite plugin, leaving matching source modules out of discovery and transforms. Globs resolve against the Vite root, and regular expressions test absolute paths. Modules named `vite.config.*`, `vitest.config.*`, or `vitest.workspace.*` are always excluded, so discovery no longer compiles tool configuration.
+  
+  ```ts
+  zyzz({ exclude: ['server.mjs', /\.stories\.tsx?$/] })
+  ```
+- b2a9655: Added `zyzz/runtime` to `optimizeDeps.include` in Vite development environments that discover dependencies and resolve the runtime inside `node_modules`. The first request for a compiled module no longer re-runs the dependency optimizer, which could leave server and browser modules with separate copies of a shared dependency such as React.
+- 820ae5e: Marked the Vite plugin's development import resolves as scans, so the dependency optimizer no longer discovers packages that only compiler analysis reaches, and plugins can tell that analysis apart from module graph imports.
+- 0945de4: Reused import resolutions and derived package contracts across Vite module transforms until the watcher reports a change, so each module no longer resolves the whole discovered project again.
+
 ## 0.0.27
 
 ### Patch Changes

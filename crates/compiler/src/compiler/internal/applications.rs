@@ -10,7 +10,7 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
-    Declaration, Expression, JSXAttributeItem, JSXAttributeName, JSXElementName,
+    Argument, Declaration, Expression, JSXAttributeItem, JSXAttributeName, JSXElementName,
     ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement, TSNamespaceDeclarationBody,
     UnaryOperator, VariableDeclarationKind,
 };
@@ -18,6 +18,7 @@ use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
+use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::scope::{self, Mode};
 use crate::compiler::source::Call;
 
@@ -102,6 +103,8 @@ struct Read<'a> {
     grandparent: Option<AstKind<'a>>,
     /// The two ancestors above the grandparent, which hold an application's class read.
     outer: [Option<AstKind<'a>>; 2],
+    /// Extraction resolves the read and rewrites its definition, so it never runs.
+    resolved: bool,
     span: Span,
     terminal: bool,
 }
@@ -328,6 +331,7 @@ pub fn create<'c, 'a>(
             .iter()
             .map(|candidate| (candidate.binding.start, Arc::clone(&candidate.name)))
             .collect(),
+        definitions: &definitions,
         evaluation: false,
         member_bindings: &member_bindings,
         names,
@@ -368,6 +372,8 @@ pub fn create<'c, 'a>(
 struct Walker<'s, 'a> {
     ancestors: Vec<AstKind<'a>>,
     candidates: FxHashMap<u32, Arc<str>>,
+    /// Definition calls by start offset.
+    definitions: &'s FxHashMap<u32, &'s Call<'a>>,
     evaluation: bool,
     member_bindings: &'s FxHashMap<u32, Arc<str>>,
     /// Names of candidates and namespace members.
@@ -490,6 +496,7 @@ impl Walker<'_, '_> {
                         .copied()
                 }),
                 parent,
+                resolved: extracted(&self.ancestors, self.definitions),
                 span: identifier.span,
                 terminal: terminal(&self.ancestors),
             };
@@ -593,7 +600,7 @@ impl<'c, 'a> Applications<'c, 'a> {
             .map(Vec::as_slice)
             .unwrap_or_default()
         {
-            if reference.span == candidate.binding {
+            if reference.span == candidate.binding || reference.resolved {
                 continue;
             }
 
@@ -793,6 +800,66 @@ impl<'c, 'a> Applications<'c, 'a> {
             .iter()
             .flatten()
             .flat_map(|(applications, _)| applications)
+    }
+}
+
+// Matches a selector interpolation or composition entry inside a definition, which
+// extraction resolves statically. Computed keys elsewhere in a definition fail extraction.
+fn extracted(path: &[AstKind<'_>], definitions: &FxHashMap<u32, &Call<'_>>) -> bool {
+    let Some(mut index) = path.len().checked_sub(1) else {
+        return false;
+    };
+
+    if let (Some(AstKind::StaticMemberExpression(member)), Some(node)) = (
+        index.checked_sub(1).and_then(|at| path.get(at)),
+        path.get(index),
+    ) && member.object.span() == node.span()
+    {
+        index -= 1;
+    }
+
+    // Type assertions around a node keep the same read.
+    let mut parent = || {
+        while index > 0
+            && path.get(index - 1).is_some_and(|kind| {
+                matches!(
+                    kind,
+                    AstKind::TSAsExpression(_)
+                        | AstKind::TSNonNullExpression(_)
+                        | AstKind::TSSatisfiesExpression(_)
+                        | AstKind::TSTypeAssertion(_)
+                )
+            })
+        {
+            index -= 1;
+        }
+
+        index = index.checked_sub(1)?;
+        path.get(index).copied()
+    };
+    let definition = |kind: &AstKind<'_>| {
+        matches!(kind, AstKind::CallExpression(call)
+            if definitions.get(&call.span.start).is_some_and(|definition| definition.end == call.span.end))
+    };
+
+    match parent() {
+        Some(AstKind::ArrayExpression(container)) => parent().is_some_and(|kind| {
+            definition(&kind)
+                && matches!(kind, AstKind::CallExpression(call)
+                    if call.arguments.first().and_then(Argument::as_expression)
+                        .is_some_and(|argument| unwrap(argument).span() == container.span))
+        }),
+        Some(AstKind::TemplateLiteral(container)) => {
+            let property = parent();
+
+            matches!(property, Some(AstKind::ObjectProperty(property))
+                if property.computed
+                    && property.key.as_expression().is_some_and(|key| unwrap(key).span() == container.span))
+                && path
+                    .get(..index)
+                    .is_some_and(|ancestors| ancestors.iter().any(definition))
+        }
+        _ => false,
     }
 }
 

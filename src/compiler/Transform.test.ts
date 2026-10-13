@@ -11621,6 +11621,67 @@ export const third = style({WebkitUserSelect:'none',opacity:.5})();`,
         await browser.close()
       }
     })
+    test('legacy box display keywords clamp lines like an inline control', async () => {
+      const declarations =
+        'display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font:16px/20px monospace;width:80px'
+      const output = Transform.compile({
+        moduleId: 'clamp.ts',
+        source: `import { style } from 'zyzz'
+export const block = style({ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', font: '16px/20px monospace', width: '80px' })()
+export const inline = style({ display: '-webkit-inline-box' })()`,
+      })
+      const js = await Esbuild.build({
+        stdin: { contents: output.code, loader: 'ts', resolveDir: root },
+        bundle: true,
+        conditions: ['src'],
+        format: 'esm',
+        write: false,
+      }).then((result) => ({ code: result.outputFiles[0]!.text }))
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const lexer = Conformance.lexer()
+
+      for (const value of ['-webkit-box', '-webkit-inline-box'])
+        expect(
+          lexer.matchProperty('display', value).error,
+        ).toMatchInlineSnapshot(`null`)
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+        const text = 'one two three four five six seven eight nine ten'
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="block" class="${module.block.className}">${text}</div><div id="control" style="${declarations}">${text}</div><span id="inline" class="${module.inline.className}"></span>`,
+        )
+
+        const display = (selector: string) =>
+          page
+            .locator(selector)
+            .evaluate((element) => getComputedStyle(element).display)
+
+        expect(
+          (await display('#block')) === (await display('#control')),
+        ).toMatchInlineSnapshot(`true`)
+        expect(await display('#inline')).toMatchInlineSnapshot(
+          `"-webkit-inline-box"`,
+        )
+        expect(
+          await page
+            .locator('#block')
+            .evaluate((element) => element.getBoundingClientRect().height),
+        ).toMatchInlineSnapshot(`40`)
+        expect(
+          await page
+            .locator('#control')
+            .evaluate((element) => element.getBoundingClientRect().height),
+        ).toMatchInlineSnapshot(`40`)
+      } finally {
+        await browser.close()
+      }
+    })
   })
 })
 

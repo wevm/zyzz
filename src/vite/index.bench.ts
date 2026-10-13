@@ -1,5 +1,5 @@
 /**
- * Measures complete Vite builds and delivered assets from the integration app.
+ * Measures Vite builds, delivered assets, and development module transforms.
  * @module
  */
 import * as Fs from 'node:fs/promises'
@@ -8,6 +8,7 @@ import * as Zlib from 'node:zlib'
 import * as Vite from 'vite'
 import { bench, describe } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
+import * as PlainPackage from '../../test/fixtures/PlainPackage.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
 
 for (const count of [10, 100]) {
@@ -111,6 +112,72 @@ for (const count of [10, 100]) {
         time: 1000,
         warmupIterations: 10,
         warmupTime: 500,
+      },
+    )
+  })
+}
+
+for (const count of [10, 100]) {
+  describe(`vite dev / ${count} package consumers`, () => {
+    let root: string
+    let config: Vite.InlineConfig
+
+    bench(
+      'cold module transforms',
+      async () => {
+        const server = await Vite.createServer(config)
+
+        try {
+          const environment = server.environments.client!
+
+          // Each module transform and stylesheet load compiles every consumer.
+          for (let index = 0; index < count; index++) {
+            const result = await environment.transformRequest(
+              `/card${index}.ts`,
+            )
+
+            for (const [, id] of result!.code.matchAll(
+              /import\s*"\/@id\/__x00__(zyzz:[^"]+)"/g,
+            ))
+              await environment.transformRequest(`\0${id}`)
+          }
+        } finally {
+          await server.close()
+        }
+      },
+      {
+        iterations: 5,
+        setup: async () => {
+          root = await Fs.mkdtemp(Path.resolve('.fixture-vite-bench-'))
+
+          // The package ships no sidecar, so each read derives its contract.
+          await PlainPackage.install(root)
+          await Fs.symlink(
+            process.cwd(),
+            Path.join(root, 'node_modules/zyzz'),
+            'dir',
+          )
+
+          for (let index = 0; index < count; index++)
+            await Fs.writeFile(
+              Path.join(root, `card${index}.ts`),
+              `import { style } from '@acme/tokens'; export const props = style({ opacity: ${index / count}, padding: '16' })();`,
+            )
+
+          config = {
+            configFile: false,
+            logLevel: 'silent',
+            optimizeDeps: { noDiscovery: true },
+            plugins: [zyzz()],
+            root,
+          }
+        },
+        teardown: async () => {
+          await Fs.rm(root, { recursive: true, force: true })
+        },
+        time: 0,
+        warmupIterations: 1,
+        warmupTime: 0,
       },
     )
   })

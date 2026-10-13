@@ -5896,6 +5896,8 @@ pub static RULES: &[(&str, Rule)] = &[
         "display",
         Rule {
             values: Some(&[
+                "-webkit-box",
+                "-webkit-inline-box",
                 "block",
                 "block flex",
                 "block flow",

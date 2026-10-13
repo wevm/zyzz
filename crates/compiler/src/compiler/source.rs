@@ -1144,8 +1144,19 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 || property.shorthand
                 || (condition.is_none() && variable.is_none() && !identifier && !string)
             {
+                // Template keys with an & target are selectors outside their group.
+                let selector = property.computed
+                    && property.key.as_expression().is_some_and(|key| {
+                        matches!(unwrap(key), Expression::TemplateLiteral(template)
+                            if template.quasis.iter().any(|quasi| quasi.value.raw.contains('&')))
+                    });
+
                 self.report(
-                    "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",
+                    if selector {
+                        "Template selector keys require a selectors object."
+                    } else {
+                        "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated."
+                    },
                     property.span,
                 );
                 continue;

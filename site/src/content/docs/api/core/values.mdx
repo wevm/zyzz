@@ -31,6 +31,21 @@ const label = style({
 })
 ```
 
+The legacy `display` keywords `-webkit-box` and `-webkit-inline-box` from the Compat Standard pair with `WebkitBoxOrient` and `WebkitLineClamp` to truncate text after a number of lines.
+
+```ts
+import { style } from 'zyzz'
+
+const excerpt = style({
+  // [!code hl:4]
+  // Truncates the text after three lines
+  display: '-webkit-box',
+  WebkitBoxOrient: 'vertical',
+  WebkitLineClamp: 3,
+  overflow: 'hidden',
+})
+```
+
 ## Lengths
 
 Lengths need a unit, and numeric `0` is the only unitless length. Units keep their authored spelling.

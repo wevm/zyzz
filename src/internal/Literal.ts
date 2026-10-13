@@ -1590,7 +1590,10 @@ const properties = {
   direction: { kind: 'enum', values: ['ltr', 'rtl'] },
   display: {
     kind: 'enum',
+    // The Compat Standard keeps the legacy box keywords that -webkit-line-clamp requires.
     values: [
+      '-webkit-box',
+      '-webkit-inline-box',
       'block',
       'block flex',
       'block flow',

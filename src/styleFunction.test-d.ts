@@ -146,6 +146,37 @@ describe('style', () => {
     // @ts-expect-error Unknown keys in a union branch are rejected.
     style(union)
   })
+
+  test('accepts the legacy box keywords that line clamps require', () => {
+    const excerpt = style({
+      display: '-webkit-box',
+      overflow: 'hidden',
+      WebkitBoxOrient: 'vertical',
+      WebkitLineClamp: 3,
+    })
+    const inline = style({ display: ['-webkit-inline-box', 'inline-flex'] })
+
+    expectTypeOf(excerpt()).toEqualTypeOf<style.Props>()
+    expectTypeOf(inline()).toEqualTypeOf<style.Props>()
+    // @ts-expect-error Other vendor display keywords remain unsupported.
+    style({ display: '-moz-box' })
+  })
+
+  test('types rejected objects and arrays as static definitions', () => {
+    const card = style({
+      color: '#fff',
+      // @ts-expect-error The diagnostic stays on the invalid declaration.
+      display: 'unknown-display',
+    })
+    const composed = style([
+      card,
+      // @ts-expect-error Composition entries keep declaration diagnostics.
+      { display: 'unknown-display' },
+    ])
+
+    expectTypeOf(card()).toEqualTypeOf<style.Props>()
+    expectTypeOf(composed()).toEqualTypeOf<style.Props>()
+  })
 })
 
 describe('atRules', () => {

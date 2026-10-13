@@ -278,6 +278,9 @@ export function graph(
   }) as Graph.compile.ReturnType
 }
 
+/** Graph option for hosts that read module code, stylesheets, and configuration catalogs only. */
+export const lean = Symbol('lean graph output')
+
 /**
  * Rebuilds one module's frozen transform output. Records decode when first read, so a module
  * whose classes, rules, and units are never read skips their parsing.

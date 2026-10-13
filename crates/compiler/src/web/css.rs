@@ -25,21 +25,31 @@ use crate::js;
 use crate::style::{Declaration, Label, Labels, NamedStyle, Value};
 use crate::web::internal::class_name::{self, CreateOptions, Registry, Units, Used, Visibility};
 use crate::web::internal::contributions;
-use crate::web::internal::themes::{Emitted, Resource, Scope, Shared, Themes};
+use crate::web::internal::themes::{self, Emitted, Resource, Scope, Shared, Themes};
 
 /// Fixed class identities used by CSS-only consumers, keyed by style name.
 pub type Names = FxHashMap<Arc<str>, Arc<str>>;
 
 /// Environment-independent compiler input.
 #[derive(Clone, Copy, Debug, Default)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "Each flag is an independent compiler option."
+)]
 pub struct Options<'a> {
     /// Composition for styles without their own mode. Ordered by default, preserving precedence
     /// across combined class lists.
     pub composition: Option<Composition>,
     /// Eager module-level stylesheet contributions, supplied as static data.
     pub contributions: &'a [contributions::Definition],
+    /// Renders only [`Output::contribution_css`], skipping theme scopes and style rules.
+    pub contributions_only: bool,
     /// CSS representation; atomic declarations are the default.
     pub css_output: Option<CssOutput>,
+    /// Leaves shared token resources and scope rules to a host that emits them once for a
+    /// graph, returning [`Output::references`] instead. References that need graph-local names
+    /// still emit here.
+    pub deferred_scopes: bool,
     /// Retains live definitions for development updates.
     pub development: bool,
     /// Readable source bindings and consumer-owned configuration namespaces.
@@ -74,6 +84,9 @@ pub struct Output {
     /// Whether every class name in [`Output::classes`] is nonempty and free of spaces, so each
     /// list splits back into its distinct names.
     pub plain: bool,
+    /// Token references in first-serialization order, when [`Options::deferred_scopes`] left
+    /// their resources to the host.
+    pub references: Option<Arc<[Arc<Reference>]>>,
     /// Exact emitted rule bodies retained for graph-wide collision diagnostics.
     pub rules: IndexMap<String, String, FxBuildHasher>,
     /// Ordinary scope and style rules when contributions were supplied.
@@ -371,6 +384,8 @@ struct Compiler<'a> {
     nested_composition: bool,
     ordered: FxHashMap<u32, Shareable>,
     owned: FxHashMap<usize, FxHashMap<u32, Vec<String>>>,
+    /// Serialized tokens in first-serialization order.
+    references: Vec<Arc<Reference>>,
     resets: bool,
     rules: IndexMap<String, String, FxBuildHasher>,
     runs: FxHashMap<usize, FxHashMap<u32, usize>>,
@@ -705,6 +720,7 @@ impl<'a> Compiler<'a> {
             .into();
 
         self.serialized.insert(key, Rc::clone(&value));
+        self.references.push(Arc::clone(reference));
         value
     }
 
@@ -1308,6 +1324,7 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
             .any(|style| style.rules.is_some() && !isolated(style, options)),
         ordered: FxHashMap::default(),
         owned: FxHashMap::default(),
+        references: Vec::new(),
         resets: false,
         rules: IndexMap::default(),
         runs: FxHashMap::default(),
@@ -1782,7 +1799,30 @@ fn run<'a>(
             vec![Arc::from("contributions")],
         )])
     })?;
-    let scopes = if compiler.themes.is_some() || options.vars.is_some() || options.schemes {
+    if options.contributions_only {
+        return Ok(Output {
+            contribution_css: Some(contribution_css),
+            ..Output::default()
+        });
+    }
+
+    let invalid_theme = |message: String| {
+        Error::Css(vec![Diagnostic::new(
+            Code::InvalidTheme,
+            message,
+            vec![Arc::from("vars")],
+        )])
+    };
+    // Graph-local names follow this compilation's reference order, so only it can emit them.
+    let deferred = options.deferred_scopes
+        && options.shared == Some(Shared::All)
+        && !compiler.themes.as_ref().is_some_and(Themes::is_anonymous);
+    let scopes = if deferred {
+        Emitted {
+            classes: themes::classes(options.vars.unwrap_or_default()).map_err(invalid_theme)?,
+            ..Emitted::default()
+        }
+    } else if compiler.themes.is_some() || options.vars.is_some() || options.schemes {
         compiler
             .themes
             .get_or_insert_with(Themes::new)
@@ -1791,13 +1831,7 @@ fn run<'a>(
                 options.schemes,
                 options.shared,
             )
-            .map_err(|message| {
-                Error::Css(vec![Diagnostic::new(
-                    Code::InvalidTheme,
-                    message,
-                    vec![Arc::from("vars")],
-                )])
-            })?
+            .map_err(invalid_theme)?
     } else {
         Emitted::default()
     };
@@ -1915,6 +1949,7 @@ fn run<'a>(
         creators,
         css,
         plain,
+        references: deferred.then(|| std::mem::take(&mut compiler.references).into()),
         rules,
         scoped_css,
         shared: (!scopes.resources.is_empty()).then_some(scopes.resources),

@@ -276,7 +276,7 @@ Graph.create()
 
 - **Type:** `(options: Graph.compile.Options) => Graph.compile.ReturnType{:ts}`
 
-Takes the same options and returns the same output as `Graph.compile`. An unchanged snapshot returns the previous result. An edit recompiles the changed modules and their importers, and keeps unaffected module results. An edit to a config or variable set recompiles every module, since each stylesheet carries the graph's scopes.
+Takes the same options and returns the same output as `Graph.compile`. An unchanged snapshot returns the previous result. An edit recompiles the changed modules and their importers. A config or variable set edit recompiles every module. A module whose output is unchanged keeps its previous result.
 
 ```ts
 import { Graph } from 'zyzz/compiler'

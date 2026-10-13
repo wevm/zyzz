@@ -487,22 +487,12 @@ pub fn resolve(value: &Data, property: &str, theme: &theme::Definition) -> Data 
     let categories = groups::property_groups(property).unwrap_or_default();
 
     if data.contract.variable_set {
-        let rank = |path: &str| {
-            let category = path.split('.').next().unwrap_or_default();
+        // The first match in a stable sort by category rank is the earliest match of the lowest
+        // rank. Categories the property does not group rank first.
+        let mut best: Option<(isize, &Arc<str>, &Value, &str)> = None;
 
-            categories
-                .iter()
-                .position(|candidate| *candidate == category)
-                .map_or(-1, usize::cast_signed)
-        };
-        let mut entries: Vec<(&Arc<str>, &Value)> = data.values.iter().collect();
-
-        entries.sort_by_key(|(path, _)| rank(path));
-
-        for (path, entry) in entries {
-            let mut parts = path.split('.');
-            let category = parts.next().unwrap_or_default();
-            let rest: Vec<&str> = parts.collect();
+        for (path, entry) in data.values.iter() {
+            let (category, rest) = path.split_once('.').unwrap_or((path, ""));
             let matches = match &data.contract.mappings {
                 Some(Mappings::Disabled) => **path == *text,
                 mappings => {
@@ -511,7 +501,7 @@ pub fn resolve(value: &Data, property: &str, theme: &theme::Definition) -> Data 
                         _ => None,
                     };
 
-                    rest.join(".") == text
+                    rest == text
                         && match mapped {
                             Some(properties) => {
                                 properties.iter().any(|candidate| &**candidate == property)
@@ -525,6 +515,17 @@ pub fn resolve(value: &Data, property: &str, theme: &theme::Definition) -> Data 
                 continue;
             }
 
+            let rank = categories
+                .iter()
+                .position(|candidate| *candidate == category)
+                .map_or(-1, usize::cast_signed);
+
+            if best.is_none_or(|(lowest, ..)| rank < lowest) {
+                best = Some((rank, path, entry, category));
+            }
+        }
+
+        if let Some((_, path, entry, category)) = best {
             let group = match leaf(&theme.tokens, path) {
                 Some(Data::Token(reference)) => reference.group.clone(),
                 _ => Group::from(category),
@@ -563,6 +564,7 @@ pub fn mapped(theme: &theme::Definition, property: &str) -> bool {
     }
 
     let data = &theme.metadata;
+    let groups = groups::property_groups(property);
 
     data.values.keys().any(|path| {
         let category = path.split('.').next().unwrap_or_default();
@@ -575,7 +577,7 @@ pub fn mapped(theme: &theme::Definition, property: &str) -> bool {
             let applies = match targets {
                 Some(targets) => targets.iter().any(|target| &**target == property),
                 None if data.contract.variable_set => {
-                    groups::property_groups(property).is_some_and(|categories| categories.contains(&category))
+                    groups.is_some_and(|categories| categories.contains(&category))
                 }
                 None => accepts(category, property),
             };

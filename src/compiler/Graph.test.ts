@@ -2684,7 +2684,7 @@ describe('create', () => {
       `)
   })
 
-  test('unimported compatible scope edits invalidate consumer CSS', () => {
+  test('unimported compatible scope edits keep unchanged consumer output', () => {
     const compiler = Graph.create()
     const sources = {
       ...modules,
@@ -2704,7 +2704,7 @@ describe('create', () => {
 
     expect(
       after.modules['pkg/card.ts'] === before.modules['pkg/card.ts'],
-    ).toMatchInlineSnapshot(`false`)
+    ).toMatchInlineSnapshot(`true`)
     expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
       [
         "pkg/theme.ts",

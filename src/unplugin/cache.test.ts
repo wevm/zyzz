@@ -13,7 +13,7 @@ describe('zyzz', () => {
             "parses": 3,
           },
           "edited": {
-            "modules": 3,
+            "modules": 2,
             "parses": 1,
           },
           "settled": {

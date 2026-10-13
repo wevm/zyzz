@@ -28,7 +28,7 @@ use crate::compiler::internal::themes::{self, Output as ThemeOutput};
 use crate::compiler::source::{Call, Extracted};
 use crate::data::Data;
 use crate::error::{Error, Result};
-use crate::internal::token::{Composition, CssOutput};
+use crate::internal::token::{Composition, CssOutput, Reference};
 use crate::internal::{identity, scheme};
 use crate::js::{self, Utf16Index};
 use crate::mapping::edits::Edits;
@@ -42,6 +42,10 @@ use crate::web::internal::contributions;
 use crate::web::internal::themes::{Resource, Scope, Shared};
 
 /// Inputs of one module's web transform.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "Each flag is an independent host option."
+)]
 pub struct Options<'s, 'a> {
     /// Rewrites authoring calls. `false` emits CSS for unchanged source.
     pub compiler: bool,
@@ -53,6 +57,9 @@ pub struct Options<'s, 'a> {
     pub style_classes: Option<&'s FxHashMap<Arc<str>, Arc<str>>>,
     /// Default CSS representation for styles without their own mode.
     pub css_output: Option<CssOutput>,
+    /// Leaves token resources and scope rules to a graph that emits them once, returning
+    /// [`Output::references`] instead.
+    pub deferred_scopes: bool,
     /// Keeps live definitions for development updates.
     pub development: bool,
     /// An untyped host supplied a default CSS output that is neither atomic nor grouped, which
@@ -90,6 +97,8 @@ pub struct Output {
     pub css_map: EncodedSourceMap,
     /// Rewritten-module map with original source content, as JSON.
     pub map: String,
+    /// Token references whose resources [`Options::deferred_scopes`] left to the graph.
+    pub references: Option<Arc<[Arc<Reference>]>>,
     /// Exact emitted rules, for collision diagnostics.
     pub rules: IndexMap<String, String, FxBuildHasher>,
     /// Generated token resources delivered beside this module's CSS.
@@ -98,6 +107,20 @@ pub struct Output {
     pub units: Used,
     /// Scope classes by theme label.
     pub vars: IndexMap<Arc<str>, String, FxBuildHasher>,
+}
+
+/// Whether two outputs serialize identically, comparing every record in order.
+pub fn same(left: &Output, right: &Output) -> bool {
+    left.code == right.code
+        && left.css == right.css
+        && left.map == right.map
+        && left.css_map == right.css_map
+        && left.references == right.references
+        && left.classes.iter().eq(right.classes.iter())
+        && left.rules.iter().eq(right.rules.iter())
+        && left.units.iter().eq(right.units.iter())
+        && left.vars.iter().eq(right.vars.iter())
+        && left.shared == right.shared
 }
 
 fn message(text: &str) -> Error {
@@ -871,7 +894,9 @@ pub fn compile<'a>(
     let css_options = css::Options {
         composition: options.composition,
         contributions: &extracted.contributions,
+        contributions_only: false,
         css_output: options.css_output,
+        deferred_scopes: options.deferred_scopes,
         development: options.development,
         labels: extracted.styles.labels.as_deref(),
         names: portable.then_some(&names),
@@ -984,6 +1009,7 @@ pub fn compile<'a>(
     let (css, css_map) = rewrite_namespaces(&css, &extracted.namespaces, css_map)?;
     let classes = generator.classes;
     let css::Output {
+        references,
         rules,
         shared,
         units,
@@ -997,6 +1023,7 @@ pub fn compile<'a>(
         css,
         css_map,
         map: write_module_map(&map, module_id, source, options.placeholder),
+        references,
         rules,
         shared,
         units,

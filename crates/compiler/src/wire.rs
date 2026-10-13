@@ -137,7 +137,9 @@ impl Input {
         css::Options {
             composition: self.composition,
             contributions: &self.contributions,
+            contributions_only: false,
             css_output: self.css_output,
+            deferred_scopes: false,
             development: self.development,
             labels: self.labels.as_ref(),
             names: self.names.as_ref(),

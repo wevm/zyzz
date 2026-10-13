@@ -1181,7 +1181,7 @@ describe('Graph.create', () => {
     ).toMatchInlineSnapshot(`true`)
   })
 
-  test('recompiles every module after a config edit', () => {
+  test('keeps unchanged module results after a config edit', () => {
     const modules = {
       'app/Card.tsx': `import { style } from './zyzz.config.js'
 
@@ -1217,10 +1217,13 @@ export const { style } = defineConfig({ vars: { color: { brand: '#06c' } } })
       },
     })
 
-    // A config edit recompiles it too
+    // A config edit recompiles every module and keeps the results it leaves unchanged
+    expect(
+      themed.modules['app/Card.tsx'] === card.modules['app/Card.tsx'],
+    ).toMatchInlineSnapshot(`false`)
     expect(
       themed.modules['app/Other.tsx'] === card.modules['app/Other.tsx'],
-    ).toMatchInlineSnapshot(`false`)
+    ).toMatchInlineSnapshot(`true`)
   })
 })
 

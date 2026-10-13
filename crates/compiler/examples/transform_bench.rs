@@ -80,6 +80,7 @@ fn options(input: &Input) -> transform::Options<'_, '_> {
         compiler: true,
         composition: input.composition,
         css_output: None,
+        deferred_scopes: false,
         development: false,
         invalid_css_output: false,
         module_id: &input.module_id,

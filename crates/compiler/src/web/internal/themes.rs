@@ -347,6 +347,12 @@ impl Themes {
         }
     }
 
+    /// Whether a reference received a graph-local variable name, which depends on the order in
+    /// which this collector saw references.
+    pub fn is_anonymous(&self) -> bool {
+        self.next_variable > 0
+    }
+
     /// Whether any reference has been serialized, as a created collector is in TypeScript.
     pub fn is_empty(&self) -> bool {
         self.ids.is_empty() && self.defaults.is_empty()
@@ -378,33 +384,7 @@ impl Themes {
             let Scope::Definition(data) = theme else {
                 return Err("Expected a theme definition.".to_owned());
             };
-            let contract_identity = truthy(data.contract.identity.as_ref());
-            let class_name =
-                if contract_identity.is_some() || truthy(data.css_name.as_ref()).is_some() {
-                    let value = match &data.css_name {
-                        Some(css_name) => css_name.to_string(),
-                        None => match data.contract.identity.as_deref() {
-                            Some(identity)
-                                if !identity.is_empty()
-                                    && name.len() > identity.len()
-                                    && name.starts_with(identity)
-                                    && name.as_bytes().get(identity.len()) == Some(&b'-') =>
-                            {
-                                name.get(identity.len() + 1..)
-                                    .unwrap_or_default()
-                                    .to_owned()
-                            }
-                            _ => name.to_string(),
-                        },
-                    };
-
-                    scope(&value, data.contract.identity.as_deref())
-                } else {
-                    let class_name = format!("z{}", js::radix(next_scope, 36));
-
-                    next_scope += 1;
-                    class_name
-                };
+            let class_name = class_name(name, data, &mut next_scope);
 
             classes.insert(Arc::clone(name), class_name.clone());
 
@@ -683,6 +663,70 @@ impl Themes {
             rules,
         })
     }
+}
+
+/// Names each theme's scope class as [`Themes::emit`] does, without emitting rules.
+///
+/// # Errors
+///
+/// Returns the messages [`Themes::emit`] reports for nullish scopes, empty names, and
+/// non-definitions.
+pub fn classes(
+    themes: &[(Arc<str>, Scope)],
+) -> Result<IndexMap<Arc<str>, String, FxBuildHasher>, String> {
+    if themes
+        .iter()
+        .any(|(_, theme)| matches!(theme, Scope::Nullish))
+    {
+        return Err("Cannot convert undefined or null to object".to_owned());
+    }
+
+    let mut classes: IndexMap<Arc<str>, String, FxBuildHasher> = IndexMap::default();
+    let mut next_scope: u64 = 0;
+
+    for (name, theme) in themes {
+        if name.is_empty() {
+            return Err("Theme names must be nonempty.".to_owned());
+        }
+
+        let Scope::Definition(data) = theme else {
+            return Err("Expected a theme definition.".to_owned());
+        };
+
+        classes.insert(Arc::clone(name), class_name(name, data, &mut next_scope));
+    }
+
+    Ok(classes)
+}
+
+/// A theme's scope class. Themes without an identity or CSS name take the next ordinal.
+fn class_name(name: &str, data: &Metadata, next_scope: &mut u64) -> String {
+    let identity = truthy(data.contract.identity.as_ref());
+
+    if identity.is_none() && truthy(data.css_name.as_ref()).is_none() {
+        let class_name = format!("z{}", js::radix(*next_scope, 36));
+
+        *next_scope += 1;
+        return class_name;
+    }
+
+    let value = match &data.css_name {
+        Some(css_name) => css_name.to_string(),
+        None => match identity {
+            Some(identity)
+                if name.len() > identity.len()
+                    && name.starts_with(identity)
+                    && name.as_bytes().get(identity.len()) == Some(&b'-') =>
+            {
+                name.get(identity.len() + 1..)
+                    .unwrap_or_default()
+                    .to_owned()
+            }
+            _ => name.to_owned(),
+        },
+    };
+
+    scope(&value, data.contract.identity.as_deref())
 }
 
 fn field<'a>(entries: &'a [(Arc<str>, Value)], key: &str) -> Option<&'a Value> {

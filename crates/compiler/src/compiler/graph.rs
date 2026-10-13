@@ -14,7 +14,7 @@ use oxc_allocator::{Allocator, CloneIn};
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
     BindingPattern, Declaration, ExportDefaultDeclarationKind, ExportSpecifier, Expression,
-    ImportDeclarationSpecifier, ImportOrExportKind, ModuleExportName, ObjectPropertyKind,
+    ImportDeclarationSpecifier, ImportOrExportKind, ModuleExportName, ObjectPropertyKind, Program,
     PropertyKind, Statement, StringLiteral, UnaryOperator,
 };
 use oxc_ast_visit::{Visit, VisitMut};
@@ -33,7 +33,7 @@ use crate::compiler::transform::{self, Owners};
 use crate::data::Data;
 use crate::error::{Error, Result};
 use crate::internal::theme::Definition;
-use crate::internal::token::{Composition, CssOutput};
+use crate::internal::token::{Composition, CssOutput, Reference};
 use crate::internal::{identity, variable_sets};
 use crate::js::{self, Record, Utf16Index};
 use crate::react_native::internal::scalar;
@@ -43,13 +43,17 @@ use crate::web::css;
 use crate::web::internal::class_name::{Registry, Visibility};
 use crate::web::internal::contributions::{Definition as Contribution, Kind as ContributionKind};
 use crate::web::internal::namespace;
-use crate::web::internal::themes::{self as theme_rules, Rule as ThemeRule, Scope, Shared};
+use crate::web::internal::themes::{self as theme_rules, Rule as ThemeRule, Scope, Shared, Themes};
 
 /// An ordered record keyed by module identity or name.
 pub type Map<V> = IndexMap<Arc<str>, V, FxBuildHasher>;
 
 /// Inputs of one graph compilation.
 #[derive(Clone, Debug, Default)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "Each flag is an independent host option."
+)]
 pub struct Options {
     /// Lets modules reuse shared rule names from unrelated modules of this one graph.
     pub complete: bool,
@@ -71,6 +75,9 @@ pub struct Options {
     /// An untyped host supplied a default CSS output that is neither atomic nor grouped. Each
     /// web module's CSS compilation reports it, as `Css.compile` validates the option first.
     pub invalid_css_output: bool,
+    /// Publishes only configuration catalogs as contracts, for hosts that read module code,
+    /// stylesheets, and catalogs but never publish contracts.
+    pub lean: bool,
     /// Complete source graph keyed by stable package-relative module identities.
     pub modules: Map<Arc<str>>,
     /// Native output context. `None` compiles web modules and CSS.
@@ -226,6 +233,8 @@ struct Module {
     contributions: Vec<Contribution>,
     namespaces: Vec<namespace::Definition>,
     native_vars: Vec<VarsRead>,
+    /// Whether no export can resolve to a constant, so importers read only `theme_exports`.
+    opaque: bool,
     styles: style::Definition,
     theme_appearances: Vec<Arc<str>>,
     theme_calls: Vec<themes::Call>,
@@ -272,6 +281,7 @@ impl Module {
             contributions: extracted.contributions.clone(),
             namespaces: extracted.namespaces.clone(),
             native_vars: extracted.native_vars.clone(),
+            opaque: false,
             styles: extracted.styles.clone(),
             theme_appearances: extracted.theme_appearances.clone(),
             theme_calls: extracted.theme_calls.clone(),
@@ -310,6 +320,17 @@ struct Transformed {
     themes: Record<Arc<Definition>>,
 }
 
+/// Token resources a lean graph emitted once for the references of its deferred modules.
+struct Scoped {
+    /// Replayed references in canonical order.
+    references: Box<[Arc<Reference>]>,
+    resources: Box<[theme_rules::Resource]>,
+}
+
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "Each flag records one independent option of the cached compilation."
+)]
 struct Cache {
     composition: Option<Composition>,
     contracts: String,
@@ -317,6 +338,7 @@ struct Cache {
     development: bool,
     entry: Option<Arc<str>>,
     extracted: Map<Arc<Module>>,
+    lean: bool,
     libraries: Map<Arc<Library>>,
     native: Option<NativeOptions>,
     reset: Option<Arc<str>>,
@@ -325,6 +347,7 @@ struct Cache {
     retained: Map<Extraction>,
     rewrite: bool,
     schemes: bool,
+    scoped: Option<Arc<Scoped>>,
     shared: Option<Shared>,
     sources: Map<Arc<str>>,
     themes: Record<Arc<Definition>>,
@@ -459,6 +482,7 @@ fn build(options: &Options, cache: Option<&Cache>) -> Result<Option<Cache>> {
             && cache.composition == options.composition
             && cache.shared == options.shared
             && cache.entry.is_none() == options.entry.is_none()
+            && cache.lean == options.lean
     });
     let mut ids: Vec<Arc<str>> = options.modules.keys().cloned().collect();
 
@@ -602,6 +626,7 @@ struct Build<'p, 'a> {
 struct Linked<'a> {
     extracted: Extracted<'a>,
     imports: Arc<[Arc<str>]>,
+    opaque: bool,
 }
 
 /// Finds the first dynamic import a closed relative graph cannot follow.
@@ -711,6 +736,47 @@ fn named_export<'s, 'a>(statement: &'s Statement<'a>) -> Option<NamedExport<'s, 
         }),
         _ => None,
     }
+}
+
+/// Whether no export of a program can resolve to a constant, as [`Build::constant`] reads them.
+/// Function, class, and type exports never do. Variables, specifier lists, re-exports, and
+/// default expressions may.
+fn opaque(program: &Program<'_>) -> bool {
+    let types = |specifiers: &[ExportSpecifier<'_>]| {
+        specifiers
+            .iter()
+            .all(|specifier| specifier.export_kind == ImportOrExportKind::Type)
+    };
+
+    program.body.iter().all(|statement| match statement {
+        Statement::ExportDeclaration(export) => {
+            export.export_kind() == ImportOrExportKind::Type
+                || !matches!(export.declaration, Declaration::VariableDeclaration(_))
+        }
+        Statement::ExportNamedDeclaration(export) => {
+            export.export_kind == ImportOrExportKind::Type || types(&export.specifiers)
+        }
+        Statement::ExportFromDeclaration(export) => {
+            export.export_kind == ImportOrExportKind::Type || types(&export.specifiers)
+        }
+        Statement::ExportAllDeclaration(export) => {
+            export.export_kind == ImportOrExportKind::Type || export.exported.is_some()
+        }
+        Statement::ExportDefaultDeclaration(export) => matches!(
+            export.declaration,
+            ExportDefaultDeclarationKind::FunctionDeclaration(_)
+                | ExportDefaultDeclarationKind::ClassDeclaration(_)
+                | ExportDefaultDeclarationKind::FunctionExpression(_)
+                | ExportDefaultDeclarationKind::ArrowFunctionExpression(_)
+                | ExportDefaultDeclarationKind::ClassExpression(_)
+        ),
+        _ => true,
+    })
+}
+
+/// Whether an importer's extraction reads the same data from both versions of a module.
+fn same_interface(left: &Module, right: &Module) -> bool {
+    left.opaque && right.opaque && left.theme_exports.is_empty() && right.theme_exports.is_empty()
 }
 
 fn type_only(declaration: &oxc_ast::ast::ImportDeclaration<'_>) -> bool {
@@ -1055,7 +1121,13 @@ impl<'p, 'a> Build<'p, 'a> {
             return Ok(*value);
         }
 
-        if active.contains(&key) || !self.options.modules.contains_key(module_id) {
+        if active.contains(&key)
+            || !self.options.modules.contains_key(module_id)
+            || self
+                .extracted
+                .get(module_id)
+                .is_some_and(|module| module.opaque)
+        {
             return Ok(None);
         }
 
@@ -1749,6 +1821,7 @@ impl<'p, 'a> Build<'p, 'a> {
         Ok(Linked {
             extracted,
             imports: imports.into_iter().collect(),
+            opaque: opaque(parsed.program),
         })
     }
 
@@ -1812,7 +1885,9 @@ impl<'p, 'a> Build<'p, 'a> {
                 } else if options.modules.contains_key(target) {
                     let module = self.visit(target)?;
 
-                    matches!(input, Some(Input::Module(input)) if Arc::ptr_eq(input, &module))
+                    // An importer of a module without constants or theme exports reads nothing
+                    // from it, so an edit there leaves the importer's extraction intact.
+                    matches!(input, Some(Input::Module(input)) if Arc::ptr_eq(input, &module) || same_interface(input, &module))
                 } else {
                     false
                 };
@@ -1829,7 +1904,10 @@ impl<'p, 'a> Build<'p, 'a> {
         }
 
         let linked = self.link(module_id)?;
-        let module = Arc::new(Module::detach(&linked.extracted));
+        let module = Arc::new(Module {
+            opaque: linked.opaque,
+            ..Module::detach(&linked.extracted)
+        });
 
         // Only extracted modules contribute names, as the TypeScript graph walks only those.
         if options.native.is_some()
@@ -2213,6 +2291,69 @@ impl Build<'_, '_> {
         ))
     }
 
+    /// Emits token resources once for every deferred module's references. A previous emission
+    /// for the same themes and schemes is reused while the references are unchanged.
+    fn scoped(
+        modules: &Map<Arc<transform::Output>>,
+        scopes: &[(Arc<str>, Scope)],
+        schemes: bool,
+        previous: Option<&Cache>,
+    ) -> Result<Arc<Scoped>> {
+        let mut seen: FxHashSet<usize> = FxHashSet::default();
+        let mut references: Vec<Arc<Reference>> = Vec::new();
+
+        for reference in modules
+            .values()
+            .filter_map(|output| output.references.as_deref())
+            .flatten()
+        {
+            if seen.insert(Arc::as_ptr(reference).addr()) {
+                references.push(Arc::clone(reference));
+            }
+        }
+
+        // A canonical replay order keeps the emitted resources when an edit only reorders a
+        // module's references.
+        references.sort_by(|left, right| {
+            left.contract
+                .identity
+                .cmp(&right.contract.identity)
+                .then_with(|| left.path.cmp(&right.path))
+        });
+
+        if let Some(cached) = previous.and_then(|previous| previous.scoped.as_ref())
+            && cached.references.len() == references.len()
+            && cached
+                .references
+                .iter()
+                .zip(&references)
+                .all(|(left, right)| Arc::ptr_eq(left, right) || left == right)
+        {
+            return Ok(Arc::clone(cached));
+        }
+
+        let mut collector = Themes::new();
+
+        for reference in &references {
+            collector.serialize(reference);
+        }
+
+        let emitted = collector
+            .emit(scopes, schemes, Some(Shared::All))
+            .map_err(|message| {
+                Error::Css(vec![css::Diagnostic::new(
+                    css::Code::InvalidTheme,
+                    message,
+                    vec![Arc::from("vars")],
+                )])
+            })?;
+
+        Ok(Arc::new(Scoped {
+            references: references.into(),
+            resources: emitted.resources.into(),
+        }))
+    }
+
     /// Wraps a rendering failure as an extraction error of the conflicting owner.
     fn render_error(&self, error: &Error, ids: &[Arc<str>]) -> Error {
         let source = match error {
@@ -2233,25 +2374,30 @@ impl Build<'_, '_> {
         module_id: &Arc<str>,
     ) -> Result<()> {
         for (name, body) in rules {
-            if let Some((previous, owner)) = self.emitted_rules.get(name)
-                && previous != body
-            {
-                let generated = match name.strip_prefix("@scope:") {
-                    Some(rest) => format!("scope {}", rest.split(':').next().unwrap_or_default()),
-                    None => format!("class {name}"),
-                };
+            match self.emitted_rules.get_mut(name) {
+                // Every module repeats the graph's scope rules, so equal rules only change owner.
+                Some((previous, owner)) if previous == body => *owner = Arc::clone(module_id),
+                Some((_, owner)) => {
+                    let generated = match name.strip_prefix("@scope:") {
+                        Some(rest) => {
+                            format!("scope {}", rest.split(':').next().unwrap_or_default())
+                        }
+                        None => format!("class {name}"),
+                    };
 
-                return Err(Error::Css(vec![css::Diagnostic::new(
-                    css::Code::IdentityCollision,
-                    format!(
-                        "Generated {generated} conflicts with module {owner}. Supply distinct config or style ids."
-                    ),
-                    vec![Arc::clone(module_id)],
-                )]));
+                    return Err(Error::Css(vec![css::Diagnostic::new(
+                        css::Code::IdentityCollision,
+                        format!(
+                            "Generated {generated} conflicts with module {owner}. Supply distinct config or style ids."
+                        ),
+                        vec![Arc::clone(module_id)],
+                    )]));
+                }
+                None => {
+                    self.emitted_rules
+                        .insert(name.to_owned(), (body.to_owned(), Arc::clone(module_id)));
+                }
             }
-
-            self.emitted_rules
-                .insert(name.to_owned(), (body.to_owned(), Arc::clone(module_id)));
         }
 
         Ok(())
@@ -2778,6 +2924,7 @@ impl Build<'_, '_> {
             development: options.development,
             entry: options.entry.clone(),
             extracted: self.extracted,
+            lean: options.lean,
             libraries: self.libraries,
             native: Some(native.clone()),
             reset: options.reset.clone(),
@@ -2793,6 +2940,7 @@ impl Build<'_, '_> {
             retained: self.retained,
             rewrite: true,
             schemes: false,
+            scoped: None,
             // The TypeScript native cache records no shared mode, so supplying one invalidates it.
             shared: None,
             sources: options.modules.clone(),
@@ -2837,6 +2985,7 @@ impl Build<'_, '_> {
                     let css = css::compile(
                         &css::Options {
                             contributions: std::slice::from_ref(contribution),
+                            contributions_only: true,
                             vars: Some(&scopes),
                             ..css::Options::default()
                         },
@@ -3191,6 +3340,7 @@ impl Build<'_, '_> {
                         compiler: rewrite,
                         composition: options.composition,
                         css_output: options.css_output,
+                        deferred_scopes: options.lean && options.entry.is_none(),
                         development: options.development,
                         invalid_css_output: options.invalid_css_output,
                         module_id,
@@ -3209,8 +3359,22 @@ impl Build<'_, '_> {
                     parsed,
                     Some(&mut units),
                 )?;
+                // A dependency edit re-transforms its consumers. An unchanged result keeps the
+                // previous value, so hosts see which modules actually changed.
+                let unchanged = transformed
+                    .get(module_id)
+                    .map(|cached| &cached.output)
+                    .or_else(|| {
+                        previous
+                            .and_then(|previous| previous.result.modules.get(module_id))
+                            .and_then(Compiled::web)
+                    })
+                    .filter(|cached| transform::same(cached, &output));
 
-                Arc::new(output)
+                match unchanged {
+                    Some(cached) => Arc::clone(cached),
+                    None => Arc::new(output),
+                }
             };
             let mut classes: Vec<(Arc<str>, Option<Arc<str>>)> = Vec::new();
 
@@ -3269,29 +3433,56 @@ impl Build<'_, '_> {
             modules.insert(Arc::clone(module_id), output);
         }
 
-        let mut defaults: FxHashSet<String> = FxHashSet::default();
+        let scoped = if modules.values().any(|output| output.references.is_some()) {
+            Some(Self::scoped(
+                &modules,
+                &scopes,
+                schemes,
+                previous.filter(|previous| same_themes && previous.schemes == schemes),
+            )?)
+        } else {
+            None
+        };
+        let mut defaults: FxHashSet<&str> = FxHashSet::default();
         let mut default_rules: Map<Vec<ThemeRule>> = Map::default();
         let mut default_sections: Vec<Section> = Vec::new();
 
         if options.entry.is_none() {
-            for (source, output) in &modules {
-                for resource in output.shared.iter().flatten() {
-                    if !defaults.insert(resource.id.clone()) {
-                        continue;
-                    }
+            // Graph-wide resources take the place of the first module's own, which every module
+            // repeated.
+            let graph = scoped
+                .iter()
+                .zip(modules.keys().next())
+                .flat_map(|(scoped, source)| {
+                    scoped
+                        .resources
+                        .iter()
+                        .map(move |resource| (source, resource))
+                });
+            let local = modules.iter().flat_map(|(source, output)| {
+                output
+                    .shared
+                    .iter()
+                    .flatten()
+                    .map(move |resource| (source, resource))
+            });
 
-                    match &resource.rules {
-                        None => default_sections.push(Section {
-                            css: Arc::from(resource.css.as_str()),
-                            key: Some(Arc::from(resource.id.as_str())),
-                            source: Arc::clone(source),
-                            ..Section::default()
-                        }),
-                        Some(rules) => default_rules
-                            .entry(Arc::clone(source))
-                            .or_default()
-                            .extend(rules.iter().cloned()),
-                    }
+            for (source, resource) in graph.chain(local) {
+                if !defaults.insert(&resource.id) {
+                    continue;
+                }
+
+                match &resource.rules {
+                    None => default_sections.push(Section {
+                        css: Arc::from(resource.css.as_str()),
+                        key: Some(Arc::from(resource.id.as_str())),
+                        source: Arc::clone(source),
+                        ..Section::default()
+                    }),
+                    Some(rules) => default_rules
+                        .entry(Arc::clone(source))
+                        .or_default()
+                        .extend(rules.iter().cloned()),
                 }
             }
         }
@@ -3317,6 +3508,36 @@ impl Build<'_, '_> {
                 let Some(module) = self.extracted.get(id).cloned() else {
                     continue;
                 };
+
+                // Catalog readers need configurations and configuration exports, not the
+                // rules, stylesheets, and links that every other contract repeats.
+                if options.lean {
+                    let configurations = Self::configurations(&module, &shared_themes);
+                    let mut links = Record::new();
+
+                    for (name, link) in module.theme_exports.iter() {
+                        if link.kind == LinkKind::Config {
+                            links.insert(Arc::clone(name), link.clone());
+                        }
+                    }
+
+                    if !configurations.is_empty() || !links.is_empty() {
+                        published_contracts.insert(
+                            Arc::clone(id),
+                            contract::write(&contract::Write {
+                                class_rules: &[],
+                                configurations: &configurations,
+                                links: &links,
+                                module_id: id,
+                                stylesheets: &[],
+                                themes: &shared_themes,
+                            })?,
+                        );
+                    }
+
+                    continue;
+                }
+
                 let reached = self.reachable(&sections, id, &mut FxHashSet::default());
                 let configurations = Self::configurations(&module, &shared_themes);
 
@@ -3409,6 +3630,7 @@ impl Build<'_, '_> {
             development: options.development,
             entry: options.entry.clone(),
             extracted: self.extracted,
+            lean: options.lean,
             libraries: self.libraries,
             native: None,
             reset: options.reset.clone(),
@@ -3417,6 +3639,7 @@ impl Build<'_, '_> {
             retained: self.retained,
             rewrite,
             schemes,
+            scoped,
             shared: options.shared,
             sources: options.modules.clone(),
             themes: shared_themes,

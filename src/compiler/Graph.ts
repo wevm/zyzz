@@ -21,6 +21,24 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 }
 
+/** The engine's answer when a snapshot names a source it no longer holds. */
+const stale = '{"stale":true}'
+
+/** Names each source equal to the one `previous` held as `0`. */
+function unchanged(
+  sources: Readonly<Record<string, string>> | undefined,
+  previous: Readonly<Record<string, string>> | undefined,
+) {
+  if (!sources || !previous) return sources
+
+  const output: Record<string, string | 0> = {}
+
+  for (const [id, source] of Object.entries(sources))
+    output[id] = previous[id] === source ? 0 : source
+
+  return output
+}
+
 /** The engine's graph input. */
 function encode(options: compile.Options) {
   return {
@@ -32,6 +50,7 @@ function encode(options: compile.Options) {
     development: options.development,
     entry: options[Stylesheets.entry],
     imports: options.imports,
+    lean: options[Results.lean],
     modules: options.modules,
     native: options.native && Results.native(options.native),
     reset: options.reset,
@@ -55,6 +74,8 @@ export declare namespace compile {
     readonly [Stylesheets.entry]?: string | undefined
     /** Lets modules reuse shared rule names from unrelated modules of this one graph. */
     readonly [ClassName.complete]?: boolean | undefined
+    /** Leaves out per-module records and publishes only configuration catalogs as contracts. */
+    readonly [Results.lean]?: boolean | undefined
     /** Rewrite authoring calls. False emits CSS for unchanged source. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
@@ -108,17 +129,43 @@ export function create(): create.ReturnType {
   // The engine compiler owns the caches, and collecting this object releases them.
   let engine: InstanceType<Addon.Exports['Graph']> | undefined
   let result: compile.ReturnType | undefined
+  // The engine holds the sources of its last decoded snapshot, so a source equal to the one sent
+  // last crosses the boundary as `0`. A failed call leaves nothing sent, which resends every source.
+  let sent: Pick<ReturnType<typeof encode>, 'contracts' | 'modules'> | undefined
 
   return Object.freeze({
     compile(options: compile.Options): compile.ReturnType {
       engine ??= new (Addon.load().Graph)()
+
+      const input = encode(options)
+      const previous = sent
+
+      sent = undefined
+
+      const text = (() => {
+        if (!previous) return engine.compile(JSON.stringify(input))
+
+        const output = engine.compile(
+          JSON.stringify({
+            ...input,
+            contracts: unchanged(input.contracts, previous.contracts),
+            modules: unchanged(input.modules, previous.modules),
+          }),
+        )
+
+        return output === stale ? engine.compile(JSON.stringify(input)) : output
+      })()
+
       result = Results.graph(
-        Results.decode<Results.Output>(
-          engine.compile(JSON.stringify(encode(options))),
-        ),
+        Results.decode<Results.Output>(text),
         result,
         decoded,
       )
+      // Hosts may update their records in place, so the sent text is copied.
+      sent = {
+        contracts: input.contracts && { ...input.contracts },
+        modules: { ...input.modules },
+      }
 
       return result
     },

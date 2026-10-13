@@ -10,6 +10,10 @@
 //! same JSON as an object. A web module serializes as its transform output, and a native module as
 //! `{"code","edits":[{"start","end","code","expression"}],"map"}` with UTF-16 edit offsets and
 //! the source map as JSON.
+//!
+//! A [`Compiler`] snapshot may name a module or contract source as `0` when it is the text the
+//! previous decoded snapshot held, so unchanged sources cross the boundary once. A `0` the
+//! compiler cannot resolve answers `{"stale":true}`, and the host resends complete sources.
 
 use std::fmt::Write as _;
 use std::sync::Arc;
@@ -29,6 +33,12 @@ use crate::internal::token::{Composition, CssOutput};
 use crate::js::{self, Record};
 use crate::web::internal::themes::Shared;
 
+/// The sources of the last decoded snapshot, which a later snapshot names as `0`.
+struct Sources {
+    contracts: Option<Map<Arc<str>>>,
+    modules: Map<Arc<str>>,
+}
+
 /// Decoded native sets and the text they came from.
 #[derive(Clone)]
 struct Vars {
@@ -40,16 +50,33 @@ fn malformed(message: &str) -> Error {
     Error::Message(format!("Malformed graph input: {message}"))
 }
 
-fn strings(value: Option<&Value>, field: &str) -> Result<Option<Map<Arc<str>>>> {
+/// Decodes a record of source text. An entry of `0` names the `previous` text of its key, and
+/// one that `previous` lacks sets `stale`.
+fn strings(
+    value: Option<&Value>,
+    field: &str,
+    previous: Option<&Map<Arc<str>>>,
+    stale: &mut bool,
+) -> Result<Option<Map<Arc<str>>>> {
     match value {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Object(object)) => object
             .iter()
             .map(|(key, value)| {
-                value
-                    .as_str()
-                    .map(|value| (Arc::from(key.as_str()), Arc::from(value)))
-                    .ok_or_else(|| malformed(field))
+                if let Some(value) = value.as_str() {
+                    return Ok((Arc::from(key.as_str()), Arc::from(value)));
+                }
+
+                if value.as_u64() != Some(0) {
+                    return Err(malformed(field));
+                }
+
+                if let Some(text) = previous.and_then(|previous| previous.get(key.as_str())) {
+                    Ok((Arc::from(key.as_str()), Arc::clone(text)))
+                } else {
+                    *stale = true;
+                    Ok((Arc::from(key.as_str()), Arc::from("")))
+                }
             })
             .collect::<Result<_>>()
             .map(Some),
@@ -131,11 +158,24 @@ fn native_options(
 ///
 /// Returns a plain error for malformed input.
 pub fn options(input: &Value) -> Result<graph::Options> {
-    decode(input, None).map(|(options, _)| options)
+    let mut stale = false;
+    let (options, _) = decode(input, None, None, &mut stale)?;
+
+    if stale {
+        return Err(malformed("sources"));
+    }
+
+    Ok(options)
 }
 
-/// Decodes graph options, reusing `previous` native sets when their text is unchanged.
-fn decode(input: &Value, previous: Option<&Vars>) -> Result<(graph::Options, Option<Vars>)> {
+/// Decodes graph options, reusing `previous` native sets when their text is unchanged and
+/// resolving `0` sources from `sources`.
+fn decode(
+    input: &Value,
+    previous: Option<&Vars>,
+    sources: Option<&Sources>,
+    stale: &mut bool,
+) -> Result<(graph::Options, Option<Vars>)> {
     let field = |name: &str| input.get(name).filter(|value| !value.is_null());
     let imports = match field("imports") {
         None => None,
@@ -193,7 +233,12 @@ fn decode(input: &Value, previous: Option<&Vars>) -> Result<(graph::Options, Opt
             .unwrap_or_default(),
         compiler: field("compiler").and_then(Value::as_bool),
         composition,
-        contracts: strings(field("contracts"), "contracts")?,
+        contracts: strings(
+            field("contracts"),
+            "contracts",
+            sources.and_then(|sources| sources.contracts.as_ref()),
+            stale,
+        )?,
         css_output: css_output.flatten(),
         development: field("development")
             .and_then(Value::as_bool)
@@ -201,7 +246,14 @@ fn decode(input: &Value, previous: Option<&Vars>) -> Result<(graph::Options, Opt
         entry: text(field("entry")),
         imports,
         invalid_css_output: css_output == Some(None),
-        modules: strings(field("modules"), "modules")?.unwrap_or_default(),
+        lean: field("lean").and_then(Value::as_bool).unwrap_or_default(),
+        modules: strings(
+            field("modules"),
+            "modules",
+            sources.map(|sources| &sources.modules),
+            stale,
+        )?
+        .unwrap_or_default(),
         native,
         reset: text(field("reset")),
         shared,
@@ -390,6 +442,29 @@ pub fn write_module(
     }
 }
 
+/// Appends one module's code, stylesheet, maps, and scope classes, without the records only
+/// contract publishers and per-module token hosts read.
+fn write_lean_module(output: &mut String, module: &transform::Output) {
+    output.reserve(module.code.len() * 9 / 8 + module.css.len() * 2 + module.map.len() + 1024);
+    output.push_str("{\"code\":");
+    js::write_string(output, &module.code);
+    output.push_str(",\"css\":");
+    js::write_string(output, &module.css);
+    output.push_str(",\"cssMap\":");
+    module.css_map.write_json(output, None);
+    output.push_str(",\"map\":");
+    output.push_str(&module.map);
+    output.push_str(",\"vars\":");
+    write_record(
+        output,
+        module
+            .vars
+            .iter()
+            .map(|(name, value)| (&**name, value.as_str())),
+    );
+    output.push('}');
+}
+
 fn write_classes(output: &mut String, module: &transform::Output) {
     output.push_str("\"classes\":");
     write_record(
@@ -470,8 +545,12 @@ pub fn write_native_module(output: &mut String, module: &native::Output) {
 }
 
 /// Serializes a graph result. Modules whose output is the value `written` holds for their
-/// identity become `0`.
-pub fn write_output(result: &Output, written: Option<&FxHashMap<Arc<str>, Compiled>>) -> String {
+/// identity become `0`, and `lean` results leave out per-module records.
+pub fn write_output(
+    result: &Output,
+    written: Option<&FxHashMap<Arc<str>, Compiled>>,
+    lean: bool,
+) -> String {
     let mut output = String::from("{\"contracts\":");
 
     write_record(
@@ -517,6 +596,7 @@ pub fn write_output(result: &Output, written: Option<&FxHashMap<Arc<str>, Compil
             match module {
                 _ if same => output.push('0'),
                 Compiled::Native(module) => write_native_module(output, module),
+                Compiled::Web(module) if lean => write_lean_module(output, module),
                 Compiled::Web(module) => write_module(output, module, None, false),
             }
         },
@@ -557,7 +637,13 @@ pub fn write_output(result: &Output, written: Option<&FxHashMap<Arc<str>, Compil
 ///
 /// Returns the graph's compilation errors and malformed input.
 pub fn compile(input: &Value) -> Result<String> {
-    Ok(write_output(&*graph::compile(&options(input)?)?, None))
+    let options = options(input)?;
+
+    Ok(write_output(
+        &*graph::compile(&options)?,
+        None,
+        options.lean,
+    ))
 }
 
 /// The bound on module outputs a host keeps decoded across snapshots.
@@ -570,7 +656,11 @@ pub struct Compiler {
     /// The snapshot text that produced `previous`. The graph is deterministic, so the same text
     /// answers before decoding.
     input: Option<Box<str>>,
+    /// Whether the written modules were serialized without their records.
+    lean: bool,
     previous: Option<Arc<Output>>,
+    /// The sources of the last decoded snapshot.
+    sources: Option<Sources>,
     /// The native sets of the last compilation, reused while their text is unchanged so the
     /// graph compares them by identity as it compares JavaScript values.
     vars: Option<Vars>,
@@ -591,18 +681,41 @@ impl Compiler {
             return "{\"same\":true}".to_owned();
         }
 
+        let mut stale = false;
         let result = serde_json::from_str::<Value>(input)
             .map_err(|error| Error::Message(error.to_string()))
-            .and_then(|input| decode(&input, self.vars.as_ref()))
+            .and_then(|input| {
+                decode(
+                    &input,
+                    self.vars.as_ref(),
+                    self.sources.as_ref(),
+                    &mut stale,
+                )
+            })
             .and_then(|(options, vars)| {
+                if stale {
+                    return Err(Error::Message(String::new()));
+                }
+
+                self.sources = Some(Sources {
+                    contracts: options.contracts.clone(),
+                    modules: options.modules.clone(),
+                });
+
                 let result = self.graph.compile(&options)?;
 
                 self.vars = vars;
-                Ok(result)
+                Ok((result, options.lean))
             });
 
         match result {
-            Ok(result) => {
+            Ok((result, lean)) => {
+                // Hosts decode lean and complete modules differently, so neither reuses the other.
+                if lean != self.lean {
+                    self.lean = lean;
+                    self.written.clear();
+                }
+
                 let same = self
                     .previous
                     .as_ref()
@@ -614,7 +727,7 @@ impl Compiler {
                     return "{\"same\":true}".to_owned();
                 }
 
-                let mut written = write_output(&result, Some(&self.written));
+                let mut written = write_output(&result, Some(&self.written), lean);
 
                 for (id, module) in &result.modules {
                     self.written.insert(Arc::clone(id), module.clone());
@@ -629,6 +742,10 @@ impl Compiler {
 
                 self.previous = Some(result);
                 written
+            }
+            Err(_) if stale => {
+                self.input = None;
+                "{\"stale\":true}".to_owned()
             }
             Err(error) => {
                 self.input = None;
@@ -798,6 +915,7 @@ pub fn transform(input: &Value, separate: Option<&str>) -> Result<String> {
             compiler: compiler != Some(false),
             composition: options.composition,
             css_output: options.css_output,
+            deferred_scopes: false,
             development: options.development,
             invalid_css_output: options.invalid_css_output,
             module_id,

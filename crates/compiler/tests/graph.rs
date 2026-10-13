@@ -100,6 +100,84 @@ mod create {
         // The card output is the one the host decoded before the snapshot without it.
         insta::assert_snapshot!(compile(&both)["modules"]["card.ts"].to_string(), @"0");
     }
+
+    fn json(text: &str) -> String {
+        serde_json::to_string(text).unwrap_or_default()
+    }
+
+    /// A graph whose page imports a module that exports only a function. A `None` source
+    /// crosses the boundary as `0`.
+    fn component(button: Option<&str>, page: bool) -> String {
+        let button = button.map_or_else(
+            || "0".to_owned(),
+            |color| {
+                json(&format!(
+                    "import {{style}} from 'zyzz';const button=style({{color:'{color}'}});export function Button(){{return button()}}"
+                ))
+            },
+        );
+        let page = if page {
+            json(
+                "import {Button} from './button.js';import {style} from 'zyzz';export const page=style({opacity:0.5});export const element=Button();",
+            )
+        } else {
+            "0".to_owned()
+        };
+
+        format!(
+            r#"{{"imports":{{"button.ts":{{"zyzz":null}},"page.ts":{{"./button.js":"button.ts","zyzz":null}}}},"modules":{{"button.ts":{button},"page.ts":{page}}}}}"#
+        )
+    }
+
+    #[test]
+    fn function_exports() {
+        let mut compiler = Compiler::default();
+
+        compiler.compile(&component(Some("red"), true));
+
+        let edited: serde_json::Value =
+            serde_json::from_str(&compiler.compile(&component(Some("blue"), true)))
+                .unwrap_or_default();
+        let fresh: serde_json::Value =
+            serde_json::from_str(&Compiler::default().compile(&component(Some("blue"), true)))
+                .unwrap_or_default();
+
+        // The importer reads nothing from a module that exports only functions, so it keeps its
+        // result across that module's edits.
+        insta::assert_snapshot!(edited["modules"]["page.ts"].to_string(), @"0");
+        insta::assert_snapshot!(
+            (edited["modules"]["button.ts"] == fresh["modules"]["button.ts"]).to_string(),
+            @"true"
+        );
+    }
+
+    #[test]
+    fn unchanged_sources() {
+        let mut compiler = Compiler::default();
+
+        compiler.compile(&component(Some("red"), true));
+
+        // `0` names the source the previous snapshot held.
+        insta::assert_snapshot!(compiler.compile(&component(None, false)), @r#"{"same":true}"#);
+
+        let edited: serde_json::Value =
+            serde_json::from_str(&compiler.compile(&component(Some("blue"), false)))
+                .unwrap_or_default();
+        let fresh: serde_json::Value =
+            serde_json::from_str(&Compiler::default().compile(&component(Some("blue"), true)))
+                .unwrap_or_default();
+
+        insta::assert_snapshot!(
+            (edited["modules"]["button.ts"] == fresh["modules"]["button.ts"]).to_string(),
+            @"true"
+        );
+
+        // A compiler without the named source asks for the complete snapshot.
+        insta::assert_snapshot!(
+            Compiler::default().compile(&component(None, true)),
+            @r#"{"stale":true}"#
+        );
+    }
 }
 
 mod transform {

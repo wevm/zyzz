@@ -2294,9 +2294,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const before = output.code.slice(0, offset)
       const insertionLine = before.split('\n').length
       const insertionColumn = before.length - (before.lastIndexOf('\n') + 1)
+      // A build compiles a fixed project, so an empty module sheet stays empty. Importing it
+      // would link an empty stylesheet from every chunk that holds no styled module.
+      const stylesheetImport =
+        this.environment.mode === 'build' && !output.css.trim()
+          ? ''
+          : `\nimport ${JSON.stringify(cssId(id))};`
 
       return {
-        code: `${before}${sharedImport}${output.code.slice(offset)}\nimport ${JSON.stringify(cssId(id))};`,
+        code: `${before}${sharedImport}${output.code.slice(offset)}${stylesheetImport}`,
         map: JSON.stringify({
           ...output.map,
           mappings: insert(

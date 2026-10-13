@@ -1806,6 +1806,42 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('production links no stylesheet for a chunk without styles', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'main.ts': `import { props } from './card'; document.body.className = props.className; void import('./plain');`,
+      'plain.ts': `export const label = 'plain';`,
+    })
+
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false, write: false },
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const plain = result.output.find(
+        (file) => file.type === 'chunk' && file.name === 'plain',
+      )
+      if (!plain || plain.type !== 'chunk')
+        throw new Error('Missing plain chunk')
+
+      expect([...plain.viteMetadata!.importedCss]).toMatchInlineSnapshot(`[]`)
+      expect(
+        result.output.flatMap((file) =>
+          file.type === 'asset' &&
+          file.fileName.endsWith('.css') &&
+          !String(file.source).trim()
+            ? [file.names]
+            : [],
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('derives contracts for installed packages without sidecars', async () => {
     const { config, root } = await create({
       'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,

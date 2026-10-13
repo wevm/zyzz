@@ -5,6 +5,7 @@
 import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
+import * as Results from '../compiler/internal/Results.js'
 import * as Contracts from '../node/internal/Contracts.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
@@ -13,6 +14,7 @@ import { existsSync } from 'node:fs'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Reset from '../node/Reset.js'
+import * as Vlq from '../internal/Vlq.js'
 import { createRequire, isBuiltin } from 'node:module'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -21,6 +23,7 @@ import * as Scope from '../compiler/internal/Scope.js'
 import type {
   DevEnvironment,
   Environment,
+  EnvironmentModuleNode,
   Plugin,
   Rollup,
   UserConfig,
@@ -60,6 +63,26 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const reads = new WeakMap<Environment, Map<string, string>>()
   const lookups = new WeakMap<Environment, Lookups>()
   const compilers = new WeakMap<Environment, Graph.create.ReturnType>()
+  const projects = new WeakMap<Environment, Project>()
+  // The shared stylesheet each environment last loaded, which an edit compares against.
+  const servedShared = new WeakMap<Environment, string>()
+  // Watcher events advance an environment's generation, which scopes memoized whole-project work.
+  const generations = new WeakMap<Environment, number>()
+  let devServer: ViteDevServer | undefined
+  const watching = new Set<string>()
+  // Each compile reads the catalogs of every contract it saw, which rarely changes text.
+  const catalogReads = new Map<string, readonly Catalogs.Catalog[]>()
+  // A development entry's last output, reused until a watcher event or a recompiled graph.
+  const outputs = new WeakMap<
+    Entry,
+    {
+      allSources: boolean
+      code: string | undefined
+      generation: number
+      output: Awaited<ReturnType<typeof compileEntry>>
+      result: Graph.compile.ReturnType
+    }
+  >()
   const packages = Contracts.create()
 
   function compiler(environment: Environment) {
@@ -69,6 +92,109 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       compilers.set(environment, value)
     }
     return value
+  }
+
+  /**
+   * Watches a compile input from a hook. Vite checks the filesystem each time a file outside its
+   * root is watched, and every compile reads the same package files, so development watches
+   * each of those once.
+   */
+  function watcher(context: { addWatchFile: (id: string) => void }) {
+    return (file: string) => {
+      if (devServer && !file.startsWith(`${devServer.config.root}/`)) {
+        if (watching.has(file)) return
+
+        watching.add(file)
+      }
+
+      context.addWatchFile(file)
+    }
+  }
+
+  function read(contract: string) {
+    let value = catalogReads.get(contract)
+
+    if (!value) {
+      if (catalogReads.size > 256) catalogReads.clear()
+
+      value = Catalogs.read(contract)
+      catalogReads.set(contract, value)
+    }
+
+    return value
+  }
+
+  function project(environment: Environment) {
+    let value = projects.get(environment)
+    if (!value) {
+      value = {
+        compiler: Graph.create(),
+        contracts: Object.create(null),
+        fallback: Graph.create(),
+        imports: Object.create(null),
+        modules: Object.create(null),
+        outcome: undefined,
+      }
+      projects.set(environment, value)
+    }
+    return value
+  }
+
+  /**
+   * Development merges every module a transform reaches into one graph per environment, so
+   * modules compile once per change instead of once per importer. A module's output depends only
+   * on its own import closure, so the merged graph returns the output a closure compile would.
+   * While some other module fails, the requested closure compiles alone and reports only its own
+   * errors, as before.
+   */
+  function compileProject(
+    environment: Environment,
+    input: Graph.compile.Options,
+    id: string,
+  ) {
+    const value = project(environment)
+    let changed = value.outcome === undefined
+
+    for (const [module, source] of Object.entries(input.modules))
+      if (value.modules[module] !== source) {
+        value.modules[module] = source
+        changed = true
+      }
+
+    for (const [module, resolutions] of Object.entries(input.imports ?? {}))
+      if (!same(value.imports[module], resolutions)) {
+        value.imports[module] = resolutions
+        changed = true
+      }
+
+    for (const [module, contract] of Object.entries(input.contracts ?? {}))
+      if (value.contracts[module] !== contract) {
+        value.contracts[module] = contract
+        changed = true
+      }
+
+    if (changed)
+      value.outcome = (() => {
+        try {
+          return {
+            result: value.compiler.compile({
+              ...input,
+              contracts: value.contracts,
+              imports: value.imports,
+              modules: value.modules,
+            }),
+          }
+        } catch (error) {
+          return { error }
+        }
+      })()
+
+    const outcome = value.outcome!
+
+    if ('result' in outcome && Object.hasOwn(outcome.result.modules, id))
+      return outcome.result
+
+    return value.fallback.compile(input)
   }
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
@@ -382,7 +508,44 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     event: string,
   ) {
     reads.delete(environment)
-    lookups.delete(environment)
+    generations.set(environment, (generations.get(environment) ?? 0) + 1)
+
+    const changed = entries(environment).get(file)
+
+    if (changed) changed.source = undefined
+
+    // An edit keeps every resolution. Adding or removing a file can change where a
+    // specifier resolves, and a contract derives again only when a file it read changes.
+    const cache = lookups.get(environment)
+
+    if (cache) {
+      // Editors save through temporary files, which no specifier resolves to.
+      if (
+        event !== 'update' &&
+        /\.(?:[cm]?[jt]sx?|json|css|svelte|vue)$|(?:^|[/\\])package\.json$/.test(
+          file,
+        )
+      )
+        cache.resolutions.clear()
+
+      for (const [key, files] of cache.read)
+        if (files.has(file)) {
+          cache.contracts.delete(key)
+          cache.read.delete(key)
+        }
+    }
+
+    if (event === 'delete') {
+      const value = projects.get(environment)
+      const id = sourceId(file)
+
+      if (value && Object.hasOwn(value.modules, id)) {
+        delete value.modules[id]
+        delete value.imports[id]
+        value.outcome = undefined
+      }
+    }
+
     if (event === 'delete') {
       if (entries(environment).has(file)) {
         let files = removed.get(environment)
@@ -420,10 +583,66 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     allSources = false,
     everything = false,
   ) {
-    // Every compile visits the discovered project, so modules share lookups
-    // until the watcher reports a change. Full-project compiles look up afresh.
+    const generation = generations.get(entry.environment) ?? 0
+    const memo = outputs.get(entry)
+    const current = projects.get(entry.environment)?.outcome
+
+    // Without a watcher event the closure is unchanged, so a stylesheet load after its
+    // transform reuses the output while the merged graph has not recompiled.
+    if (
+      memo &&
+      !everything &&
+      memo.allSources === allSources &&
+      memo.generation === generation &&
+      (code === undefined || code === memo.code) &&
+      current &&
+      'result' in current &&
+      current.result === memo.result
+    ) {
+      for (const file of entry.files) host.watch(file)
+      return memo.output
+    }
+
+    const output = await compileEntry(entry, host, code, allSources, everything)
+    const outcome = projects.get(entry.environment)?.outcome
+
+    // A concurrent compile can replace the merged result while this one renders, so only an
+    // output of the current result is kept.
+    if (
+      entry.environment.mode === 'dev' &&
+      !everything &&
+      outcome &&
+      'result' in outcome &&
+      outcome.result.modules === output.modules &&
+      generation === (generations.get(entry.environment) ?? 0)
+    )
+      outputs.set(entry, {
+        allSources,
+        code,
+        generation,
+        output,
+        result: outcome.result,
+      })
+
+    return output
+  }
+
+  async function compileEntry(
+    entry: Entry,
+    host: Host,
+    code?: string,
+    allSources = false,
+    everything = false,
+  ) {
+    // Every compile visits the discovered project, so modules share lookups. Watcher events
+    // drop the resolutions and contracts a change can affect. Full-project compiles look up
+    // afresh, since a document must not trail the watcher.
     const cache = (() => {
-      const fresh: Lookups = { contracts: new Map(), resolutions: new Map() }
+      const fresh: Lookups = {
+        contracts: new Map(),
+        read: new Map(),
+        resolutions: new Map(),
+      }
       if (everything) return fresh
 
       let value = lookups.get(entry.environment)
@@ -449,14 +668,37 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       if (!resolved) return resolved
 
       if (entry.environment.mode === 'dev') {
-        const optimized = Object.values({
-          ...entry.environment.depsOptimizer?.metadata.optimized,
-          ...entry.environment.depsOptimizer?.metadata.discovered,
-        }).find((item) => item.file === resolved.id.split('?')[0])
-        if (optimized?.src) return { ...resolved, id: optimized.src }
+        const source = optimized().get(resolved.id.split('?')[0]!)
+        if (source) return { ...resolved, id: source }
       }
 
       return { ...resolved, id: normalize(resolved.id) }
+    }
+
+    // Optimized dependency sources by bundled file, indexed once per compile rather than
+    // searched for every resolution.
+    let indexed: Map<string, string> | undefined
+
+    function optimized() {
+      if (indexed) return indexed
+
+      indexed = new Map()
+
+      const environment = entry.environment
+      const metadata =
+        environment.mode === 'dev'
+          ? environment.depsOptimizer?.metadata
+          : undefined
+
+      // Discovered entries replace optimized ones of the same name, and the first entry
+      // bundling a file wins, as a search of the merged record finds it.
+      for (const item of Object.values({
+        ...metadata?.optimized,
+        ...metadata?.discovered,
+      }))
+        if (!indexed.has(item.file)) indexed.set(item.file, item.src ?? '')
+
+      return indexed
     }
 
     const imports: Record<
@@ -487,7 +729,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             resolve: async (specifier, importer) =>
               (await resolve(specifier, importer))?.id.split(/[?#]/)[0],
           })
-          .then((contract) => ({ contract, files: read }))
+          .then((contract) => {
+            cache.read.set(key, read)
+            return { contract, files: read }
+          })
         cache.contracts.set(key, pending)
         pending.catch(() => cache.contracts.delete(key))
       }
@@ -516,9 +761,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         cached = new Map()
         reads.set(entry.environment, cached)
       }
+      // Earlier plugins can rewrite a module before this one sees it, as router plugins drop
+      // server routes from client route trees. Its importers read the code Vite transformed, so
+      // every graph in the environment holds one version of each module.
       // Full-project compilation must not reuse reads from concurrent module transforms.
       const text =
         source ??
+        (everything
+          ? undefined
+          : entries(entry.environment).get(file)?.source) ??
         (everything ? undefined : cached.get(file)) ??
         (await snapshot(entry.environment).read(file))
       if (!everything) cached.set(file, text)
@@ -836,7 +1087,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         ]),
       )
 
-    const result = entry.compiler.compile({
+    const input: Graph.compile.Options = {
+      [Results.lean]: true,
       [ThemeRules.shared]: native ? undefined : 'all',
       compiler: options.compiler,
       reset: options.reset ? Reset.read() : undefined,
@@ -845,7 +1097,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       development: entry.environment.mode !== 'build',
       imports,
       modules,
-    })
+    }
+    const result =
+      entry.environment.mode === 'dev' && !native && !everything
+        ? compileProject(entry.environment, input, sourceId(entry.file))
+        : entry.compiler.compile(input)
 
     if (native) {
       const output = result.modules[sourceId(entry.file)]!
@@ -894,166 +1150,181 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     const configurations = new Map<string, Catalogs.Catalog>()
     for (const [id, contract] of Object.entries(compiled))
-      for (const configuration of Catalogs.read(contract)) {
+      for (const configuration of read(contract)) {
         const key = `${id}\0${configuration.identity}`
         catalogs.set(key, configuration)
         configurations.set(key, configuration)
       }
 
-    const owners = new Map<string, string>()
+    // Development renders the shared stylesheet for its own request only; transforms and module
+    // stylesheets read module outputs.
+    async function renderShared() {
+      const owners = new Map<string, string>()
 
-    for (const id of new Set(Object.values(result.sharedAssetOwners ?? {}))) {
-      if (!Path.isAbsolute(id)) continue
+      for (const id of new Set(Object.values(result.sharedAssetOwners ?? {}))) {
+        if (!Path.isAbsolute(id)) continue
 
-      let directory = Path.dirname(id.split(/[?#]/)[0]!)
+        let directory = Path.dirname(id.split(/[?#]/)[0]!)
 
-      for (;;) {
-        try {
-          await Fs.access(Path.join(directory, 'package.json'))
-          owners.set(id, await Fs.realpath(directory))
-          break
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-        }
-
-        const parent = Path.dirname(directory)
-        if (parent === directory)
-          throw new Error('Packed assets require an owning package.json.')
-
-        directory = parent
-      }
-    }
-
-    const assetUrls = new Map<string, string>()
-
-    for (const [key, target] of Object.entries(result.sharedAssets ?? {})) {
-      const raw = target.split(/[?#]/)[0]!
-
-      const identity = result.sharedAssetOwners?.[key]
-      const path =
-        sourceFile(decodeURIComponent(raw)) ??
-        (Path.isAbsolute(raw) ? decodeURIComponent(raw) : undefined)
-      if (!path) throw new Error('Asset path escapes the Vite graph.')
-
-      const asset = await (async () => {
-        try {
-          return { file: await Fs.realpath(path), package: false }
-        } catch (error) {
-          if (
-            (error as NodeJS.ErrnoException).code !== 'ENOENT' ||
-            !identity ||
-            !sourceFile(identity)
-          )
-            throw error
-
-          const importer = sourceFile(identity)!
-          const specifier = Path.relative(Path.dirname(importer), path)
-            .split(Path.sep)
-            .join('/')
-          if (specifier.startsWith('.') || Path.isAbsolute(specifier))
-            throw error
-          const resolved = await host.resolve(specifier, importer)
-          if (!resolved || resolved.external) throw error
-          return {
-            file: await Fs.realpath(resolved.id.split('?')[0]!),
-            package: true,
+        for (;;) {
+          try {
+            await Fs.access(Path.join(directory, 'package.json'))
+            owners.set(id, await Fs.realpath(directory))
+            break
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
           }
+
+          const parent = Path.dirname(directory)
+          if (parent === directory)
+            throw new Error('Packed assets require an owning package.json.')
+
+          directory = parent
         }
-      })()
-      const file = asset.file
-
-      const owner =
-        identity && sourceFile(identity)
-          ? sourceRoot(sourceFile(identity)!)
-          : identity
-            ? owners.get(identity)
-            : undefined
-
-      const relative = owner ? Path.relative(owner, file) : '..'
-      if (
-        !asset.package &&
-        (relative === '..' ||
-          relative.startsWith(`..${Path.sep}`) ||
-          Path.isAbsolute(relative))
-      )
-        throw new Error('Asset path escapes its owning package.')
-
-      host.watch(file)
-      files.add(file)
-
-      let url: string
-
-      if (asset.package || /[?#%]/.test(file)) {
-        if (entry.environment.mode === 'build') {
-          url = await host.asset(file)
-
-          if (target.slice(raw.length)) url += `$_${target.slice(raw.length)}__`
-        } else {
-          url = `/@zyzz/asset/${Crypto.hash('sha256', file)}/${encodeURIComponent(Path.basename(file))}`
-          assets.set(url, file)
-          url += target.slice(raw.length)
-        }
-      } else {
-        // Vite reads `/@fs/` URLs with `decodeURI`, which keeps reserved escapes
-        // such as `%40` in scoped package paths, so those characters stay raw.
-        const pathname = encodeURI(file.replaceAll('\\', '/'))
-
-        url = `/@fs/${pathname}${target.slice(raw.length)}`
       }
 
-      assetUrls.set(target, url)
-    }
+      const assetUrls = new Map<string, string>()
 
-    const shared = !Object.keys(result.sharedAssets ?? {}).length
-      ? {
-          code: new TextEncoder().encode(result.sharedCss ?? ''),
-          map: new TextEncoder().encode(
-            JSON.stringify(
+      for (const [key, target] of Object.entries(result.sharedAssets ?? {})) {
+        const raw = target.split(/[?#]/)[0]!
+
+        const identity = result.sharedAssetOwners?.[key]
+        const path =
+          sourceFile(decodeURIComponent(raw)) ??
+          (Path.isAbsolute(raw) ? decodeURIComponent(raw) : undefined)
+        if (!path) throw new Error('Asset path escapes the Vite graph.')
+
+        const asset = await (async () => {
+          try {
+            return { file: await Fs.realpath(path), package: false }
+          } catch (error) {
+            if (
+              (error as NodeJS.ErrnoException).code !== 'ENOENT' ||
+              !identity ||
+              !sourceFile(identity)
+            )
+              throw error
+
+            const importer = sourceFile(identity)!
+            const specifier = Path.relative(Path.dirname(importer), path)
+              .split(Path.sep)
+              .join('/')
+            if (specifier.startsWith('.') || Path.isAbsolute(specifier))
+              throw error
+            const resolved = await host.resolve(specifier, importer)
+            if (!resolved || resolved.external) throw error
+            return {
+              file: await Fs.realpath(resolved.id.split('?')[0]!),
+              package: true,
+            }
+          }
+        })()
+        const file = asset.file
+
+        const owner =
+          identity && sourceFile(identity)
+            ? sourceRoot(sourceFile(identity)!)
+            : identity
+              ? owners.get(identity)
+              : undefined
+
+        const relative = owner ? Path.relative(owner, file) : '..'
+        if (
+          !asset.package &&
+          (relative === '..' ||
+            relative.startsWith(`..${Path.sep}`) ||
+            Path.isAbsolute(relative))
+        )
+          throw new Error('Asset path escapes its owning package.')
+
+        host.watch(file)
+        files.add(file)
+
+        let url: string
+
+        if (asset.package || /[?#%]/.test(file)) {
+          if (entry.environment.mode === 'build') {
+            url = await host.asset(file)
+
+            if (target.slice(raw.length))
+              url += `$_${target.slice(raw.length)}__`
+          } else {
+            url = `/@zyzz/asset/${Crypto.hash('sha256', file)}/${encodeURIComponent(Path.basename(file))}`
+            assets.set(url, file)
+            url += target.slice(raw.length)
+          }
+        } else {
+          // Vite reads `/@fs/` URLs with `decodeURI`, which keeps reserved escapes
+          // such as `%40` in scoped package paths, so those characters stay raw.
+          const pathname = encodeURI(file.replaceAll('\\', '/'))
+
+          url = `/@fs/${pathname}${target.slice(raw.length)}`
+        }
+
+        assetUrls.set(target, url)
+      }
+
+      const shared = !Object.keys(result.sharedAssets ?? {}).length
+        ? {
+            code: new TextEncoder().encode(result.sharedCss ?? ''),
+            map: new TextEncoder().encode(
+              JSON.stringify(
+                result.sharedCssMap ??
+                  Mapping.toEncodedMap(new Mapping.GenMapping()),
+              ),
+            ),
+          }
+        : AtRules.transform({
+            filename: 'zyzz.shared.css',
+            code: new TextEncoder().encode(result.sharedCss ?? ''),
+            sourceMap: true,
+            inputSourceMap: JSON.stringify(
               result.sharedCssMap ??
                 Mapping.toEncodedMap(new Mapping.GenMapping()),
             ),
-          ),
-        }
-      : AtRules.transform({
-          filename: 'zyzz.shared.css',
-          code: new TextEncoder().encode(result.sharedCss ?? ''),
-          sourceMap: true,
-          inputSourceMap: JSON.stringify(
-            result.sharedCssMap ??
-              Mapping.toEncodedMap(new Mapping.GenMapping()),
-          ),
-          visitor: {
-            Rule(rule) {
-              if (rule.type !== 'import') return
-              const target = result.sharedAssets?.[rule.value.url]
-              if (target)
-                return AtRules.relocateImport(
-                  rule.value,
-                  assetUrls.get(target)!,
-                )
+            visitor: {
+              Rule(rule) {
+                if (rule.type !== 'import') return
+                const target = result.sharedAssets?.[rule.value.url]
+                if (target)
+                  return AtRules.relocateImport(
+                    rule.value,
+                    assetUrls.get(target)!,
+                  )
+              },
+              Url(url) {
+                const target = result.sharedAssets?.[url.url]
+                if (!target) return
+
+                return { ...url, url: assetUrls.get(target)! }
+              },
             },
-            Url(url) {
-              const target = result.sharedAssets?.[url.url]
-              if (!target) return
+          })
 
-              return { ...url, url: assetUrls.get(target)! }
-            },
-          },
-        })
+      const sharedMap = JSON.parse(
+        new TextDecoder().decode(shared.map!),
+      ) as Mapping.EncodedSourceMap
 
-    const sharedMap = JSON.parse(
-      new TextDecoder().decode(shared.map!),
-    ) as Mapping.EncodedSourceMap
+      sharedMap.sources = sharedMap.sources.map((source) =>
+        source === null ? null : (sourceFile(source) ?? source),
+      )
 
-    sharedMap.sources = sharedMap.sources.map((source) =>
-      source === null ? null : (sourceFile(source) ?? source),
-    )
+      return { css: new TextDecoder().decode(shared.code), map: sharedMap }
+    }
+
+    const sharedOutput =
+      entry.environment.mode !== 'dev' || allSources
+        ? await renderShared()
+        : {
+            css: '',
+            map: Mapping.toEncodedMap(new Mapping.GenMapping()),
+          }
 
     const output = result.modules[sourceId(entry.file)]!
 
     entry.files = files
 
-    return {
+    const value = {
       imports,
       modules: result.modules,
       code: output.code,
@@ -1061,8 +1332,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       configurations,
       connections: staged,
       css: output.css,
-      sharedCss: new TextDecoder().decode(shared.code),
-      sharedCssMap: sharedMap,
+      sharedCss: sharedOutput.css,
+      sharedCssMap: sharedOutput.map,
       cssMap: {
         ...output.cssMap,
         sources: output.cssMap.sources.map((source) =>
@@ -1076,13 +1347,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         ),
       },
     }
+
+    return value
   }
 
   /** Compiles every discovered source once so index.html can inline each configuration's script before modules load. */
   async function initializations(server: ViteDevServer) {
     const environment = server.environments.client
     reads.delete(environment)
-    lookups.delete(environment)
     const host: Host = {
       asset: async (file) => file,
       resolve: resolver(environment),
@@ -1096,8 +1368,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       const file = sources.keys().next().value
       if (file === undefined) return { catalogs: new Map(), edges: new Map() }
 
+      // Whole-project compiles keep their own cache beside the transforms' merged graph.
       entry = {
-        compiler: compiler(environment),
+        compiler: initializers.get(environment)?.compiler ?? Graph.create(),
         environment,
         file,
         files: new Set([file]),
@@ -1273,6 +1546,93 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       .map(([, configuration]) => configuration)
   }
 
+  /**
+   * The modules an edit invalidates: those whose code or stylesheet differs from what Vite served.
+   * A concurrent compile can already hold the edit, so outputs are not compared with each other.
+   */
+  async function changes(
+    environment: DevEnvironment,
+    after: Graph.compile.ReturnType,
+    served: Served,
+    modules: readonly EnvironmentModuleNode[],
+    timestamp: number,
+    deleted: string | undefined,
+  ) {
+    // Portable build adapters share this module and do not require Vite.
+    const { transformWithOxc } = await import('vite')
+    const code = new Set<string>()
+    const css = new Set<string>()
+
+    for (const [
+      entry,
+      { code: current, css: stylesheet, imports },
+    ] of served.entries) {
+      const id = sourceId(entry.file)
+      const next = after.modules[id]
+
+      if (!next) continue
+
+      // A stylesheet Vite never loaded has no module to invalidate.
+      if (stylesheet !== undefined && stylesheet !== next.css)
+        css.add(entry.file)
+
+      // A stylesheet request can compile a module whose code was never transformed here.
+      if (current === undefined) continue
+
+      if (imports !== JSON.stringify(projects.get(environment)?.imports[id])) {
+        code.add(entry.file)
+        continue
+      }
+
+      if (current === next.code) continue
+
+      // Generated type assertions can change without changing runtime bindings.
+      const [left, right] = await Promise.all([
+        transformWithOxc(current, entry.file, { sourcemap: false }),
+        transformWithOxc(next.code, entry.file, { sourcemap: false }),
+      ])
+
+      if (left.code !== right.code) code.add(entry.file)
+    }
+
+    const ids = new Set<string>()
+
+    if (deleted !== undefined) ids.add(cssId(deleted))
+    if (served.shared !== undefined && served.shared !== after.sharedCss)
+      ids.add(sharedId)
+    for (const file of code) ids.add(file)
+    for (const file of css) ids.add(cssId(file))
+
+    // Compiled modules the edit left unchanged skip Vite's own update; other modules, such as
+    // plain JavaScript or assets, keep it.
+    const affected = new Set(
+      modules.filter((module) => {
+        if (!module.id) return module.type !== 'asset'
+
+        const file = normalize(module.id)
+
+        return Object.hasOwn(after.modules, sourceId(file))
+          ? code.has(file)
+          : true
+      }),
+    )
+
+    for (const id of ids) {
+      const module = environment.moduleGraph.getModuleById(id)
+      if (!module) continue
+
+      environment.moduleGraph.invalidateModule(
+        module,
+        new Set(),
+        timestamp,
+        true,
+      )
+      affected.add(module)
+    }
+
+    return [...affected]
+  }
+
   return {
     buildStart() {
       reads.delete(this.environment)
@@ -1342,6 +1702,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       },
     },
     configureServer(server) {
+      devServer = server
+
       // Directory watches belong to the server, not module import dependencies.
       server.watcher.add(directories.slice(1))
 
@@ -1480,6 +1842,59 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     async hotUpdate({ file, modules, timestamp, type, server }) {
       const state = entries(this.environment)
+      const before = projects.get(this.environment)?.outcome
+      // Concurrent transforms update entries while this compiles, so the served output is read now.
+      const served: Served = {
+        entries: new Map(
+          [...state.values()].map((entry) => [
+            entry,
+            { code: entry.code, css: entry.css, imports: entry.imports },
+          ]),
+        ),
+        shared: servedShared.get(this.environment),
+      }
+
+      // The merged development graph compares module outputs before and after the edit, so
+      // only modules whose code or stylesheet changed update.
+      if (!native && before && 'result' in before) {
+        await updateDiscovery(this.environment, file, type)
+
+        // The edited module's own entry, or one whose closure reads it, merges its new source.
+        // A contribution source no module imports joins every closure.
+        const first =
+          state.get(file) ??
+          [...state.values()].find((entry) => entry.files.has(file)) ??
+          (eager(file, this.environment)
+            ? state.values().next().value
+            : undefined)
+        if (!first && !removed.get(this.environment)?.has(file)) return modules
+
+        const compiled =
+          first && type === 'update' && eligible(file)
+            ? await compile(first, {
+                resolve: resolver(this.environment),
+                watch: (file) => {
+                  server.watcher.add(file)
+                },
+                asset: async (file) => file,
+              }).then(
+                () => true,
+                () => false,
+              )
+            : false
+        const after = projects.get(this.environment)?.outcome
+
+        if (compiled && after && 'result' in after)
+          return await changes(
+            this.environment,
+            after.result,
+            served,
+            modules,
+            timestamp,
+            type === 'delete' ? file : undefined,
+          )
+      }
+
       const previous = [...state.values()].map((entry) => ({
         code: entry.code,
         file: entry.file,
@@ -1581,12 +1996,39 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         id === sharedId
           ? undefined
           : decodeURIComponent(id.slice(prefix.length, -4))
-      const entry =
+      let entry =
         file === undefined
           ? entries(this.environment).values().next().value
           : entries(this.environment).get(file)
       // A pruned JavaScript module can leave its stylesheet loaded in the browser.
       if (!entry && file && removed.get(this.environment)?.has(file)) return ''
+
+      // Server rendering links the stylesheets of modules this environment has not transformed
+      // yet, so a development request compiles the module where the browser loads it.
+      if (!entry && this.environment.mode === 'dev') {
+        const anchor =
+          file ??
+          (
+            await discover(this.environment, {
+              asset: async (file) => file,
+              resolve: resolver(this.environment),
+              watch: watcher(this),
+            })
+          )
+            .keys()
+            .next().value
+
+        if (anchor !== undefined && eligible(anchor)) {
+          entry = {
+            compiler: compiler(this.environment),
+            environment: this.environment,
+            file: anchor,
+            files: new Set([anchor]),
+          }
+          entries(this.environment).set(anchor, entry)
+        }
+      }
+
       if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
 
       const output = await compile(
@@ -1596,7 +2038,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             this.environment.mode === 'dev'
               ? resolver(this.environment)
               : (source, importer) => this.resolve(source, importer),
-          watch: (file) => this.addWatchFile(file),
+          watch: watcher(this),
           asset: async (file) => {
             const reference = this.emitFile({
               type: 'asset',
@@ -1624,11 +2066,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
               '-zyzz-fpv-000000000',
             )
           : css
-      if (id === sharedId)
+      if (id === sharedId) {
+        servedShared.set(this.environment, output.sharedCss)
         return {
           code: transport(output.sharedCss),
           map: JSON.stringify(output.sharedCssMap),
         }
+      }
+
+      entry.css = output.css
       return { code: transport(output.css), map: JSON.stringify(output.cssMap) }
     },
     name: 'zyzz',
@@ -1654,6 +2100,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         removed.get(this.environment)?.delete(id)
       }
 
+      entry.source = code
+
       const output = await compile(
         entry,
         {
@@ -1661,7 +2109,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             this.environment.mode === 'dev'
               ? resolver(this.environment)
               : (source, importer) => this.resolve(source, importer),
-          watch: (file) => this.addWatchFile(file),
+          watch: watcher(this),
           asset: async (file) => {
             const reference = this.emitFile({
               type: 'asset',
@@ -1683,64 +2131,23 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       // Keep the CSS dependency even when the current graph has no live rules.
       // Later edits can introduce styles without changing this import boundary.
-      const parsed = Parser.parseSync('source.tsx', output.code, {
-        sourceType: 'module',
-      })
-      let offset = output.code.startsWith('#!')
-        ? output.code.indexOf('\n') + 1
-        : 0
-
-      for (const node of parsed.program.body) {
-        if (node.type !== 'ExpressionStatement' || !node.directive) break
-
-        offset = node.end
-      }
-
+      const offset = prologue(output.code)
       const sharedImport = `\nimport ${JSON.stringify(sharedId)};\n`
-      const map = Mapping.fromMap(JSON.stringify(output.map))
       // The inserted dependency shifts only generated positions after the prologue.
       const before = output.code.slice(0, offset)
       const insertionLine = before.split('\n').length
       const insertionColumn = before.length - (before.lastIndexOf('\n') + 1)
-      const shifted = new Mapping.GenMapping()
-
-      for (const mapping of Mapping.allMappings(map)) {
-        const generated = { ...mapping.generated }
-
-        if (
-          generated.line > insertionLine ||
-          (generated.line === insertionLine &&
-            generated.column >= insertionColumn)
-        ) {
-          if (generated.line === insertionLine)
-            generated.column -= insertionColumn
-
-          generated.line += 2
-        }
-
-        if (mapping.source !== undefined && mapping.original !== undefined) {
-          const location = {
-            generated,
-            original: mapping.original,
-            source: mapping.source,
-          }
-
-          if (mapping.name === undefined) Mapping.addMapping(shifted, location)
-          else Mapping.addMapping(shifted, { ...location, name: mapping.name })
-        } else Mapping.addMapping(shifted, { generated })
-      }
-
-      for (const [index, source] of output.map.sources.entries())
-        if (source !== null)
-          Mapping.setSourceContent(
-            shifted,
-            source,
-            output.map.sourcesContent?.[index] ?? null,
-          )
 
       return {
         code: `${before}${sharedImport}${output.code.slice(offset)}\nimport ${JSON.stringify(cssId(id))};`,
-        map: JSON.stringify(Mapping.toEncodedMap(shifted)),
+        map: JSON.stringify({
+          ...output.map,
+          mappings: insert(
+            output.map.mappings,
+            insertionLine - 1,
+            insertionColumn,
+          ),
+        }),
       }
     },
     transformIndexHtml: {
@@ -1779,11 +2186,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
 type Entry = {
   code?: string
-  imports?: string
-  environment: Environment
   compiler: Graph.create.ReturnType
+  /** The stylesheet Vite last loaded for this module. */
+  css?: string | undefined
+  environment: Environment
   file: string
   files: Set<string>
+  imports?: string
+  /** The code Vite last passed to the transform, until a watcher event changes the file. */
+  source?: string | undefined
 }
 
 type Host = {
@@ -1803,7 +2214,128 @@ type Lookups = {
     string,
     Promise<{ contract: string | undefined; files: ReadonlySet<string> }>
   >
+  /** Files each settled contract read, so an edit to one drops only its contracts. */
+  read: Map<string, ReadonlySet<string>>
   resolutions: Map<string, ReturnType<Host['resolve']>>
+}
+
+/** One development environment's merged source graph and its last compilation. */
+type Project = {
+  compiler: Graph.create.ReturnType
+  contracts: Record<string, string>
+  /** Compiles a closure alone while the merged graph fails. */
+  fallback: Graph.create.ReturnType
+  imports: Record<string, Record<string, string | null>>
+  modules: Record<string, string>
+  outcome:
+    | { readonly error: unknown }
+    | { readonly result: Graph.compile.ReturnType }
+    | undefined
+}
+
+/** What an environment served when an edit arrived. */
+type Served = {
+  entries: ReadonlyMap<
+    Entry,
+    {
+      code: string | undefined
+      css: string | undefined
+      imports: string | undefined
+    }
+  >
+  shared: string | undefined
+}
+
+/**
+ * The end of a module's hashbang and directive prologue, where an added import keeps directives
+ * first. Source without a leading string literal skips parsing.
+ */
+function prologue(code: string) {
+  let index = code.startsWith('#!') ? code.indexOf('\n') + 1 : 0
+  const start = index
+
+  for (;;) {
+    while (index < code.length && /\s/.test(code[index]!)) index++
+
+    if (code.startsWith('//', index)) {
+      const end = code.indexOf('\n', index)
+      index = end === -1 ? code.length : end
+    } else if (code.startsWith('/*', index)) {
+      const end = code.indexOf('*/', index + 2)
+      index = end === -1 ? code.length : end + 2
+    } else break
+  }
+
+  if (code[index] !== "'" && code[index] !== '"') return start
+
+  let offset = start
+  const { program } = Parser.parseSync('source.tsx', code, {
+    sourceType: 'module',
+  })
+
+  for (const node of program.body) {
+    if (node.type !== 'ExpressionStatement' || !node.directive) break
+
+    offset = node.end
+  }
+
+  return offset
+}
+
+/**
+ * Moves encoded mappings for two lines inserted at a generated position. Segments at or past
+ * `column` on `line` start the line after the insertion, and every later line moves down by two.
+ * Other fields stay relative to the segment before them, which keeps its order.
+ */
+function insert(mappings: string, line: number, column: number) {
+  const lines = mappings.split(';')
+  const text = lines[line]
+
+  if (text === undefined) return mappings
+
+  let generated = 0
+  let split = -1
+  let position = 0
+  const segments = text ? text.split(',') : []
+
+  for (const [index, segment] of segments.entries()) {
+    const [delta] = Vlq.decode(segment)
+
+    generated += delta!
+
+    if (generated >= column) {
+      split = index
+      position = generated
+      break
+    }
+  }
+
+  if (split === -1) {
+    lines.splice(line + 1, 0, '', '')
+    return lines.join(';')
+  }
+
+  const moved = segments.slice(split)
+  const fields = Vlq.decode(moved[0]!)
+
+  fields[0] = position - column
+  moved[0] = Vlq.encode(fields)
+  lines.splice(line, 1, segments.slice(0, split).join(','), '', moved.join(','))
+
+  return lines.join(';')
+}
+
+/** Whether two import resolution records hold the same entries. */
+function same(
+  left: Readonly<Record<string, string | null>> | undefined,
+  right: Readonly<Record<string, string | null>>,
+) {
+  if (!left) return false
+
+  const keys = Object.keys(right)
+  if (Object.keys(left).length !== keys.length) return false
+
+  return keys.every((key) => left[key] === right[key])
 }
 
 /**

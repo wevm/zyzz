@@ -2,20 +2,32 @@
  * Builds the native addon with profile-guided optimization. An instrumented build compiles the
  * repository's authored modules through `scripts/train-binding.ts`, and the release build lays out
  * and inlines code for the paths that training exercised.
+ *
+ * `--target <triple>` selects one of the napi targets in `crates/binding/package.json`, and
+ * defaults to the host. Training runs the instrumented addon, so the host must be able to load it.
+ * Linux glibc targets link against the glibc 2.17 sysroot from `@napi-rs/cross-toolchain`, so the
+ * addon also loads on distributions older than the build machine.
  * @module
  */
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
+import * as Util from 'node:util'
 
 const root = Path.resolve(import.meta.dirname, '..')
 const profiles = Path.join(root, 'target/pgo')
 const merged = Path.join(profiles, 'merged.profdata')
+
+const { values } = Util.parseArgs({ options: { target: { type: 'string' } } })
+const target = values.target ?? host()
 const napi = [
   'exec',
   'napi',
   'build',
   '--platform',
+  '--target',
+  target,
+  ...(target.endsWith('-linux-gnu') ? ['--use-napi-cross'] : []),
   '--package-json-path',
   'crates/binding/package.json',
   '--manifest-path',
@@ -65,7 +77,9 @@ function build(
   // static runtime.
   const rustflags = [
     process.env.RUSTFLAGS,
-    process.platform === 'win32' ? '-Ctarget-feature=+crt-static' : undefined,
+    target.endsWith('-windows-msvc')
+      ? '-Ctarget-feature=+crt-static'
+      : undefined,
     flags,
   ]
     .filter(Boolean)
@@ -79,15 +93,21 @@ function build(
   })
 }
 
+/** Reads the host triple from `rustc`. */
+function host(): string {
+  const triple = /^host: (.+)$/m.exec(rustc(['-vV']))?.[1]
+
+  if (!triple) throw new Error('rustc -vV did not report a host triple.')
+
+  return triple
+}
+
 /** Locates `llvm-profdata` from the toolchain's `llvm-tools` component. */
 function profdata(): string {
-  const rustc = (args: readonly string[]) =>
-    ChildProcess.execFileSync('rustc', args, { cwd: root, encoding: 'utf8' })
-  const host = /^host: (.+)$/m.exec(rustc(['-vV']))?.[1]
   const path = Path.join(
     rustc(['--print', 'sysroot']).trim(),
     'lib/rustlib',
-    host ?? '',
+    host(),
     'bin',
     process.platform === 'win32' ? 'llvm-profdata.exe' : 'llvm-profdata',
   )
@@ -98,4 +118,12 @@ function profdata(): string {
     )
 
   return path
+}
+
+/** Runs `rustc` from the repository's pinned toolchain. */
+function rustc(args: readonly string[]): string {
+  return ChildProcess.execFileSync('rustc', args, {
+    cwd: root,
+    encoding: 'utf8',
+  })
 }

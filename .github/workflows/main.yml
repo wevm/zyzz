@@ -16,15 +16,47 @@ jobs:
     uses: ./.github/workflows/verify.yml
     secrets: inherit
 
+  release:
+    name: Release
+    outputs:
+      publish: ${{ steps.release.outputs.publish }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      # Changesets publishes once no changesets are pending, and the native addons are built only
+      # for a version that npm does not have yet.
+      - id: release
+        name: Check for an unpublished version
+        run: |
+          pending=$(find .changeset -name '*.md' ! -name README.md | head -n 1)
+          version=$(node -p "require('./package.json').version")
+          if [ -z "$pending" ] && [ -z "$(npm view "zyzz@$version" version 2>/dev/null)" ]; then
+            echo publish=true >> "$GITHUB_OUTPUT"
+          fi
+
+  binding:
+    if: needs.release.outputs.publish == 'true'
+    name: Binding
+    needs: release
+    permissions:
+      contents: read
+    uses: ./.github/workflows/binding.yml
+
   changesets:
+    if: ${{ !cancelled() && needs.verify.result == 'success' && contains(fromJSON('["skipped", "success"]'), needs.binding.result) }}
     name: Changesets
-    needs: verify
+    needs: [binding, verify]
     permissions:
       contents: write
       id-token: write
       pull-requests: write
     runs-on: ubuntu-latest
-    # Publishing builds the PGO native addon and the WebAssembly fallback.
+    # Publishing builds the WebAssembly fallback beside the downloaded native addons.
     timeout-minutes: 45
 
     steps:
@@ -36,6 +68,14 @@ jobs:
 
       - name: Cache Rust builds
         uses: Swatinem/rust-cache@v2
+
+      - if: needs.binding.result == 'success'
+        name: Download native addons
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: binding
+          pattern: binding-*
 
       - name: PR or publish
         id: changesets

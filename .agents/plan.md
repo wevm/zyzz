@@ -126,7 +126,7 @@ Independent browser/iOS/Android renderer controls remain 3.9b. Packed external a
 - [ ] Add shared Browserslist target configuration and a CLI `--targets` option. Lightning CSS processing already exists in the host. Preserve consuming-build ownership, cache identities, maps, and default modern CSS.
 - [ ] Complete downlevel theme/scheme checks, including inherited, forced, inline, and external scopes. Diagnose transformations that cannot preserve semantics.
 - [ ] Review public APIs/dependencies, package metadata, and the release workflow against the project principles.
-- [ ] Publish the per-platform `@zyzz/binding-*` native packages from a release build matrix, and add them as optional dependencies. Releases and prereleases ship the Linux x64 addon and the `wasm32-wasip1-threads` fallback in `binding/`, which other platforms load.
+- [ ] Publish the per-platform `@zyzz/binding-*` native packages as optional dependencies, so an install downloads only its platform's addon. Releases ship every native target's addon in `binding/` from the Binding workflow matrix. Prereleases ship only the Linux x64 addon, and other platforms load the `wasm32-wasip1-threads` fallback.
 - [ ] Decide whether browser `Css.compile` loads its WebAssembly module as a separate asset. The inlined module adds about 928 KB raw and 272 KB gzip to bundles that import it.
 
 ### Remaining measurement work

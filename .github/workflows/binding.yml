@@ -1,0 +1,99 @@
+name: Binding
+on:
+  pull_request:
+    paths:
+      - .cargo/**
+      - .github/workflows/binding.yml
+      - Cargo.lock
+      - Cargo.toml
+      - crates/binding/**
+      - rust-toolchain.toml
+      - scripts/build-binding.ts
+      - scripts/check-binding.ts
+      - scripts/train-binding.ts
+  workflow_call:
+  workflow_dispatch:
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - if: ${{ !endsWith(matrix.target, '-musl') }}
+        name: Set up pnpm
+        uses: pnpm/action-setup@v4
+      - if: ${{ !endsWith(matrix.target, '-musl') }}
+        name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: '24'
+      # The build needs only the root package's tooling, so examples and the site stay
+      # uninstalled on hosts their dependencies do not support.
+      - if: ${{ !endsWith(matrix.target, '-musl') }}
+        name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter zyzz
+      - if: ${{ !endsWith(matrix.target, '-musl') }}
+        name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - if: ${{ !endsWith(matrix.target, '-musl') }}
+        name: Build native addon
+        run: node scripts/build-binding.ts --target ${{ matrix.target }}
+      - if: ${{ !endsWith(matrix.target, '-musl') }}
+        name: Load native addon
+        run: node scripts/check-binding.ts --target ${{ matrix.target }}
+      # Debian 11 ships glibc 2.31, older than the runner's, so a symbol from a newer glibc fails
+      # to load here.
+      - if: ${{ endsWith(matrix.target, '-linux-gnu') }}
+        name: Load native addon on Debian 11
+        run: docker run --rm -v "$PWD:/zyzz" -w /zyzz node:22-bullseye-slim node scripts/check-binding.ts --target ${{ matrix.target }}
+      # Training runs the instrumented addon, so musl builds install and run inside Alpine.
+      - if: ${{ endsWith(matrix.target, '-musl') }}
+        name: Build and load native addon on Alpine
+        run: |
+          docker run --rm -e CI -v "$PWD:/zyzz" -w /zyzz node:24-alpine sh -euc '
+            apk add --no-cache build-base rustup
+            rustup-init -y --default-toolchain none --profile minimal
+            . "$HOME/.cargo/env"
+            corepack enable
+            pnpm install --frozen-lockfile --filter zyzz
+            node scripts/build-binding.ts --target ${{ matrix.target }}
+            node scripts/check-binding.ts --target ${{ matrix.target }}
+          '
+      - name: Upload native addon
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: binding-${{ matrix.target }}
+          path: binding/*.node
+          retention-days: 1
+    timeout-minutes: 60

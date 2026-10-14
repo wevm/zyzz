@@ -1734,18 +1734,20 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     for (const id of [...stylesheets].sort(
       (left, right) =>
         Number(right === cssId(edited)) - Number(left === cssId(edited)),
-    )) {
-      const module = environment.moduleGraph.getModuleById(id)
-      if (!module) continue
+    ))
+      // A server-rendered link loads the sheet as a direct request, which the browser never imports.
+      for (const variant of [id, `${id}?direct`]) {
+        const module = environment.moduleGraph.getModuleById(variant)
+        if (!module) continue
 
-      environment.moduleGraph.invalidateModule(
-        module,
-        new Set(),
-        timestamp,
-        true,
-      )
-      sheets.push(module)
-    }
+        environment.moduleGraph.invalidateModule(
+          module,
+          new Set(),
+          timestamp,
+          true,
+        )
+        sheets.push(module)
+      }
 
     // A stylesheet accepts its own updates and only its module imports it, so it is never within
     // an import cycle. Vite proves that by walking every importer of the importing module, which
@@ -1768,7 +1770,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           isWithinCircularImport: false,
           path,
           timestamp,
-          type: 'js-update' as const,
+          type:
+            module.type === 'css'
+              ? ('css-update' as const)
+              : ('js-update' as const),
         }
       })
 
@@ -2123,8 +2128,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
         // Rewritten importers can lose a source edge, so changed bindings must update together.
         if (javascriptChanged) ids.add(entry.file)
-        ids.add(cssId(entry.file))
-        ids.add(sharedId)
+        for (const id of [cssId(entry.file), sharedId])
+          ids.add(id).add(`${id}?direct`)
       }
 
       for (const id of ids) {

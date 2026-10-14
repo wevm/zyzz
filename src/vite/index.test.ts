@@ -2683,6 +2683,76 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
     }
   }, 30000)
 
+  test('Vite HMR updates server-rendered stylesheet links in Chromium', async () => {
+    const { config, root } = await create()
+    const server = await Vite.createServer(config)
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
+    try {
+      browser = await chromium.launch()
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      // 1. Render the card on the server only and link its stylesheet, as RSC and SSR hosts do.
+      const file = Path.join(root, 'card.ts')
+      const { props } = await server.ssrLoadModule('/card.ts')
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        `<link rel="stylesheet" href="/@id/__x00__zyzz:${encodeURIComponent(file)}.css"><div id="card" class="${props.className}">Card</div>`,
+      )
+      const page = await browser.newPage()
+
+      await page.goto(`http://127.0.0.1:${address.port}`)
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).padding === '8px',
+      )
+
+      expect(
+        server.environments.client.moduleGraph.getModuleById(file),
+      ).toBeUndefined()
+
+      // 2. Edit the server-only module and keep the document.
+      await page.waitForLoadState('networkidle')
+      await page.evaluate(() => {
+        document.querySelector('#card')!.setAttribute('data-preserved', 'yes')
+      })
+      await Watch.write({
+        path: file,
+        source: Fixture.files['card.ts'].replace("'8px'", "'12px'"),
+      })
+      await page.waitForFunction(() =>
+        [...document.styleSheets].some((sheet) =>
+          [...sheet.cssRules].some((rule) =>
+            rule.cssText.includes('padding: 12px'),
+          ),
+        ),
+      )
+
+      // 3. Apply the class a server re-render returns, which only the updated link styles.
+      const { props: next } = await server.ssrLoadModule('/card.ts')
+      await page.evaluate((className) => {
+        document.querySelector('#card')!.className = className
+      }, next.className)
+
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot(`"12px"`)
+      expect(
+        await page.locator('#card').getAttribute('data-preserved'),
+      ).toMatchInlineSnapshot(`"yes"`)
+    } finally {
+      await browser?.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
+
   test('Vite HMR updates rendered theme scopes in Chromium', async () => {
     const { config, root } = await create()
     const server = await Vite.createServer(config)

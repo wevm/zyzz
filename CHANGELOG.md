@@ -1,5 +1,11 @@
 # zyzz
 
+## 0.0.31
+
+### Patch Changes
+
+- a20ecab: Fixed development HMR for server-rendered stylesheet links, which now update in the browser when a server-only module changes.
+
 ## 0.0.30
 
 ### Patch Changes

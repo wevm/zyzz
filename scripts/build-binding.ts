@@ -14,6 +14,8 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 
+import { parseTriple } from '@napi-rs/cli'
+
 const root = Path.resolve(import.meta.dirname, '..')
 const profiles = Path.join(root, 'target/pgo')
 const merged = Path.join(profiles, 'merged.profdata')
@@ -58,7 +60,14 @@ build(['--release'], `-Cprofile-generate=${profiles}`, {
 // 2. Train in a separate process, which writes its profile when it exits.
 ChildProcess.execFileSync(
   process.execPath,
-  [Path.join(root, 'scripts/train-binding.ts')],
+  [
+    Path.join(root, 'scripts/train-binding.ts'),
+    Path.join(
+      root,
+      'binding',
+      `zyzz.${parseTriple(target).platformArchABI}.node`,
+    ),
+  ],
   { cwd: root, stdio: 'inherit' },
 )
 

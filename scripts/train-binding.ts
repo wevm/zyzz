@@ -15,14 +15,13 @@ type Binding = {
 
 const root = Path.resolve(import.meta.dirname, '..')
 const require = Module.createRequire(import.meta.url)
-// The instrumented build writes one addon for the current platform.
-const addon = Fs.readdirSync(Path.join(root, 'binding')).find((file) =>
-  file.endsWith('.node'),
-)
+// `binding/` can hold addons for other platforms, so the build names the one it instrumented.
+const addon = process.argv[2]
 
-if (!addon) throw new Error('Build the instrumented addon before training.')
+if (!addon || !Fs.existsSync(addon))
+  throw new Error('Pass the instrumented addon path to train it.')
 
-const binding = require(Path.join(root, 'binding', addon)) as Binding
+const binding = require(addon) as Binding
 const modules: Record<string, string> = Object.create(null)
 
 // Installed dependencies, build output, tests, and benchmarks stay out of the corpus.

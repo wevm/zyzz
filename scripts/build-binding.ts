@@ -37,6 +37,16 @@ const napi = [
   '--no-js',
 ]
 
+// napi-rs names a cross linker for some targets, such as `aarch64-linux-musl-gcc`, even when the
+// build runs on that target, so a native musl build links with the system compiler.
+const linker =
+  target.endsWith('-linux-musl') && target === host()
+    ? {
+        [`CARGO_TARGET_${target.toUpperCase().replaceAll('-', '_')}_LINKER`]:
+          'cc',
+      }
+    : {}
+
 // 1. Instrument a release build, since profiles match only code built with the same
 // optimizations. Its own target directory keeps the release cache's flags.
 Fs.rmSync(profiles, { force: true, recursive: true })
@@ -87,7 +97,7 @@ function build(
 
   ChildProcess.execFileSync('pnpm', [...napi, ...args], {
     cwd: root,
-    env: { ...process.env, ...env, RUSTFLAGS: rustflags },
+    env: { ...linker, ...process.env, ...env, RUSTFLAGS: rustflags },
     shell: process.platform === 'win32',
     stdio: 'inherit',
   })

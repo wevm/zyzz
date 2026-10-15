@@ -3,7 +3,5 @@
 .tanstack/
 .wrangler/
 public/playground/
-src/playground/assets.generated.json
-src/playground/compiler.generated.json
 src/routeTree.gen.ts
 worker-configuration.d.ts

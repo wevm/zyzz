@@ -8,8 +8,6 @@ export type Request = {
   files: Project.Files
   /** Monotonically increasing edit identifier. */
   id: number
-  /** Content-addressed compiler asset URL. */
-  wasm: string
 }
 
 /** Compilation result or diagnostic for the corresponding edit. */
@@ -25,9 +23,13 @@ export type Response = {
 let compiler: Promise<ReturnType<typeof Compiler.create>> | undefined
 
 self.onmessage = async (event: MessageEvent<Request>) => {
-  const { files, id, wasm } = event.data
+  const { files, id } = event.data
   try {
-    compiler ??= fetch(wasm).then(async (response) => {
+    compiler ??= fetch('/playground/manifest.json').then(async (manifest) => {
+      if (!manifest.ok)
+        throw new Error(`Could not load compiler assets (${manifest.status}).`)
+      const { wasm } = await manifest.json()
+      const response = await fetch(wasm)
       if (!response.ok)
         throw new Error(`Could not load the compiler (${response.status}).`)
       return Compiler.create(await response.arrayBuffer())

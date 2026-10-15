@@ -44,6 +44,9 @@ for (const entry of ['index', 'runtime/index']) {
     format: 'esm',
     minify: true,
     platform: 'browser',
+    // The browser Parcel preview uses a parser that predates optional chaining.
+    target: 'es2018',
+    supported: { bigint: true },
     write: false,
   })
   files[`/node_modules/zyzz/${entry}.js`] = {
@@ -62,14 +65,15 @@ for (const name of ['react', 'react-dom']) {
   dependencies[name] = manifest.version
 }
 
-await Fs.mkdir(Path.join(root, 'site/src/playground'), { recursive: true })
+const runtime = JSON.stringify({ dependencies, files })
+const runtimeName = `runtime-${Crypto.createHash('sha256').update(runtime).digest('hex').slice(0, 16)}.json`
+await Fs.writeFile(Path.join(directory, runtimeName), runtime)
 await Fs.writeFile(
-  Path.join(root, 'site/src/playground/assets.generated.json'),
-  JSON.stringify({ dependencies, files }),
-)
-await Fs.writeFile(
-  Path.join(root, 'site/src/playground/compiler.generated.json'),
-  JSON.stringify({ wasm: `/playground/${name}` }),
+  Path.join(directory, 'manifest.json'),
+  JSON.stringify({
+    wasm: `/playground/${name}`,
+    runtime: `/playground/${runtimeName}`,
+  }),
 )
 console.log(
   `Playground compiler: ${(bytes.length / 1024 / 1024).toFixed(2)} MiB (uncompressed)`,

@@ -24,11 +24,15 @@ After authenticating with `pnpm --dir site exec wrangler login`, build and deplo
 
 ## Playground
 
-`/playground` edits a two-file React project, compiles it with the Rust compiler in a Web Worker, and displays a live preview, generated CSS, and rewritten TypeScript/JSX. Share links encode the source in the URL fragment. There is no persistence service.
+`/playground` offers Styles and Variants React examples and a Vanilla JS example. A Web Worker compiles source with the Rust compiler for a live preview, generated CSS, and rewritten source. Share links encode source, framework, and tab order in the URL fragment. Existing React links remain supported.
 
-The page renders its controls and source before loading Monaco, the syntax highlighter, or the preview. Monaco uses the docs' Tempo themes. The isolated React preview uses Sandpack and needs network access. It is not an offline or private execution environment.
+The default Styles example uses light/dark color pairs in its config. The preview inherits the page's Light, Dark, or System scheme through CSS, without recompiling source or resetting application state.
 
-Site `dev`, `build`, and `check:types` generate the playground assets automatically. This requires the repository's pinned Rust toolchain and `wasm32-wasip1` target. `pnpm --dir site build:playground` builds them separately. Generated runtime files and the full compiler Wasm are ignored. The library's lightweight CSS Wasm keeps its default feature set.
+File tabs support dragging and Alt+Left/Right reordering without changing CSS emission order. The plus button adds top-level `.ts`, `.tsx`, `.js`, or `.jsx` files, up to 20 files. React mounts `App.tsx`. Vanilla JS mounts a DOM node returned by `App.js`. `index.*` is reserved for preview bootstrapping.
+
+The page renders its controls and source before loading Monaco, the syntax highlighter, or the preview. Monaco uses the docs' Tempo themes. The isolated preview uses Sandpack and needs network access. It is not an offline or private execution environment.
+
+Site `dev` and `build` generate the playground assets automatically with the pinned Rust toolchain and `wasm32-wasip1` target. `pnpm --dir site build:playground` builds them separately. Browsers fetch the generated manifest, runtime, and full compiler from `public/playground`. Other routes and typechecks do not require these assets. The library's lightweight CSS Wasm is unchanged.
 
 ## Search
 

@@ -5,12 +5,16 @@ import { appearance } from 'zyzz/default'
 import CheckIcon from '~icons/lucide/check'
 import ChevronsUpDownIcon from '~icons/lucide/chevrons-up-down'
 import LinkIcon from '~icons/lucide/link'
+import PlusIcon from '~icons/lucide/plus'
+import XIcon from '~icons/lucide/x'
+import JavaScriptIcon from '~icons/simple-icons/javascript'
+import ReactIcon from '~icons/simple-icons/react'
+import TypeScriptIcon from '~icons/simple-icons/typescript'
 import { Button } from '../components/Button.js'
 import { Link } from '../components/Link.js'
 import { ThemeToggle } from '../components/ThemeToggle.js'
 import { style } from '../zyzz.config.js'
 import type * as Compiler from './Compiler.js'
-import { wasm } from './compiler.generated.json'
 import type * as WorkerProtocol from './Compiler.worker.js'
 import type * as Preview from './Preview.js'
 import * as Project from './Project.js'
@@ -21,8 +25,17 @@ type PreviewClient = Awaited<ReturnType<typeof Preview.create>>
 /** Renders the interface immediately while editor, compiler, and preview load independently. */
 export default function Playground() {
   const [ready, setReady] = useState(false)
-  const [files, setFiles] = useState(Project.examples.Styles!.files)
+  const [project, setProject] = useState(() => Project.create('Styles'))
+  const { files, framework, order } = project
   const [active, setActive] = useState('App.tsx')
+  const [addingFile, setAddingFile] = useState(false)
+  const [filename, setFilename] = useState('')
+  const [fileError, setFileError] = useState('')
+  const [fileNotice, setFileNotice] = useState('')
+  const [dragging, setDragging] = useState<string>()
+  const [dropTarget, setDropTarget] = useState<string>()
+  const newFileButton = useRef<HTMLButtonElement>(null)
+  const newFileInput = useRef<HTMLInputElement>(null)
   const [example, setExample] = useState('Styles')
   const [tab, setTab] = useState('Preview')
   const [scheme, setScheme] = useState<ThemeToggle.Scheme>('light dark')
@@ -31,6 +44,7 @@ export default function Playground() {
   const [notice, setNotice] = useState('')
   const [copied, setCopied] = useState(false)
   const [output, setOutput] = useState<Compiler.Output>()
+  const hasOutput = Boolean(output)
   const [restart, setRestart] = useState(0)
   const [previewError, setPreviewError] = useState('')
   const client = useRef<PreviewClient | undefined>(undefined)
@@ -48,7 +62,16 @@ export default function Playground() {
     // Restore the URL before compiling or replacing it with the default example.
     try {
       const input = new URLSearchParams(location.hash.slice(1)).get('code')
-      if (input) setFiles(Project.decode(input))
+      if (input) {
+        const restored = Project.decode(input)
+        setProject(restored)
+        setActive(Project.entryFiles[restored.framework])
+        const matching = Object.keys(Project.examples).find(
+          (name) =>
+            JSON.stringify(Project.create(name)) === JSON.stringify(restored),
+        )
+        setExample(matching ?? '')
+      }
     } catch (error) {
       setNotice(`Could not restore this link: ${String(error)}`)
     }
@@ -58,6 +81,10 @@ export default function Playground() {
     )
     setReady(true)
   }, [])
+
+  useEffect(() => {
+    if (addingFile) newFileInput.current?.focus()
+  }, [addingFile])
 
   useEffect(() => {
     if (!copied) return
@@ -104,16 +131,9 @@ export default function Playground() {
     const id = ++sequence.current
     clearTimeout(timeout.current)
     const timer = setTimeout(() => {
-      const hash = `#code=${Project.encode(files)}`
-      history.replaceState(
-        history.state,
-        '',
-        `${location.pathname}${location.search}${hash}`,
-      )
       worker.current?.postMessage({
         files,
         id,
-        wasm,
       } satisfies WorkerProtocol.Request)
       timeout.current = setTimeout(() => {
         worker.current?.terminate()
@@ -127,13 +147,37 @@ export default function Playground() {
 
   useEffect(() => {
     if (!ready) return
+    const timer = setTimeout(() => {
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}${location.search}#code=${Project.encode(project)}`,
+      )
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [project, ready])
+
+  useEffect(() => {
+    latest.current = output
+    if (output) client.current?.update(output)
+  }, [output])
+
+  useEffect(() => {
+    const initial = latest.current
+    if (!ready || !initial) return
     let disposed = false
     let owned: PreviewClient | undefined
     const frame = iframe.current!
     void import('./Preview.js')
       .then((Preview) => {
         if (disposed) return
-        return Preview.create(frame, { onError: setPreviewError })
+        return Preview.create(frame, {
+          framework,
+          onError: (message) => {
+            if (!disposed) setPreviewError(message)
+          },
+          output: initial,
+        })
       })
       .then((instance) => {
         if (!instance) return
@@ -143,7 +187,8 @@ export default function Playground() {
         }
         owned = instance
         client.current = instance
-        if (latest.current) instance.update(latest.current)
+        if (latest.current && latest.current !== initial)
+          instance.update(latest.current)
       })
       .catch((error: unknown) => {
         if (!disposed) setPreviewError(`Preview unavailable: ${String(error)}`)
@@ -153,16 +198,11 @@ export default function Playground() {
       owned?.destroy()
       client.current = undefined
     }
-  }, [ready])
-
-  useEffect(() => {
-    latest.current = output
-    if (output) client.current?.update(output)
-  }, [output])
+  }, [framework, hasOutput, ready])
 
   async function share() {
     const url = new URL(location.href)
-    url.hash = `code=${Project.encode(files)}`
+    url.hash = `code=${Project.encode(project)}`
     history.replaceState(history.state, '', url)
     try {
       await navigator.clipboard.writeText(url.href)
@@ -185,17 +225,42 @@ export default function Playground() {
     )
       return
     setExample(name)
-    setFiles(Project.examples[name]!.files)
-    setActive('App.tsx')
+    const next = Project.create(name)
+    setProject(next)
+    setActive(Project.entryFiles[next.framework])
+    setOutput(undefined)
+    setPreviewError('')
+    setAddingFile(false)
+    setFileError('')
     setError('')
     setNotice('')
+  }
+
+  function moveFile(path: string, target: string) {
+    const next = [...order]
+    const from = next.indexOf(path)
+    const to = next.indexOf(target)
+    if (from < 0 || to < 0 || from === to) return
+    next.splice(from, 1)
+    next.splice(to, 0, path)
+    setProject((previous) => ({ ...previous, order: next }))
+    setFileNotice(`${path} moved to position ${to + 1} of ${next.length}.`)
+  }
+
+  function cancelFile() {
+    setAddingFile(false)
+    setFileError('')
+    newFileButton.current?.focus()
   }
 
   const sourceFallback = (
     <textarea
       aria-label={`${active} source`}
       onChange={(event) =>
-        setFiles((previous) => ({ ...previous, [active]: event.target.value }))
+        setProject((previous) => ({
+          ...previous,
+          files: { ...previous.files, [active]: event.target.value },
+        }))
       }
       readOnly={!ready}
       spellCheck={false}
@@ -255,28 +320,158 @@ export default function Playground() {
       <div {...styles.workspace()}>
         <section aria-label="Source editor" {...styles.pane()}>
           <div aria-label="Source files" {...styles.tabs()}>
-            {Object.keys(files).map((path) => (
+            {order.map((path) => (
               <Button
                 aria-pressed={active === path}
+                aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+                title={`${path}: drag to reorder, or use Alt+Left/Right`}
+                data-file={path}
+                data-dragging={dragging === path || undefined}
+                data-drop-target={dropTarget === path || undefined}
+                draggable={ready}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData('text/plain', path)
+                  event.dataTransfer.effectAllowed = 'move'
+                  setDragging(path)
+                }}
+                onDragOver={(event) => {
+                  if (!dragging) return
+                  event.preventDefault()
+                  event.dataTransfer.dropEffect = 'move'
+                  setDropTarget(path)
+                }}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  if (dragging) moveFile(dragging, path)
+                  setDragging(undefined)
+                  setDropTarget(undefined)
+                }}
+                onDragEnd={() => {
+                  setDragging(undefined)
+                  setDropTarget(undefined)
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    !event.altKey ||
+                    !['ArrowLeft', 'ArrowRight'].includes(event.key)
+                  )
+                    return
+                  event.preventDefault()
+                  const target =
+                    order[
+                      order.indexOf(path) + (event.key === 'ArrowLeft' ? -1 : 1)
+                    ]
+                  if (target) moveFile(path, target)
+                }}
                 key={path}
                 onClick={() => setActive(path)}
                 variant="ghost"
                 {...styles.tab()}
               >
+                {(() => {
+                  const Icon = (() => {
+                    if (path.endsWith('x') && framework === 'react')
+                      return ReactIcon
+                    return /\.jsx?$/.test(path)
+                      ? JavaScriptIcon
+                      : TypeScriptIcon
+                  })()
+                  return <Icon aria-hidden="true" {...styles.fileIcon()} />
+                })()}
                 {path}
               </Button>
             ))}
+            <Button
+              aria-label="New file"
+              title="New file"
+              disabled={!ready || order.length >= 20}
+              ref={newFileButton}
+              onClick={() => {
+                setFilename('')
+                setFileError('')
+                setAddingFile(true)
+              }}
+              variant="ghost"
+              {...styles.addFile()}
+            >
+              <PlusIcon aria-hidden="true" {...styles.icon()} />
+            </Button>
           </div>
+          {addingFile && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                const name = filename.trim()
+                try {
+                  setProject(Project.addFile(project, name))
+                  setActive(name)
+                  setAddingFile(false)
+                  setFileError('')
+                  setFileNotice(`${name} created.`)
+                  newFileButton.current?.focus()
+                } catch (error) {
+                  setFileError(
+                    error instanceof Error ? error.message : String(error),
+                  )
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') cancelFile()
+              }}
+              {...styles.fileForm()}
+            >
+              <div {...styles.fileFields()}>
+                <input
+                  aria-label="Filename"
+                  aria-invalid={Boolean(fileError)}
+                  aria-describedby={fileError ? 'file-error' : undefined}
+                  autoComplete="off"
+                  placeholder="Button.tsx"
+                  ref={newFileInput}
+                  value={filename}
+                  onChange={(event) => {
+                    setFilename(event.target.value)
+                    setFileError('')
+                  }}
+                  {...styles.filename()}
+                />
+                <Button type="submit" variant="secondary" {...styles.share()}>
+                  Create
+                </Button>
+                <Button
+                  aria-label="Cancel new file"
+                  variant="ghost"
+                  size="icon"
+                  onClick={cancelFile}
+                >
+                  <XIcon aria-hidden="true" {...styles.icon()} />
+                </Button>
+              </div>
+              {fileError && (
+                <div id="file-error" role="alert" {...styles.fileError()}>
+                  {fileError}
+                </div>
+              )}
+            </form>
+          )}
+          <span role="status" {...styles.srOnly()}>
+            {fileNotice}
+          </span>
           <div {...styles.editor()}>
             <Suspense fallback={sourceFallback}>
               {ready ? (
                 <CodeEditor
                   language="typescript"
                   onChange={(value) =>
-                    setFiles((previous) => ({
-                      ...previous,
-                      [active]: value ?? '',
-                    }))
+                    setProject((previous) => {
+                      const source = value ?? ''
+                      // Model switches can report unchanged text. Do not restart the preview.
+                      if (previous.files[active] === source) return previous
+                      return {
+                        ...previous,
+                        files: { ...previous.files, [active]: source },
+                      }
+                    })
                   }
                   options={{
                     ariaLabel: `${active} source`,
@@ -312,9 +507,10 @@ export default function Playground() {
               </div>
             )}
             <iframe
+              key={framework}
               ref={iframe}
               sandbox="allow-scripts allow-same-origin"
-              title="React preview"
+              title="Live preview"
               {...styles.frame()}
             />
           </div>
@@ -363,7 +559,7 @@ export default function Playground() {
       )}
       <footer {...styles.footer()}>
         <Select.Root<string>
-          value={example}
+          value={example || null}
           onValueChange={(value) => {
             if (value) choose(value)
           }}
@@ -375,7 +571,7 @@ export default function Playground() {
             {...styles.exampleTrigger()}
           >
             <span {...styles.exampleLabel()}>Example</span>
-            <Select.Value />
+            <Select.Value placeholder="Custom" />
             <Select.Icon>
               <ChevronsUpDownIcon aria-hidden="true" {...styles.icon()} />
             </Select.Icon>
@@ -397,15 +593,15 @@ export default function Playground() {
                         key={name}
                         value={name}
                         label={name}
-                        aria-describedby={`example-${name}-description`}
+                        aria-describedby={`example-${encodeURIComponent(name)}-description`}
                         {...styles.exampleItem()}
                       >
-                        <div>
+                        <div {...styles.exampleText()}>
                           <Select.ItemText {...styles.exampleName()}>
                             {name}
                           </Select.ItemText>
                           <div
-                            id={`example-${name}-description`}
+                            id={`example-${encodeURIComponent(name)}-description`}
                             {...styles.exampleDescription()}
                           >
                             {project.description}
@@ -435,6 +631,63 @@ export default function Playground() {
 }
 
 namespace styles {
+  export const addFile = style({
+    alignSelf: 'center',
+    flexShrink: 0,
+    height: 8,
+    width: 8,
+    padding: 0,
+    borderRadius: 'md',
+  })
+
+  export const fileIcon = style({ height: 3, width: 3, color: 'gray.900' })
+
+  export const fileForm = style({
+    padding: 3,
+    borderBottom: '1px solid',
+    borderColor: 'gray.400',
+    backgroundColor: 'background.surface',
+  })
+
+  export const fileFields = style({
+    display: 'flex',
+    gap: 2,
+    alignItems: 'center',
+  })
+
+  export const filename = style({
+    typography: 'copy.13',
+    backgroundColor: 'background.primary',
+    color: 'foreground',
+    border: '1px solid',
+    borderColor: 'gray.400',
+    borderRadius: 'md',
+    minWidth: 0,
+    flex: 1,
+    height: 8,
+    paddingInline: 2,
+    ':focus-visible': {
+      outline: '2px solid',
+      outlineColor: 'blue.900',
+      outlineOffset: '2px',
+    },
+  })
+
+  export const fileError = style({
+    typography: 'copy.13',
+    color: 'red.900',
+    marginTop: 2,
+  })
+
+  export const srOnly = style({
+    position: 'absolute',
+    width: '1px !custom',
+    height: '1px !custom',
+    overflow: 'hidden',
+    clipPath: 'inset(50%)',
+    whiteSpace: 'nowrap',
+  })
+
   export const actions = style({
     alignItems: 'center',
     display: 'flex',
@@ -485,7 +738,7 @@ namespace styles {
   })
 
   export const frame = style({
-    backgroundColor: 'white',
+    backgroundColor: 'background.primary',
     border: 'none',
     height: '100% !custom',
     width: '100% !custom',
@@ -573,6 +826,7 @@ namespace styles {
     height: 8,
     paddingBlock: 0,
     paddingInline: 2,
+    '&[aria-expanded="true"]': { backgroundColor: 'grayAlpha.200' },
   })
 
   export const exampleLabel = style({ color: 'gray.900' })
@@ -585,8 +839,12 @@ namespace styles {
   export const exampleDescription = style({
     typography: 'copy.13',
     color: 'gray.900',
-    marginTop: 1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   })
+
+  export const exampleText = style({ minWidth: 0 })
 
   export const exampleItem = style({
     alignItems: 'center',
@@ -595,7 +853,8 @@ namespace styles {
     display: 'flex',
     gap: 3,
     justifyContent: 'space-between',
-    padding: 3,
+    paddingBlock: 2,
+    paddingInline: 2,
     outline: 'none',
     userSelect: 'none',
     '&[data-highlighted]': { backgroundColor: 'grayAlpha.200' },
@@ -612,7 +871,7 @@ namespace styles {
     maxWidth: 'calc(100vw - 32px) !custom',
     overflowY: 'auto',
     padding: 1,
-    width: 80,
+    width: 72,
   })
 
   export const positioner = style({ zIndex: 3 })
@@ -648,13 +907,18 @@ namespace styles {
     borderRadius: '0 !custom',
     borderBottom: '2px solid transparent',
     typography: 'label.14',
+    flexShrink: 0,
+    gap: 2,
+    whiteSpace: 'nowrap',
     paddingBlock: 3,
     paddingInline: 4,
     '&[aria-pressed="true"]': { borderBottomColor: 'foreground' },
+    '&[data-dragging]': { opacity: 0.5 },
+    '&[data-drop-target]': { boxShadow: 'inset 2px 0 currentColor !custom' },
   })
 
   export const tabs = style({
-    backgroundColor: 'light-dark(#f5f5f5, #111) !custom',
+    backgroundColor: 'background.surface',
     borderBottom: '1px solid',
     borderColor: 'gray.400',
     display: 'flex',

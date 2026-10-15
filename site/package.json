@@ -5,7 +5,7 @@
   "scripts": {
     "build": "pnpm build:playground && vite build",
     "build:playground": "node scripts/build-playground.ts",
-    "check:types": "pnpm build:playground && pnpm generate-routes && tsc --noEmit",
+    "check:types": "pnpm generate-routes && tsc --noEmit",
     "deploy": "pnpm run build && wrangler deploy",
     "dev": "pnpm build:playground && vite dev --port 3000",
     "gen:types": "wrangler types",

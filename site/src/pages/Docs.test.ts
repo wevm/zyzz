@@ -18,11 +18,6 @@ const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fi
 
 describe('/docs', () => {
   beforeAll(async () => {
-    // Routes import generated playground metadata; prepare it before copying the site fixture.
-    ChildProcess.execFileSync('node', ['scripts/build-playground.ts'], {
-      cwd: site,
-      stdio: 'pipe',
-    })
     Fs.cpSync(new URL('src', site), `${directory}/src`, { recursive: true })
     for (const file of [
       'package.json',

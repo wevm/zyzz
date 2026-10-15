@@ -278,7 +278,7 @@ export default function Playground() {
     tab === 'CSS' ? (output?.css ?? '') : (output?.files[active] ?? '')
 
   return (
-    <main {...styles.page()}>
+    <main data-initializing={!ready || undefined} {...styles.page()}>
       <header {...styles.header()}>
         <div {...styles.identity()}>
           <Link aria-label="Zyzz home" href="/" {...styles.logo()}>
@@ -649,6 +649,11 @@ namespace styles {
     width: 8,
     padding: 0,
     borderRadius: 'md',
+    '[data-initializing] &:disabled': {
+      backgroundColor: 'transparent !custom',
+      borderColor: 'transparent !custom',
+      color: 'foreground',
+    },
   })
 
   export const fileIcon = style({ height: 3, width: 3, color: 'gray.900' })
@@ -840,6 +845,11 @@ namespace styles {
     height: 8,
     paddingBlock: 0,
     paddingInline: 2,
+    '[data-initializing] &:disabled': {
+      backgroundColor: 'transparent !custom',
+      borderColor: 'transparent !custom',
+      color: 'foreground',
+    },
     '&[aria-expanded="true"]': { backgroundColor: 'grayAlpha.200' },
   })
 
@@ -916,6 +926,10 @@ namespace styles {
     height: 8,
     paddingBlock: 0,
     paddingInline: 2,
+    '[data-initializing] &:disabled': {
+      backgroundColor: 'background.primary',
+      color: 'foreground',
+    },
   })
 
   export const shareIcon = style({ height: 3, width: 3 })

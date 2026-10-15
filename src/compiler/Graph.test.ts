@@ -2465,7 +2465,99 @@ ${web.modules['app.ts']!.code}`,
       `[Source.ExtractError: pkg/card.ts:0: Missing source module: ./missing.js]`,
     )
   })
-  test('cycles fail before output', () => {
+  test('component import cycles compile independent styles', async () => {
+    const result = Graph.compile({
+      modules: {
+        'app.tsx': `import {style} from 'zyzz'; import {Route} from './routes/__root.js'; export function App() { Route.useRouteContext(); return <main {...styles.app()} />; } namespace styles { export const app = style({color:'red'}); }`,
+        'routes/__root.tsx': `import {style} from 'zyzz'; import {App} from '../app.js'; export const Route = {component:App, useRouteContext() { return {}; }}; export function Root() { return <div {...styles.root()}><App /></div>; } namespace styles { export const root = style({padding:'8px'}); }`,
+      },
+    })
+
+    expect(result.dependencies).toMatchInlineSnapshot(`
+      {
+        "app.tsx": [
+          "routes/__root.tsx",
+        ],
+        "routes/__root.tsx": [
+          "app.tsx",
+        ],
+      }
+    `)
+    expect(result.modules['app.tsx']!.css).toMatchInlineSnapshot(
+      `".z_kNYrjR0{color:red;}"`,
+    )
+    expect(result.modules['routes/__root.tsx']!.css).toMatchInlineSnapshot(
+      `".z_Kup_0T0{padding:8px;}"`,
+    )
+
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-graph-cycle-'))
+
+    try {
+      for (const [id, output] of Object.entries(result.modules)) {
+        const file = Path.join(directory, id)
+
+        await Fs.mkdir(Path.dirname(file), { recursive: true })
+        await Fs.writeFile(file, output.code)
+      }
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
+        bundle: true,
+        entryPoints: [Path.join(directory, 'routes/__root.tsx')],
+        format: 'iife',
+        globalName: 'Fixture',
+        jsx: 'automatic',
+        write: false,
+      })
+      const context = Vm.createContext({})
+
+      Vm.runInContext(bundle.outputFiles[0]!.text, context)
+
+      expect(
+        Vm.runInContext('Fixture.Route.component().props.className', context),
+      ).toMatchInlineSnapshot(`"z_kNYrjR0"`)
+      expect(
+        Vm.runInContext('Fixture.Root().props.className', context),
+      ).toMatchInlineSnapshot(`"z_Kup_0T0"`)
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+  })
+
+  test.each([
+    'export default function App() { return props(); }',
+    'export default () => props();',
+    'export const App = () => props();',
+  ])('runtime export cycles compile: %s', (declaration) => {
+    const output = Graph.compile({
+      modules: {
+        'a.ts': `import './b.js'; import {style} from 'zyzz'; const props = style({color:'red'}); export const Route = {}; export function Root() { return props(); }`,
+        'b.ts': `import './a.js'; import {style} from 'zyzz'; const props = style({padding:'8px'}); ${declaration}`,
+      },
+    })
+
+    expect(output.modules['a.ts']!.css).toMatchInlineSnapshot(
+      `".z-text-red{color:red;}"`,
+    )
+    expect(output.modules['b.ts']!.css).toMatchInlineSnapshot(
+      `".z-p-8px{padding:8px;}"`,
+    )
+  })
+
+  test('cyclic style values fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/a.ts': `import {style} from 'zyzz'; import {b} from './b.js'; export const a = style({...b, color:'red'});`,
+          'pkg/b.ts': `import {style} from 'zyzz'; import {a} from './a.js'; export const b = style({...a, padding:'8px'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/a.ts:0: Circular source dependencies are not supported yet.]`,
+    )
+  })
+
+  test('cyclic re-exports fail before output', () => {
     expect(() =>
       Graph.compile({
         modules: {
@@ -2505,6 +2597,62 @@ ${web.modules['app.ts']!.code}`,
 })
 
 describe('create', () => {
+  test('runtime cycles survive edits and changes to style exports', () => {
+    const compiler = Graph.create()
+    const sources = {
+      'app.ts': `import {style} from 'zyzz'; import {Route} from './root.js'; const props = style({color:'red'}); export function App() { Route.context(); return props(); }`,
+      'root.ts': `import {App} from './app.js'; export {App}; export const Route = {component:App, context() { return {}; }}; export function render() { return App(); }`,
+    }
+    const before = compiler.compile({ modules: sources })
+
+    expect(
+      compiler.compile({ modules: sources }) === before,
+    ).toMatchInlineSnapshot(`true`)
+
+    const edited = {
+      ...sources,
+      'app.ts': sources['app.ts'].replace("'red'", "'blue'"),
+    }
+    const after = compiler.compile({ modules: edited })
+
+    expect(after.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-text-blue{color:blue;}"`,
+    )
+    expect(
+      after.modules['root.ts']!.code === before.modules['root.ts']!.code,
+    ).toMatchInlineSnapshot(`true`)
+
+    // A formerly runtime-only export now supplies a style to the same importer.
+    const styled = {
+      ...sources,
+      'app.ts': `import {style} from 'zyzz'; export const App = style({color:'green'});`,
+    }
+    const linked = compiler.compile({ modules: styled })
+
+    expect(linked.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-text-green{color:green;}"`,
+    )
+    expect(linked.modules['root.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(Object.keys(JSON.parse(linked.contracts['root.ts']!).exports))
+      .toMatchInlineSnapshot(`
+      [
+        "App",
+      ]
+    `)
+
+    // Reintroducing the component cycle must discard the previous style-link edge.
+    const restored = compiler.compile({ modules: sources })
+
+    expect(restored.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-text-red{color:red;}"`,
+    )
+    expect(
+      restored.modules['root.ts']!.code === before.modules['root.ts']!.code,
+    ).toMatchInlineSnapshot(`true`)
+    expect(restored.modules['root.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(restored.contracts['root.ts']).toMatchInlineSnapshot(`undefined`)
+  })
+
   test.each([false, true])(
     'snapshots mutable nested native options with fresh outer options: %s',
     (fresh) => {

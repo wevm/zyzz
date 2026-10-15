@@ -34,16 +34,20 @@ jobs:
       ADAPTER_LANES: ${{ matrix.lane }}
     steps:
       - name: Clone candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Save shared benchmark fixture
         run: cp -R bench/adapters "$RUNNER_TEMP/adapter-fixture"
       - name: Clone baseline
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
+        # Baseline measurements need the action from the checked-out baseline.
+        uses: ./.github/actions/install-dependencies # zizmor: ignore[self-repository]
       - name: Install browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
       - name: Measure baseline
@@ -57,11 +61,13 @@ jobs:
           trap 'cp -R bench/results "$RUNNER_TEMP/adapter-baseline"' EXIT
           node bench/adapters/Run.ts
       - name: Clone candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Install candidate dependencies
-        uses: ./.github/actions/install-dependencies
+        uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Measure candidate
@@ -83,7 +89,7 @@ jobs:
         run: echo 'Baseline workload failed correctness or execution. Candidate results are not a valid performance comparison.' >> "$GITHUB_STEP_SUMMARY"
       - name: Upload application workload
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: adapter-workload-${{ matrix.lane }}
           path: bench/results/
@@ -94,11 +100,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
+        uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install browser
@@ -109,7 +117,7 @@ jobs:
         run: pnpm bench:check
       - name: Upload benchmark checks and Next.js comparisons
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           if-no-files-found: error
           name: benchmarks-checks
@@ -131,12 +139,14 @@ jobs:
     steps:
       - name: Clone comparison baseline
         if: github.event_name != 'push'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ github.event.pull_request.base.sha || 'main' }}
       - name: Install baseline dependencies
         if: github.event_name != 'push'
-        uses: ./.github/actions/install-dependencies
+        # Baseline measurements need the action from the checked-out baseline.
+        uses: ./.github/actions/install-dependencies # zizmor: ignore[self-repository]
       - name: Benchmark baseline on this runner
         if: github.event_name != 'push'
         id: baseline
@@ -159,12 +169,14 @@ jobs:
           pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
           mv bench/results "$RUNNER_TEMP/benchmark-baseline"
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Install dependencies
         id: dependencies
-        uses: ./.github/actions/install-dependencies
+        uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Record benchmark environment
@@ -273,7 +285,7 @@ jobs:
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload baseline results
         if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           if-no-files-found: error
           name: benchmarks-baseline
@@ -281,7 +293,7 @@ jobs:
           retention-days: 30
       - name: Report timing comparisons
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
         with:
           alert-threshold: '${{ env.BENCH_TIME_THRESHOLD }}%'
           external-data-json-path: ${{ runner.temp }}/benchmark-action/time-baseline.json
@@ -293,7 +305,7 @@ jobs:
           tool: customSmallerIsBetter
       - name: Check size regressions
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
         with:
           alert-threshold: '${{ env.BENCH_SIZE_THRESHOLD }}%'
           external-data-json-path: ${{ runner.temp }}/benchmark-action/size-baseline.json
@@ -308,7 +320,7 @@ jobs:
         run: exit 1
       - if: ${{ !cancelled() }}
         name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           if-no-files-found: error
           name: benchmarks
@@ -341,14 +353,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install dependencies
         id: dependencies
-        uses: ./.github/actions/install-dependencies
+        uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Record render environment
@@ -363,7 +376,7 @@ jobs:
           uname -a > bench/results/render-environment/platform.txt
       - name: Remove separate render comment
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405 # v2.9.4
         with:
           delete: true
           header: render-benchmarks
@@ -406,7 +419,7 @@ jobs:
           cat bench/results/render.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload render results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           if-no-files-found: error
           name: benchmarks-render
@@ -424,14 +437,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
       - name: Download benchmark results
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: benchmarks
           path: reports/benchmarks
@@ -442,7 +457,7 @@ jobs:
           cat reports/comment.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405 # v2.9.4
         with:
           header: benchmarks
           path: reports/comment.md
@@ -459,9 +474,11 @@ jobs:
         shard: [1, 2]
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
+        uses: $/.github/actions/install-dependencies
       - name: Check type instantiations
         run: |
           set -o pipefail

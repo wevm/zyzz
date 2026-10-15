@@ -13,8 +13,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: ./.github/workflows/verify.yml
-    secrets: inherit
+    uses: $/.github/workflows/verify.yml
 
   release:
     name: Release
@@ -26,7 +25,9 @@ jobs:
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       # Changesets publishes once no changesets are pending, and the native addons are built only
       # for a version that npm does not have yet.
@@ -40,49 +41,76 @@ jobs:
           fi
 
   binding:
+    cache-mode: none
     if: needs.release.outputs.publish == 'true'
     name: Binding
     needs: release
     permissions:
       contents: read
-    uses: ./.github/workflows/binding.yml
+    uses: $/.github/workflows/binding.yml
 
   changesets:
-    if: ${{ !cancelled() && needs.verify.result == 'success' && contains(fromJSON('["skipped", "success"]'), needs.binding.result) }}
-    name: Changesets
-    needs: [binding, verify]
+    cache-mode: none
+    if: needs.release.outputs.publish != 'true'
+    name: Version PR
+    needs: [release, verify]
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        uses: $/.github/actions/install-dependencies
+
+      - name: Create or update version PR
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          commit-message: 'chore: version packages'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-title: 'chore: version packages'
+          version-script: pnpm run changeset:version
+
+  publish:
+    # Published packages must not consume build state from other CI jobs.
+    cache-mode: none
+    if: needs.release.outputs.publish == 'true'
+    name: Publish
+    needs: [binding, release, verify]
     permissions:
       contents: write
       id-token: write
-      pull-requests: write
     runs-on: ubuntu-latest
     # Publishing builds the WebAssembly fallback beside the downloaded native addons.
     timeout-minutes: 45
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
+        uses: $/.github/actions/install-dependencies
 
-      - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
-
-      - if: needs.binding.result == 'success'
-        name: Download native addons
-        uses: actions/download-artifact@v4
+      - name: Download native addons
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           merge-multiple: true
           path: binding
           pattern: binding-*
 
-      - name: PR or publish
-        id: changesets
+      - name: Publish packages and tags
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          commit-message: 'chore: version packages'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          pr-title: 'chore: version packages'
           publish-script: pnpm run changeset:publish
-          version-script: pnpm run changeset:version
+
+permissions:
+  contents: read

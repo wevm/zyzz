@@ -22,8 +22,8 @@ const highlighterPromise = createHighlighterCore({
       ...theme,
       colors: {
         ...theme.colors,
-        // Docs code blocks use the page surface, not Shiki's standalone background.
-        'editor.background': theme.type === 'dark' ? '#000000' : '#fafafa',
+        // Match the playground's background.surface token in both color schemes.
+        'editor.background': theme.type === 'dark' ? '#0a0a0a' : '#ffffff',
       },
       // Monaco consumes TextMate rules directly, bypassing Shiki's color replacements.
       settings: theme.settings.map((entry) => ({

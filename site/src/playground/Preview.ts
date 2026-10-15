@@ -34,17 +34,23 @@ export async function create(
     {
       height: '100%',
       showErrorScreen: true,
-      showLoadingScreen: true,
+      showLoadingScreen: false,
       showOpenInCodeSandbox: false,
       width: '100%',
     },
   )
   client.listen((message) => {
     if (message.type === 'start') options.onError('')
-    if (message.type === 'done' && message.compilatonError)
+    // The client can connect before the preview has evaluated its CSS.
+    if (message.type === 'done') {
+      if (message.compilatonError)
+        options.onError('Preview failed. Check the error in the preview.')
+      options.onReady()
+    }
+    if (message.type === 'action' && message.action === 'show-error') {
       options.onError('Preview failed. Check the error in the preview.')
-    if (message.type === 'action' && message.action === 'show-error')
-      options.onError('Preview failed. Check the error in the preview.')
+      options.onReady()
+    }
   })
 
   return {
@@ -60,6 +66,8 @@ export declare namespace create {
     framework: Project.Framework
     /** Receives preview failures, or an empty string when a new build starts. */
     onError: (message: string) => void
+    /** Reveals the preview once its CSS or error screen is available. */
+    onReady: () => void
     /** First successful compilation, avoiding a second mount during startup. */
     output: Compiler.Output
   }

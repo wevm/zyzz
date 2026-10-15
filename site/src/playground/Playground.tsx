@@ -47,6 +47,7 @@ export default function Playground() {
   const hasOutput = Boolean(output)
   const [restart, setRestart] = useState(0)
   const [previewError, setPreviewError] = useState('')
+  const [previewReady, setPreviewReady] = useState(false)
   const client = useRef<PreviewClient | undefined>(undefined)
   const iframe = useRef<HTMLIFrameElement>(null)
   const latest = useRef<Compiler.Output | undefined>(undefined)
@@ -165,6 +166,7 @@ export default function Playground() {
   useEffect(() => {
     const initial = latest.current
     if (!ready || !initial) return
+    setPreviewReady(false)
     let disposed = false
     let owned: PreviewClient | undefined
     const frame = iframe.current!
@@ -175,6 +177,9 @@ export default function Playground() {
           framework,
           onError: (message) => {
             if (!disposed) setPreviewError(message)
+          },
+          onReady: () => {
+            if (!disposed) setPreviewReady(true)
           },
           output: initial,
         })
@@ -230,6 +235,7 @@ export default function Playground() {
     setActive(Project.entryFiles[next.framework])
     setOutput(undefined)
     setPreviewError('')
+    setPreviewReady(false)
     setAddingFile(false)
     setFileError('')
     setError('')
@@ -304,9 +310,9 @@ export default function Playground() {
             {...styles.share()}
           >
             {copied ? (
-              <CheckIcon aria-hidden="true" {...styles.icon()} />
+              <CheckIcon aria-hidden="true" {...styles.shareIcon()} />
             ) : (
-              <LinkIcon aria-hidden="true" {...styles.icon()} />
+              <LinkIcon aria-hidden="true" {...styles.shareIcon()} />
             )}
             <span aria-live="polite">{copied ? 'Copied' : 'Share'}</span>
           </Button>
@@ -462,6 +468,7 @@ export default function Playground() {
               {ready ? (
                 <CodeEditor
                   language="typescript"
+                  loading={sourceFallback}
                   onChange={(value) =>
                     setProject((previous) => {
                       const source = value ?? ''
@@ -507,6 +514,7 @@ export default function Playground() {
               </div>
             )}
             <iframe
+              data-ready={previewReady || undefined}
               key={framework}
               ref={iframe}
               sandbox="allow-scripts allow-same-origin"
@@ -523,6 +531,9 @@ export default function Playground() {
               >
                 <CodeEditor
                   language={tab === 'CSS' ? 'css' : 'typescript'}
+                  loading={
+                    <pre {...styles.sourceFallback()}>{outputSource}</pre>
+                  }
                   options={{
                     ariaLabel:
                       tab === 'CSS' ? 'Generated CSS' : 'Compiled source',
@@ -738,10 +749,12 @@ namespace styles {
   })
 
   export const frame = style({
-    backgroundColor: 'background.primary',
+    backgroundColor: 'background.surface',
     border: 'none',
     height: '100% !custom',
+    visibility: 'hidden',
     width: '100% !custom',
+    '&[data-ready]': { visibility: 'visible' },
   })
 
   export const header = style({
@@ -812,6 +825,7 @@ namespace styles {
   })
 
   export const preview = style({
+    backgroundColor: 'background.surface',
     display: 'flex',
     flex: 1,
     flexDirection: 'column',
@@ -877,7 +891,7 @@ namespace styles {
   export const positioner = style({ zIndex: 3 })
 
   export const sourceFallback = style({
-    backgroundColor: 'background.primary',
+    backgroundColor: 'background.surface',
     border: 'none',
     borderRadius: '0 !custom',
     color: 'foreground',
@@ -888,6 +902,8 @@ namespace styles {
     margin: 0,
     overflow: 'auto',
     padding: 5,
+    // Reserve Monaco's five-digit gutter and folding controls before it loads.
+    paddingInlineStart: 'calc(5ch + 26px) !custom',
     resize: 'none',
     tabSize: 2,
     width: '100% !custom',
@@ -896,12 +912,13 @@ namespace styles {
   export const share = style({
     typography: 'label.14',
     borderRadius: 'md',
-    gap: 2,
+    gap: 1,
     height: 8,
-    minWidth: 24,
     paddingBlock: 0,
-    paddingInline: 3,
+    paddingInline: 2,
   })
+
+  export const shareIcon = style({ height: 3, width: 3 })
 
   export const tab = style({
     borderRadius: '0 !custom',

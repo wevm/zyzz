@@ -5,7 +5,6 @@ import * as Url from 'node:url'
 import { cloudflare } from '@cloudflare/vite-plugin'
 import { compile } from '@mdx-js/mdx'
 import mdx from '@mdx-js/rollup'
-import babel from '@rolldown/plugin-babel'
 import {
   transformerMetaWordHighlight,
   transformerNotationDiff,
@@ -13,7 +12,7 @@ import {
 } from '@shikijs/transformers'
 import { createTransformerFactory, rendererRich } from '@shikijs/twoslash/core'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react'
 import type { Code, Nodes, Root } from 'mdast'
 import { defaultHandlers, toMarkdown } from 'mdast-util-to-markdown'
 import MiniSearch from 'minisearch'
@@ -394,8 +393,7 @@ export default defineConfig(async () => {
       },
       Icons({ compiler: 'jsx', jsx: 'react' }),
       tanstackStart({ server: { entry: './entry.server.ts' } }),
-      react(),
-      babel({ presets: [reactCompilerPreset()] }),
+      react({ compiler: true }),
     ],
   }
 })

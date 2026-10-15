@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+export CI=true
+TIMEFORMAT='Completed in %3R seconds'
+
+echo 'Preparing system dependencies'
+time {
+  packages=(
+    build-essential ca-certificates curl fonts-liberation fonts-noto-color-emoji
+    libasound2 libatk-bridge2.0-0 libatk1.0-0 libcairo2 libcups2 libdbus-1-3
+    libdrm2 libgbm1 libnspr4 libnss3 libpango-1.0-0 libpangoft2-1.0-0
+    libssl-dev libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3
+    libxkbcommon0 libxrandr2 pkg-config poppler-utils
+  )
+  missing=()
+  for package in "${packages[@]}"; do
+    if [[ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null || true)" != 'install ok installed' ]]; then
+      missing+=("$package")
+    fi
+  done
+  if ((${#missing[@]})); then
+    sudo apt-get update
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${missing[@]}"
+  fi
+}
+
+echo 'Preparing Node 24 and the packageManager-pinned pnpm'
+time {
+  tools="$HOME/.local/share/zyzz-orb"
+  pnpm_version="$(node -p "require('./package.json').packageManager.split('@')[1]")"
+  if [[ ! -x "$tools/node_modules/.bin/node" ]] ||
+    [[ "$("$tools/node_modules/.bin/node" -p 'process.versions.node.split(".")[0]')" != 24 ]] ||
+    [[ ! -f "$tools/node_modules/pnpm/package.json" ]] ||
+    [[ "$(node -p "require('$tools/node_modules/pnpm/package.json').version")" != "$pnpm_version" ]]; then
+    npm install --prefix "$tools" --no-save --package-lock=false "node@24" "pnpm@$pnpm_version"
+  fi
+  export PATH="$tools/node_modules/.bin:$HOME/.cargo/bin:$PATH"
+  node --version
+  pnpm --version
+}
+
+echo 'Preparing the rust-toolchain.toml toolchain and Cargo dependencies'
+time {
+  if ! command -v rustup >/dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+      sh -s -- -y --no-modify-path --profile minimal --default-toolchain none
+  fi
+  # Rustup reads the pinned channel, components, and targets from rust-toolchain.toml.
+  rustup install --no-self-update --no-update
+  rustup show
+  cargo fetch --locked
+}
+
+echo 'Installing workspace dependencies'
+time pnpm install --frozen-lockfile
+
+echo 'Preparing browser and print engines'
+time pnpm exec playwright install --only-shell chromium
+time {
+  uv python install 3.12
+  if [[ ! -x .venv/bin/python ]]; then
+    uv venv --python 3.12 .venv
+  fi
+  uv pip install --python .venv/bin/python -r test/conformance/requirements.txt
+}
+
+# Amp and supervised services start in new login shells, not this setup process.
+profile_marker='# Zyzz orb toolchains'
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<EOF
+
+$profile_marker
+case "\$PWD" in
+  "$repo_root"|"$repo_root"/*)
+    export PATH="$tools/node_modules/.bin:$HOME/.cargo/bin:$repo_root/.venv/bin:\$PATH"
+    ;;
+esac
+EOF
+fi
+
+# Cache the CI test build, not the release build's repeated PGO training.
+# Cargo checks source freshness on stale snapshots and later test runs.
+echo 'Building native and browser compilers'
+time pnpm build:binding:test
+echo 'Building package entrypoints for integration consumers and examples'
+time pnpm build:package
+
+# The initial install cannot link the workspace CLI until dist/cli/index.js exists.
+echo 'Linking workspace executables'
+time pnpm --recursive rebuild --pending

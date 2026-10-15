@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Toolchains, dependencies, and builds survive in the snapshot. This repository
+# needs no authenticated services or database repair when an orb wakes.
+echo 'Zyzz orb ready. Toolchains and dependencies are restored from the snapshot.'

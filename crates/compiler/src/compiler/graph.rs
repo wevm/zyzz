@@ -233,7 +233,7 @@ struct Module {
     contributions: Vec<Contribution>,
     namespaces: Vec<namespace::Definition>,
     native_vars: Vec<VarsRead>,
-    /// Whether no export can resolve to a constant, so importers read only `theme_exports`.
+    /// Whether exports supply neither constants nor authoring links.
     opaque: bool,
     styles: style::Definition,
     theme_appearances: Vec<Arc<str>>,
@@ -299,6 +299,8 @@ impl Module {
 enum Input {
     Library(Arc<Library>),
     Module(Arc<Module>),
+    /// A source whose exports cannot supply constants or authoring links.
+    Runtime,
 }
 
 #[derive(Clone)]
@@ -738,9 +740,8 @@ fn named_export<'s, 'a>(statement: &'s Statement<'a>) -> Option<NamedExport<'s, 
     }
 }
 
-/// Whether no export of a program can resolve to a constant, as [`Build::constant`] reads them.
-/// Function, class, and type exports never do. Variables, specifier lists, re-exports, and
-/// default expressions may.
+/// Whether exports supply neither constants nor authoring links. Local styles still need
+/// extraction, but their importers do not need to wait for it.
 fn opaque(program: &Program<'_>) -> bool {
     let types = |specifiers: &[ExportSpecifier<'_>]| {
         specifiers
@@ -751,7 +752,23 @@ fn opaque(program: &Program<'_>) -> bool {
     program.body.iter().all(|statement| match statement {
         Statement::ExportDeclaration(export) => {
             export.export_kind() == ImportOrExportKind::Type
-                || !matches!(export.declaration, Declaration::VariableDeclaration(_))
+                || match &export.declaration {
+                    Declaration::FunctionDeclaration(_) | Declaration::ClassDeclaration(_) => true,
+                    Declaration::VariableDeclaration(declaration) => {
+                        declaration.declarations.iter().all(|declaration| {
+                            matches!(declaration.id, BindingPattern::BindingIdentifier(_))
+                                && matches!(
+                                    declaration.init,
+                                    Some(
+                                        Expression::ArrowFunctionExpression(_)
+                                            | Expression::FunctionExpression(_)
+                                            | Expression::ClassExpression(_)
+                                    )
+                                )
+                        })
+                    }
+                    _ => false,
+                }
         }
         Statement::ExportNamedDeclaration(export) => {
             export.export_kind == ImportOrExportKind::Type || types(&export.specifiers)
@@ -759,9 +776,7 @@ fn opaque(program: &Program<'_>) -> bool {
         Statement::ExportFromDeclaration(export) => {
             export.export_kind == ImportOrExportKind::Type || types(&export.specifiers)
         }
-        Statement::ExportAllDeclaration(export) => {
-            export.export_kind == ImportOrExportKind::Type || export.exported.is_some()
-        }
+        Statement::ExportAllDeclaration(export) => export.export_kind == ImportOrExportKind::Type,
         Statement::ExportDefaultDeclaration(export) => matches!(
             export.declaration,
             ExportDefaultDeclarationKind::FunctionDeclaration(_)
@@ -772,11 +787,6 @@ fn opaque(program: &Program<'_>) -> bool {
         ),
         _ => true,
     })
-}
-
-/// Whether an importer's extraction reads the same data from both versions of a module.
-fn same_interface(left: &Module, right: &Module) -> bool {
-    left.opaque && right.opaque && left.theme_exports.is_empty() && right.theme_exports.is_empty()
 }
 
 fn type_only(declaration: &oxc_ast::ast::ImportDeclaration<'_>) -> bool {
@@ -883,6 +893,19 @@ impl<'p, 'a> Build<'p, 'a> {
 
     fn source(&self, module_id: &str) -> Option<&'a str> {
         self.options.modules.get(module_id).map(|source| &**source)
+    }
+
+    /// Reuses the export classification without parsing unchanged dependencies.
+    fn opaque(&self, module_id: &str) -> bool {
+        if let Some(previous) = self.previous
+            && previous.sources.get(module_id) == self.options.modules.get(module_id)
+            && let Some(module) = previous.extracted.get(module_id)
+        {
+            return module.opaque;
+        }
+
+        self.parse(module_id)
+            .is_some_and(|parsed| opaque(parsed.program))
     }
 
     fn allocator(&self, module_id: &str) -> Option<&'a Allocator> {
@@ -1519,6 +1542,7 @@ impl<'p, 'a> Build<'p, 'a> {
         let mut explicit: FxHashSet<String> = FxHashSet::default();
         let mut stars: Vec<Input> = Vec::new();
         let mut imports: IndexSet<Arc<str>, FxBuildHasher> = IndexSet::default();
+        let empty = Record::new();
 
         for node in &parsed.program.body {
             if let Some(declaration) = named_export(node)
@@ -1592,11 +1616,13 @@ impl<'p, 'a> Build<'p, 'a> {
 
             let input = match self.libraries.get(&target) {
                 Some(library) => Input::Library(Arc::clone(library)),
+                None if self.opaque(&target) => Input::Runtime,
                 None => Input::Module(self.visit(&target)?),
             };
             let contracts = match &input {
                 Input::Library(library) => &library.links,
                 Input::Module(module) => &module.theme_exports,
+                Input::Runtime => &empty,
             };
             let namespace = |name: &str| -> Option<Link> {
                 let first = contracts.values().next()?;
@@ -1795,6 +1821,7 @@ impl<'p, 'a> Build<'p, 'a> {
             let contracts = match input {
                 Input::Library(library) => &library.links,
                 Input::Module(module) => &module.theme_exports,
+                Input::Runtime => &empty,
             };
 
             for (name, link) in contracts.iter() {
@@ -1854,9 +1881,16 @@ impl<'p, 'a> Build<'p, 'a> {
                     inputs: dependencies
                         .iter()
                         .filter_map(|target| {
-                            let input = match previous.libraries.get(target) {
-                                Some(library) => Input::Library(Arc::clone(library)),
-                                None => Input::Module(Arc::clone(previous.extracted.get(target)?)),
+                            let input = if let Some(library) = previous.libraries.get(target) {
+                                Input::Library(Arc::clone(library))
+                            } else {
+                                let module = previous.extracted.get(target)?;
+
+                                if module.opaque {
+                                    Input::Runtime
+                                } else {
+                                    Input::Module(Arc::clone(module))
+                                }
                             };
 
                             Some((Arc::clone(target), input))
@@ -1883,11 +1917,17 @@ impl<'p, 'a> Build<'p, 'a> {
                 let same = if let Some(library) = self.libraries.get(target) {
                     matches!(input, Some(Input::Library(input)) if Arc::ptr_eq(input, library))
                 } else if options.modules.contains_key(target) {
-                    let module = self.visit(target)?;
+                    if self.opaque(target) {
+                        matches!(input, Some(Input::Runtime))
+                    } else if matches!(input, Some(Input::Runtime)) {
+                        // Re-link before following a new extraction edge. The old runtime
+                        // dependency may now supply a style, or may have introduced a cycle.
+                        false
+                    } else {
+                        let module = self.visit(target)?;
 
-                    // An importer of a module without constants or theme exports reads nothing
-                    // from it, so an edit there leaves the importer's extraction intact.
-                    matches!(input, Some(Input::Module(input)) if Arc::ptr_eq(input, &module) || same_interface(input, &module))
+                        matches!(input, Some(Input::Module(input)) if Arc::ptr_eq(input, &module))
+                    }
                 } else {
                     false
                 };
@@ -1973,6 +2013,7 @@ impl<'p, 'a> Build<'p, 'a> {
             .filter_map(|target| {
                 let input = match self.libraries.get(target) {
                     Some(library) => Input::Library(Arc::clone(library)),
+                    None if self.opaque(target) => Input::Runtime,
                     None => Input::Module(Arc::clone(self.extracted.get(target)?)),
                 };
 
@@ -2600,19 +2641,26 @@ impl Build<'_, '_> {
             return Arc::clone(closure);
         }
 
-        // A placeholder guards against revisiting while the closure is computed.
-        closures.insert(Arc::clone(module_id), Arc::default());
-
+        // Cache only complete closures. A back-edge cannot stand for an empty closure because
+        // another member of the cycle may reach dependencies not visited yet.
+        let mut pending = vec![Arc::clone(module_id)];
         let mut result: FxHashSet<Box<str>> = FxHashSet::default();
 
-        for dependency in self
-            .dependencies
-            .get(module_id)
-            .iter()
-            .flat_map(|dependencies| dependencies.iter())
-        {
-            result.insert(Box::from(&**dependency));
-            result.extend(self.closure(dependency, closures).iter().cloned());
+        while let Some(id) = pending.pop() {
+            for dependency in self
+                .dependencies
+                .get(&id)
+                .iter()
+                .flat_map(|dependencies| dependencies.iter())
+            {
+                if result.insert(Box::from(&**dependency)) {
+                    if let Some(closure) = closures.get(dependency) {
+                        result.extend(closure.iter().cloned());
+                    } else {
+                        pending.push(Arc::clone(dependency));
+                    }
+                }
+            }
         }
 
         let result = Arc::new(result);

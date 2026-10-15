@@ -3,6 +3,12 @@
  * @module
  */
 import * as Trace from '@jridgewell/trace-mapping'
+import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import {
+  type Config as RouterConfig,
+  tanstackRouter,
+} from '@tanstack/router-plugin/vite'
+import react from '@vitejs/plugin-react'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Util from 'node:util'
@@ -22,6 +28,7 @@ import * as Responsive from '../../test/fixtures/Responsive.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
 import * as Font from '../../test/fixtures/AtRuleFont.js'
 import * as PlainPackage from '../../test/fixtures/PlainPackage.js'
+import * as TanStack from '../../test/fixtures/TanStack.js'
 import * as Watch from '../../test/fixtures/Watch.js'
 
 async function create(files: Readonly<Record<string, string>> = Fixture.files) {
@@ -120,6 +127,268 @@ function message(
 }
 
 describe('zyzz', () => {
+  test.each(['Router', 'Start'])(
+    'compiles TanStack %s split routes in development and production',
+    async (framework) => {
+      const { config, root } = await create(TanStack.files)
+      config.optimizeDeps = {
+        include: [
+          '@tanstack/react-router',
+          'react',
+          'react-dom/client',
+          'react/jsx-dev-runtime',
+          'react/jsx-runtime',
+        ],
+      }
+      await Fs.mkdir(Path.join(root, 'routes'))
+      for (const name of ['__root.tsx', 'settings.tsx'])
+        await Fs.rename(Path.join(root, name), Path.join(root, 'routes', name))
+
+      if (framework === 'Start')
+        await Fs.writeFile(
+          Path.join(root, 'routes/__root.tsx'),
+          `import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
+export const Route = createRootRoute({ component: () => <html><head><HeadContent /></head><body><Outlet /><Scripts /></body></html> })`,
+        )
+
+      const router: Partial<RouterConfig> = {
+        autoCodeSplitting: true,
+        codeSplittingOptions: {
+          defaultBehavior: [
+            ['loader', 'component'],
+            ['errorComponent'],
+            ['notFoundComponent'],
+          ],
+        },
+        generatedRouteTree: Path.join(root, 'routeTree.gen.ts'),
+        routesDirectory: Path.join(root, 'routes'),
+      }
+      const plugins = () => [
+        zyzz({ include: ['.'], script: false }),
+        framework === 'Start'
+          ? tanstackStart({ router, srcDirectory: '.' })
+          : tanstackRouter(router),
+        react(),
+      ]
+      const browser = await chromium.launch()
+      let server: Vite.ViteDevServer | undefined
+      let preview: Vite.PreviewServer | undefined
+
+      try {
+        server = await Vite.createServer({ ...config, plugins: plugins() })
+        await server.listen()
+        const page = await browser.newPage()
+        page.setDefaultTimeout(8000)
+        const errors: string[] = []
+        page.on('pageerror', (error) => errors.push(error.message))
+        await page.goto(`${server.resolvedUrls!.local[0]}settings`)
+        await vi.waitUntil(
+          async () =>
+            (await page.locator('#page').count()) ||
+            (await page.getByText('Something went wrong!').count()),
+          { timeout: 10000 },
+        )
+        expect(
+          await page.evaluate(() => ({
+            error: document.body.textContent?.includes('styles is not defined'),
+            padding: document.querySelector('#page')
+              ? getComputedStyle(document.querySelector('#page')!).padding
+              : null,
+          })),
+        ).toMatchInlineSnapshot(`
+        {
+          "error": false,
+          "padding": "24px",
+        }
+      `)
+        await page.locator('#page[data-hydrated="true"]').waitFor()
+        expect(
+          await page
+            .locator('#dynamic')
+            .evaluate((node) => getComputedStyle(node).opacity),
+        ).toMatchInlineSnapshot('"0.4"')
+
+        await page.evaluate(() => {
+          document.body.dataset.preserved = 'yes'
+        })
+        await Watch.write({
+          path: Path.join(root, 'routes/settings.tsx'),
+          source: TanStack.files['settings.tsx'].replace("'24px'", "'32px'"),
+        })
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#page')!).padding ===
+            '32px',
+        )
+        expect(
+          await page.evaluate(() => document.body.dataset.preserved),
+        ).toMatchInlineSnapshot('"yes"')
+
+        async function boundaries(url: string) {
+          const padding: string[] = []
+          for (const state of ['error', 'missing']) {
+            await page.goto(`${url}settings?${state}=true`)
+            await page.locator(`#${state}`).waitFor()
+            padding.push(
+              await page
+                .locator(`#${state}`)
+                .evaluate((node) => getComputedStyle(node).padding),
+            )
+          }
+          expect(padding).toMatchInlineSnapshot(`
+          [
+            "13px",
+            "7px",
+          ]
+        `)
+        }
+        await boundaries(server.resolvedUrls!.local[0]!)
+
+        for (const target of [
+          'component---loader',
+          'errorComponent',
+          'notFoundComponent',
+          'component&t=123&v=456&import',
+        ]) {
+          const output = await server.transformRequest(
+            `/routes/settings.tsx?tsr-split=${target}`,
+          )
+          expect({
+            authoring: /\bstyle\(/.test(output!.code),
+            stylesheet: output!.code.includes('zyzz:'),
+          }).toMatchInlineSnapshot(`
+          {
+            "authoring": false,
+            "stylesheet": true,
+          }
+        `)
+          if (target === 'component---loader') {
+            const before = output!.code.slice(
+              0,
+              output!.code.indexOf('function Page('),
+            )
+            const original = Trace.originalPositionFor(
+              new Trace.TraceMap(JSON.stringify(output!.map)),
+              {
+                column: before.length - before.lastIndexOf('\n') - 1,
+                line: before.split('\n').length,
+              },
+            )
+            expect({
+              line: original.line,
+              source: original.source,
+            }).toMatchInlineSnapshot(`
+              {
+                "line": 16,
+                "source": "settings.tsx",
+              }
+            `)
+          }
+        }
+        await server.close()
+        server = undefined
+        await Fs.writeFile(
+          Path.join(root, 'routes/settings.tsx'),
+          TanStack.files['settings.tsx'],
+        )
+
+        if (framework === 'Start') {
+          const builder = await Vite.createBuilder({
+            ...config,
+            plugins: plugins(),
+          })
+          await builder.buildApp()
+        } else await Vite.build({ ...config, plugins: plugins() })
+
+        preview = await Vite.preview({
+          ...config,
+          appType: framework === 'Start' ? 'custom' : 'spa',
+          build: { outDir: framework === 'Start' ? 'dist/client' : 'dist' },
+          plugins: [],
+          preview: { host: '127.0.0.1', port: 0 },
+        })
+        if (framework === 'Start') {
+          const built = (await import(
+            Path.join(root, 'dist/server/server.js')
+          )) as { default: { fetch: (request: Request) => Promise<Response> } }
+          preview.middlewares.use(async (request, response, next) => {
+            try {
+              const result = await built.default.fetch(
+                new Request(
+                  new URL(request.url!, preview!.resolvedUrls!.local[0]!),
+                ),
+              )
+              response.statusCode = result.status
+              result.headers.forEach((value: string, name: string) =>
+                response.setHeader(name, value),
+              )
+              response.end(await result.text())
+            } catch (error) {
+              next(error)
+            }
+          })
+        }
+        await page.goto(`${preview.resolvedUrls!.local[0]}settings`)
+        await page.locator('#page[data-hydrated="true"]').waitFor()
+        expect(
+          await page
+            .locator('#page')
+            .evaluate((node) => getComputedStyle(node).padding),
+        ).toMatchInlineSnapshot('"24px"')
+        expect(
+          await page
+            .locator('#dynamic')
+            .evaluate((node) => getComputedStyle(node).opacity),
+        ).toMatchInlineSnapshot('"0.4"')
+        await boundaries(preview.resolvedUrls!.local[0]!)
+        expect(errors).toMatchInlineSnapshot('[]')
+      } finally {
+        await browser.close()
+        await server?.close()
+        await preview?.close()
+        await Fs.rm(root, { force: true, recursive: true })
+      }
+    },
+  )
+
+  test('keeps foreign resource queries out of split-route compilation', async () => {
+    const { config, root } = await create({
+      'style.ts':
+        "import { style } from 'zyzz'; export const card = style({ padding: '24px' });",
+    })
+    config.resolve = { alias: { zyzz: Path.resolve('src') } }
+    const server = await Vite.createServer(config)
+
+    try {
+      for (const query of [
+        'raw',
+        'tsr-split=component&raw',
+        'tsr-split=component&unknown',
+        'unknown',
+        'url',
+        'worker',
+      ]) {
+        const output = await server.transformRequest(`/style.ts?${query}`)
+        expect(output!.code.includes('zyzz:')).toMatchInlineSnapshot('false')
+      }
+      const output = await server.transformRequest(
+        '/style.ts?tsr-split=component',
+      )
+      expect({
+        authoring: /\bstyle\(/.test(output!.code),
+        stylesheet: output!.code.includes('zyzz:'),
+      }).toMatchInlineSnapshot(`
+        {
+          "authoring": false,
+          "stylesheet": true,
+        }
+      `)
+    } finally {
+      await server.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('rejects include patterns outside an existing directory', async () => {
     const { config, root } = await create()
     try {

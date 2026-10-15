@@ -340,7 +340,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     return (
       query !== undefined &&
       [...new URLSearchParams(query).keys()].some(
-        (key) => !['v', 't', 'import'].includes(key),
+        // TanStack splits fresh physical source after pre-transforms, not the
+        // transformed route. Compile these requests under the same source identity.
+        (key) => !['import', 't', 'tsr-split', 'v'].includes(key),
       )
     )
   }
@@ -2278,6 +2280,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       if (id.startsWith(prefix)) return id
     },
     async transform(code, id) {
+      const split = new URLSearchParams(id.split('?')[1]).has('tsr-split')
       id = normalize(id)
 
       if (!eligible(id)) return
@@ -2340,7 +2343,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           ? ''
           : `\nimport ${JSON.stringify(cssId(id))};`
 
-      return {
+      const transformed = {
         code: `${before}${sharedImport}${output.code.slice(offset)}${stylesheetImport}`,
         map: JSON.stringify({
           ...output.map,
@@ -2351,6 +2354,20 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           ),
         }),
       }
+
+      if (split) {
+        // TanStack's dead-code elimination does not track TypeScript namespace
+        // bindings. Lower them before splitting, leaving JSX for the framework plugin.
+        const { transformWithOxc } = await import('vite')
+        return transformWithOxc(
+          transformed.code,
+          id,
+          { jsx: 'preserve' },
+          JSON.parse(transformed.map),
+        )
+      }
+
+      return transformed
     },
     transformIndexHtml: {
       order: 'post',

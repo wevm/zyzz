@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Toolchains, dependencies, and builds survive in the snapshot. This repository
-# needs no authenticated services or database repair when an orb wakes.
+# Reapply the kernel setting if activation restored the filesystem on a new VM.
+# Oxc's virtual buffer reservation exceeds the physical memory of small orbs.
+sudo sysctl -w vm.overcommit_memory=1
+
+# Toolchains, dependencies, and builds survive in the snapshot.
 echo 'Zyzz orb ready. Toolchains and dependencies are restored from the snapshot.'

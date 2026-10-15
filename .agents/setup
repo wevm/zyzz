@@ -6,6 +6,10 @@ cd "$repo_root"
 export CI=true
 TIMEFORMAT='Completed in %3R seconds'
 
+# Oxc reserves a 6 GiB virtual buffer but commits only the pages parsing uses.
+# Linux's heuristic rejects that reservation on small orbs without swap.
+sudo sysctl -w vm.overcommit_memory=1
+
 echo 'Preparing system dependencies'
 time {
   packages=(

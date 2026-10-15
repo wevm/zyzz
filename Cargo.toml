@@ -88,12 +88,13 @@ opt-level = 3
 panic = "unwind"
 strip = "symbols"
 
-# Integration tests rebuild the addon after every Rust edit, so they skip link-time optimization.
+# Integration tests rebuild the addon after Rust edits, so compilation skips optimization.
 [profile.binding-test]
 codegen-units = 16
 incremental = true
 inherits = "release"
 lto = false
+opt-level = 0
 
 # The browser WebAssembly module inlines into bundles, so it trades peak speed for size.
 [profile.wasm]

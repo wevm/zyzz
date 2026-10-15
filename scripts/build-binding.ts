@@ -1,7 +1,8 @@
 /**
  * Builds the native addon with profile-guided optimization. An instrumented build compiles the
  * repository's authored modules through `scripts/train-binding.ts`, and the release build lays out
- * and inlines code for the paths that training exercised.
+ * and inlines code for the paths that training exercised. Windows ARM64 uses an uninstrumented
+ * release build until its toolchain emits valid profiles.
  *
  * `--target <triple>` selects one of the napi targets in `crates/binding/package.json`, and
  * defaults to the host. Training runs the instrumented addon, so the host must be able to load it.
@@ -48,6 +49,19 @@ const linker =
           'cc',
       }
     : {}
+
+// Windows ARM64 emits malformed profile names with the pinned Rust toolchain, even when
+// training succeeds. Keep the native release addon, including LTO and the static CRT, without
+// accepting corrupt profiles or falling back after arbitrary build failures.
+// https://github.com/rust-lang/rust/issues/150123
+// https://github.com/rust-lang/rust/issues/156675
+if (target === 'aarch64-pc-windows-msvc') {
+  console.warn(
+    `Building ${target} without PGO because its profiles are malformed.`,
+  )
+  build(['--release'], '', {})
+  process.exit(0)
+}
 
 // 1. Instrument a release build, since profiles match only code built with the same
 // optimizations. Its own target directory keeps the release cache's flags.

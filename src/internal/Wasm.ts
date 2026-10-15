@@ -42,7 +42,8 @@ export function instantiate(bytes: BufferSource): Instance {
 
   function start(): Exports {
     stderr = ''
-    // The reactor reads no files, clock, or environment. WASI output only carries panic messages.
+    // The reactor reads no files, clock, or environment. Parser dependencies seed internal hash
+    // tables with entropy, but emitted class identities use the compiler's deterministic hashes.
     const wasi = {
       environ_get: () => 0,
       environ_sizes_get: (count: number, size: number) => {
@@ -66,6 +67,13 @@ export function instantiate(bytes: BufferSource): Instance {
       },
       proc_exit: (code: number) => {
         throw new TrapError(`WebAssembly compiler exited with code ${code}.`)
+      },
+      random_get: (pointer: number, length: number) => {
+        const bytes = new Uint8Array(exports!.memory.buffer, pointer, length)
+        // Web Crypto limits each request to 65,536 bytes.
+        for (let offset = 0; offset < length; offset += 65536)
+          crypto.getRandomValues(bytes.subarray(offset, offset + 65536))
+        return 0
       },
     }
     const instance = new WebAssembly.Instance(module, {

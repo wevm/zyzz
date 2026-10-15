@@ -238,9 +238,14 @@ export function Page(props: Page.Props) {
       mobileMenu
       search={<SearchDialog.Trigger onClick={() => setSearching(true)} />}
       navigation={
-        <Link href="/vars" {...styles.variables()}>
-          Variables
-        </Link>
+        <>
+          <Link href="/playground" {...styles.variables()}>
+            Playground
+          </Link>
+          <Link href="/vars" {...styles.variables()}>
+            Variables
+          </Link>
+        </>
       }
       sidebar={
         <nav aria-label="Documentation">

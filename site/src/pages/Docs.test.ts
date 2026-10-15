@@ -18,6 +18,11 @@ const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fi
 
 describe('/docs', () => {
   beforeAll(async () => {
+    // Routes import generated playground metadata; prepare it before copying the site fixture.
+    ChildProcess.execFileSync('node', ['scripts/build-playground.ts'], {
+      cwd: site,
+      stdio: 'pipe',
+    })
     Fs.cpSync(new URL('src', site), `${directory}/src`, { recursive: true })
     for (const file of [
       'package.json',
@@ -164,7 +169,7 @@ describe('/docs', () => {
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
     throw new Error(`Documentation site did not start. ${output}`)
-  }, 150000)
+  }, 300000)
 
   afterAll(async () => {
     if (server?.pid && server.exitCode === null) {
@@ -173,6 +178,37 @@ describe('/docs', () => {
       await exited
     }
     Fs.rmSync(directory, { recursive: true, force: true })
+  })
+
+  test('serves playground controls and source before browser tools load', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({ javaScriptEnabled: false })
+      await page.goto(`${origin}/playground`)
+
+      expect(
+        await page.getByRole('heading', { level: 1 }).textContent(),
+      ).toMatchInlineSnapshot('"Playground"')
+      expect(
+        (
+          await page
+            .getByRole('textbox', { name: 'App.tsx source' })
+            .inputValue()
+        ).includes('Make it your own.'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        (
+          await page.getByRole('combobox', { name: 'Example' }).textContent()
+        )?.includes('Styles'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page
+          .getByRole('link', { name: 'Docs', exact: true })
+          .getAttribute('href'),
+      ).toMatchInlineSnapshot('"/docs/introduction/getting-started"')
+    } finally {
+      await browser.close()
+    }
   })
 
   test('lists published guides in sidebar navigation', async () => {

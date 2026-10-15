@@ -301,7 +301,8 @@ export default defineConfig(async () => {
     },
     plugins: [
       cloudflare({ viteEnvironment: { name: 'ssr' } }),
-      zyzz(),
+      // Worker modules cannot load the DOM stylesheet injection used by page components.
+      zyzz({ exclude: ['src/playground/*.ts'] }),
       mdx({
         remarkPlugins: [
           inlineCode,

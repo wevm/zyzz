@@ -114,6 +114,9 @@ function Index() {
         <Link href={docsUrl} {...styles.headerLink()}>
           Docs
         </Link>
+        <Link href="/playground" {...styles.referenceLink()}>
+          Playground
+        </Link>
         <Link href="/vars" {...styles.referenceLink()}>
           Variables
         </Link>
@@ -278,6 +281,7 @@ namespace styles {
     transform: 'translateY(1px)',
     '& a': { color: 'inherit !custom', textDecoration: 'none' },
     '& a:hover': { color: 'foreground' },
+    '@media (max-width: 600px)': { display: 'none' },
   })
 
   export const code = style({
@@ -456,5 +460,6 @@ namespace styles {
     marginLeft: 6,
     textDecoration: 'none',
     ':hover': { color: 'foreground' },
+    '@media (max-width: 600px)': { marginLeft: 3, typography: 'label.14' },
   })
 }

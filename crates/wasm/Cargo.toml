@@ -11,8 +11,12 @@ version.workspace = true
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+# The documentation playground loads source compilation separately from the small CSS engine.
+compiler = ["compiler/compiler"]
+
 [dependencies]
-# Browsers compile web CSS only, so the parser-backed compiler stays out of the module.
+# Default browser builds emit web CSS only, without the source parsers.
 compiler = { path = "../compiler", default-features = false }
 
 [lints]

@@ -22,6 +22,14 @@ pnpm --dir site preview
 
 After authenticating with `pnpm --dir site exec wrangler login`, build and deploy with `pnpm --dir site deploy`. The Worker name is `zyzz-site`.
 
+## Playground
+
+`/playground` edits a two-file React project, compiles it with the Rust compiler in a Web Worker, and displays a live preview, generated CSS, and rewritten TypeScript/JSX. Share links encode the source in the URL fragment. There is no persistence service.
+
+The page renders its controls and source before loading Monaco, the syntax highlighter, or the preview. Monaco uses the docs' Tempo themes. The isolated React preview uses Sandpack and needs network access. It is not an offline or private execution environment.
+
+Site `dev`, `build`, and `check:types` generate the playground assets automatically. This requires the repository's pinned Rust toolchain and `wasm32-wasip1` target. `pnpm --dir site build:playground` builds them separately. Generated runtime files and the full compiler Wasm are ignored. The library's lightweight CSS Wasm keeps its default feature set.
+
 ## Search
 
 The docs dialog searches a MiniSearch index of every page and `##` or `###` section, built from the MDX sources and loaded on first use.

@@ -36,6 +36,7 @@
   "devDependencies": {
     "@ark/attest": "catalog:",
     "@babel/core": "catalog:",
+    "@base-ui/react": "catalog:",
     "@changesets/cli": "catalog:",
     "@mdn/browser-compat-data": "catalog:",
     "@napi-rs/cli": "catalog:",

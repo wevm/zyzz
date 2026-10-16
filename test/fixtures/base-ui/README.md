@@ -5,11 +5,13 @@
 
 ## Authoring
 
-Pass the imported component directly. No component wrapper, registry configuration, or duplicate component namespace is needed at the call site.
+Pass the imported component directly. The proposed `zyzz/base-ui/react` entrypoint opts into Base UI types without adding React dependencies to the core. No component wrapper, registry configuration, or duplicate component namespace is needed at the call site.
+
+This entrypoint is not exported yet. The example shows the intended public API. For editor exploration today, the adjacent type fixtures import the local `./Style.js` declaration instead.
 
 ```ts
 import { Select } from '@base-ui/react/select'
-import { style } from './Style.js'
+import { style } from 'zyzz/base-ui/react'
 
 namespace styles {
   // The component supplies selector suggestions, not component props.
@@ -41,7 +43,7 @@ The completion test queries positions inside partially typed selector keys. It c
 - **Structural identity:** A custom component with an identical callback-state shape receives the same hints. Unsupported state shapes receive no Base UI hints. Matching props or import names in conditional types cannot establish nominal identity.
 - **DOM mappings:** State keys cannot be mechanically converted to attributes. Popup `open` maps to `data-open` and `data-closed`. Trigger `open` uses `data-popup-open`. Transitions use `data-starting-style` and `data-ending-style`.
 - **Completion scope:** The experiment suggests whole selector keys, including enumerated values. It is not a CSS language server for arbitrary selector expressions. Hints do not reject misspelled attribute names or prove attributes reach the DOM through a custom `render` element.
-- **Implementation scope:** Configured themes, variants, dynamic styles, component unions, other component libraries, runtime dispatch, and source extraction are not implemented by this prototype. Registration and the eventual public entrypoint remain undecided.
+- **Implementation scope:** Configured themes, variants, dynamic styles, component unions, other component libraries, runtime dispatch, and source extraction are not implemented by this prototype. Binding the integration to an app's configured tokens and shorthands remains undecided.
 
 ## Upstream Contract
 

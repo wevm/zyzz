@@ -37,6 +37,7 @@ export default function Playground() {
   const [dropTarget, setDropTarget] = useState<string>()
   const newFileButton = useRef<HTMLButtonElement>(null)
   const newFileInput = useRef<HTMLInputElement>(null)
+  const sourceFiles = useRef<HTMLDivElement>(null)
   const [example, setExample] = useState('Styles')
   const [tab, setTab] = useState('Preview')
   const [scheme, setScheme] = useState<ThemeToggle.Scheme>('light dark')
@@ -260,6 +261,27 @@ export default function Playground() {
     newFileButton.current?.focus()
   }
 
+  function removeFile(path: string) {
+    const nextOrder = order.filter((name) => name !== path)
+    const nextActive =
+      active === path
+        ? nextOrder[Math.min(order.indexOf(path), nextOrder.length - 1)]!
+        : active
+
+    setProject({
+      ...project,
+      files: Object.fromEntries(
+        Object.entries(files).filter((entry) => entry[0] !== path),
+      ),
+      order: nextOrder,
+    })
+    setActive(nextActive)
+    setFileNotice(`${path} removed.`)
+    sourceFiles.current
+      ?.querySelector<HTMLButtonElement>(`[data-file="${nextActive}"]`)
+      ?.focus()
+  }
+
   const sourceFallback =
     files[active] === __PLAYGROUND__.source ? (
       <EditorFallback />
@@ -329,67 +351,84 @@ export default function Playground() {
       )}
       <div {...styles.workspace()}>
         <section aria-label="Source editor" {...styles.pane()}>
-          <div aria-label="Source files" {...styles.tabs()}>
+          <div aria-label="Source files" ref={sourceFiles} {...styles.tabs()}>
             {order.map((path) => (
-              <Button
-                aria-pressed={active === path}
-                aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
-                title={`${path}: drag to reorder, or use Alt+Left/Right`}
-                data-file={path}
-                data-dragging={dragging === path || undefined}
-                data-drop-target={dropTarget === path || undefined}
-                draggable={ready}
-                onDragStart={(event) => {
-                  event.dataTransfer.setData('text/plain', path)
-                  event.dataTransfer.effectAllowed = 'move'
-                  setDragging(path)
-                }}
-                onDragOver={(event) => {
-                  if (!dragging) return
-                  event.preventDefault()
-                  event.dataTransfer.dropEffect = 'move'
-                  setDropTarget(path)
-                }}
-                onDrop={(event) => {
-                  event.preventDefault()
-                  if (dragging) moveFile(dragging, path)
-                  setDragging(undefined)
-                  setDropTarget(undefined)
-                }}
-                onDragEnd={() => {
-                  setDragging(undefined)
-                  setDropTarget(undefined)
-                }}
-                onKeyDown={(event) => {
-                  if (
-                    !event.altKey ||
-                    !['ArrowLeft', 'ArrowRight'].includes(event.key)
-                  )
-                    return
-                  event.preventDefault()
-                  const target =
-                    order[
-                      order.indexOf(path) + (event.key === 'ArrowLeft' ? -1 : 1)
-                    ]
-                  if (target) moveFile(path, target)
-                }}
-                key={path}
-                onClick={() => setActive(path)}
-                variant="ghost"
-                {...styles.tab()}
-              >
-                {(() => {
-                  const Icon = (() => {
-                    if (path.endsWith('x') && framework === 'react')
-                      return ReactIcon
-                    return /\.jsx?$/.test(path)
-                      ? JavaScriptIcon
-                      : TypeScriptIcon
-                  })()
-                  return <Icon aria-hidden="true" {...styles.fileIcon()} />
-                })()}
-                {path}
-              </Button>
+              <div key={path} data-file-tab {...styles.fileTab()}>
+                <Button
+                  aria-pressed={active === path}
+                  aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+                  title={`${path}: drag to reorder, or use Alt+Left/Right`}
+                  data-file={path}
+                  data-removable={
+                    path !== Project.entryFiles[framework] || undefined
+                  }
+                  data-dragging={dragging === path || undefined}
+                  data-drop-target={dropTarget === path || undefined}
+                  draggable={ready}
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('text/plain', path)
+                    event.dataTransfer.effectAllowed = 'move'
+                    setDragging(path)
+                  }}
+                  onDragOver={(event) => {
+                    if (!dragging) return
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                    setDropTarget(path)
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    if (dragging) moveFile(dragging, path)
+                    setDragging(undefined)
+                    setDropTarget(undefined)
+                  }}
+                  onDragEnd={() => {
+                    setDragging(undefined)
+                    setDropTarget(undefined)
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      !event.altKey ||
+                      !['ArrowLeft', 'ArrowRight'].includes(event.key)
+                    )
+                      return
+                    event.preventDefault()
+                    const target =
+                      order[
+                        order.indexOf(path) +
+                          (event.key === 'ArrowLeft' ? -1 : 1)
+                      ]
+                    if (target) moveFile(path, target)
+                  }}
+                  onClick={() => setActive(path)}
+                  variant="ghost"
+                  {...styles.tab()}
+                >
+                  {(() => {
+                    const Icon = (() => {
+                      if (path.endsWith('x') && framework === 'react')
+                        return ReactIcon
+                      return /\.jsx?$/.test(path)
+                        ? JavaScriptIcon
+                        : TypeScriptIcon
+                    })()
+                    return <Icon aria-hidden="true" {...styles.fileIcon()} />
+                  })()}
+                  {path}
+                </Button>
+                {path !== Project.entryFiles[framework] && (
+                  <Button
+                    aria-label={`Remove ${path}`}
+                    disabled={!ready}
+                    onClick={() => removeFile(path)}
+                    title={`Remove ${path}`}
+                    variant="ghost"
+                    {...styles.removeFile()}
+                  >
+                    <XIcon aria-hidden="true" {...styles.fileIcon()} />
+                  </Button>
+                )}
+              </div>
             ))}
             <Button
               aria-label="New file"
@@ -761,9 +800,12 @@ namespace styles {
     backgroundColor: 'background.surface',
     border: 'none',
     height: '100% !custom',
+    opacity: 0,
+    transition: 'opacity 180ms ease-out',
     visibility: 'hidden',
     width: '100% !custom',
-    '&[data-ready]': { visibility: 'visible' },
+    '&[data-ready]': { opacity: 1, visibility: 'visible' },
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
   })
 
   export const header = style({
@@ -938,6 +980,30 @@ namespace styles {
 
   export const shareIcon = style({ height: 3, width: 3 })
 
+  export const fileTab = style({
+    flexShrink: 0,
+    position: 'relative',
+  })
+
+  export const removeFile = style({
+    borderRadius: 'sm',
+    height: 6,
+    opacity: 0,
+    padding: 0,
+    position: 'absolute',
+    right: 2,
+    top: '50% !custom',
+    transform: 'translateY(-50%)',
+    width: 6,
+    '[data-file-tab]:hover &, [data-file-tab]:focus-within &': { opacity: 1 },
+    '[data-initializing] &:disabled': {
+      backgroundColor: 'transparent !custom',
+      borderColor: 'transparent !custom',
+      color: 'foreground',
+    },
+    '@media (hover: none)': { opacity: 1 },
+  })
+
   export const tab = style({
     borderRadius: '0 !custom',
     borderBottom: '2px solid transparent',
@@ -947,6 +1013,7 @@ namespace styles {
     whiteSpace: 'nowrap',
     paddingBlock: 3,
     paddingInline: 4,
+    '&[data-removable]': { paddingInlineEnd: 10 },
     '&[aria-pressed="true"]': { borderBottomColor: 'foreground' },
     '&[data-dragging]': { opacity: 0.5 },
     '&[data-drop-target]': { boxShadow: 'inset 2px 0 currentColor !custom' },

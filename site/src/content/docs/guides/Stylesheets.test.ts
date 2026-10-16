@@ -45,6 +45,7 @@ const guides = [
 })
 const examples = guides.flatMap((guide) => guide.examples)
 let directory: string
+let fixtureRoot: string
 let server: ChildProcess.ChildProcess
 
 function text(node: Nodes): string {
@@ -153,9 +154,12 @@ describe('stylesheet guides', () => {
 
   describe('published page', () => {
     beforeAll(async () => {
-      directory = Fs.realpathSync(
+      fixtureRoot = Fs.realpathSync(
         Fs.mkdtempSync(`${Os.tmpdir()}/zyzz-stylesheets-site-`),
       )
+      directory = `${fixtureRoot}/site`
+      // Preserve the playground worker's repository-relative Wasm adapter import.
+      Fs.symlinkSync(new URL('../src', site), `${fixtureRoot}/src`, 'dir')
       Fs.cpSync(new URL('src', site), `${directory}/src`, { recursive: true })
       for (const file of [
         'package.json',
@@ -218,7 +222,7 @@ describe('stylesheet guides', () => {
         process.kill(-server.pid, 'SIGTERM')
         await exited
       }
-      if (directory) Fs.rmSync(directory, { recursive: true, force: true })
+      if (fixtureRoot) Fs.rmSync(fixtureRoot, { recursive: true, force: true })
     })
 
     test('preserves prose, headings, tables, and examples in HTML and Markdown', async () => {

@@ -303,10 +303,8 @@ describe('/docs', () => {
 
       const editor = page.locator('.monaco-editor').first()
       const line = editor.locator('.view-line').first()
-      await line.waitFor({ state: 'visible' })
-      const bounds = (await line.boundingBox())!
       // Hover the imported Logo on the first line, where the popup crosses the file bar.
-      await page.mouse.move(bounds.x + 8 * 9, bounds.y + 12)
+      await line.hover({ position: { x: 8 * 9, y: 12 } })
       const tooltip = page.locator('.monaco-hover:visible').first()
       await tooltip.waitFor({ state: 'visible' })
 

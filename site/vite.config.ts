@@ -29,9 +29,25 @@ import Icons from 'unplugin-icons/vite'
 import { defineConfig, type ViteDevServer } from 'vite'
 import { zyzz } from 'zyzz/vite'
 import { files, lightTheme, theme } from './src/Example.js'
+import * as Project from './src/playground/Project.js'
 import * as Search from './src/Search.js'
 
 export default defineConfig(async () => {
+  // Ship the first editor paint as HTML, without loading Monaco or Shiki in the browser.
+  const source = Project.create('Styles').files['App.tsx']!
+  const tokens = await codeToTokensWithThemes(source, {
+    lang: 'tsx',
+    themes: { light: lightTheme, dark: theme },
+  })
+  const playground = {
+    source,
+    tokens: tokens.map((line) =>
+      line.map((token) => ({
+        content: token.content,
+        color: `light-dark(${token.variants.light?.color ?? lightTheme.fg}, ${token.variants.dark?.color ?? theme.fg})`,
+      })),
+    ),
+  }
   const examples = await Promise.all(
     files.map(async (file) => {
       const tokens = await codeToTokensWithThemes(file.code, {
@@ -298,6 +314,7 @@ export default defineConfig(async () => {
         files: examples,
       }),
       __MARKDOWN__: JSON.stringify(markdowns),
+      __PLAYGROUND__: JSON.stringify(playground),
     },
     plugins: [
       cloudflare({ viteEnvironment: { name: 'ssr' } }),

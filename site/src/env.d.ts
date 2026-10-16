@@ -27,6 +27,12 @@ declare const __DOCS__: {
 /** Markdown twins prepared during the build, keyed by documentation path. Only server modules read them. */
 declare const __MARKDOWN__: Record<string, string>
 
+/** Default playground source and theme-aware tokens prepared during the build. */
+declare const __PLAYGROUND__: {
+  source: string
+  tokens: readonly (readonly { content: string; color: string }[])[]
+}
+
 /** Serialized MiniSearch index of documentation pages and sections, built from the MDX sources. */
 declare module 'virtual:search-index' {
   const index: string

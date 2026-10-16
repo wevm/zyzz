@@ -7,9 +7,8 @@ import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
 
 const origin = 'http://localhost:3157'
 let server: ChildProcess.ChildProcess
-const directory = Fs.realpathSync(
-  Fs.mkdtempSync(`${Os.tmpdir()}/zyzz-docs-test-`),
-)
+const root = Fs.realpathSync(Fs.mkdtempSync(`${Os.tmpdir()}/zyzz-docs-test-`))
+const directory = `${root}/site`
 const site = new URL('../..', import.meta.url)
 const fixture = `${directory}/src/content/docs/guides/navigation-review-fixture.mdx`
 const outlineFixture = `${directory}/src/content/docs/guides/outline-review-fixture.mdx`
@@ -18,6 +17,8 @@ const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fi
 
 describe('/docs', () => {
   beforeAll(async () => {
+    // Preserve the playground worker's repository-relative Wasm adapter import.
+    Fs.symlinkSync(new URL('../src', site), `${root}/src`, 'dir')
     Fs.cpSync(new URL('src', site), `${directory}/src`, { recursive: true })
     for (const file of [
       'package.json',
@@ -172,7 +173,7 @@ describe('/docs', () => {
       process.kill(-server.pid, 'SIGTERM')
       await exited
     }
-    Fs.rmSync(directory, { recursive: true, force: true })
+    Fs.rmSync(root, { recursive: true, force: true })
   })
 
   test('serves playground controls and source before browser tools load', async () => {
@@ -188,9 +189,40 @@ describe('/docs', () => {
         (
           await page
             .getByRole('textbox', { name: 'App.tsx source' })
-            .inputValue()
-        ).includes('Make it your own.'),
+            .textContent()
+        )?.includes('Edit the root component'),
       ).toMatchInlineSnapshot('true')
+      const editor = page.getByRole('textbox', { name: 'App.tsx source' })
+      expect(
+        await editor
+          .locator(':scope > span > span:first-child')
+          .allTextContents()
+          .then((lines) => lines.slice(0, 5)),
+      ).toMatchInlineSnapshot(`
+        [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+        ]
+      `)
+      expect(
+        await editor
+          .locator('span[style*="color:"]')
+          .first()
+          .evaluate(
+            (element) =>
+              getComputedStyle(element).color !==
+              getComputedStyle(element.parentElement!).color,
+          ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await editor
+          .locator('span[aria-hidden][style]')
+          .first()
+          .evaluate((element) => getComputedStyle(element).borderLeftWidth),
+      ).toMatchInlineSnapshot('"1px"')
       expect(
         (
           await page.getByRole('combobox', { name: 'Example' }).textContent()
@@ -201,6 +233,38 @@ describe('/docs', () => {
           .getByRole('link', { name: 'Docs', exact: true })
           .getAttribute('href'),
       ).toMatchInlineSnapshot('"/docs/introduction/getting-started"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('shows playground code tooltips above the file bar', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1400, height: 900 },
+      })
+      await page.goto(`${origin}/playground`)
+      const editor = page.locator('.monaco-editor').first()
+      const line = editor.locator('.view-line').first()
+      await line.waitFor({ state: 'visible' })
+      const bounds = (await line.boundingBox())!
+      // Hover the imported Logo on the first line, where the popup crosses the file bar.
+      await page.mouse.move(bounds.x + 8 * 9, bounds.y + 12)
+      const tooltip = page.locator('.monaco-hover:visible').first()
+      await tooltip.waitFor({ state: 'visible' })
+
+      expect(
+        (await tooltip.boundingBox())!.y < (await editor.boundingBox())!.y,
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await tooltip.evaluate((element) => {
+          const bounds = element.getBoundingClientRect()
+          return element.contains(
+            document.elementFromPoint(bounds.x + 20, bounds.y + 10),
+          )
+        }),
+      ).toMatchInlineSnapshot('true')
     } finally {
       await browser.close()
     }

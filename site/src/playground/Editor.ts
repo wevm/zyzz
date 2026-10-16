@@ -24,6 +24,10 @@ const highlighterPromise = createHighlighterCore({
         ...theme.colors,
         // Match the playground's background.surface token in both color schemes.
         'editor.background': theme.type === 'dark' ? '#0a0a0a' : '#ffffff',
+        'editorIndentGuide.background1':
+          theme.type === 'dark' ? '#404040' : '#d3d3d3',
+        'editorLineNumber.foreground':
+          theme.type === 'dark' ? '#858585' : '#737373',
       },
       // Monaco consumes TextMate rules directly, bypassing Shiki's color replacements.
       settings: theme.settings.map((entry) => ({
@@ -77,8 +81,10 @@ export function onMount(editor: Monaco.editor.IStandaloneCodeEditor) {
 export const options = {
   automaticLayout: true,
   bracketPairColorization: { enabled: false },
+  fixedOverflowWidgets: true,
   fontFamily: 'Geist Mono, monospace',
   fontSize: 15,
+  guides: { highlightActiveIndentation: false },
   lineHeight: 24,
   minimap: { enabled: false },
   padding: { top: 20 },
@@ -87,4 +93,6 @@ export const options = {
   'semanticHighlighting.enabled': false,
   tabSize: 2,
   wordWrap: 'on',
+  // Use browser line breaking, as the server-rendered fallback does.
+  wrappingStrategy: 'advanced',
 } satisfies Monaco.editor.IStandaloneEditorConstructionOptions

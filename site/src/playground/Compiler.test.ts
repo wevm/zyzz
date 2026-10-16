@@ -39,7 +39,7 @@ describe('create', () => {
           'true',
         )
       expect(
-        browser.css.includes('light-dark(#6366f1,#a5b4fc)'),
+        browser.css.includes('light-dark(#0072f5,#52a8ff)'),
       ).toMatchInlineSnapshot('true')
       expect(browser.css.includes('background-color:')).toMatchInlineSnapshot(
         'true',
@@ -54,13 +54,14 @@ describe('create', () => {
     project.files['App.tsx'] =
       `import Badge from './Badge.js'; export default function App() { return <Badge /> }`
     const original = compiler.compile(project.files)
-    project.order = ['Badge.tsx', 'App.tsx', 'zyzz.config.ts']
+    project.order = ['Badge.tsx', 'App.tsx', 'Logo.tsx', 'zyzz.config.ts']
     const restored = Project.decode(Project.encode(project))
     expect(restored.framework).toMatchInlineSnapshot('"react"')
     expect(restored.order).toMatchInlineSnapshot(`
       [
         "Badge.tsx",
         "App.tsx",
+        "Logo.tsx",
         "zyzz.config.ts",
       ]
     `)
@@ -91,7 +92,7 @@ describe('create', () => {
     )
     expect(legacy.framework).toMatchInlineSnapshot('"react"')
     expect(
-      compiler.compile(legacy.files).css.includes('#6366f1'),
+      compiler.compile(legacy.files).css.includes('#0072f5'),
     ).toMatchInlineSnapshot('true')
   })
 

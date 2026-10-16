@@ -16,6 +16,7 @@ import { ThemeToggle } from '../components/ThemeToggle.js'
 import { style } from '../zyzz.config.js'
 import type * as Compiler from './Compiler.js'
 import type * as WorkerProtocol from './Compiler.worker.js'
+import { EditorFallback } from './EditorFallback.js'
 import type * as Preview from './Preview.js'
 import * as Project from './Project.js'
 
@@ -259,21 +260,24 @@ export default function Playground() {
     newFileButton.current?.focus()
   }
 
-  const sourceFallback = (
-    <textarea
-      aria-label={`${active} source`}
-      onChange={(event) =>
-        setProject((previous) => ({
-          ...previous,
-          files: { ...previous.files, [active]: event.target.value },
-        }))
-      }
-      readOnly={!ready}
-      spellCheck={false}
-      value={files[active] ?? ''}
-      {...styles.sourceFallback()}
-    />
-  )
+  const sourceFallback =
+    files[active] === __PLAYGROUND__.source ? (
+      <EditorFallback />
+    ) : (
+      <textarea
+        aria-label={`${active} source`}
+        onChange={(event) =>
+          setProject((previous) => ({
+            ...previous,
+            files: { ...previous.files, [active]: event.target.value },
+          }))
+        }
+        readOnly={!ready}
+        spellCheck={false}
+        value={files[active] ?? ''}
+        {...styles.sourceFallback()}
+      />
+    )
   const outputSource =
     tab === 'CSS' ? (output?.css ?? '') : (output?.files[active] ?? '')
 

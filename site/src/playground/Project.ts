@@ -26,13 +26,13 @@ const config = `import { defineConfig } from 'zyzz'
 export const { style, variants, vars } = defineConfig({
   vars: {
     color: {
-      accent: { dark: '#a5b4fc', light: '#6366f1' },
-      accentHover: { dark: '#c7d2fe', light: '#4338ca' },
+      accent: { dark: '#52a8ff', light: '#0072f5' },
+      accentHover: { dark: '#8ec8ff', light: '#0062d1' },
       border: { dark: '#333333', light: '#e5e5e5' },
-      canvas: { dark: '#0a0a0a', light: '#fafafa' },
-      ink: { dark: '#ededed', light: '#18181b' },
+      canvas: { dark: '#0a0a0a', light: '#ffffff' },
+      ink: { dark: '#ededed', light: '#171717' },
       onAccent: { dark: '#171717', light: '#ffffff' },
-      paper: { dark: '#171717', light: '#ffffff' },
+      paper: { dark: '#111111', light: '#fafafa' },
     },
     spacing: { gap: '16px' },
   },
@@ -48,16 +48,39 @@ export const examples: Record<
     description: 'React · Themes and hover styles',
     framework: 'react',
     files: {
-      'App.tsx': `import { style } from './zyzz.config.js'
+      'App.tsx': `import Logo from './Logo.js'
+import { style } from './zyzz.config.js'
+
+const steps = [
+  <>Edit the root component in <code>App.tsx</code>.</>,
+  <>Add files for more components.</>,
+  <>Define tokens in <code>zyzz.config.ts</code>.</>,
+  <>Use Share to copy a link to this project.</>,
+]
 
 export default function App() {
   return (
     <main {...styles.page()}>
       <article {...styles.card()}>
-        <span {...styles.eyebrow()}>ZYZZ PLAYGROUND</span>
-        <h1 {...styles.title()}>Make it your own.</h1>
-        <p>Switch the theme. Edit a style. See the CSS.</p>
-        <button {...styles.button()}>Hover over me ↗</button>
+        <h1 {...styles.title()}>
+          <Logo /> <span>playground</span>
+        </h1>
+        <ul {...styles.steps()}>
+          {steps.map((step, index) => (
+            <li key={index} {...styles.step()}>
+              <span aria-hidden="true" {...styles.check()}>✓</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ul>
+        <nav aria-label="Resources" {...styles.links()}>
+          <a {...styles.button()} href="https://zyzz.style/docs/introduction/getting-started" target="_blank" rel="noreferrer">
+            See the docs <span aria-hidden="true">↗</span>
+          </a>
+          <a {...styles.button(styles.secondary())} href="https://github.com/wevm/zyzz" target="_blank" rel="noreferrer">
+            View on GitHub <span aria-hidden="true">↗</span>
+          </a>
+        </nav>
       </article>
     </main>
   )
@@ -68,7 +91,7 @@ namespace styles {
     backgroundColor: 'canvas',
     display: 'grid',
     minHeight: '100vh !custom',
-    padding: '32px !custom',
+    padding: '24px !custom',
     placeItems: 'center',
   })
 
@@ -76,39 +99,105 @@ namespace styles {
     backgroundColor: 'paper',
     border: '1px solid',
     borderColor: 'border',
-    borderRadius: '20px',
+    borderRadius: '24px',
     color: 'ink',
     display: 'grid',
-    gap: 'gap',
-    maxWidth: '420px !custom',
+    gap: '32px !custom',
+    maxWidth: '560px !custom',
     padding: '32px !custom',
-  })
-
-  export const eyebrow = style({
-    color: 'accent',
-    fontSize: '11px',
-    fontWeight: 700,
-    letterSpacing: '0.12em',
+    width: '100% !custom',
+    '@media (max-width: 480px)': { gap: '24px !custom', padding: '20px !custom' },
   })
 
   export const title = style({
-    fontSize: '36px',
+    alignItems: 'center',
+    color: 'accent',
+    display: 'flex',
+    flexWrap: 'wrap',
+    fontSize: 'clamp(24px, 5vw, 32px)',
+    fontWeight: 500,
+    gap: '12px !custom',
+    justifyContent: 'center',
     letterSpacing: '-0.04em',
-    lineHeight: 1.1,
+    margin: '8px 0 !custom',
+    '& svg': { color: 'ink', width: '104px !custom', height: '32px !custom' },
+  })
+
+  export const steps = style({
+    display: 'grid',
+    gap: '8px !custom',
+    listStyle: 'none',
     margin: '0 !custom',
+    padding: '0 !custom',
+  })
+
+  export const step = style({
+    alignItems: 'center',
+    border: '1px solid',
+    borderColor: 'border',
+    borderRadius: '8px',
+    display: 'flex',
+    fontSize: '14px',
+    gap: '12px !custom',
+    lineHeight: 1.6,
+    padding: '16px !custom',
+    ':first-child': { borderStartStartRadius: '16px', borderStartEndRadius: '16px' },
+    ':last-child': { borderEndStartRadius: '16px', borderEndEndRadius: '16px' },
+    '@media (max-width: 480px)': { fontSize: '13px', padding: '12px !custom' },
+  })
+
+  export const check = style({
+    backgroundColor: 'accent',
+    borderRadius: '50%',
+    color: 'onAccent',
+    display: 'grid',
+    flexShrink: 0,
+    height: '24px !custom',
+    placeItems: 'center',
+    width: '24px !custom',
+  })
+
+  export const links = style({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px !custom',
   })
 
   // Selectors are emitted as ordinary CSS.
   export const button = style({
+    alignItems: 'center',
     backgroundColor: 'accent',
-    border: 'none',
-    borderRadius: '10px',
+    border: '1px solid transparent',
+    borderRadius: '8px',
     color: 'onAccent',
-    cursor: 'pointer',
+    display: 'flex',
+    flex: '1 1 auto',
+    fontSize: '14px',
     fontWeight: 600,
-    padding: '12px 20px !custom',
+    gap: '12px !custom',
+    justifyContent: 'space-between',
+    padding: '14px 20px !custom',
+    textDecoration: 'none',
     ':hover': { backgroundColor: 'accentHover' },
+    ':focus-visible': { outline: '2px solid', outlineColor: 'accent', outlineOffset: '3px' },
+    '@media (max-width: 480px)': { fontSize: '13px', padding: '12px !custom' },
   })
+
+  export const secondary = style({
+    backgroundColor: 'canvas',
+    borderColor: 'border',
+    color: 'ink',
+    ':hover': { backgroundColor: 'border' },
+  })
+}
+`,
+      'Logo.tsx': `// The Zyzz wordmark uses the surrounding text color.
+export default function Logo() {
+  return (
+    <svg aria-label="Zyzz" role="img" viewBox="12 24 233 64" fill="currentColor">
+      <path d="M12.7256 88L14.5713 79.0352L54.6494 36.1885V35.9248H24.5908L26.9639 24.5869H73.7217L71.876 33.5078L31.8418 76.3984V76.6621H63.4824L61.1533 88H12.7256ZM101.144 88H87.7842L92.7939 64.4893L79.1709 24.5869H93.0137L101.759 51.7451H102.022L121.974 24.5869H136.607L106.065 65.0166L101.144 88ZM127.687 88L129.532 79.0352L169.61 36.1885V35.9248H139.552L141.925 24.5869H188.683L186.837 33.5078L146.803 76.3984V76.6621H178.443L176.114 88H127.687ZM183.585 88L185.431 79.0352L225.509 36.1885V35.9248H195.45L197.823 24.5869H244.581L242.735 33.5078L202.701 76.3984V76.6621H234.342L232.013 88H183.585Z" />
+    </svg>
+  )
 }
 `,
       'zyzz.config.ts': config,

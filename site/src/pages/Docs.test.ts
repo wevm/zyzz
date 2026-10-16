@@ -344,6 +344,11 @@ describe('/docs', () => {
           .getByRole('button', { name: 'Remove App.tsx', exact: true })
           .count(),
       ).toMatchInlineSnapshot('0')
+      expect(
+        await page
+          .getByRole('button', { name: 'Remove zyzz.config.ts', exact: true })
+          .count(),
+      ).toMatchInlineSnapshot('0')
 
       for (const name of ['first.ts', 'middle.ts', 'last.ts']) {
         await page
@@ -429,6 +434,18 @@ describe('/docs', () => {
       expect(
         await page.locator('[data-file][aria-pressed="true"]').textContent(),
       ).toMatchInlineSnapshot('"middle.ts"')
+
+      await page.goto(`${origin}/playground`)
+      await page.getByRole('combobox', { name: 'Example' }).click()
+      await page.getByRole('option', { name: /^Vanilla JS/ }).click()
+      await page
+        .getByRole('button', { name: 'zyzz.config.js', exact: true })
+        .waitFor()
+      expect(
+        await page
+          .getByRole('button', { name: /^Remove (App.js|zyzz.config.js)$/ })
+          .count(),
+      ).toMatchInlineSnapshot('0')
     } finally {
       await browser.close()
     }

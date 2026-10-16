@@ -28,6 +28,11 @@ export default function Playground() {
   const [ready, setReady] = useState(false)
   const [project, setProject] = useState(() => Project.create('Styles'))
   const { files, framework, order } = project
+  const protectedFiles = [
+    Project.entryFiles[framework],
+    'zyzz.config.js',
+    'zyzz.config.ts',
+  ]
   const [active, setActive] = useState('App.tsx')
   const [addingFile, setAddingFile] = useState(false)
   const [filename, setFilename] = useState('')
@@ -359,9 +364,7 @@ export default function Playground() {
                   aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
                   title={`${path}: drag to reorder, or use Alt+Left/Right`}
                   data-file={path}
-                  data-removable={
-                    path !== Project.entryFiles[framework] || undefined
-                  }
+                  data-removable={!protectedFiles.includes(path) || undefined}
                   data-dragging={dragging === path || undefined}
                   data-drop-target={dropTarget === path || undefined}
                   draggable={ready}
@@ -416,7 +419,7 @@ export default function Playground() {
                   })()}
                   {path}
                 </Button>
-                {path !== Project.entryFiles[framework] && (
+                {!protectedFiles.includes(path) && (
                   <Button
                     aria-label={`Remove ${path}`}
                     disabled={!ready}

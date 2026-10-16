@@ -260,6 +260,8 @@ describe('/docs', () => {
       const page = await browser.newPage({
         viewport: { width: 1400, height: 900 },
       })
+      // Allow the normal 30-second browser budget at 4× CPU throttling.
+      page.setDefaultTimeout(120_000)
       const session = await page.context().newCDPSession(page)
       await session.send('Emulation.setCPUThrottlingRate', { rate: 4 })
       await page.addInitScript(() => {
@@ -300,6 +302,7 @@ describe('/docs', () => {
           return frames.length > 1 && frames.every(Boolean)
         }),
       ).toMatchInlineSnapshot('true')
+      await session.send('Emulation.setCPUThrottlingRate', { rate: 1 })
 
       const editor = page.locator('.monaco-editor').first()
       const line = editor.locator('.view-line').first()
@@ -322,7 +325,7 @@ describe('/docs', () => {
     } finally {
       await browser.close()
     }
-  })
+  }, 120_000)
 
   test('removes playground files with hover and keyboard controls and preserves share links', async () => {
     const browser = await chromium.launch({

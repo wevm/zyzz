@@ -113,6 +113,8 @@ const sidebarIcons: Record<string, typeof BookOpenIcon> = {
   'api/compiler/namespaces/Native': SmartphoneIcon,
   'api/compiler/namespaces/Source': FileSearchIcon,
   'api/compiler/namespaces/Transform': WandSparklesIcon,
+  'api/compiler/wasm': BookOpenIcon,
+  'api/compiler/wasm/namespaces/Graph': NetworkIcon,
   'api/core': BookOpenIcon,
   'api/core/cx': CombineIcon,
   'api/core/defineConfig': SettingsIcon,

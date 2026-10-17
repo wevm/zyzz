@@ -29,6 +29,7 @@ jobs:
           name: binding
           path: |
             binding/*.node
+            binding/compiler.wasm
             src/web/internal/Wasm.generated.ts
           retention-days: 1
     timeout-minutes: 30

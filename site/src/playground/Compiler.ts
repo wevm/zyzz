@@ -1,5 +1,5 @@
-/** Compiles virtual projects using the same Rust graph operation as the Node binding. @module */
-import * as Wasm from '../../../src/internal/Wasm.js'
+/** Compiles virtual projects with the WebAssembly compiler that `zyzz/compiler/wasm` publishes. @module */
+import { Graph } from 'zyzz/compiler/wasm'
 import type * as Project from './Project.js'
 
 /** Artifacts sent to the preview and output viewers. */
@@ -10,28 +10,27 @@ export type Output = {
   files: Project.Files
 }
 
-type Result = {
-  error?: { message: string; name: string }
-  modules: Record<string, { code: string; css: string }>
-  shared?: { css: string }
-}
-
 /** Owns a compiler instance for one worker or integration run. */
 export function create(bytes: BufferSource) {
-  const engine = Wasm.instantiate(bytes)
+  const compiler = Graph.create({ module: bytes })
 
   return {
     /** Compiles without executing source, reading files, or resolving external packages. */
     compile(files: Project.Files): Output {
-      const result: Result = JSON.parse(
-        engine.call('graph.compile', JSON.stringify({ modules: files })),
-      )
-      if (result.error)
-        throw new Error(`${result.error.name}: ${result.error.message}`)
+      const result = (() => {
+        try {
+          return compiler.compile({ modules: files })
+        } catch (error) {
+          // The output panel names the native error, as the CLI and bundler plugins report it.
+          if (error instanceof Graph.CompileError)
+            throw new Error(`${error.failure}: ${error.message}`)
+          throw error
+        }
+      })()
 
       return {
         css: [
-          result.shared?.css,
+          result.sharedCss,
           ...Object.values(result.modules).map((module) => module.css),
         ]
           .filter(Boolean)

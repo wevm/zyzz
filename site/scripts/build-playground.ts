@@ -1,4 +1,4 @@
-/** Builds the separately loaded source compiler and local preview runtime. @module */
+/** Copies the separately loaded source compiler and builds the local preview runtime. @module */
 import * as ChildProcess from 'node:child_process'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
@@ -9,28 +9,13 @@ import * as Esbuild from 'esbuild'
 const root = Path.resolve(import.meta.dirname, '../..')
 const require = Module.createRequire(import.meta.url)
 
-// A separate target directory keeps this build from replacing the lightweight CSS artifact.
-ChildProcess.execFileSync(
-  'cargo',
-  [
-    'build',
-    '-p',
-    'wasm',
-    '--features',
-    'compiler',
-    '--profile',
-    'wasm',
-    '--target',
-    'wasm32-wasip1',
-    '--target-dir',
-    'target/playground',
-  ],
-  { cwd: root, stdio: 'inherit' },
-)
+// The package build writes `binding/compiler.wasm`, which `zyzz/compiler.wasm` publishes.
+ChildProcess.execFileSync('node', ['scripts/build-wasm.ts'], {
+  cwd: root,
+  stdio: 'inherit',
+})
 
-const bytes = await Fs.readFile(
-  Path.join(root, 'target/playground/wasm32-wasip1/wasm/wasm.wasm'),
-)
+const bytes = await Fs.readFile(Path.join(root, 'binding/compiler.wasm'))
 const name = `compiler-${Crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 16)}.wasm`
 const directory = Path.join(root, 'site/public/playground')
 await Fs.mkdir(directory, { recursive: true })

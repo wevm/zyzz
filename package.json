@@ -167,6 +167,15 @@
       "types": "./dist/compiler/index.d.ts",
       "default": "./dist/compiler/index.js"
     },
+    "./compiler.wasm": {
+      "src": "./binding/compiler.wasm",
+      "default": "./dist/binding/compiler.wasm"
+    },
+    "./compiler/wasm": {
+      "src": "./src/compiler/wasm/index.ts",
+      "types": "./dist/compiler/wasm/index.d.ts",
+      "default": "./dist/compiler/wasm/index.js"
+    },
     "./default": {
       "src": "./src/default.ts",
       "types": "./dist/default.d.ts",

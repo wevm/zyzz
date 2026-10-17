@@ -948,7 +948,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
 
         const resolved = await resolve(specifier, file)
-        if (!resolved)
+        if (!resolved) {
+          // Framework transforms can remove server-only protocols from client code.
+          // Resolve first so aliases and plugins can still supply analyzable source.
+          if (
+            !Path.isAbsolute(specifier) &&
+            /^[a-z][a-z\d+.-]*:/i.test(specifier)
+          ) {
+            resolutions[specifier] = null
+            continue
+          }
+
           throw new Source.ExtractError([
             {
               code: 'unsupported_syntax',
@@ -958,6 +968,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
               start: node.start,
             },
           ])
+        }
 
         if (resource(specifier) || resource(resolved.id)) {
           resolutions[specifier] = null

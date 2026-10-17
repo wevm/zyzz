@@ -113,6 +113,7 @@
   "main": "./dist/index.js",
   "files": [
     "binding/*.node",
+    "binding/compiler.wasm",
     "binding/wasi/wasi-worker.mjs",
     "binding/wasi/zyzz.wasi.cjs",
     "binding/wasi/zyzz.wasm32-wasi.wasm",

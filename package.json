@@ -89,7 +89,7 @@
   "packageManager": "pnpm@11.19.0",
   "[!start-pkg]": "",
   "name": "zyzz",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "license": "MIT",
   "description": "Modern, universal, simple styling library for the Web and React Native",
   "homepage": "https://zyzz.style",
@@ -116,6 +116,7 @@
   "main": "./dist/index.js",
   "files": [
     "binding/*.node",
+    "binding/compiler.wasm",
     "binding/wasi/wasi-worker.mjs",
     "binding/wasi/zyzz.wasi.cjs",
     "binding/wasi/zyzz.wasm32-wasi.wasm",
@@ -174,6 +175,15 @@
       "src": "./src/compiler/index.ts",
       "types": "./dist/compiler/index.d.ts",
       "default": "./dist/compiler/index.js"
+    },
+    "./compiler.wasm": {
+      "src": "./binding/compiler.wasm",
+      "default": "./dist/binding/compiler.wasm"
+    },
+    "./compiler/wasm": {
+      "src": "./src/compiler/wasm/index.ts",
+      "types": "./dist/compiler/wasm/index.d.ts",
+      "default": "./dist/compiler/wasm/index.js"
     },
     "./default": {
       "src": "./src/default.ts",

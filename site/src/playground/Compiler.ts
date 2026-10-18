@@ -1,6 +1,6 @@
-/** Compiles virtual projects using the same Rust graph operation as the Node binding. @module */
+/** Compiles virtual projects with the WebAssembly compiler that `zyzz/compiler/wasm` publishes. @module */
 import type { Source } from 'zyzz/compiler'
-import * as Wasm from '../../../src/internal/Wasm.js'
+import { Graph } from 'zyzz/compiler/wasm'
 import type * as Project from './Project.js'
 
 /** A compiler failure with any source ranges available for editor diagnostics. */
@@ -12,9 +12,11 @@ export class CompileError extends Error {
   override name = 'Compiler.CompileError'
 
   /** Preserves the compiler message and structured diagnostics without parsing its text. */
-  constructor(options: NonNullable<Result['error']>) {
-    super(`${options.name}: ${options.message}`)
-    this.diagnostics = options.diagnostics ?? []
+  constructor(error: Graph.CompileError) {
+    super(`${error.failure}: ${error.message}`)
+    this.diagnostics = error.diagnostics.filter(
+      (diagnostic) => 'source' in diagnostic,
+    )
   }
 }
 
@@ -29,31 +31,26 @@ export type Output = {
   files: Project.Files
 }
 
-type Result = {
-  error?: {
-    diagnostics?: readonly Diagnostic[]
-    message: string
-    name: string
-  }
-  modules: Record<string, { code: string; css: string }>
-  shared?: { css: string }
-}
-
 /** Owns a compiler instance for one worker or integration run. */
 export function create(bytes: BufferSource) {
-  const engine = Wasm.instantiate(bytes)
+  const compiler = Graph.create({ module: bytes })
 
   return {
     /** Compiles without executing source, reading files, or resolving external packages. */
     compile(files: Project.Files): Output {
-      const result: Result = JSON.parse(
-        engine.call('graph.compile', JSON.stringify({ modules: files })),
-      )
-      if (result.error) throw new CompileError(result.error)
+      const result = (() => {
+        try {
+          return compiler.compile({ modules: files })
+        } catch (error) {
+          // The output panel names the native error, as the CLI and bundler plugins report it.
+          if (error instanceof Graph.CompileError) throw new CompileError(error)
+          throw error
+        }
+      })()
 
       return {
         css: [
-          result.shared?.css,
+          result.sharedCss,
           ...Object.values(result.modules).map((module) => module.css),
         ]
           .filter(Boolean)

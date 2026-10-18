@@ -17,8 +17,6 @@ const twoslashFixture = `${directory}/src/content/docs/guides/twoslash-review-fi
 
 describe('/docs', () => {
   beforeAll(async () => {
-    // Preserve the playground worker's repository-relative Wasm adapter import.
-    Fs.symlinkSync(new URL('../src', site), `${root}/src`, 'dir')
     Fs.cpSync(new URL('src', site), `${directory}/src`, { recursive: true })
     for (const file of [
       'package.json',

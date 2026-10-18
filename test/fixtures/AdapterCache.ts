@@ -43,29 +43,31 @@ try {
   async function run() {
     const code = await build()
     const { result } = await session.post('Profiler.takePreciseCoverage')
-    const calls = (file: string, ...names: readonly string[]) => {
-      const script = result.find(
-        (script) =>
-          script.url === Url.pathToFileURL(require.resolve(file)).href,
-      )
+    // Each target names a module and one of its functions. The count sums every target.
+    const calls = (...targets: readonly (readonly [string, string])[]) => {
       let count = 0
-      for (const name of names) {
+      for (const [file, name] of targets) {
+        const script = result.find(
+          (script) =>
+            script.url === Url.pathToFileURL(require.resolve(file)).href,
+        )
         const fn = script?.functions.find((fn) => fn.functionName === name)
         if (fn) observed.add(`${file}:${name}`)
         count += fn?.ranges[0]?.count ?? 0
       }
-      if (!names.some((name) => observed.has(`${file}:${name}`)))
-        throw new Error(`Missing V8 coverage for ${file}:${names.join('|')}`)
+      const labels = targets.map((target) => `${target[0]}:${target[1]}`)
+      if (!labels.some((label) => observed.has(label)))
+        throw new Error(`Missing V8 coverage for ${labels.join('|')}`)
       return count
     }
     return {
       code,
-      parses: calls('oxc-parser', 'parseSync'),
-      // The engine reports unchanged modules, whose decoded results the host keeps.
+      parses: calls(['oxc-parser', 'parseSync']),
+      // The engine reports unchanged modules, whose decoded results the host keeps. Web modules
+      // decode in `Modules`, and native modules in `Results`.
       modules: calls(
-        '../../dist/compiler/internal/Results.js',
-        'module',
-        'nativeModule',
+        ['../../dist/compiler/internal/Modules.js', 'decode'],
+        ['../../dist/compiler/internal/Results.js', 'nativeModule'],
       ),
     }
   }

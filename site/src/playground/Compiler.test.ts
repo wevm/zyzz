@@ -15,12 +15,7 @@ beforeAll(() => {
     stdio: 'pipe',
   })
   compiler = Compiler.create(
-    Fs.readFileSync(
-      new URL(
-        '../../../target/playground/wasm32-wasip1/wasm/wasm.wasm',
-        import.meta.url,
-      ),
-    ),
+    Fs.readFileSync(new URL('../../../binding/compiler.wasm', import.meta.url)),
   )
 }, 300_000)
 

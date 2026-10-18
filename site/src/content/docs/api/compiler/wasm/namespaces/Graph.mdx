@@ -1,0 +1,114 @@
+# Graph
+
+Compile a web source graph in browsers and workers, without the native addon.
+
+`Graph.create` instantiates the compiler from `zyzz/compiler.wasm`, which the host loads as an asset. Its `compile` takes the web options of [`Graph.compile`](/docs/api/compiler/namespaces/Graph#graphcompile) from `zyzz/compiler` and returns the same output. The entrypoint imports no Node built-ins, and compilation reads no files.
+
+```ts title="worker.ts"
+import { Graph } from 'zyzz/compiler/wasm'
+// Workers import a `.wasm` file as a compiled module
+import module from 'zyzz/compiler.wasm'
+
+declare const source: string
+
+// [!code hl:3]
+// Links the card against its config without the native addon
+const compiler = Graph.create({ module })
+const output = compiler.compile({ modules: { 'app/Card.tsx': source } })
+```
+
+## Graph.create
+
+Instantiates the compiler. Each compiler owns one WebAssembly instance and its memory, and each compilation is independent, as `Graph.compile` from `zyzz/compiler` is.
+
+```ts
+// A compiler that owns one WebAssembly instance
+Graph.create({ module })
+```
+
+### options.module
+
+- **Type:** `BufferSource | WebAssembly.Module{:ts}`
+
+The `zyzz/compiler.wasm` module, compiled or as bytes. Bytes compile synchronously. Cloudflare Workers forbid compiling at runtime, and browsers limit synchronous compilation on the main thread, so those hosts pass a compiled module.
+
+```ts
+import { Graph } from 'zyzz/compiler/wasm'
+// A bundler resolves the module's URL
+import url from 'zyzz/compiler.wasm?url'
+
+// [!code hl:2]
+// Compiles the module while it downloads
+const module = await WebAssembly.compileStreaming(fetch(url))
+const compiler = Graph.create({ module })
+```
+
+### compiler.compile
+
+- **Type:** `(options: Graph.compile.Options) => Graph.compile.ReturnType{:ts}`
+
+Takes the web options of [`Graph.compile`](/docs/api/compiler/namespaces/Graph#graphcompile), which are `modules`, `imports`, `contracts`, `compiler`, `cssOutput`, `composition`, and `development`. It returns the same modules, contracts, dependencies, and shared CSS. Native graphs compile with the native addon.
+
+```ts
+import { Graph } from 'zyzz/compiler/wasm'
+
+declare const compiler: Graph.create.ReturnType
+declare const contract: string
+declare const source: string
+
+// [!code hl:9]
+// Links a card to a separately compiled library through its contract
+const output = compiler.compile({
+  contracts: { '@acme/theme/index.js': contract },
+  imports: {
+    'app/Card.tsx': { '@acme/theme': '@acme/theme/index.js', zyzz: null },
+  },
+  modules: { 'app/Card.tsx': source },
+})
+```
+
+## Types
+
+- **`Graph.compile.ErrorType{:ts}`:** The typed errors `compile` throws.
+- **`Graph.compile.Options{:ts}`:** The web options of `Graph.compile` from `zyzz/compiler`.
+- **`Graph.compile.ReturnType{:ts}`:** The compiled modules and graph metadata.
+- **`Graph.create.ReturnType{:ts}`:** The compiler.
+
+```ts title="compile.ts"
+import { Graph } from 'zyzz/compiler/wasm'
+
+// [!code hl:2]
+// Shares one compiler across edits of a project
+export function compile(compiler: Graph.create.ReturnType) {
+  return (modules: Graph.compile.Options['modules']) =>
+    compiler.compile({ modules })
+}
+```
+
+## Errors
+
+`compile` returns no partial output. Every failure the compiler reports throws `Graph.CompileError`, with the message of the error `Graph.compile` from `zyzz/compiler` throws for the same input. A trap in the WebAssembly module throws an error named `Wasm.TrapError`, and the next call starts a new instance.
+
+- **`error.failure`:** The name of the native error, such as `Source.ExtractError` or `Css.CompileError`.
+- **`error.diagnostics`:** The source and CSS diagnostics, or an empty list for a failure without a location, such as an unresolved import.
+
+```ts
+import { Graph } from 'zyzz/compiler/wasm'
+
+declare const compiler: Graph.create.ReturnType
+
+try {
+  compiler.compile({
+    modules: {
+      // `huge` is not a configured spacing token
+      'app/Card.tsx': `import { style } from './zyzz.config.js'
+export const card = style({ padding: 'huge' })
+`,
+    },
+  })
+} catch (error) {
+  // [!code hl:2]
+  if (error instanceof Graph.CompileError)
+    for (const item of error.diagnostics) console.error(item.message)
+}
+```

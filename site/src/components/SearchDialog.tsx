@@ -14,9 +14,10 @@ import {
 import FileIcon from '~icons/lucide/file-text'
 import HashIcon from '~icons/lucide/hash'
 import SearchIcon from '~icons/lucide/search'
+import { style as baseStyle } from 'zyzz/base-ui/react'
 import * as Docs from '../Docs.js'
 import * as Search from '../Search.js'
-import { style } from '../zyzz.config.js'
+import { style, vars } from '../zyzz.config.js'
 import { Kbd } from './Kbd.js'
 import { Link } from './Link.js'
 
@@ -337,7 +338,7 @@ function snippet(text: string, terms: readonly string[]): string {
 }
 
 namespace styles {
-  export const backdrop = style({
+  export const backdrop = baseStyle(Dialog.Backdrop, {
     backdropFilter: 'blur(4px) !custom',
     backgroundColor: 'light-dark(rgb(0 0 0 / 0.2), rgb(0 0 0 / 0.6)) !custom',
     inset: 0,
@@ -345,8 +346,9 @@ namespace styles {
     transition: 'opacity 150ms',
     zIndex: 100,
     '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-    selectors: {
-      '&[data-starting-style], &[data-ending-style]': { opacity: 0 },
+    states: {
+      endingStyle: { opacity: 0 },
+      startingStyle: { opacity: 0 },
     },
   })
 
@@ -460,17 +462,17 @@ namespace styles {
     minWidth: 0,
   })
 
-  export const popup = style({
-    backgroundColor: 'background.surface',
+  export const popup = baseStyle(Dialog.Popup, {
+    backgroundColor: vars.color.background.surface,
     border: '1px solid',
-    borderColor: 'gray.400',
-    borderRadius: '2xl',
-    boxShadow: '2xl',
+    borderColor: vars.color.gray[400],
+    borderRadius: vars.radius['2xl'],
+    boxShadow: vars.shadow['2xl'],
     display: 'flex',
     flexDirection: 'column',
     left: '50% !custom',
     maxHeight: '70vh !custom',
-    maxWidth: '2xl',
+    maxWidth: vars.container['2xl'],
     overflow: 'hidden',
     position: 'fixed',
     top: '12vh !custom',
@@ -479,13 +481,11 @@ namespace styles {
     transition: 'opacity 150ms, scale 150ms',
     width: 'calc(100vw - 32px) !custom',
     zIndex: 101,
-    '@media (max-width: 640px)': { top: 4 },
+    '@media (max-width: 640px)': { top: vars.spacing[4] },
     '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-    selectors: {
-      '&[data-starting-style], &[data-ending-style]': {
-        opacity: 0,
-        scale: '0.98 !custom',
-      },
+    states: {
+      endingStyle: { opacity: 0, scale: '0.98 !custom' },
+      startingStyle: { opacity: 0, scale: '0.98 !custom' },
     },
   })
 

@@ -4,7 +4,8 @@ import { RadioGroup } from '@base-ui/react/radio-group'
 import MonitorIcon from '~icons/lucide/monitor'
 import MoonIcon from '~icons/lucide/moon'
 import SunIcon from '~icons/lucide/sun'
-import { style } from '../zyzz.config.js'
+import { style as baseStyle } from 'zyzz/base-ui/react'
+import { style, vars } from '../zyzz.config.js'
 
 /** Renders the color schemes as a radio group. The parent applies the chosen scheme. */
 export function ThemeToggle(props: ThemeToggle.Props) {
@@ -64,28 +65,30 @@ namespace styles {
 
   export const icon = style({ height: 4, width: 4 })
 
-  export const option = style({
+  export const option = baseStyle(Radio.Root, {
     alignItems: 'center',
     border: '1px solid transparent',
     borderRadius: '9999px !custom',
-    color: 'gray.900',
+    color: vars.color.gray[900],
     cursor: 'pointer',
     display: 'flex',
-    height: 7,
+    height: vars.spacing[7],
     justifyContent: 'center',
     transition: 'background-color 150ms, color 150ms',
-    width: 7,
-    ':hover': { color: 'foreground' },
+    width: vars.spacing[7],
+    ':hover': { color: vars.color.foreground },
     ':focus-visible': {
       outline: '2px solid',
-      outlineColor: 'blue.900',
+      outlineColor: vars.color.blue[900],
       outlineOffset: '2px',
     },
     '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-    '&[data-checked]': {
-      backgroundColor: 'grayAlpha.200',
-      borderColor: 'gray.400',
-      color: 'foreground',
+    states: {
+      checked: {
+        backgroundColor: vars.color.grayAlpha[200],
+        borderColor: vars.color.gray[400],
+        color: vars.color.foreground,
+      },
     },
   })
 }

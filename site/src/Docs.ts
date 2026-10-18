@@ -26,6 +26,7 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
       { path: 'guides/default-theme', title: 'Default Theme' },
       { path: 'guides/conditions', title: 'Conditions' },
       { path: 'guides/variants', title: 'Variants' },
+      { path: 'guides/base-ui', title: 'Base UI' },
       { path: 'guides/global-styles', title: 'Global Styles' },
       { path: 'guides/layers', title: 'Layers' },
       { path: 'guides/typography', title: 'Fonts & Typography' },

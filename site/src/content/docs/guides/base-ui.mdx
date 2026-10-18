@@ -1,0 +1,199 @@
+# Base UI
+
+Style Base UI parts with autocomplete for their data attributes and state values.
+
+## Overview
+
+Import `style` from `zyzz/base-ui/react` and pass a Base UI part before its declarations. The component determines the available `states` names and values. Boolean states match attribute presence, such as `checked` matching `[data-checked]`, rather than a nested `true` branch.
+
+Styles compile to ordinary CSS ahead of time. Base UI owns the attributes and interaction behavior. Apply the returned props directly to its parts without a wrapper. Compiler setup is unchanged, as described in [Getting Started](/docs/introduction/getting-started).
+
+```tsx title="BasicSwitch.tsx"
+import { Switch } from '@base-ui/react/switch'
+import { style } from 'zyzz/base-ui/react'
+
+export function BasicSwitch() {
+  return (
+    <Switch.Root aria-label="Notifications" {...styles.root()}>
+      <Switch.Thumb {...styles.thumb()} />
+    </Switch.Root>
+  )
+}
+
+namespace styles {
+  export const root = style(Switch.Root, {
+    backgroundColor: 'gray',
+    border: 'none',
+    borderRadius: '999px',
+    boxSizing: 'border-box',
+    display: 'inline-flex',
+    height: '24px',
+    padding: '4px',
+    width: '40px',
+    // [!code hl:4]
+    // Base UI adds data-checked when the switch is on.
+    states: {
+      checked: { backgroundColor: 'blue' },
+    },
+  })
+
+  export const thumb = style(Switch.Thumb, {
+    backgroundColor: 'white',
+    borderRadius: '50%',
+    height: '16px',
+    width: '16px',
+    states: {
+      checked: { translate: '16px' },
+    },
+  })
+}
+```
+
+## Walkthrough
+
+### Configure Tokens
+
+The direct `style` import is token-free. To use default tokens or an application theme, import `defineConfig` from the same Base UI entrypoint. It accepts the ordinary configuration options and returns a component-aware `style` alongside the other config helpers.
+
+```ts title="zyzz.config.ts"
+import { defineConfig } from 'zyzz/base-ui/react'
+import { tokens } from 'zyzz/default'
+
+// Share the default token identity with other zyzz/default styles.
+export const { style, variants, vars } = defineConfig({
+  id: 'default',
+  vars: tokens,
+})
+```
+
+### Style Parts
+
+Define each part separately. Configured token strings work in base declarations and state branches. State names use camelCase, such as `popupOpen` for `data-popup-open`, and only the selected part's documented states are accepted.
+
+```ts title="notification.styles.ts"
+import { Switch } from '@base-ui/react/switch'
+import { style } from './zyzz.config.js'
+
+export namespace styles {
+  export const root = style(Switch.Root, {
+    backgroundColor: 'gray.300',
+    border: 'none',
+    borderRadius: '999px !custom',
+    boxSizing: 'border-box',
+    display: 'inline-flex',
+    height: 6,
+    padding: 1,
+    width: 10,
+    // [!code hl:5]
+    // Token strings resolve through the same configuration in every state.
+    states: {
+      checked: { backgroundColor: 'blue.900' },
+      disabled: { cursor: 'not-allowed', opacity: 0.5 },
+    },
+  })
+
+  export const thumb = style(Switch.Thumb, {
+    backgroundColor: 'background.primary',
+    borderRadius: '999px !custom',
+    height: 4,
+    width: 4,
+    states: {
+      checked: { translate: 4 },
+    },
+  })
+}
+```
+
+### Apply Styles
+
+Spread each style's props onto the corresponding part. Keep component props such as `disabled`, `defaultChecked`, and accessible labels on Base UI itself. Zyzz does not synchronize state in JavaScript or insert CSS rules at runtime.
+
+```tsx title="NotificationSwitch.tsx"
+import { Switch } from '@base-ui/react/switch'
+import { styles } from './notification.styles.js'
+
+// Base UI handles keyboard interaction and toggles both parts' attributes.
+export function NotificationSwitch() {
+  return (
+    <Switch.Root aria-label="Notifications" defaultChecked {...styles.root()}>
+      <Switch.Thumb {...styles.thumb()} />
+    </Switch.Root>
+  )
+}
+```
+
+## Recipes
+
+### Value States
+
+States with values use nested branches. For `Select.Popup`, `side` offers the supported placements. The `bottom` branch emits a `[data-side="bottom"]` selector. TypeScript checks the state name, each value, and the declarations inside the branch.
+
+```ts title="placement.styles.ts"
+import { Select } from '@base-ui/react/select'
+import { style } from 'zyzz/base-ui/react'
+
+export namespace styles {
+  export const popup = style(Select.Popup, {
+    // Match the placement that Base UI assigns after positioning.
+    states: {
+      side: {
+        bottom: { marginTop: '4px' },
+        top: { marginBottom: '4px' },
+      },
+    },
+  })
+}
+```
+
+### Raw Selectors
+
+The `selectors` object also suggests the part's data-attribute selectors. Arbitrary selectors remain valid for application-owned attributes or relationships. These retain ordinary CSS specificity, just like the selectors emitted from `states`.
+
+```ts title="item.styles.ts"
+import { Select } from '@base-ui/react/select'
+import { style } from 'zyzz/base-ui/react'
+
+export namespace styles {
+  export const item = style(Select.Item, {
+    selectors: {
+      // Base UI selectors and application selectors can coexist.
+      '&[data-highlighted]': { backgroundColor: 'lightblue' },
+      '&[data-pending]': { opacity: 0.5 },
+    },
+  })
+}
+```
+
+### CSS Variables
+
+Reference Base UI's CSS custom properties with ordinary `var()` values. Their availability depends on the part, as documented in the [Base UI component reference](https://base-ui.com/react/components/select).
+
+```ts title="popup.styles.ts"
+import { Select } from '@base-ui/react/select'
+import { style } from 'zyzz/base-ui/react'
+
+export namespace styles {
+  export const popup = style(Select.Popup, {
+    // Fit the popup within the space reported by Base UI.
+    maxHeight: 'var(--available-height)',
+    overflowY: 'auto',
+  })
+}
+```
+
+### Supported Calls
+
+Component-first `style(Component, declarations)` accepts static objects for React DOM parts. Component-first callbacks, component-first `variants`, HTML output, and React Native are unsupported. Ordinary `style(...)` and `variants(...)` calls retain their existing APIs through this entrypoint and its config helpers.
+
+## More
+
+<Card.Group>
+  <Card title="Conditions" icon="git-branch" href="/docs/guides/conditions">
+    Combine state selectors with<br />
+    queries and CSS conditions.
+  </Card>
+  <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
+    Share tokens across components<br />
+    and switch color schemes.
+  </Card>
+</Card.Group>

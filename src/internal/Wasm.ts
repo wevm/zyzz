@@ -1,5 +1,5 @@
 /**
- * Instantiates the WebAssembly compiler synchronously from its bytes, for hosts without the native addon.
+ * Instantiates the WebAssembly compiler synchronously, for hosts without the native addon.
  * @module
  */
 
@@ -28,13 +28,20 @@ export class TrapError extends Error {
 }
 
 /**
- * Compiles and instantiates the module without awaiting, so synchronous APIs can call it.
- * A trap leaves Rust state undefined, so the next call starts a fresh instance.
- * @param bytes - The `crates/wasm` module.
+ * Instantiates the module without awaiting, so synchronous APIs can call it. Bytes compile
+ * synchronously first. Hosts that forbid runtime compilation, such as Cloudflare Workers, pass
+ * a compiled module instead. A trap leaves Rust state undefined, so the next call starts a
+ * fresh instance.
+ * @param source - The `crates/wasm` module, compiled or as bytes.
  * @returns The instance's operations.
  */
-export function instantiate(bytes: BufferSource): Instance {
-  const module = new WebAssembly.Module(bytes)
+export function instantiate(
+  source: BufferSource | WebAssembly.Module,
+): Instance {
+  const module =
+    source instanceof WebAssembly.Module
+      ? source
+      : new WebAssembly.Module(source)
   const encoder = new TextEncoder()
   const decoder = new TextDecoder()
   let exports: Exports | undefined

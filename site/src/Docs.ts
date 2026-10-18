@@ -230,6 +230,18 @@ export const groups: readonly { pages: readonly Item[]; title: string }[] = [
         ],
       },
       {
+        title: 'WebAssembly Compiler',
+        children: [
+          { path: 'api/compiler/wasm', title: 'Overview' },
+          {
+            title: 'Namespaces',
+            items: [
+              { path: 'api/compiler/wasm/namespaces/Graph', title: 'Graph' },
+            ],
+          },
+        ],
+      },
+      {
         title: 'Runtime',
         children: [
           { path: 'api/runtime', title: 'Overview' },

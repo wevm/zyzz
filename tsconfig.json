@@ -14,6 +14,7 @@
       "zyzz/babel": ["./src/babel/index.ts"],
       "zyzz/base-ui/react": ["./src/base-ui/react/index.ts"],
       "zyzz/compiler": ["./src/compiler/index.ts"],
+      "zyzz/compiler/wasm": ["./src/compiler/wasm/index.ts"],
       "zyzz/default": ["./src/default.ts"],
       "zyzz/esbuild": ["./src/esbuild/index.ts"],
       "zyzz/metro": ["./src/metro/index.ts"],

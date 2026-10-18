@@ -2722,6 +2722,90 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
     }
   })
 
+  test.each(['cloudflare:workers', './missing', 'missing-package'])(
+    'analyzes server-only imports before TanStack removes %s',
+    async (specifier) => {
+      const { config, root } = await create({
+        ...TanStack.files,
+        'declarations.ts': `export const declarations = { padding: '17px' } as const;`,
+        'main.tsx': `export { getClient, styles } from './rpc';`,
+        'rpc.ts': `import { createIsomorphicFn } from '@tanstack/react-start'
+import { env } from '${specifier}'
+import { declarations } from 'styles:declarations'
+import { style } from 'zyzz'
+
+export const getClient = createIsomorphicFn()
+  .server(() => env)
+  .client(() => 'browser')
+
+export namespace styles {
+  export const card = style(declarations)
+}`,
+      })
+      await Fs.mkdir(Path.join(root, 'routes'))
+      for (const name of ['__root.tsx', 'settings.tsx'])
+        await Fs.rename(Path.join(root, name), Path.join(root, 'routes', name))
+
+      const server = await Vite.createServer({
+        ...config,
+        plugins: [
+          zyzz({ include: ['.'], script: false }),
+          tanstackStart({
+            router: {
+              generatedRouteTree: Path.join(root, 'routeTree.gen.ts'),
+              routesDirectory: Path.join(root, 'routes'),
+            },
+            srcDirectory: '.',
+          }),
+          react(),
+        ],
+        resolve: {
+          alias: {
+            ...(config.resolve!.alias as Record<string, string>),
+            // Resolvable protocols still supply statically evaluated declarations.
+            'styles:declarations': Path.join(root, 'declarations.ts'),
+          },
+        },
+      })
+
+      try {
+        await server.listen()
+
+        // The importer walks rpc.ts before Start transforms its server branch.
+        const output = server.environments.client.transformRequest('/main.tsx')
+
+        if (specifier !== 'cloudflare:workers') {
+          const error = await output.catch((error: unknown) =>
+            String(error).replace(root, '<root>'),
+          )
+
+          if (specifier === './missing')
+            expect(error).toMatchInlineSnapshot(
+              `"Source.ExtractError: <root>/rpc.ts:59: Unable to resolve "./missing""`,
+            )
+          else
+            expect(error).toMatchInlineSnapshot(
+              `"Source.ExtractError: <root>/rpc.ts:59: Unable to resolve "missing-package""`,
+            )
+
+          return
+        }
+
+        expect((await output) !== null).toMatchInlineSnapshot(`true`)
+
+        const rpc = await server.environments.client.transformRequest('/rpc.ts')
+
+        expect(rpc?.code.includes('cloudflare:workers')).toMatchInlineSnapshot(
+          `false`,
+        )
+        expect(rpc?.code.includes('browser')).toMatchInlineSnapshot(`true`)
+      } finally {
+        await server.close()
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+  )
+
   test('keeps unreachable analysis imports out of dependency optimization', async () => {
     const { config, root } = await create({
       ...Fixture.files,

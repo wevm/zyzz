@@ -31,21 +31,57 @@ describe('defineConfig', () => {
     })
 
     expectTypeOf(item()).toEqualTypeOf<rootStyle.Props>()
-    // @ts-expect-error Configured styles reject misspelled state names.
-    style(Select.Item, { states: { higlighted: { color: 'ink' } } })
-    // @ts-expect-error Configured states remain specific to the component part.
-    style(Select.Item, { states: { side: { bottom: { color: 'ink' } } } })
-    // @ts-expect-error Configured placement states reject misspelled values.
-    style(Select.Popup, { states: { side: { botom: { color: 'ink' } } } })
-    // @ts-expect-error Unknown configured color token.
-    style(Select.Item, { states: { highlighted: { color: 'missing' } } })
-    // @ts-expect-error Shorthands preserve their configured domains.
-    style(Select.Item, { states: { selected: { px: 'ink' } } })
-    // @ts-expect-error State branches only accept configured layers.
-    style(Select.Item, { states: { selected: { '@layer missing': {} } } })
-    // @ts-expect-error Unknown configuration options are rejected.
-    defineConfig({ missing: true })
-    // @ts-expect-error The integration produces React props.
-    defineConfig({ output: 'html' })
+    style(Select.Item, {
+      states: {
+        // @ts-expect-error Configured styles reject misspelled state names.
+        higlighted: { color: 'ink' },
+      },
+    })
+    style(Select.Item, {
+      states: {
+        // @ts-expect-error Configured states remain specific to the component part.
+        side: { bottom: { color: 'ink' } },
+      },
+    })
+    style(Select.Popup, {
+      states: {
+        side: {
+          // @ts-expect-error Configured placement states reject misspelled values.
+          botom: { color: 'ink' },
+        },
+      },
+    })
+    style(Select.Item, {
+      states: {
+        highlighted: {
+          // @ts-expect-error Unknown configured color token.
+          color: 'missing',
+        },
+      },
+    })
+    style(Select.Item, {
+      states: {
+        selected: {
+          // @ts-expect-error Shorthands preserve their configured domains.
+          px: 'ink',
+        },
+      },
+    })
+    style(Select.Item, {
+      states: {
+        selected: {
+          // @ts-expect-error State branches only accept configured layers.
+          '@layer missing': {},
+        },
+      },
+    })
+    defineConfig({
+      // @ts-expect-error Unknown configuration options are rejected.
+      missing: true,
+    })
+    defineConfig({
+      // @ts-expect-error The integration produces React props.
+      output: 'html',
+    })
   })
 })

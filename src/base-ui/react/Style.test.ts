@@ -2,6 +2,7 @@
 import { NavigationMenu } from '@base-ui/react/navigation-menu'
 import { Popover } from '@base-ui/react/popover'
 import { Select } from '@base-ui/react/select'
+import { Toast } from '@base-ui/react/toast'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
@@ -176,6 +177,119 @@ Attribute: \`data-highlighted\`. Presence selector."`)
           selectors: { '&[data-instant="click"]': { color: 'red' } },
         })().className,
     ).toMatchInlineSnapshot('true')
+  })
+
+  test.each([true, false])(
+    'renders numeric, arbitrary-string, supplemental, and child states (compiler=%s)',
+    async (compiler) => {
+      const output = Transform.compile({
+        compiler,
+        moduleId: 'Coverage.tsx',
+        source: Fs.readFileSync(
+          Path.join(root, 'test/fixtures/base-ui/Coverage.tsx'),
+          'utf8',
+        ),
+      })
+      const browser = await chromium.launch()
+      const directory = Fs.mkdtempSync(
+        Path.join(root, '.fixture-base-ui-browser-'),
+      )
+
+      try {
+        Fs.writeFileSync(Path.join(directory, 'Coverage.tsx'), output.code)
+        const bundle = await Esbuild.build({
+          bundle: true,
+          conditions: ['src'],
+          entryPoints: [Path.join(directory, 'Coverage.tsx')],
+          format: 'iife',
+          globalName: 'Fixture',
+          jsx: 'automatic',
+          write: false,
+        })
+        const page = await browser.newPage()
+        page.setDefaultTimeout(5_000)
+        await page.setContent(
+          `<style>${output.css}</style><div id="root"></div>`,
+        )
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+        await page.evaluate('Fixture.mount(document.getElementById("root"))')
+        await page.getByTestId('custom').waitFor({ state: 'visible' })
+        const computed = (testId: string, property: string) =>
+          page
+            .getByTestId(testId)
+            .evaluate(
+              (element, name) =>
+                getComputedStyle(element).getPropertyValue(name),
+              property,
+            )
+
+        expect(
+          await computed('first', 'border-left-width'),
+        ).toMatchInlineSnapshot(`"4px"`)
+        expect(
+          await computed('second', 'border-left-width'),
+        ).toMatchInlineSnapshot(`"6px"`)
+        expect(await computed('disabled', 'color')).toMatchInlineSnapshot(
+          `"rgb(128, 0, 128)"`,
+        )
+        expect(await computed('enabled', 'color')).toMatchInlineSnapshot(
+          `"rgb(0, 0, 0)"`,
+        )
+        expect(await computed('custom', 'color')).toMatchInlineSnapshot(
+          `"rgb(0, 128, 0)"`,
+        )
+        expect(await computed('other', 'color')).toMatchInlineSnapshot(
+          `"rgb(0, 0, 0)"`,
+        )
+        expect(
+          await page
+            .locator('[data-index="0"]')
+            .filter({ has: page.getByRole('slider', { name: 'Lower' }) })
+            .evaluate((element) => getComputedStyle(element).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        expect(
+          await page
+            .locator('[data-index="1"]')
+            .filter({ has: page.getByRole('slider', { name: 'Upper' }) })
+            .evaluate((element) => getComputedStyle(element).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+        expect(
+          await computed('viewport', 'border-left-width'),
+        ).toMatchInlineSnapshot(`"1px"`)
+        expect(
+          await page
+            .locator('[data-testid="viewport"] > [data-current]')
+            .evaluate((element) => getComputedStyle(element).borderLeftWidth),
+        ).toMatchInlineSnapshot(`"7px"`)
+      } finally {
+        await browser.close()
+        Fs.rmSync(directory, { force: true, recursive: true })
+      }
+    },
+  )
+
+  test('rejects invalid numeric domains and NUL in arbitrary state values', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { Slider } from '@base-ui/react/slider'; import { style } from 'zyzz/base-ui/react'; style(Slider.Thumb, { states: { index: { first: { color: 'red' } } } });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:133: Unknown Base UI state value: index.first.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { Toast } from '@base-ui/react/toast'; import { style } from 'zyzz/base-ui/react'; style(Toast.Root, { states: { type: { 'a\\0b': { color: 'red' } } } });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:128: Base UI state values cannot contain NUL.]`,
+    )
+    expect(() =>
+      style(Toast.Root, { states: { type: { 'a\0b': { color: 'red' } } } }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: []: Base UI state values cannot contain NUL.]`,
+    )
   })
 
   test.each([true, false])(

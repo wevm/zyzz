@@ -6,8 +6,42 @@ import * as Token from '../../../internal/Token.js'
 
 type Attribute = {
   readonly attribute: string
+  readonly domain?: 'number' | 'string'
   readonly presence: boolean
+  readonly selector?: string
   readonly values: readonly string[]
+}
+
+// Matches css::string::encode so CSS-only identities agree with the compiler.
+function quote(value: string): string {
+  let result = '"'
+  let spaceBeforeHex = false
+
+  for (const code of value) {
+    const point = code.codePointAt(0)!
+    if (point === 0)
+      throw new Style.InvalidError([
+        {
+          code: 'invalid_structure',
+          message: 'Base UI state values cannot contain NUL.',
+          path: [],
+        },
+      ])
+
+    if (point <= 0x1f || point === 0x7f) {
+      result += `\\${point.toString(16)}`
+      spaceBeforeHex = true
+    } else if (code === '"' || code === '\\') {
+      result += `\\${code}`
+      spaceBeforeHex = false
+    } else {
+      if (spaceBeforeHex && /[\da-fA-F\t\n\f\r ]/u.test(code)) result += ' '
+      result += code
+      spaceBeforeHex = false
+    }
+  }
+
+  return `${result}"`
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -75,12 +109,18 @@ function lower(input: unknown, depth = 0): Record<string, unknown> {
               !Token.isExpression(entry[1]),
           )
         ) {
-          insert(`&[${attribute.attribute}]`, body)
+          insert(attribute.selector ?? `&[${attribute.attribute}]`, body)
           continue
         }
 
         for (const [choice, declarations] of choices) {
-          if (!attribute.values.includes(choice))
+          if (
+            attribute.domain === 'number'
+              ? !Number.isFinite(Number(choice)) ||
+                String(Number(choice)) !== choice
+              : attribute.domain !== 'string' &&
+                !attribute.values.includes(choice)
+          )
             throw new Style.InvalidError([
               {
                 code: 'invalid_structure',
@@ -89,7 +129,7 @@ function lower(input: unknown, depth = 0): Record<string, unknown> {
               },
             ])
 
-          insert(`&[${attribute.attribute}="${choice}"]`, declarations)
+          insert(`&[${attribute.attribute}=${quote(choice)}]`, declarations)
         }
       }
     } else if (key === 'selectors') {

@@ -8,18 +8,25 @@ import type * as Types from './internal/Types.generated.js'
 import * as Authoring from './internal/Authoring.js'
 import { style as rootStyle } from '../../styleFunction.js'
 
+type MarkerKeys<marker> = {
+  [key in keyof marker]-?: true extends marker[key] ? key : never
+}[keyof marker]
+
+type Keys<input> = input extends { readonly [Types.part]?: infer marker }
+  ? MarkerKeys<marker>
+  : never
+
 type Identity<component> = component extends (props: infer props) => unknown
-  ? typeof Types.part extends keyof props
-    ? Extract<NonNullable<props[typeof Types.part]>, keyof Types.Parts>
-    : never
+  ? Extract<Keys<component> | Keys<props>, keyof Types.Parts>
   : never
 
 type Hints<
   part extends keyof Types.Parts,
   tokens extends Theme.Tokens,
 > = Completion.Properties<tokens> & {
-  readonly selectors?: Types.Selectors<Hints<part, tokens>>[part] &
-    Readonly<Record<string, Hints<part, tokens>>>
+  readonly selectors?: {
+    readonly [selector in keyof Types.Selectors[part]]?: Hints<part, tokens>
+  } & Readonly<Record<string, Hints<part, tokens>>>
   readonly states?: Types.States<Hints<part, tokens>>[part]
 } & {
   readonly [key in Condition.Keys<tokens> | Condition.Suggestions]?: Hints<
@@ -37,12 +44,12 @@ type Body<
 > = {
   readonly [key in keyof input]: key extends 'states'
     ? {
-        readonly [name in keyof input[key]]: name extends keyof Types.States<unknown>[part]
+        readonly [name in keyof input[key]]: name extends keyof Types.States<true>[part]
           ? NonNullable<Types.States<true>[part][name]> extends true
             ? Body<input[key][name], part, tokens, layers, mappings>
             : {
                 readonly [value in keyof input[key][name]]: value extends keyof NonNullable<
-                  Types.States<unknown>[part][name]
+                  Types.States<true>[part][name]
                 >
                   ? Body<
                       input[key][name][value],
@@ -79,12 +86,9 @@ export type Factory<
   layers extends string = never,
   mappings extends Shorthands.Map = {},
 > = {
-  <
-    const component extends (props: never) => unknown,
-    const input extends Record<string, unknown>,
-  >(
+  <const component, const input extends Record<string, unknown>>(
     component: component &
-      ([Identity<component>] extends [never] ? never : unknown),
+      ([Identity<NoInfer<component>>] extends [never] ? never : unknown),
     styles: input &
       NoInfer<Body<input, Identity<component>, tokens, layers, mappings>> &
       Hints<Identity<NoInfer<component>>, tokens>,

@@ -44,8 +44,9 @@ const checker = program.getTypeChecker()
 type State = {
   attribute: string
   description: string
+  selector?: string
   url: string
-  values: readonly string[] | null
+  values: readonly string[] | 'number' | 'string' | null
 }
 type Entry = {
   member: string
@@ -54,14 +55,144 @@ type Entry = {
   states: Record<string, State>
 }
 type Part = {
+  ancestors: readonly string[]
   entry: Entry
   identity: string
+  marker: Ts.InterfaceDeclaration | undefined
   props: Ts.InterfaceDeclaration | undefined
   reason: string | undefined
 }
 const parts: Part[] = []
 const used = new Set<string>()
 const deferred: Record<string, string> = {}
+const nonDom: string[] = []
+// Reviewed against v1.8.0 SliderThumb.tsx, TabsPanel.tsx, and usePopupViewport.tsx.
+// Upstream omits @type on these declarations. Child markers do not target the viewport.
+const viewportStates: Record<string, Partial<State>> = {
+  current: { selector: '& > [data-current]', values: null },
+  previous: { selector: '& > [data-previous]', values: null },
+  transitioning: { values: null },
+}
+const fieldStates: Record<string, Partial<State>> = {
+  dirty: { values: null },
+  disabled: { values: null },
+  filled: { values: null },
+  focused: { values: null },
+  invalid: { values: null },
+  touched: { values: null },
+  valid: { values: null },
+}
+const orientation: Partial<State> = { values: ['horizontal', 'vertical'] }
+const required: Partial<State> = {
+  description:
+    'Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.',
+}
+// Missing declarations are reviewed against the pinned component render paths and
+// getStateAttributesProps, not inferred from callback State fields.
+const supplements: Record<string, Record<string, Partial<State>>> = {
+  'Accordion.Header': {
+    closed: { values: null },
+    hidden: { values: null },
+    orientation,
+  },
+  'Accordion.Item': {
+    closed: { values: null },
+    hidden: { values: null },
+    orientation,
+  },
+  'Accordion.Panel': { orientation },
+  'Accordion.Root': { orientation },
+  'Accordion.Trigger': {
+    hidden: { values: null },
+    index: {
+      description:
+        'The item index. Base UI 1.8.0 omits this attribute for index zero.',
+      values: 'number',
+    },
+    orientation,
+  },
+  'Autocomplete.Input': { required },
+  'Autocomplete.List': { empty: { values: null } },
+  'Autocomplete.Trigger': { required },
+  CheckboxGroup: fieldStates,
+  'Collapsible.Panel': { disabled: { values: null } },
+  'Collapsible.Root': { disabled: { values: null } },
+  'Collapsible.Trigger': {
+    disabled: {
+      description:
+        'Present when the Collapsible.Root is disabled. Base UI 1.8.0 does not reflect the trigger-local disabled override in this attribute.',
+      values: null,
+    },
+  },
+  'Combobox.Chip': { disabled: { values: null } },
+  'Combobox.ChipRemove': { disabled: { values: null } },
+  'Combobox.Input': { required },
+  'Combobox.ItemIndicator': { selected: { values: null } },
+  'Combobox.Label': fieldStates,
+  'Combobox.List': { empty: { values: null } },
+  'Combobox.Trigger': { required },
+  'ContextMenu.CheckboxItemIndicator': { highlighted: { values: null } },
+  'ContextMenu.Popup': { nested: { values: null } },
+  'ContextMenu.Positioner': {
+    instant: { values: ['click', 'dismiss', 'group', 'trigger-change'] },
+    nested: { values: null },
+  },
+  'ContextMenu.RadioGroup': { disabled: { values: null } },
+  'ContextMenu.RadioItemIndicator': { highlighted: { values: null } },
+  'Drawer.Backdrop': {
+    swipeDismiss: { values: null },
+    swiping: { values: null },
+  },
+  'Drawer.Indent': { active: { values: null }, inactive: { values: null } },
+  'Drawer.IndentBackground': {
+    active: { values: null },
+    inactive: { values: null },
+  },
+  'Fieldset.Legend': { disabled: { values: null } },
+  'Fieldset.Root': { disabled: { values: null } },
+  'Menu.CheckboxItemIndicator': { highlighted: { values: null } },
+  'Menu.Popup': { nested: { values: null } },
+  'Menu.Positioner': {
+    instant: { values: ['click', 'dismiss', 'group', 'trigger-change'] },
+    nested: { values: null },
+  },
+  'Menu.RadioGroup': { disabled: { values: null } },
+  'Menu.RadioItemIndicator': { highlighted: { values: null } },
+  'Menu.Viewport': viewportStates,
+  'NavigationMenu.List': { open: { values: null } },
+  'NavigationMenu.Root': { nested: { values: null }, open: { values: null } },
+  'Popover.Positioner': {
+    instant: { values: ['click', 'dismiss', 'focus', 'trigger-change'] },
+  },
+  'Popover.Viewport': viewportStates,
+  'PreviewCard.Positioner': { instant: { values: ['dismiss', 'focus'] } },
+  'PreviewCard.Viewport': viewportStates,
+  RadioGroup: {
+    ...fieldStates,
+    readOnly: { attribute: 'data-readonly', values: null },
+    required: { values: null },
+  },
+  'Select.Arrow': {
+    side: {
+      description:
+        'The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.',
+    },
+  },
+  'Select.ItemIndicator': { selected: { values: null } },
+  'Select.Label': fieldStates,
+  'Slider.Control': { filled: { values: null } },
+  'Slider.Indicator': { filled: { values: null } },
+  'Slider.Label': { ...fieldStates, dragging: { values: null }, orientation },
+  'Slider.Root': { filled: { values: null } },
+  'Slider.Thumb': { filled: { values: null }, index: { values: 'number' } },
+  'Slider.Track': { filled: { values: null } },
+  'Slider.Value': { filled: { values: null } },
+  'Tabs.Panel': { index: { values: 'number' } },
+  'Tooltip.Positioner': {
+    instant: { values: ['delay', 'dismiss', 'focus', 'tracking-cursor'] },
+  },
+  'Tooltip.Viewport': viewportStates,
+}
 const resolve = (symbol: Ts.Symbol): Ts.Symbol =>
   symbol.flags & Ts.SymbolFlags.Alias
     ? checker.getAliasedSymbol(symbol)
@@ -121,33 +252,62 @@ for (const file of files.filter(
         members[0] === exported ? namespace : `${namespace}.${member.name}`
       const componentFile = declaration.getSourceFile()
       const componentName = target.name
-      const attributesPath = componentFile.fileName.replace(
+      const originalPath = componentFile.fileName.replace(
         /\.d\.ts$/u,
         'DataAttributes.d.ts',
       )
-      const attributesFile = program.getSourceFile(attributesPath)
+      const aliasPath = Path.join(
+        upstream,
+        directory,
+        member.name.replace(
+          /[A-Z]/gu,
+          (letter, offset: number) =>
+            `${offset ? '-' : ''}${letter.toLowerCase()}`,
+        ),
+        `${namespace}${member.name}DataAttributes.d.ts`,
+      )
+      const attributesFile =
+        program.getSourceFile(aliasPath) ?? program.getSourceFile(originalPath)
       const props = componentFile.statements.find(
         (node): node is Ts.InterfaceDeclaration =>
           Ts.isInterfaceDeclaration(node) &&
           node.name.text === `${componentName}Props`,
       )
+      const marker =
+        props ??
+        componentFile.statements.find(
+          (node): node is Ts.InterfaceDeclaration =>
+            Ts.isInterfaceDeclaration(node) && node.name.text === componentName,
+        )
       const entry: Entry = {
         member: member.name,
         namespace,
         source,
         states: {},
       }
-      const part: Part = { entry, identity, props, reason: undefined }
-      if (!props) part.reason = 'No public mergeable component Props interface'
-      if (props && !checker.getTypeAtLocation(props).getProperty('className'))
-        part.reason =
-          'No className contract (provider, root, or non-DOM component)'
-      if (props?.typeParameters?.length)
-        part.reason =
-          'Generic Props interface requires explicit augmentation review'
+      const part: Part = {
+        ancestors: [],
+        entry,
+        identity,
+        marker,
+        props,
+        reason: undefined,
+      }
+      const parameter = type.getCallSignatures()[0]?.parameters[0]
+      if (
+        !parameter ||
+        !checker
+          .getTypeOfSymbolAtLocation(parameter, declaration)
+          .getProperty('className')
+      ) {
+        nonDom.push(identity)
+        continue
+      }
+      if (!marker)
+        part.reason = 'No public mergeable Props or component interface'
 
       if (attributesFile) {
-        used.add(Path.relative(upstream, attributesPath))
+        used.add(Path.relative(upstream, attributesFile.fileName))
         for (const attributeExport of [...exportsOf(attributesFile)].sort(
           (a, b) => a.name.localeCompare(b.name, 'en'),
         )) {
@@ -157,6 +317,7 @@ for (const file of files.filter(
             part.reason = `Unresolved attribute ${attributeExport.name}`
             continue
           }
+          used.add(Path.relative(upstream, node.getSourceFile().fileName))
 
           const value = checker.getTypeOfSymbolAtLocation(attribute, node)
           const tags = attribute
@@ -168,7 +329,9 @@ for (const file of files.filter(
           const description = Ts.displayPartsToString(
             attribute.getDocumentationComment(checker),
           )
+          const supplement = supplements[identity]?.[attributeExport.name]
           if (
+            !supplement &&
             !documentedType &&
             !tags.length &&
             !description.startsWith('Present')
@@ -177,37 +340,26 @@ for (const file of files.filter(
             continue
           }
 
-          let values: readonly string[] | null = null
-          if (tags.length || documentedType) {
-            const types =
-              documentedType && Ts.isUnionTypeNode(documentedType)
-                ? documentedType.types.filter(
-                    (type) =>
-                      !(
-                        Ts.isLiteralTypeNode(type) &&
-                        type.literal.kind === Ts.SyntaxKind.NullKeyword
-                      ),
-                  )
-                : documentedType
-                  ? [documentedType]
-                  : []
-            if (
-              !types.length ||
-              types.some(
-                (type) =>
-                  !Ts.isLiteralTypeNode(type) ||
-                  !Ts.isStringLiteral(type.literal),
-              )
-            ) {
-              part.reason = `Unbounded or unhandled @type for ${attributeExport.name}`
+          let values: State['values'] = null
+          if (documentedType) {
+            const domain = checker.getTypeFromTypeNode(documentedType)
+            const types = (domain.isUnion() ? domain.types : [domain]).filter(
+              (type) =>
+                !(type.flags & (Ts.TypeFlags.Null | Ts.TypeFlags.Undefined)),
+            )
+            if (types.every((type) => type.flags & Ts.TypeFlags.BooleanLike))
+              values = null
+            else if (types.every((type) => type.isStringLiteral()))
+              values = types.map((type) => (type as Ts.StringLiteralType).value)
+            else if (domain.flags & Ts.TypeFlags.Number) values = 'number'
+            else if (domain.flags & Ts.TypeFlags.String) values = 'string'
+            else {
+              part.reason = `Unhandled @type for ${attributeExport.name}`
               continue
             }
-
-            values = types.flatMap((type) =>
-              Ts.isLiteralTypeNode(type) && Ts.isStringLiteral(type.literal)
-                ? [type.literal.text]
-                : [],
-            )
+          } else if (tags.length && !supplement) {
+            part.reason = `Unresolved @type for ${attributeExport.name}`
+            continue
           }
 
           if (!value.isStringLiteral() || !value.value.startsWith('data-')) {
@@ -225,17 +377,37 @@ for (const file of files.filter(
             description,
             url: `https://base-ui.com/react/components/${directory}#${anchor}`,
             values,
+            ...supplement,
           }
         }
       }
+
+      for (const [name, supplement] of Object.entries(
+        supplements[identity] ?? {},
+      )) {
+        if (entry.states[name]) continue
+
+        entry.states[name] = {
+          attribute: `data-${name.replace(/[A-Z]/gu, (letter) => `-${letter.toLowerCase()}`)}`,
+          description: `Supplemental ${name} hook emitted by Base UI ${version}, absent from its attribute declarations.`,
+          url: `https://github.com/mui/base-ui/blob/v${version}/packages/react/src/${Path.relative(upstream, componentFile.fileName).replace(/\.d\.ts$/u, '.tsx')}`,
+          values: null,
+          ...supplement,
+        }
+      }
+      entry.states = Object.fromEntries(
+        Object.entries(entry.states).sort((a, b) =>
+          a[0].localeCompare(b[0], 'en'),
+        ),
+      )
 
       parts.push(part)
     }
   }
 }
 
-// Follow declaration references, including utility types, before adding brands.
-// Excluded descendants still inherit an augmented ancestor's optional property.
+// Retain ancestor keys as optional never properties so derived marker objects
+// remain assignable to their parents without identifying as the parent part.
 const ancestors = (props: Ts.InterfaceDeclaration): Set<Ts.Declaration> => {
   const found = new Set<Ts.Declaration>()
   const visit = (node: Ts.Node): void => {
@@ -258,14 +430,12 @@ const ancestors = (props: Ts.InterfaceDeclaration): Set<Ts.Declaration> => {
 for (const part of parts) {
   if (!part.props) continue
   const bases = ancestors(part.props)
-  for (const other of parts) {
-    if (!other.props || !bases.has(other.props)) continue
-    part.reason = `Inherited Props identity is unsafe with ${other.identity}`
-    other.reason = `Props identity inherited by ${part.identity}`
-  }
+  part.ancestors = parts
+    .filter((other) => other.props && bases.has(other.props))
+    .map((other) => other.identity)
 }
 
-// Aliases share an optional union brand only when their attribute contracts agree.
+// Aliases share identity hints only when their attribute contracts agree.
 for (const part of parts) {
   if (
     part.props &&
@@ -276,12 +446,14 @@ for (const part of parts) {
         JSON.stringify(
           Object.values(other.entry.states).map((state) => [
             state.attribute,
+            state.selector,
             state.values,
           ]),
         ) !==
           JSON.stringify(
             Object.values(part.entry.states).map((state) => [
               state.attribute,
+              state.selector,
               state.values,
             ]),
           ),
@@ -298,16 +470,28 @@ for (const part of parts) {
 for (const file of files.filter(
   (file) => file.endsWith('DataAttributes.d.ts') && !used.has(file),
 ))
-  deferred[file] =
-    'Attribute module not associated with a public component declaration'
+  if (!file.startsWith('utils/') && !file.startsWith('internals/'))
+    deferred[file] =
+      'Attribute module not associated with a public DOM component'
+
+if (Object.keys(deferred).length)
+  throw new Error(
+    `Incomplete Base UI coverage:\n${JSON.stringify(deferred, null, 2)}`,
+  )
 
 const header =
   '/**\n * Generated by scripts/base-ui.ts. Do not edit.\n * @module\n */\n'
 const metadata = { package: '@base-ui/react', version }
 const catalogText = `${header}\n/** Pinned upstream package metadata. */\nexport const metadata = ${JSON.stringify(metadata, null, 2)} as const\n\n/** Public component attributes, independent of runtime and type adapters. */\nexport const catalog = ${JSON.stringify(catalog, null, 2)} as const\n`
 const quote = (value: string): string => JSON.stringify(value)
-const documentation = (state: State, indent: string): string =>
-  `${indent}/** ${state.description.replaceAll('*/', '* /')}\n${indent} * Attribute: \`${state.attribute}\`. ${state.values ? `Values: ${state.values.map((value) => `\`${value}\``).join(', ')}. A null upstream state omits the attribute.` : 'Presence selector.'}\n${indent} * @see ${state.url}\n${indent} */\n`
+const documentation = (state: State, indent: string): string => {
+  const domain = (() => {
+    if (state.values === null) return 'Presence selector.'
+    if (typeof state.values === 'string') return `Values: ${state.values}.`
+    return `Values: ${state.values.map((value) => `\`${value}\``).join(', ')}. A null upstream state omits the attribute.`
+  })()
+  return `${indent}/** ${state.description.replaceAll('*/', '* /')}\n${indent} * Attribute: \`${state.attribute}\`. ${domain}\n${indent} * @see ${state.url}\n${indent} */\n`
+}
 let typesText = header
 for (const source of [
   ...new Set(Object.values(catalog).map((entry) => entry.source)),
@@ -324,22 +508,29 @@ for (const [identity, entry] of Object.entries(catalog)) {
 }
 typesText += '}\n'
 for (const kind of ['States', 'Selectors']) {
-  typesText += `\n/** Explicit ${kind.toLowerCase()} hints for each supported public part. */\nexport type ${kind}<body> = {\n`
+  typesText += `\n/** Explicit ${kind.toLowerCase()} domains for each supported public part. */\nexport type ${kind}${kind === 'States' ? '<body>' : ''} = {\n`
   for (const [identity, entry] of Object.entries(catalog)) {
     typesText += `  /** ${identity} attribute styles. */\n  readonly ${quote(identity)}: {\n`
     for (const [name, state] of Object.entries(entry.states)) {
       if (kind === 'States') {
         typesText += documentation(state, '    ')
-        typesText += `    readonly ${quote(name)}?: ${state.values ? `{\n${state.values.map((value) => `${documentation(state, '      ')}      readonly ${quote(value)}?: body`).join('\n')}\n    }` : 'body'}\n`
+        const body = (() => {
+          if (state.values === null) return 'body'
+          if (state.values === 'number')
+            return 'Readonly<Partial<Record<number | `${number}`, body>>>'
+          if (state.values === 'string') return 'Readonly<Record<string, body>>'
+          return `{\n${state.values.map((value) => `${documentation(state, '      ')}      readonly ${quote(value)}?: body`).join('\n')}\n    }`
+        })()
+        typesText += `    readonly ${quote(name)}?: ${body}\n`
       } else {
         const selectors = [
-          `&[${state.attribute}]`,
-          ...(state.values ?? []).map(
+          state.selector ?? `&[${state.attribute}]`,
+          ...(typeof state.values === 'string' ? [] : (state.values ?? [])).map(
             (value) => `&[${state.attribute}="${value}"]`,
           ),
         ]
         for (const selector of selectors)
-          typesText += `${documentation(state, '    ')}    readonly ${quote(selector)}?: body\n`
+          typesText += `${documentation(state, '    ')}    readonly ${quote(selector)}?: true\n`
       }
     }
     typesText += '  }\n'
@@ -354,16 +545,24 @@ for (const source of [
   for (const item of parts.filter(
     (item) =>
       !item.reason &&
-      item.props &&
-      `@base-ui/react/${Path.relative(upstream, item.props.getSourceFile().fileName).split(Path.sep)[0]}` ===
+      item.marker &&
+      `@base-ui/react/${Path.relative(upstream, item.marker.getSourceFile().fileName).split(Path.sep)[0]}` ===
         source,
   )) {
-    if (!item.props || augmented.has(item.props)) continue
-    augmented.add(item.props)
+    if (!item.marker || augmented.has(item.marker)) continue
+    augmented.add(item.marker)
     const aliases = parts.filter(
-      (other) => !other.reason && other.props === item.props,
+      (other) => !other.reason && other.marker === item.marker,
     )
-    typesText += `  interface ${item.props.name.text} {\n    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */\n    readonly [part]?: ${aliases.map((alias) => quote(alias.identity)).join(' | ')}\n  }\n`
+    const parameters = item.marker.typeParameters
+      ? `<${item.marker.typeParameters.map((parameter) => parameter.getText()).join(', ')}>`
+      : ''
+    const keys = [
+      ...new Set(
+        aliases.flatMap((alias) => [alias.identity, ...alias.ancestors]),
+      ),
+    ].sort()
+    typesText += `  interface ${item.marker.name.text}${parameters} {\n    /** Documented part and inherited contracts, absent at runtime. */\n    readonly [part]?: {\n${keys.map((key) => `      /** ${key} identity hint. */\n      readonly ${quote(key)}?: ${aliases.some((alias) => alias.identity === key) ? 'true' : 'never'}`).join('\n')}\n    }\n  }\n`
   }
   typesText += '}\n'
 }
@@ -379,12 +578,16 @@ const inventory = {
     ]),
   ),
   metadata,
+  nonDom: nonDom.sort(),
+  supplements,
   supported: Object.keys(catalog),
 }
 // Runtime authoring needs attribute spellings, not component implementations.
 type Attribute = {
   attribute: string
+  domain?: 'number' | 'string'
   presence: boolean
+  selector?: string
   values: string[]
 }
 const attributes: Record<string, Attribute> = {}
@@ -393,12 +596,17 @@ for (const entry of Object.values(catalog)) {
     const attribute = (attributes[name] ??= {
       attribute: state.attribute,
       presence: false,
+      ...(state.selector ? { selector: state.selector } : {}),
       values: [],
     })
-    if (attribute.attribute !== state.attribute)
-      throw new Error(`Conflicting Base UI attribute spelling: ${name}`)
+    if (
+      attribute.attribute !== state.attribute ||
+      attribute.selector !== state.selector
+    )
+      throw new Error(`Conflicting Base UI attribute selector: ${name}`)
 
     if (state.values === null) attribute.presence = true
+    else if (typeof state.values === 'string') attribute.domain = state.values
     else
       for (const value of state.values)
         if (!attribute.values.includes(value)) attribute.values.push(value)
@@ -434,5 +642,5 @@ for (const [file, text] of [
     )
 }
 console.log(
-  `Base UI ${version}: ${Object.keys(catalog).length} supported parts, ${Object.keys(deferred).length} deferred entries`,
+  `Base UI ${version}: ${Object.keys(catalog).length} supported DOM parts, ${nonDom.length} non-DOM parts, ${Object.keys(deferred).length} deferred entries`,
 )

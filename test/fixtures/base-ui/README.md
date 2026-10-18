@@ -1,6 +1,6 @@
 # Base UI Integration
 
-`Select.tsx` renders the real Base UI Select with styles from `zyzz/base-ui/react`. `Config.ts` supplies shared tokens and shorthands. The integration suite compiles this graph and exercises it in Chromium with source rewriting enabled and disabled.
+`Select.tsx` renders the real Base UI Select with styles from `zyzz/base-ui/react`. `Config.ts` supplies shared tokens and shorthands. `Coverage.tsx` exercises numeric indices, arbitrary toast types, supplemental fieldset state, and viewport child selectors. Both fixtures run in Chromium with source rewriting enabled and disabled.
 
 ```tsx
 import { Select } from '@base-ui/react/select'
@@ -65,13 +65,18 @@ pnpm check:base-ui
 pnpm test run src/base-ui/react/Style.test.ts scripts/base-ui.test.ts
 ```
 
-`test/conformance/base-ui.json` lists supported parts and explicit deferrals. Generic or inherited prop interfaces, unbounded attribute domains, and non-DOM parts remain outside the component-first contract. Ordinary `style({ selectors: … })` remains available for those parts.
+`test/conformance/base-ui.json` lists all 246 supported DOM parts, 24 non-DOM parts, and reviewed metadata supplements. Generic and inherited component contracts are supported. Generation fails on unhandled DOM parts or attribute modules. Tests independently enumerate the package's component exports and type-check every supported part with `skipLibCheck: false`.
+
+Supplements cover missing domains and emitted hooks omitted from upstream declarations, including disabled fieldsets, empty lists, and field-state labels. Their TSDoc links to pinned implementations. They require review on upstream upgrades, without assuming semver stability. Providers, collections, render-only values, imperative handles, and internal ownership markers have no DOM styling contract.
+
+Base UI 1.8.0 has declaration/runtime discrepancies. Combobox and Autocomplete Input/Trigger declare `required` without emitting `data-required`. Select.Arrow declares `side: 'none'` but does not render in that mode. These declared keys remain available, with TSDoc caveats, but cannot match absent attributes.
 
 ## Limits
 
 - **Component references:** The compiler accepts direct imports from the Base UI root or documented component subpaths, including aliases and namespace imports. Local wrappers, dynamic component expressions, and re-exported component aliases are not supported.
 - **Authoring:** Component-first calls accept static objects. Dynamic callbacks, composition arrays, and component-first variants are not supported. Ordinary style and variants overloads remain available.
-- **Validation:** `states` checks names and finite values. `selectors` supplies whole-key suggestions but accepts arbitrary CSS, including application-owned attributes. It is not a CSS language server for compound selector fragments.
+- **Validation:** `states` checks names and finite values. Numeric domains accept finite canonical numeric keys, including zero and negative indices. Toast types accept arbitrary strings with CSS escaping, except NUL. `selectors` supplies whole-key suggestions but accepts arbitrary CSS, including application-owned attributes.
+- **Child hooks:** Menu, Popover, PreviewCard, and Tooltip Viewport `current` and `previous` states target direct-child containers. Their transition attributes can be combined with `selectors`, such as `& > [data-current][data-starting-style]`. They do not describe the viewport element itself.
 - **Type identity:** Optional, type-only props augmentation distinguishes documented parts and compatible aliases. Props-preserving wrappers retain hints structurally, but compiler import validation still rejects those wrappers. Custom `render` elements must forward Base UI attributes.
 - **CSS-only mode:** The runtime expands attribute spellings without a component registry. Types and source extraction validate component-specific domains. No CSS rules are inserted at runtime.
 

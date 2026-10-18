@@ -11,6 +11,160 @@ export const metadata = {
 
 /** Public component attributes, independent of runtime and type adapters. */
 export const catalog = {
+  'Accordion.Header': {
+    member: 'Header',
+    namespace: 'Accordion',
+    source: '@base-ui/react/accordion',
+    states: {
+      closed: {
+        attribute: 'data-closed',
+        description:
+          'Supplemental closed hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the accordion item is disabled.',
+        url: 'https://base-ui.com/react/components/accordion#header',
+        values: null,
+      },
+      hidden: {
+        attribute: 'data-hidden',
+        description:
+          'Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx',
+        values: null,
+      },
+      index: {
+        attribute: 'data-index',
+        description: 'Indicates the index of the accordion item.',
+        url: 'https://base-ui.com/react/components/accordion#header',
+        values: 'number',
+      },
+      open: {
+        attribute: 'data-open',
+        description: 'Present when the accordion item is open.',
+        url: 'https://base-ui.com/react/components/accordion#header',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description:
+          'Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx',
+        values: ['horizontal', 'vertical'],
+      },
+    },
+  },
+  'Accordion.Item': {
+    member: 'Item',
+    namespace: 'Accordion',
+    source: '@base-ui/react/accordion',
+    states: {
+      closed: {
+        attribute: 'data-closed',
+        description:
+          'Supplemental closed hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the accordion item is disabled.',
+        url: 'https://base-ui.com/react/components/accordion#item',
+        values: null,
+      },
+      hidden: {
+        attribute: 'data-hidden',
+        description:
+          'Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx',
+        values: null,
+      },
+      index: {
+        attribute: 'data-index',
+        description: 'Indicates the index of the accordion item.',
+        url: 'https://base-ui.com/react/components/accordion#item',
+        values: 'number',
+      },
+      open: {
+        attribute: 'data-open',
+        description: 'Present when the accordion item is open.',
+        url: 'https://base-ui.com/react/components/accordion#item',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description:
+          'Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx',
+        values: ['horizontal', 'vertical'],
+      },
+    },
+  },
+  'Accordion.Panel': {
+    member: 'Panel',
+    namespace: 'Accordion',
+    source: '@base-ui/react/accordion',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the accordion item is disabled.',
+        url: 'https://base-ui.com/react/components/accordion#panel',
+        values: null,
+      },
+      endingStyle: {
+        attribute: 'data-ending-style',
+        description: 'Present when the panel is animating out.',
+        url: 'https://base-ui.com/react/components/accordion#panel',
+        values: null,
+      },
+      index: {
+        attribute: 'data-index',
+        description: 'Indicates the index of the accordion item.',
+        url: 'https://base-ui.com/react/components/accordion#panel',
+        values: 'number',
+      },
+      open: {
+        attribute: 'data-open',
+        description: 'Present when the accordion panel is open.',
+        url: 'https://base-ui.com/react/components/accordion#panel',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the accordion.',
+        url: 'https://base-ui.com/react/components/accordion#panel',
+        values: ['horizontal', 'vertical'],
+      },
+      startingStyle: {
+        attribute: 'data-starting-style',
+        description: 'Present when the panel begins animating in.',
+        url: 'https://base-ui.com/react/components/accordion#panel',
+        values: null,
+      },
+    },
+  },
+  'Accordion.Root': {
+    member: 'Root',
+    namespace: 'Accordion',
+    source: '@base-ui/react/accordion',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the accordion is disabled.',
+        url: 'https://base-ui.com/react/components/accordion#root',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the accordion.',
+        url: 'https://base-ui.com/react/components/accordion#root',
+        values: ['horizontal', 'vertical'],
+      },
+    },
+  },
   'Accordion.Trigger': {
     member: 'Trigger',
     namespace: 'Accordion',
@@ -21,6 +175,27 @@ export const catalog = {
         description: 'Present when the accordion item is disabled.',
         url: 'https://base-ui.com/react/components/accordion#trigger',
         values: null,
+      },
+      hidden: {
+        attribute: 'data-hidden',
+        description:
+          'Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx',
+        values: null,
+      },
+      index: {
+        attribute: 'data-index',
+        description:
+          'The item index. Base UI 1.8.0 omits this attribute for index zero.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx',
+        values: 'number',
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description:
+          'Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx',
+        values: ['horizontal', 'vertical'],
       },
       panelOpen: {
         attribute: 'data-panel-open',
@@ -136,6 +311,25 @@ export const catalog = {
     source: '@base-ui/react/alert-dialog',
     states: {},
   },
+  'AlertDialog.Trigger': {
+    member: 'Trigger',
+    namespace: 'AlertDialog',
+    source: '@base-ui/react/alert-dialog',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the trigger is disabled.',
+        url: 'https://base-ui.com/react/components/alert-dialog#trigger',
+        values: null,
+      },
+      popupOpen: {
+        attribute: 'data-popup-open',
+        description: 'Present when the corresponding alert dialog is open.',
+        url: 'https://base-ui.com/react/components/alert-dialog#trigger',
+        values: null,
+      },
+    },
+  },
   'AlertDialog.Viewport': {
     member: 'Viewport',
     namespace: 'AlertDialog',
@@ -190,7 +384,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/autocomplete#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -397,7 +591,8 @@ export const catalog = {
       },
       required: {
         attribute: 'data-required',
-        description: 'Present when the component is required.',
+        description:
+          'Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.',
         url: 'https://base-ui.com/react/components/autocomplete#input',
         values: null,
       },
@@ -533,7 +728,15 @@ export const catalog = {
     member: 'List',
     namespace: 'Autocomplete',
     source: '@base-ui/react/autocomplete',
-    states: {},
+    states: {
+      empty: {
+        attribute: 'data-empty',
+        description:
+          'Supplemental empty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/list/ComboboxList.tsx',
+        values: null,
+      },
+    },
   },
   'Autocomplete.Popup': {
     member: 'Popup',
@@ -545,7 +748,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/autocomplete#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -615,7 +818,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/autocomplete#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -754,7 +957,8 @@ export const catalog = {
       },
       required: {
         attribute: 'data-required',
-        description: 'Present when the component is required.',
+        description:
+          'Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.',
         url: 'https://base-ui.com/react/components/autocomplete#trigger',
         values: null,
       },
@@ -1017,10 +1221,52 @@ export const catalog = {
     namespace: 'CheckboxGroup',
     source: '@base-ui/react/checkbox-group',
     states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          'Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx',
+        values: null,
+      },
       disabled: {
         attribute: 'data-disabled',
         description: 'Present when the checkbox group is disabled.',
         url: 'https://base-ui.com/react/components/checkbox-group#checkbox-group',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx',
+        values: null,
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx',
         values: null,
       },
     },
@@ -1034,6 +1280,13 @@ export const catalog = {
         attribute: 'data-closed',
         description: 'Present when the collapsible panel is closed.',
         url: 'https://base-ui.com/react/components/collapsible#panel',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/panel/CollapsiblePanel.tsx',
         values: null,
       },
       endingStyle: {
@@ -1067,6 +1320,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/collapsible#root',
         values: null,
       },
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/root/CollapsibleRoot.tsx',
+        values: null,
+      },
       endingStyle: {
         attribute: 'data-ending-style',
         description: 'Present when the collapsible is animating out.',
@@ -1092,6 +1352,13 @@ export const catalog = {
     namespace: 'Collapsible',
     source: '@base-ui/react/collapsible',
     states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Present when the Collapsible.Root is disabled. Base UI 1.8.0 does not reflect the trigger-local disabled override in this attribute.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/trigger/CollapsibleTrigger.tsx',
+        values: null,
+      },
       panelOpen: {
         attribute: 'data-panel-open',
         description: 'Present when the collapsible panel is open.',
@@ -1110,7 +1377,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/combobox#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -1181,13 +1448,29 @@ export const catalog = {
     member: 'Chip',
     namespace: 'Combobox',
     source: '@base-ui/react/combobox',
-    states: {},
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/chip/ComboboxChip.tsx',
+        values: null,
+      },
+    },
   },
   'Combobox.ChipRemove': {
     member: 'ChipRemove',
     namespace: 'Combobox',
     source: '@base-ui/react/combobox',
-    states: {},
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/chip-remove/ComboboxChipRemove.tsx',
+        values: null,
+      },
+    },
   },
   'Combobox.Chips': {
     member: 'Chips',
@@ -1335,7 +1618,8 @@ export const catalog = {
       },
       required: {
         attribute: 'data-required',
-        description: 'Present when the component is required.',
+        description:
+          'Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.',
         url: 'https://base-ui.com/react/components/combobox#input',
         values: null,
       },
@@ -1490,6 +1774,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/combobox#item-indicator',
         values: null,
       },
+      selected: {
+        attribute: 'data-selected',
+        description:
+          'Supplemental selected hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/item-indicator/ComboboxItemIndicator.tsx',
+        values: null,
+      },
       startingStyle: {
         attribute: 'data-starting-style',
         description: 'Present when the indicator begins animating in.',
@@ -1502,13 +1793,71 @@ export const catalog = {
     member: 'Label',
     namespace: 'Combobox',
     source: '@base-ui/react/combobox',
-    states: {},
+    states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          'Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx',
+        values: null,
+      },
+    },
   },
   'Combobox.List': {
     member: 'List',
     namespace: 'Combobox',
     source: '@base-ui/react/combobox',
-    states: {},
+    states: {
+      empty: {
+        attribute: 'data-empty',
+        description:
+          'Supplemental empty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/list/ComboboxList.tsx',
+        values: null,
+      },
+    },
   },
   'Combobox.Popup': {
     member: 'Popup',
@@ -1520,7 +1869,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/combobox#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -1590,7 +1939,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/combobox#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -1735,7 +2084,8 @@ export const catalog = {
       },
       required: {
         attribute: 'data-required',
-        description: 'Present when the component is required.',
+        description:
+          'Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.',
         url: 'https://base-ui.com/react/components/combobox#trigger',
         values: null,
       },
@@ -1765,7 +2115,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/context-menu#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -1886,6 +2236,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/context-menu#checkbox-item-indicator',
         values: null,
       },
+      highlighted: {
+        attribute: 'data-highlighted',
+        description:
+          'Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.tsx',
+        values: null,
+      },
       startingStyle: {
         attribute: 'data-starting-style',
         description: 'Present when the indicator begins animating in.',
@@ -1954,7 +2311,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/context-menu#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -1973,6 +2330,13 @@ export const catalog = {
         description: 'Present if animations should be instant.',
         url: 'https://base-ui.com/react/components/context-menu#popup',
         values: ['click', 'dismiss', 'group', 'trigger-change'],
+      },
+      nested: {
+        attribute: 'data-nested',
+        description:
+          'Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/popup/MenuPopup.tsx',
+        values: null,
       },
       open: {
         attribute: 'data-open',
@@ -2008,11 +2372,79 @@ export const catalog = {
     source: '@base-ui/react/context-menu',
     states: {},
   },
+  'ContextMenu.Positioner': {
+    member: 'Positioner',
+    namespace: 'ContextMenu',
+    source: '@base-ui/react/context-menu',
+    states: {
+      align: {
+        attribute: 'data-align',
+        description:
+          'Indicates how the popup is aligned relative to the specified side.',
+        url: 'https://base-ui.com/react/components/context-menu#positioner',
+        values: ['center', 'start', 'end'],
+      },
+      anchorHidden: {
+        attribute: 'data-anchor-hidden',
+        description: 'Present when the anchor is hidden.',
+        url: 'https://base-ui.com/react/components/context-menu#positioner',
+        values: null,
+      },
+      closed: {
+        attribute: 'data-closed',
+        description: 'Present when the menu popup is closed.',
+        url: 'https://base-ui.com/react/components/context-menu#positioner',
+        values: null,
+      },
+      instant: {
+        attribute: 'data-instant',
+        description:
+          'Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx',
+        values: ['click', 'dismiss', 'group', 'trigger-change'],
+      },
+      nested: {
+        attribute: 'data-nested',
+        description:
+          'Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx',
+        values: null,
+      },
+      open: {
+        attribute: 'data-open',
+        description: 'Present when the menu popup is open.',
+        url: 'https://base-ui.com/react/components/context-menu#positioner',
+        values: null,
+      },
+      side: {
+        attribute: 'data-side',
+        description:
+          'Indicates which side the popup is positioned relative to the anchor.',
+        url: 'https://base-ui.com/react/components/context-menu#positioner',
+        values: [
+          'top',
+          'bottom',
+          'left',
+          'right',
+          'inline-end',
+          'inline-start',
+        ],
+      },
+    },
+  },
   'ContextMenu.RadioGroup': {
     member: 'RadioGroup',
     namespace: 'ContextMenu',
     source: '@base-ui/react/context-menu',
-    states: {},
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-group/MenuRadioGroup.tsx',
+        values: null,
+      },
+    },
   },
   'ContextMenu.RadioItem': {
     member: 'RadioItem',
@@ -2068,6 +2500,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/context-menu#radio-item-indicator',
         values: null,
       },
+      highlighted: {
+        attribute: 'data-highlighted',
+        description:
+          'Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-item-indicator/MenuRadioItemIndicator.tsx',
+        values: null,
+      },
       startingStyle: {
         attribute: 'data-starting-style',
         description: 'Present when the radio indicator begins animating in.',
@@ -2079,6 +2518,19 @@ export const catalog = {
         description: 'Present when the menu radio item is not selected.',
         url: 'https://base-ui.com/react/components/context-menu#radio-item-indicator',
         values: null,
+      },
+    },
+  },
+  'ContextMenu.Separator': {
+    member: 'Separator',
+    namespace: 'ContextMenu',
+    source: '@base-ui/react/context-menu',
+    states: {
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the separator.',
+        url: 'https://base-ui.com/react/components/context-menu#separator',
+        values: ['horizontal', 'vertical'],
       },
     },
   },
@@ -2232,6 +2684,25 @@ export const catalog = {
     source: '@base-ui/react/dialog',
     states: {},
   },
+  'Dialog.Trigger': {
+    member: 'Trigger',
+    namespace: 'Dialog',
+    source: '@base-ui/react/dialog',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the trigger is disabled.',
+        url: 'https://base-ui.com/react/components/dialog#trigger',
+        values: null,
+      },
+      popupOpen: {
+        attribute: 'data-popup-open',
+        description: 'Present when the corresponding dialog is open.',
+        url: 'https://base-ui.com/react/components/dialog#trigger',
+        values: null,
+      },
+    },
+  },
   'Dialog.Viewport': {
     member: 'Viewport',
     namespace: 'Dialog',
@@ -2305,6 +2776,20 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/drawer#backdrop',
         values: null,
       },
+      swipeDismiss: {
+        attribute: 'data-swipe-dismiss',
+        description:
+          'Supplemental swipeDismiss hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/backdrop/DrawerBackdrop.tsx',
+        values: null,
+      },
+      swiping: {
+        attribute: 'data-swiping',
+        description:
+          'Supplemental swiping hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/backdrop/DrawerBackdrop.tsx',
+        values: null,
+      },
     },
   },
   'Drawer.Close': {
@@ -2329,13 +2814,43 @@ export const catalog = {
     member: 'Indent',
     namespace: 'Drawer',
     source: '@base-ui/react/drawer',
-    states: {},
+    states: {
+      active: {
+        attribute: 'data-active',
+        description:
+          'Supplemental active hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent/DrawerIndent.tsx',
+        values: null,
+      },
+      inactive: {
+        attribute: 'data-inactive',
+        description:
+          'Supplemental inactive hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent/DrawerIndent.tsx',
+        values: null,
+      },
+    },
   },
   'Drawer.IndentBackground': {
     member: 'IndentBackground',
     namespace: 'Drawer',
     source: '@base-ui/react/drawer',
-    states: {},
+    states: {
+      active: {
+        attribute: 'data-active',
+        description:
+          'Supplemental active hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent-background/DrawerIndentBackground.tsx',
+        values: null,
+      },
+      inactive: {
+        attribute: 'data-inactive',
+        description:
+          'Supplemental inactive hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent-background/DrawerIndentBackground.tsx',
+        values: null,
+      },
+    },
   },
   'Drawer.Popup': {
     member: 'Popup',
@@ -2389,7 +2904,7 @@ export const catalog = {
         attribute: 'data-swipe-direction',
         description: 'Indicates the swipe direction.',
         url: 'https://base-ui.com/react/components/drawer#popup',
-        values: ['up', 'down', 'left', 'right'],
+        values: ['left', 'right', 'up', 'down'],
       },
       swipeDismiss: {
         attribute: 'data-swipe-dismiss',
@@ -2438,7 +2953,7 @@ export const catalog = {
         attribute: 'data-swipe-direction',
         description: 'Indicates the swipe direction.',
         url: 'https://base-ui.com/react/components/drawer#swipe-area',
-        values: ['up', 'down', 'left', 'right'],
+        values: ['left', 'right', 'up', 'down'],
       },
       swiping: {
         attribute: 'data-swiping',
@@ -2450,6 +2965,12 @@ export const catalog = {
   },
   'Drawer.Title': {
     member: 'Title',
+    namespace: 'Drawer',
+    source: '@base-ui/react/drawer',
+    states: {},
+  },
+  'Drawer.Trigger': {
+    member: 'Trigger',
     namespace: 'Drawer',
     source: '@base-ui/react/drawer',
     states: {},
@@ -2801,12 +3322,34 @@ export const catalog = {
     member: 'Legend',
     namespace: 'Fieldset',
     source: '@base-ui/react/fieldset',
-    states: {},
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/fieldset/legend/FieldsetLegend.tsx',
+        values: null,
+      },
+    },
   },
   'Fieldset.Root': {
     member: 'Root',
     namespace: 'Fieldset',
     source: '@base-ui/react/fieldset',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/fieldset/root/FieldsetRoot.tsx',
+        values: null,
+      },
+    },
+  },
+  Form: {
+    member: 'Form',
+    namespace: 'Form',
+    source: '@base-ui/react/form',
     states: {},
   },
   Input: {
@@ -2874,7 +3417,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/menu#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -2995,6 +3538,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/menu#checkbox-item-indicator',
         values: null,
       },
+      highlighted: {
+        attribute: 'data-highlighted',
+        description:
+          'Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.tsx',
+        values: null,
+      },
       startingStyle: {
         attribute: 'data-starting-style',
         description: 'Present when the indicator begins animating in.',
@@ -3063,7 +3613,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/menu#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -3082,6 +3632,13 @@ export const catalog = {
         description: 'Present if animations should be instant.',
         url: 'https://base-ui.com/react/components/menu#popup',
         values: ['click', 'dismiss', 'group', 'trigger-change'],
+      },
+      nested: {
+        attribute: 'data-nested',
+        description:
+          'Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/popup/MenuPopup.tsx',
+        values: null,
       },
       open: {
         attribute: 'data-open',
@@ -3117,11 +3674,79 @@ export const catalog = {
     source: '@base-ui/react/menu',
     states: {},
   },
+  'Menu.Positioner': {
+    member: 'Positioner',
+    namespace: 'Menu',
+    source: '@base-ui/react/menu',
+    states: {
+      align: {
+        attribute: 'data-align',
+        description:
+          'Indicates how the popup is aligned relative to the specified side.',
+        url: 'https://base-ui.com/react/components/menu#positioner',
+        values: ['center', 'start', 'end'],
+      },
+      anchorHidden: {
+        attribute: 'data-anchor-hidden',
+        description: 'Present when the anchor is hidden.',
+        url: 'https://base-ui.com/react/components/menu#positioner',
+        values: null,
+      },
+      closed: {
+        attribute: 'data-closed',
+        description: 'Present when the menu popup is closed.',
+        url: 'https://base-ui.com/react/components/menu#positioner',
+        values: null,
+      },
+      instant: {
+        attribute: 'data-instant',
+        description:
+          'Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx',
+        values: ['click', 'dismiss', 'group', 'trigger-change'],
+      },
+      nested: {
+        attribute: 'data-nested',
+        description:
+          'Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx',
+        values: null,
+      },
+      open: {
+        attribute: 'data-open',
+        description: 'Present when the menu popup is open.',
+        url: 'https://base-ui.com/react/components/menu#positioner',
+        values: null,
+      },
+      side: {
+        attribute: 'data-side',
+        description:
+          'Indicates which side the popup is positioned relative to the anchor.',
+        url: 'https://base-ui.com/react/components/menu#positioner',
+        values: [
+          'top',
+          'bottom',
+          'left',
+          'right',
+          'inline-end',
+          'inline-start',
+        ],
+      },
+    },
+  },
   'Menu.RadioGroup': {
     member: 'RadioGroup',
     namespace: 'Menu',
     source: '@base-ui/react/menu',
-    states: {},
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-group/MenuRadioGroup.tsx',
+        values: null,
+      },
+    },
   },
   'Menu.RadioItem': {
     member: 'RadioItem',
@@ -3177,6 +3802,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/menu#radio-item-indicator',
         values: null,
       },
+      highlighted: {
+        attribute: 'data-highlighted',
+        description:
+          'Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-item-indicator/MenuRadioItemIndicator.tsx',
+        values: null,
+      },
       startingStyle: {
         attribute: 'data-starting-style',
         description: 'Present when the radio indicator begins animating in.',
@@ -3188,6 +3820,19 @@ export const catalog = {
         description: 'Present when the menu radio item is not selected.',
         url: 'https://base-ui.com/react/components/menu#radio-item-indicator',
         values: null,
+      },
+    },
+  },
+  'Menu.Separator': {
+    member: 'Separator',
+    namespace: 'Menu',
+    source: '@base-ui/react/menu',
+    states: {
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the separator.',
+        url: 'https://base-ui.com/react/components/menu#separator',
+        values: ['horizontal', 'vertical'],
       },
     },
   },
@@ -3212,6 +3857,84 @@ export const catalog = {
         attribute: 'data-popup-open',
         description: 'Present when the corresponding submenu is open.',
         url: 'https://base-ui.com/react/components/menu#submenu-trigger',
+        values: null,
+      },
+    },
+  },
+  'Menu.Trigger': {
+    member: 'Trigger',
+    namespace: 'Menu',
+    source: '@base-ui/react/menu',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the trigger is disabled.',
+        url: 'https://base-ui.com/react/components/menu#trigger',
+        values: null,
+      },
+      popupOpen: {
+        attribute: 'data-popup-open',
+        description: 'Present when the corresponding menu is open.',
+        url: 'https://base-ui.com/react/components/menu#trigger',
+        values: null,
+      },
+      pressed: {
+        attribute: 'data-pressed',
+        description: 'Present when the trigger is pressed.',
+        url: 'https://base-ui.com/react/components/menu#trigger',
+        values: null,
+      },
+    },
+  },
+  'Menu.Viewport': {
+    member: 'Viewport',
+    namespace: 'Menu',
+    source: '@base-ui/react/menu',
+    states: {
+      activationDirection: {
+        attribute: 'data-activation-direction',
+        description:
+          'Indicates the direction from which the popup was activated.\nThis can be used to create directional animations based on how the popup was triggered.\nContains space-separated values for both horizontal and vertical axes.',
+        url: 'https://base-ui.com/react/components/menu#viewport',
+        values: [
+          ' ',
+          ' up',
+          ' down',
+          'left ',
+          'left up',
+          'left down',
+          'right ',
+          'right up',
+          'right down',
+        ],
+      },
+      current: {
+        attribute: 'data-current',
+        description:
+          "Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.",
+        url: 'https://base-ui.com/react/components/menu#viewport',
+        values: null,
+        selector: '& > [data-current]',
+      },
+      instant: {
+        attribute: 'data-instant',
+        description: 'Present if animations should be instant.',
+        url: 'https://base-ui.com/react/components/menu#viewport',
+        values: ['click', 'dismiss', 'group', 'trigger-change'],
+      },
+      previous: {
+        attribute: 'data-previous',
+        description:
+          'Applied to the direct child of the viewport that contains the exiting content when transitions are present.',
+        url: 'https://base-ui.com/react/components/menu#viewport',
+        values: null,
+        selector: '& > [data-previous]',
+      },
+      transitioning: {
+        attribute: 'data-transitioning',
+        description:
+          'Indicates that the viewport is currently transitioning between old and new content.',
+        url: 'https://base-ui.com/react/components/menu#viewport',
         values: null,
       },
     },
@@ -3281,7 +4004,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/navigation-menu#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -3422,7 +4145,15 @@ export const catalog = {
     member: 'List',
     namespace: 'NavigationMenu',
     source: '@base-ui/react/navigation-menu',
-    states: {},
+    states: {
+      open: {
+        attribute: 'data-open',
+        description:
+          'Supplemental open hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/list/NavigationMenuList.tsx',
+        values: null,
+      },
+    },
   },
   'NavigationMenu.Popup': {
     member: 'Popup',
@@ -3434,7 +4165,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to the specified side.',
         url: 'https://base-ui.com/react/components/navigation-menu#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -3498,7 +4229,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to the specified side.',
         url: 'https://base-ui.com/react/components/navigation-menu#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -3537,6 +4268,27 @@ export const catalog = {
           'inline-end',
           'inline-start',
         ],
+      },
+    },
+  },
+  'NavigationMenu.Root': {
+    member: 'Root',
+    namespace: 'NavigationMenu',
+    source: '@base-ui/react/navigation-menu',
+    states: {
+      nested: {
+        attribute: 'data-nested',
+        description:
+          'Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/root/NavigationMenuRoot.tsx',
+        values: null,
+      },
+      open: {
+        attribute: 'data-open',
+        description:
+          'Supplemental open hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/root/NavigationMenuRoot.tsx',
+        values: null,
       },
     },
   },
@@ -4225,6 +4977,19 @@ export const catalog = {
       },
     },
   },
+  'OTPField.Separator': {
+    member: 'Separator',
+    namespace: 'OTPField',
+    source: '@base-ui/react/otp-field',
+    states: {
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the separator.',
+        url: 'https://base-ui.com/react/components/otp-field#separator',
+        values: ['horizontal', 'vertical'],
+      },
+    },
+  },
   'Popover.Arrow': {
     member: 'Arrow',
     namespace: 'Popover',
@@ -4235,7 +5000,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/popover#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -4324,7 +5089,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/popover#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -4342,7 +5107,7 @@ export const catalog = {
         attribute: 'data-instant',
         description: 'Present if animations should be instant.',
         url: 'https://base-ui.com/react/components/popover#popup',
-        values: ['click', 'dismiss', 'focus', 'trigger-change'],
+        values: ['click', 'dismiss', 'trigger-change', 'focus'],
       },
       open: {
         attribute: 'data-open',
@@ -4388,7 +5153,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/popover#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -4401,6 +5166,13 @@ export const catalog = {
         description: 'Present when the popup is closed.',
         url: 'https://base-ui.com/react/components/popover#positioner',
         values: null,
+      },
+      instant: {
+        attribute: 'data-instant',
+        description:
+          'Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx',
+        values: ['click', 'dismiss', 'focus', 'trigger-change'],
       },
       open: {
         attribute: 'data-open',
@@ -4430,6 +5202,84 @@ export const catalog = {
     source: '@base-ui/react/popover',
     states: {},
   },
+  'Popover.Trigger': {
+    member: 'Trigger',
+    namespace: 'Popover',
+    source: '@base-ui/react/popover',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the trigger is disabled.',
+        url: 'https://base-ui.com/react/components/popover#trigger',
+        values: null,
+      },
+      popupOpen: {
+        attribute: 'data-popup-open',
+        description: 'Present when the corresponding popover is open.',
+        url: 'https://base-ui.com/react/components/popover#trigger',
+        values: null,
+      },
+      pressed: {
+        attribute: 'data-pressed',
+        description: 'Present when the trigger is pressed.',
+        url: 'https://base-ui.com/react/components/popover#trigger',
+        values: null,
+      },
+    },
+  },
+  'Popover.Viewport': {
+    member: 'Viewport',
+    namespace: 'Popover',
+    source: '@base-ui/react/popover',
+    states: {
+      activationDirection: {
+        attribute: 'data-activation-direction',
+        description:
+          'Indicates the direction from which the popup was activated.\nThis can be used to create directional animations based on how the popup was triggered.\nContains space-separated values for both horizontal and vertical axes.',
+        url: 'https://base-ui.com/react/components/popover#viewport',
+        values: [
+          ' ',
+          ' up',
+          ' down',
+          'left ',
+          'left up',
+          'left down',
+          'right ',
+          'right up',
+          'right down',
+        ],
+      },
+      current: {
+        attribute: 'data-current',
+        description:
+          "Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.",
+        url: 'https://base-ui.com/react/components/popover#viewport',
+        values: null,
+        selector: '& > [data-current]',
+      },
+      instant: {
+        attribute: 'data-instant',
+        description: 'Present if animations should be instant.',
+        url: 'https://base-ui.com/react/components/popover#viewport',
+        values: ['click', 'dismiss', 'trigger-change', 'focus'],
+      },
+      previous: {
+        attribute: 'data-previous',
+        description:
+          'Applied to the direct child of the viewport that contains the exiting content when transitions are present.',
+        url: 'https://base-ui.com/react/components/popover#viewport',
+        values: null,
+        selector: '& > [data-previous]',
+      },
+      transitioning: {
+        attribute: 'data-transitioning',
+        description:
+          'Indicates that the viewport is currently transitioning between old and new content.',
+        url: 'https://base-ui.com/react/components/popover#viewport',
+        values: null,
+      },
+    },
+  },
   'PreviewCard.Arrow': {
     member: 'Arrow',
     namespace: 'PreviewCard',
@@ -4440,7 +5290,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/preview-card#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -4517,7 +5367,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/preview-card#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -4575,7 +5425,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/preview-card#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -4588,6 +5438,13 @@ export const catalog = {
         description: 'Present when the preview card is closed.',
         url: 'https://base-ui.com/react/components/preview-card#positioner',
         values: null,
+      },
+      instant: {
+        attribute: 'data-instant',
+        description:
+          'Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx',
+        values: ['dismiss', 'focus'],
       },
       open: {
         attribute: 'data-open',
@@ -4608,6 +5465,72 @@ export const catalog = {
           'inline-end',
           'inline-start',
         ],
+      },
+    },
+  },
+  'PreviewCard.Trigger': {
+    member: 'Trigger',
+    namespace: 'PreviewCard',
+    source: '@base-ui/react/preview-card',
+    states: {
+      popupOpen: {
+        attribute: 'data-popup-open',
+        description: 'Present when the corresponding preview card is open.',
+        url: 'https://base-ui.com/react/components/preview-card#trigger',
+        values: null,
+      },
+    },
+  },
+  'PreviewCard.Viewport': {
+    member: 'Viewport',
+    namespace: 'PreviewCard',
+    source: '@base-ui/react/preview-card',
+    states: {
+      activationDirection: {
+        attribute: 'data-activation-direction',
+        description:
+          'Indicates the direction from which the popup was activated.\nThis can be used to create directional animations based on how the popup was triggered.\nContains space-separated values for both horizontal and vertical axes.',
+        url: 'https://base-ui.com/react/components/preview-card#viewport',
+        values: [
+          ' ',
+          ' up',
+          ' down',
+          'left ',
+          'left up',
+          'left down',
+          'right ',
+          'right up',
+          'right down',
+        ],
+      },
+      current: {
+        attribute: 'data-current',
+        description:
+          "Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.",
+        url: 'https://base-ui.com/react/components/preview-card#viewport',
+        values: null,
+        selector: '& > [data-current]',
+      },
+      instant: {
+        attribute: 'data-instant',
+        description: 'Present if animations should be instant.',
+        url: 'https://base-ui.com/react/components/preview-card#viewport',
+        values: ['dismiss', 'focus'],
+      },
+      previous: {
+        attribute: 'data-previous',
+        description:
+          'Applied to the direct child of the viewport that contains the exiting content when transitions are present.',
+        url: 'https://base-ui.com/react/components/preview-card#viewport',
+        values: null,
+        selector: '& > [data-previous]',
+      },
+      transitioning: {
+        attribute: 'data-transitioning',
+        description:
+          'Indicates that the viewport is currently transitioning between old and new content.',
+        url: 'https://base-ui.com/react/components/preview-card#viewport',
+        values: null,
       },
     },
   },
@@ -4823,6 +5746,154 @@ export const catalog = {
         description:
           'Present when the radio is in a valid state (when wrapped in Field.Root).',
         url: 'https://base-ui.com/react/components/radio#indicator',
+        values: null,
+      },
+    },
+  },
+  'Radio.Root': {
+    member: 'Root',
+    namespace: 'Radio',
+    source: '@base-ui/react/radio',
+    states: {
+      checked: {
+        attribute: 'data-checked',
+        description: 'Present when the radio is checked.',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          "Present when the radio's value has changed (when wrapped in Field.Root).",
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the radio is disabled.',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Present when the radio is checked (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Present when the radio is focused (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Present when the radio is in an invalid state (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      readonly: {
+        attribute: 'data-readonly',
+        description: 'Present when the radio is readonly.',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      required: {
+        attribute: 'data-required',
+        description: 'Present when the radio is required.',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Present when the radio has been touched (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      unchecked: {
+        attribute: 'data-unchecked',
+        description: 'Present when the radio is not checked.',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Present when the radio is in a valid state (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/radio#root',
+        values: null,
+      },
+    },
+  },
+  RadioGroup: {
+    member: 'RadioGroup',
+    namespace: 'RadioGroup',
+    source: '@base-ui/react/radio-group',
+    states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          'Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the radio group is disabled.',
+        url: 'https://base-ui.com/react/components/radio-group#radio-group',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      readOnly: {
+        attribute: 'data-readonly',
+        description:
+          'Supplemental readOnly hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      required: {
+        attribute: 'data-required',
+        description:
+          'Supplemental required hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx',
         values: null,
       },
     },
@@ -5090,7 +6161,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/select#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -5107,7 +6178,7 @@ export const catalog = {
       side: {
         attribute: 'data-side',
         description:
-          'Indicates which side the popup is positioned relative to the trigger.',
+          'The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.',
         url: 'https://base-ui.com/react/components/select#arrow',
         values: [
           'none',
@@ -5219,6 +6290,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/select#item-indicator',
         values: null,
       },
+      selected: {
+        attribute: 'data-selected',
+        description:
+          'Supplemental selected hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/item-indicator/SelectItemIndicator.tsx',
+        values: null,
+      },
       startingStyle: {
         attribute: 'data-starting-style',
         description: 'Present when the indicator begins animating in.',
@@ -5237,7 +6315,57 @@ export const catalog = {
     member: 'Label',
     namespace: 'Select',
     source: '@base-ui/react/select',
-    states: {},
+    states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          'Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx',
+        values: null,
+      },
+    },
   },
   'Select.List': {
     member: 'List',
@@ -5255,7 +6383,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/select#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -5314,7 +6442,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/select#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -5561,6 +6689,19 @@ export const catalog = {
       },
     },
   },
+  Separator: {
+    member: 'Separator',
+    namespace: 'Separator',
+    source: '@base-ui/react/separator',
+    states: {
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the separator.',
+        url: 'https://base-ui.com/react/components/separator#separator',
+        values: ['horizontal', 'vertical'],
+      },
+    },
+  },
   'Slider.Control': {
     member: 'Control',
     namespace: 'Slider',
@@ -5583,6 +6724,13 @@ export const catalog = {
         attribute: 'data-dragging',
         description: 'Present while the user is dragging.',
         url: 'https://base-ui.com/react/components/slider#control',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/control/SliderControl.tsx',
         values: null,
       },
       focused: {
@@ -5645,6 +6793,13 @@ export const catalog = {
         url: 'https://base-ui.com/react/components/slider#indicator',
         values: null,
       },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/indicator/SliderIndicator.tsx',
+        values: null,
+      },
       focused: {
         attribute: 'data-focused',
         description:
@@ -5685,7 +6840,211 @@ export const catalog = {
     member: 'Label',
     namespace: 'Slider',
     source: '@base-ui/react/slider',
-    states: {},
+    states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          'Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description:
+          'Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      dragging: {
+        attribute: 'data-dragging',
+        description:
+          'Supplemental dragging hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description:
+          'Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: ['horizontal', 'vertical'],
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx',
+        values: null,
+      },
+    },
+  },
+  'Slider.Root': {
+    member: 'Root',
+    namespace: 'Slider',
+    source: '@base-ui/react/slider',
+    states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          "Present when the slider's value has changed (when wrapped in Field.Root).",
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the slider is disabled.',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+      dragging: {
+        attribute: 'data-dragging',
+        description: 'Present while the user is dragging.',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/root/SliderRoot.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Present when the slider is focused (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Present when the slider is in an invalid state (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the slider.',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: ['horizontal', 'vertical'],
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Present when the slider has been touched (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Present when the slider is in a valid state (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#root',
+        values: null,
+      },
+    },
+  },
+  'Slider.Thumb': {
+    member: 'Thumb',
+    namespace: 'Slider',
+    source: '@base-ui/react/slider',
+    states: {
+      dirty: {
+        attribute: 'data-dirty',
+        description:
+          "Present when the slider's value has changed (when wrapped in Field.Root).",
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the slider is disabled.',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+      dragging: {
+        attribute: 'data-dragging',
+        description: 'Present while the user is dragging.',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/thumb/SliderThumb.tsx',
+        values: null,
+      },
+      focused: {
+        attribute: 'data-focused',
+        description:
+          'Present when the slider is focused (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+      index: {
+        attribute: 'data-index',
+        description: 'Indicates the index of the thumb in range sliders.',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: 'number',
+      },
+      invalid: {
+        attribute: 'data-invalid',
+        description:
+          'Present when the slider is in an invalid state (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the slider.',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: ['horizontal', 'vertical'],
+      },
+      touched: {
+        attribute: 'data-touched',
+        description:
+          'Present when the slider has been touched (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+      valid: {
+        attribute: 'data-valid',
+        description:
+          'Present when the slider is in a valid state (when wrapped in Field.Root).',
+        url: 'https://base-ui.com/react/components/slider#thumb',
+        values: null,
+      },
+    },
   },
   'Slider.Track': {
     member: 'Track',
@@ -5709,6 +7068,13 @@ export const catalog = {
         attribute: 'data-dragging',
         description: 'Present while the user is dragging.',
         url: 'https://base-ui.com/react/components/slider#track',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/track/SliderTrack.tsx',
         values: null,
       },
       focused: {
@@ -5769,6 +7135,13 @@ export const catalog = {
         attribute: 'data-dragging',
         description: 'Present while the user is dragging.',
         url: 'https://base-ui.com/react/components/slider#value',
+        values: null,
+      },
+      filled: {
+        attribute: 'data-filled',
+        description:
+          'Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/value/SliderValue.tsx',
         values: null,
       },
       focused: {
@@ -5975,7 +7348,7 @@ export const catalog = {
         description:
           'Indicates the direction of the activation (based on the previous active tab).',
         url: 'https://base-ui.com/react/components/tabs#indicator',
-        values: ['left', 'right', 'up', 'down', 'none'],
+        values: ['none', 'left', 'right', 'up', 'down'],
       },
       orientation: {
         attribute: 'data-orientation',
@@ -5995,13 +7368,57 @@ export const catalog = {
         description:
           'Indicates the direction of the activation (based on the previous active tab).',
         url: 'https://base-ui.com/react/components/tabs#list',
-        values: ['left', 'right', 'up', 'down', 'none'],
+        values: ['none', 'left', 'right', 'up', 'down'],
       },
       orientation: {
         attribute: 'data-orientation',
         description: 'Indicates the orientation of the tabs.',
         url: 'https://base-ui.com/react/components/tabs#list',
         values: ['horizontal', 'vertical'],
+      },
+    },
+  },
+  'Tabs.Panel': {
+    member: 'Panel',
+    namespace: 'Tabs',
+    source: '@base-ui/react/tabs',
+    states: {
+      activationDirection: {
+        attribute: 'data-activation-direction',
+        description:
+          'Indicates the direction of the activation (based on the previous active tab).',
+        url: 'https://base-ui.com/react/components/tabs#panel',
+        values: ['none', 'left', 'right', 'up', 'down'],
+      },
+      endingStyle: {
+        attribute: 'data-ending-style',
+        description: 'Present when the panel is animating out.',
+        url: 'https://base-ui.com/react/components/tabs#panel',
+        values: null,
+      },
+      hidden: {
+        attribute: 'data-hidden',
+        description: 'Present when the panel is hidden.',
+        url: 'https://base-ui.com/react/components/tabs#panel',
+        values: null,
+      },
+      index: {
+        attribute: 'data-index',
+        description: 'Indicates the index of the tab panel.',
+        url: 'https://base-ui.com/react/components/tabs#panel',
+        values: 'number',
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the tabs.',
+        url: 'https://base-ui.com/react/components/tabs#panel',
+        values: ['horizontal', 'vertical'],
+      },
+      startingStyle: {
+        attribute: 'data-starting-style',
+        description: 'Present when the panel begins animating in.',
+        url: 'https://base-ui.com/react/components/tabs#panel',
+        values: null,
       },
     },
   },
@@ -6015,7 +7432,7 @@ export const catalog = {
         description:
           'Indicates the direction of the activation (based on the previous active tab).',
         url: 'https://base-ui.com/react/components/tabs#root',
-        values: ['left', 'right', 'up', 'down', 'none'],
+        values: ['none', 'left', 'right', 'up', 'down'],
       },
       orientation: {
         attribute: 'data-orientation',
@@ -6035,7 +7452,7 @@ export const catalog = {
         description:
           'Indicates the direction of the activation (based on the previous active tab).',
         url: 'https://base-ui.com/react/components/tabs#tab',
-        values: ['left', 'right', 'up', 'down', 'none'],
+        values: ['none', 'left', 'right', 'up', 'down'],
       },
       active: {
         attribute: 'data-active',
@@ -6057,6 +7474,19 @@ export const catalog = {
       },
     },
   },
+  'Toast.Action': {
+    member: 'Action',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      type: {
+        attribute: 'data-type',
+        description: 'The type of the toast.',
+        url: 'https://base-ui.com/react/components/toast#action',
+        values: 'string',
+      },
+    },
+  },
   'Toast.Arrow': {
     member: 'Arrow',
     namespace: 'Toast',
@@ -6067,7 +7497,7 @@ export const catalog = {
         description:
           'Indicates how the toast is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/toast#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       side: {
         attribute: 'data-side',
@@ -6091,6 +7521,52 @@ export const catalog = {
       },
     },
   },
+  'Toast.Close': {
+    member: 'Close',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      type: {
+        attribute: 'data-type',
+        description: 'The type of the toast.',
+        url: 'https://base-ui.com/react/components/toast#close',
+        values: 'string',
+      },
+    },
+  },
+  'Toast.Content': {
+    member: 'Content',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      behind: {
+        attribute: 'data-behind',
+        description:
+          'Present when the toast is behind the frontmost toast in the stack.',
+        url: 'https://base-ui.com/react/components/toast#content',
+        values: null,
+      },
+      expanded: {
+        attribute: 'data-expanded',
+        description: 'Present when the toast viewport is expanded.',
+        url: 'https://base-ui.com/react/components/toast#content',
+        values: null,
+      },
+    },
+  },
+  'Toast.Description': {
+    member: 'Description',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      type: {
+        attribute: 'data-type',
+        description: 'The type of the toast.',
+        url: 'https://base-ui.com/react/components/toast#description',
+        values: 'string',
+      },
+    },
+  },
   'Toast.Portal': {
     member: 'Portal',
     namespace: 'Toast',
@@ -6107,7 +7583,7 @@ export const catalog = {
         description:
           'Indicates how the toast is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/toast#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -6128,6 +7604,127 @@ export const catalog = {
           'inline-end',
           'inline-start',
         ],
+      },
+    },
+  },
+  'Toast.Root': {
+    member: 'Root',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      endingStyle: {
+        attribute: 'data-ending-style',
+        description: 'Present when the toast is animating out.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: null,
+      },
+      expanded: {
+        attribute: 'data-expanded',
+        description: 'Present when the toast is expanded in the viewport.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: null,
+      },
+      limited: {
+        attribute: 'data-limited',
+        description:
+          'Present when the toast was limited because the toast limit was exceeded.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: null,
+      },
+      startingStyle: {
+        attribute: 'data-starting-style',
+        description: 'Present when the toast begins animating in.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: null,
+      },
+      swipeDirection: {
+        attribute: 'data-swipe-direction',
+        description: 'The direction the toast was swiped.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: ['left', 'right', 'up', 'down'],
+      },
+      swiping: {
+        attribute: 'data-swiping',
+        description: 'Present when the toast is being swiped.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: null,
+      },
+      type: {
+        attribute: 'data-type',
+        description: 'The type of the toast.',
+        url: 'https://base-ui.com/react/components/toast#root',
+        values: 'string',
+      },
+    },
+  },
+  'Toast.Title': {
+    member: 'Title',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      type: {
+        attribute: 'data-type',
+        description: 'The type of the toast.',
+        url: 'https://base-ui.com/react/components/toast#title',
+        values: 'string',
+      },
+    },
+  },
+  'Toast.Viewport': {
+    member: 'Viewport',
+    namespace: 'Toast',
+    source: '@base-ui/react/toast',
+    states: {
+      expanded: {
+        attribute: 'data-expanded',
+        description: 'Indicates toasts are expanded in the viewport.',
+        url: 'https://base-ui.com/react/components/toast#viewport',
+        values: null,
+      },
+    },
+  },
+  Toggle: {
+    member: 'Toggle',
+    namespace: 'Toggle',
+    source: '@base-ui/react/toggle',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the toggle button is disabled.',
+        url: 'https://base-ui.com/react/components/toggle#toggle',
+        values: null,
+      },
+      pressed: {
+        attribute: 'data-pressed',
+        description: 'Present when the toggle button is pressed.',
+        url: 'https://base-ui.com/react/components/toggle#toggle',
+        values: null,
+      },
+    },
+  },
+  ToggleGroup: {
+    member: 'ToggleGroup',
+    namespace: 'ToggleGroup',
+    source: '@base-ui/react/toggle-group',
+    states: {
+      disabled: {
+        attribute: 'data-disabled',
+        description: 'Present when the toggle group is disabled.',
+        url: 'https://base-ui.com/react/components/toggle-group#toggle-group',
+        values: null,
+      },
+      multiple: {
+        attribute: 'data-multiple',
+        description:
+          'Present when the toggle group allows multiple buttons to be in the pressed state at the same time.',
+        url: 'https://base-ui.com/react/components/toggle-group#toggle-group',
+        values: null,
+      },
+      orientation: {
+        attribute: 'data-orientation',
+        description: 'Indicates the orientation of the toggle group.',
+        url: 'https://base-ui.com/react/components/toggle-group#toggle-group',
+        values: ['horizontal', 'vertical'],
       },
     },
   },
@@ -6232,6 +7829,20 @@ export const catalog = {
       },
     },
   },
+  'Toolbar.Separator': {
+    member: 'Separator',
+    namespace: 'Toolbar',
+    source: '@base-ui/react/toolbar',
+    states: {
+      orientation: {
+        attribute: 'data-orientation',
+        description:
+          'Indicates the orientation of the separator, which is perpendicular to the toolbar.',
+        url: 'https://base-ui.com/react/components/toolbar#separator',
+        values: ['horizontal', 'vertical'],
+      },
+    },
+  },
   'Tooltip.Arrow': {
     member: 'Arrow',
     namespace: 'Tooltip',
@@ -6242,7 +7853,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/tooltip#arrow',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -6294,7 +7905,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/tooltip#popup',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       closed: {
         attribute: 'data-closed',
@@ -6358,7 +7969,7 @@ export const catalog = {
         description:
           'Indicates how the popup is aligned relative to specified side.',
         url: 'https://base-ui.com/react/components/tooltip#positioner',
-        values: ['start', 'center', 'end'],
+        values: ['center', 'start', 'end'],
       },
       anchorHidden: {
         attribute: 'data-anchor-hidden',
@@ -6371,6 +7982,13 @@ export const catalog = {
         description: 'Present when the tooltip is closed.',
         url: 'https://base-ui.com/react/components/tooltip#positioner',
         values: null,
+      },
+      instant: {
+        attribute: 'data-instant',
+        description:
+          'Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.',
+        url: 'https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx',
+        values: ['delay', 'dismiss', 'focus', 'tracking-cursor'],
       },
       open: {
         attribute: 'data-open',
@@ -6391,6 +8009,79 @@ export const catalog = {
           'inline-end',
           'inline-start',
         ],
+      },
+    },
+  },
+  'Tooltip.Trigger': {
+    member: 'Trigger',
+    namespace: 'Tooltip',
+    source: '@base-ui/react/tooltip',
+    states: {
+      popupOpen: {
+        attribute: 'data-popup-open',
+        description: 'Present when the corresponding tooltip is open.',
+        url: 'https://base-ui.com/react/components/tooltip#trigger',
+        values: null,
+      },
+      triggerDisabled: {
+        attribute: 'data-trigger-disabled',
+        description:
+          'Present when the trigger is disabled, either by the `disabled` prop or by a parent `<Tooltip.Root>` component.',
+        url: 'https://base-ui.com/react/components/tooltip#trigger',
+        values: null,
+      },
+    },
+  },
+  'Tooltip.Viewport': {
+    member: 'Viewport',
+    namespace: 'Tooltip',
+    source: '@base-ui/react/tooltip',
+    states: {
+      activationDirection: {
+        attribute: 'data-activation-direction',
+        description:
+          'Indicates the direction from which the popup was activated.\nThis can be used to create directional animations based on how the popup was triggered.\nContains space-separated values for both horizontal and vertical axes.',
+        url: 'https://base-ui.com/react/components/tooltip#viewport',
+        values: [
+          ' ',
+          ' up',
+          ' down',
+          'left ',
+          'left up',
+          'left down',
+          'right ',
+          'right up',
+          'right down',
+        ],
+      },
+      current: {
+        attribute: 'data-current',
+        description:
+          "Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.",
+        url: 'https://base-ui.com/react/components/tooltip#viewport',
+        values: null,
+        selector: '& > [data-current]',
+      },
+      instant: {
+        attribute: 'data-instant',
+        description: 'Present if animations should be instant.',
+        url: 'https://base-ui.com/react/components/tooltip#viewport',
+        values: ['delay', 'dismiss', 'focus'],
+      },
+      previous: {
+        attribute: 'data-previous',
+        description:
+          'Applied to the direct child of the viewport that contains the exiting content when transitions are present.',
+        url: 'https://base-ui.com/react/components/tooltip#viewport',
+        values: null,
+        selector: '& > [data-previous]',
+      },
+      transitioning: {
+        attribute: 'data-transitioning',
+        description:
+          'Indicates that the viewport is currently transitioning between old and new content.',
+        url: 'https://base-ui.com/react/components/tooltip#viewport',
+        values: null,
       },
     },
   },

@@ -230,7 +230,19 @@ pub(crate) fn lower<'a>(
                 .as_str()
                 .ok_or_else(|| invalid("Invalid Base UI state attribute.", state.span))?;
 
-            if let Some(values) = definition["values"].as_array() {
+            if definition["values"].is_null() {
+                let selector = definition["selector"]
+                    .as_str()
+                    .map_or_else(|| format!("&[{attribute}]"), str::to_owned);
+
+                conditions.insert(state.span.start, Arc::from(selector.as_str()));
+                properties.push(property(
+                    allocator,
+                    state.span,
+                    &selector,
+                    lower(allocator, &state.value, component, conditions, depth + 1)?,
+                ));
+            } else {
                 let Expression::ObjectExpression(choices) = unwrap(&state.value) else {
                     return Err(invalid(
                         "Valued Base UI states require a static value map.",
@@ -257,17 +269,34 @@ pub(crate) fn lower<'a>(
                         invalid("Base UI state values require static keys.", choice.span)
                     })?;
 
-                    if !values
-                        .iter()
-                        .any(|entry| entry.as_str() == Some(value.as_ref()))
-                    {
+                    let valid = match definition["values"].as_str() {
+                        Some("string") => true,
+                        Some("number") => {
+                            let number = crate::js::to_number(&value);
+                            number.is_finite() && crate::js::number(number) == value
+                        }
+                        _ => definition["values"].as_array().is_some_and(|values| {
+                            values
+                                .iter()
+                                .any(|entry| entry.as_str() == Some(value.as_ref()))
+                        }),
+                    };
+
+                    if !valid {
                         return Err(invalid(
                             format!("Unknown Base UI state value: {name}.{value}."),
                             choice.span,
                         ));
                     }
 
-                    let selector = format!("&[{attribute}=\"{value}\"]");
+                    if value.contains('\0') {
+                        return Err(invalid(
+                            "Base UI state values cannot contain NUL.",
+                            choice.span,
+                        ));
+                    }
+
+                    let selector = format!("&[{attribute}={}]", css::string::encode(&value, false));
 
                     conditions.insert(choice.span.start, Arc::from(selector.as_str()));
                     properties.push(property(
@@ -277,16 +306,6 @@ pub(crate) fn lower<'a>(
                         lower(allocator, &choice.value, component, conditions, depth + 1)?,
                     ));
                 }
-            } else {
-                let selector = format!("&[{attribute}]");
-
-                conditions.insert(state.span.start, Arc::from(selector.as_str()));
-                properties.push(property(
-                    allocator,
-                    state.span,
-                    &selector,
-                    lower(allocator, &state.value, component, conditions, depth + 1)?,
-                ));
             }
         }
     }

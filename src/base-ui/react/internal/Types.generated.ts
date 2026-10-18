@@ -16,6 +16,7 @@ import type * as DialogComponents from '@base-ui/react/dialog'
 import type * as DrawerComponents from '@base-ui/react/drawer'
 import type * as FieldComponents from '@base-ui/react/field'
 import type * as FieldsetComponents from '@base-ui/react/fieldset'
+import type * as FormComponents from '@base-ui/react/form'
 import type * as InputComponents from '@base-ui/react/input'
 import type * as MenuComponents from '@base-ui/react/menu'
 import type * as MenubarComponents from '@base-ui/react/menubar'
@@ -27,12 +28,16 @@ import type * as PopoverComponents from '@base-ui/react/popover'
 import type * as PreviewCardComponents from '@base-ui/react/preview-card'
 import type * as ProgressComponents from '@base-ui/react/progress'
 import type * as RadioComponents from '@base-ui/react/radio'
+import type * as RadioGroupComponents from '@base-ui/react/radio-group'
 import type * as ScrollAreaComponents from '@base-ui/react/scroll-area'
 import type * as SelectComponents from '@base-ui/react/select'
+import type * as SeparatorComponents from '@base-ui/react/separator'
 import type * as SliderComponents from '@base-ui/react/slider'
 import type * as SwitchComponents from '@base-ui/react/switch'
 import type * as TabsComponents from '@base-ui/react/tabs'
 import type * as ToastComponents from '@base-ui/react/toast'
+import type * as ToggleComponents from '@base-ui/react/toggle'
+import type * as ToggleGroupComponents from '@base-ui/react/toggle-group'
 import type * as ToolbarComponents from '@base-ui/react/toolbar'
 import type * as TooltipComponents from '@base-ui/react/tooltip'
 
@@ -41,6 +46,22 @@ export declare const part: unique symbol
 
 /** Public component types indexed by documented identity. */
 export type Parts = {
+  /** Accordion.Header component from `@base-ui/react/accordion`.
+   * @see https://base-ui.com/react/components/accordion
+   */
+  readonly 'Accordion.Header': typeof AccordionComponents.Accordion.Header
+  /** Accordion.Item component from `@base-ui/react/accordion`.
+   * @see https://base-ui.com/react/components/accordion
+   */
+  readonly 'Accordion.Item': typeof AccordionComponents.Accordion.Item
+  /** Accordion.Panel component from `@base-ui/react/accordion`.
+   * @see https://base-ui.com/react/components/accordion
+   */
+  readonly 'Accordion.Panel': typeof AccordionComponents.Accordion.Panel
+  /** Accordion.Root component from `@base-ui/react/accordion`.
+   * @see https://base-ui.com/react/components/accordion
+   */
+  readonly 'Accordion.Root': typeof AccordionComponents.Accordion.Root
   /** Accordion.Trigger component from `@base-ui/react/accordion`.
    * @see https://base-ui.com/react/components/accordion
    */
@@ -69,6 +90,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/alert-dialog
    */
   readonly 'AlertDialog.Title': typeof AlertDialogComponents.AlertDialog.Title
+  /** AlertDialog.Trigger component from `@base-ui/react/alert-dialog`.
+   * @see https://base-ui.com/react/components/alert-dialog
+   */
+  readonly 'AlertDialog.Trigger': typeof AlertDialogComponents.AlertDialog.Trigger
   /** AlertDialog.Viewport component from `@base-ui/react/alert-dialog`.
    * @see https://base-ui.com/react/components/alert-dialog
    */
@@ -317,6 +342,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/context-menu
    */
   readonly 'ContextMenu.Portal': typeof ContextMenuComponents.ContextMenu.Portal
+  /** ContextMenu.Positioner component from `@base-ui/react/context-menu`.
+   * @see https://base-ui.com/react/components/context-menu
+   */
+  readonly 'ContextMenu.Positioner': typeof ContextMenuComponents.ContextMenu.Positioner
   /** ContextMenu.RadioGroup component from `@base-ui/react/context-menu`.
    * @see https://base-ui.com/react/components/context-menu
    */
@@ -329,6 +358,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/context-menu
    */
   readonly 'ContextMenu.RadioItemIndicator': typeof ContextMenuComponents.ContextMenu.RadioItemIndicator
+  /** ContextMenu.Separator component from `@base-ui/react/context-menu`.
+   * @see https://base-ui.com/react/components/context-menu
+   */
+  readonly 'ContextMenu.Separator': typeof ContextMenuComponents.ContextMenu.Separator
   /** ContextMenu.SubmenuTrigger component from `@base-ui/react/context-menu`.
    * @see https://base-ui.com/react/components/context-menu
    */
@@ -361,6 +394,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/dialog
    */
   readonly 'Dialog.Title': typeof DialogComponents.Dialog.Title
+  /** Dialog.Trigger component from `@base-ui/react/dialog`.
+   * @see https://base-ui.com/react/components/dialog
+   */
+  readonly 'Dialog.Trigger': typeof DialogComponents.Dialog.Trigger
   /** Dialog.Viewport component from `@base-ui/react/dialog`.
    * @see https://base-ui.com/react/components/dialog
    */
@@ -405,6 +442,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/drawer
    */
   readonly 'Drawer.Title': typeof DrawerComponents.Drawer.Title
+  /** Drawer.Trigger component from `@base-ui/react/drawer`.
+   * @see https://base-ui.com/react/components/drawer
+   */
+  readonly 'Drawer.Trigger': typeof DrawerComponents.Drawer.Trigger
   /** Drawer.Viewport component from `@base-ui/react/drawer`.
    * @see https://base-ui.com/react/components/drawer
    */
@@ -441,6 +482,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/fieldset
    */
   readonly 'Fieldset.Root': typeof FieldsetComponents.Fieldset.Root
+  /** Form component from `@base-ui/react/form`.
+   * @see https://base-ui.com/react/components/form
+   */
+  readonly Form: typeof FormComponents.Form
   /** Input component from `@base-ui/react/input`.
    * @see https://base-ui.com/react/components/input
    */
@@ -485,6 +530,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/menu
    */
   readonly 'Menu.Portal': typeof MenuComponents.Menu.Portal
+  /** Menu.Positioner component from `@base-ui/react/menu`.
+   * @see https://base-ui.com/react/components/menu
+   */
+  readonly 'Menu.Positioner': typeof MenuComponents.Menu.Positioner
   /** Menu.RadioGroup component from `@base-ui/react/menu`.
    * @see https://base-ui.com/react/components/menu
    */
@@ -497,10 +546,22 @@ export type Parts = {
    * @see https://base-ui.com/react/components/menu
    */
   readonly 'Menu.RadioItemIndicator': typeof MenuComponents.Menu.RadioItemIndicator
+  /** Menu.Separator component from `@base-ui/react/menu`.
+   * @see https://base-ui.com/react/components/menu
+   */
+  readonly 'Menu.Separator': typeof MenuComponents.Menu.Separator
   /** Menu.SubmenuTrigger component from `@base-ui/react/menu`.
    * @see https://base-ui.com/react/components/menu
    */
   readonly 'Menu.SubmenuTrigger': typeof MenuComponents.Menu.SubmenuTrigger
+  /** Menu.Trigger component from `@base-ui/react/menu`.
+   * @see https://base-ui.com/react/components/menu
+   */
+  readonly 'Menu.Trigger': typeof MenuComponents.Menu.Trigger
+  /** Menu.Viewport component from `@base-ui/react/menu`.
+   * @see https://base-ui.com/react/components/menu
+   */
+  readonly 'Menu.Viewport': typeof MenuComponents.Menu.Viewport
   /** Menubar component from `@base-ui/react/menubar`.
    * @see https://base-ui.com/react/components/menubar
    */
@@ -565,6 +626,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/navigation-menu
    */
   readonly 'NavigationMenu.Positioner': typeof NavigationMenuComponents.NavigationMenu.Positioner
+  /** NavigationMenu.Root component from `@base-ui/react/navigation-menu`.
+   * @see https://base-ui.com/react/components/navigation-menu
+   */
+  readonly 'NavigationMenu.Root': typeof NavigationMenuComponents.NavigationMenu.Root
   /** NavigationMenu.Trigger component from `@base-ui/react/navigation-menu`.
    * @see https://base-ui.com/react/components/navigation-menu
    */
@@ -609,6 +674,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/otp-field
    */
   readonly 'OTPField.Root': typeof OTPFieldComponents.OTPField.Root
+  /** OTPField.Separator component from `@base-ui/react/otp-field`.
+   * @see https://base-ui.com/react/components/otp-field
+   */
+  readonly 'OTPField.Separator': typeof OTPFieldComponents.OTPField.Separator
   /** Popover.Arrow component from `@base-ui/react/popover`.
    * @see https://base-ui.com/react/components/popover
    */
@@ -641,6 +710,14 @@ export type Parts = {
    * @see https://base-ui.com/react/components/popover
    */
   readonly 'Popover.Title': typeof PopoverComponents.Popover.Title
+  /** Popover.Trigger component from `@base-ui/react/popover`.
+   * @see https://base-ui.com/react/components/popover
+   */
+  readonly 'Popover.Trigger': typeof PopoverComponents.Popover.Trigger
+  /** Popover.Viewport component from `@base-ui/react/popover`.
+   * @see https://base-ui.com/react/components/popover
+   */
+  readonly 'Popover.Viewport': typeof PopoverComponents.Popover.Viewport
   /** PreviewCard.Arrow component from `@base-ui/react/preview-card`.
    * @see https://base-ui.com/react/components/preview-card
    */
@@ -661,6 +738,14 @@ export type Parts = {
    * @see https://base-ui.com/react/components/preview-card
    */
   readonly 'PreviewCard.Positioner': typeof PreviewCardComponents.PreviewCard.Positioner
+  /** PreviewCard.Trigger component from `@base-ui/react/preview-card`.
+   * @see https://base-ui.com/react/components/preview-card
+   */
+  readonly 'PreviewCard.Trigger': typeof PreviewCardComponents.PreviewCard.Trigger
+  /** PreviewCard.Viewport component from `@base-ui/react/preview-card`.
+   * @see https://base-ui.com/react/components/preview-card
+   */
+  readonly 'PreviewCard.Viewport': typeof PreviewCardComponents.PreviewCard.Viewport
   /** Progress.Indicator component from `@base-ui/react/progress`.
    * @see https://base-ui.com/react/components/progress
    */
@@ -685,6 +770,14 @@ export type Parts = {
    * @see https://base-ui.com/react/components/radio
    */
   readonly 'Radio.Indicator': typeof RadioComponents.Radio.Indicator
+  /** Radio.Root component from `@base-ui/react/radio`.
+   * @see https://base-ui.com/react/components/radio
+   */
+  readonly 'Radio.Root': typeof RadioComponents.Radio.Root
+  /** RadioGroup component from `@base-ui/react/radio-group`.
+   * @see https://base-ui.com/react/components/radio-group
+   */
+  readonly RadioGroup: typeof RadioGroupComponents.RadioGroup
   /** ScrollArea.Content component from `@base-ui/react/scroll-area`.
    * @see https://base-ui.com/react/components/scroll-area
    */
@@ -781,6 +874,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/select
    */
   readonly 'Select.Value': typeof SelectComponents.Select.Value
+  /** Separator component from `@base-ui/react/separator`.
+   * @see https://base-ui.com/react/components/separator
+   */
+  readonly Separator: typeof SeparatorComponents.Separator
   /** Slider.Control component from `@base-ui/react/slider`.
    * @see https://base-ui.com/react/components/slider
    */
@@ -793,6 +890,14 @@ export type Parts = {
    * @see https://base-ui.com/react/components/slider
    */
   readonly 'Slider.Label': typeof SliderComponents.Slider.Label
+  /** Slider.Root component from `@base-ui/react/slider`.
+   * @see https://base-ui.com/react/components/slider
+   */
+  readonly 'Slider.Root': typeof SliderComponents.Slider.Root
+  /** Slider.Thumb component from `@base-ui/react/slider`.
+   * @see https://base-ui.com/react/components/slider
+   */
+  readonly 'Slider.Thumb': typeof SliderComponents.Slider.Thumb
   /** Slider.Track component from `@base-ui/react/slider`.
    * @see https://base-ui.com/react/components/slider
    */
@@ -817,6 +922,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/tabs
    */
   readonly 'Tabs.List': typeof TabsComponents.Tabs.List
+  /** Tabs.Panel component from `@base-ui/react/tabs`.
+   * @see https://base-ui.com/react/components/tabs
+   */
+  readonly 'Tabs.Panel': typeof TabsComponents.Tabs.Panel
   /** Tabs.Root component from `@base-ui/react/tabs`.
    * @see https://base-ui.com/react/components/tabs
    */
@@ -825,10 +934,26 @@ export type Parts = {
    * @see https://base-ui.com/react/components/tabs
    */
   readonly 'Tabs.Tab': typeof TabsComponents.Tabs.Tab
+  /** Toast.Action component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Action': typeof ToastComponents.Toast.Action
   /** Toast.Arrow component from `@base-ui/react/toast`.
    * @see https://base-ui.com/react/components/toast
    */
   readonly 'Toast.Arrow': typeof ToastComponents.Toast.Arrow
+  /** Toast.Close component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Close': typeof ToastComponents.Toast.Close
+  /** Toast.Content component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Content': typeof ToastComponents.Toast.Content
+  /** Toast.Description component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Description': typeof ToastComponents.Toast.Description
   /** Toast.Portal component from `@base-ui/react/toast`.
    * @see https://base-ui.com/react/components/toast
    */
@@ -837,6 +962,26 @@ export type Parts = {
    * @see https://base-ui.com/react/components/toast
    */
   readonly 'Toast.Positioner': typeof ToastComponents.Toast.Positioner
+  /** Toast.Root component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Root': typeof ToastComponents.Toast.Root
+  /** Toast.Title component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Title': typeof ToastComponents.Toast.Title
+  /** Toast.Viewport component from `@base-ui/react/toast`.
+   * @see https://base-ui.com/react/components/toast
+   */
+  readonly 'Toast.Viewport': typeof ToastComponents.Toast.Viewport
+  /** Toggle component from `@base-ui/react/toggle`.
+   * @see https://base-ui.com/react/components/toggle
+   */
+  readonly Toggle: typeof ToggleComponents.Toggle
+  /** ToggleGroup component from `@base-ui/react/toggle-group`.
+   * @see https://base-ui.com/react/components/toggle-group
+   */
+  readonly ToggleGroup: typeof ToggleGroupComponents.ToggleGroup
   /** Toolbar.Button component from `@base-ui/react/toolbar`.
    * @see https://base-ui.com/react/components/toolbar
    */
@@ -857,6 +1002,10 @@ export type Parts = {
    * @see https://base-ui.com/react/components/toolbar
    */
   readonly 'Toolbar.Root': typeof ToolbarComponents.Toolbar.Root
+  /** Toolbar.Separator component from `@base-ui/react/toolbar`.
+   * @see https://base-ui.com/react/components/toolbar
+   */
+  readonly 'Toolbar.Separator': typeof ToolbarComponents.Toolbar.Separator
   /** Tooltip.Arrow component from `@base-ui/react/tooltip`.
    * @see https://base-ui.com/react/components/tooltip
    */
@@ -873,10 +1022,174 @@ export type Parts = {
    * @see https://base-ui.com/react/components/tooltip
    */
   readonly 'Tooltip.Positioner': typeof TooltipComponents.Tooltip.Positioner
+  /** Tooltip.Trigger component from `@base-ui/react/tooltip`.
+   * @see https://base-ui.com/react/components/tooltip
+   */
+  readonly 'Tooltip.Trigger': typeof TooltipComponents.Tooltip.Trigger
+  /** Tooltip.Viewport component from `@base-ui/react/tooltip`.
+   * @see https://base-ui.com/react/components/tooltip
+   */
+  readonly 'Tooltip.Viewport': typeof TooltipComponents.Tooltip.Viewport
 }
 
-/** Explicit states hints for each supported public part. */
+/** Explicit states domains for each supported public part. */
 export type States<body> = {
+  /** Accordion.Header attribute styles. */
+  readonly 'Accordion.Header': {
+    /** Supplemental closed hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly closed?: body
+    /** Present when the accordion item is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#header
+     */
+    readonly disabled?: body
+    /** Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly hidden?: body
+    /** Indicates the index of the accordion item.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/accordion#header
+     */
+    readonly index?: Readonly<Partial<Record<number | `${number}`, body>>>
+    /** Present when the accordion item is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#header
+     */
+    readonly open?: body
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly orientation?: {
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+       */
+      readonly horizontal?: body
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+       */
+      readonly vertical?: body
+    }
+  }
+  /** Accordion.Item attribute styles. */
+  readonly 'Accordion.Item': {
+    /** Supplemental closed hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly closed?: body
+    /** Present when the accordion item is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#item
+     */
+    readonly disabled?: body
+    /** Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly hidden?: body
+    /** Indicates the index of the accordion item.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/accordion#item
+     */
+    readonly index?: Readonly<Partial<Record<number | `${number}`, body>>>
+    /** Present when the accordion item is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#item
+     */
+    readonly open?: body
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly orientation?: {
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+       */
+      readonly horizontal?: body
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+       */
+      readonly vertical?: body
+    }
+  }
+  /** Accordion.Panel attribute styles. */
+  readonly 'Accordion.Panel': {
+    /** Present when the accordion item is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly disabled?: body
+    /** Present when the panel is animating out.
+     * Attribute: `data-ending-style`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly endingStyle?: body
+    /** Indicates the index of the accordion item.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly index?: Readonly<Partial<Record<number | `${number}`, body>>>
+    /** Present when the accordion panel is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly open?: body
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the accordion.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/accordion#panel
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the accordion.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/accordion#panel
+       */
+      readonly vertical?: body
+    }
+    /** Present when the panel begins animating in.
+     * Attribute: `data-starting-style`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly startingStyle?: body
+  }
+  /** Accordion.Root attribute styles. */
+  readonly 'Accordion.Root': {
+    /** Present when the accordion is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#root
+     */
+    readonly disabled?: body
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#root
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the accordion.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/accordion#root
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the accordion.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/accordion#root
+       */
+      readonly vertical?: body
+    }
+  }
   /** Accordion.Trigger attribute styles. */
   readonly 'Accordion.Trigger': {
     /** Present when the accordion item is disabled.
@@ -884,6 +1197,32 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/accordion#trigger
      */
     readonly disabled?: body
+    /** Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly hidden?: body
+    /** The item index. Base UI 1.8.0 omits this attribute for index zero.
+     * Attribute: `data-index`. Values: number.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly index?: Readonly<Partial<Record<number | `${number}`, body>>>
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly orientation?: {
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+       */
+      readonly horizontal?: body
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+       */
+      readonly vertical?: body
+    }
     /** Present when the accordion panel is open.
      * Attribute: `data-panel-open`. Presence selector.
      * @see https://base-ui.com/react/components/accordion#trigger
@@ -960,6 +1299,19 @@ export type States<body> = {
   readonly 'AlertDialog.Portal': {}
   /** AlertDialog.Title attribute styles. */
   readonly 'AlertDialog.Title': {}
+  /** AlertDialog.Trigger attribute styles. */
+  readonly 'AlertDialog.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/alert-dialog#trigger
+     */
+    readonly disabled?: body
+    /** Present when the corresponding alert dialog is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/alert-dialog#trigger
+     */
+    readonly popupOpen?: body
+  }
   /** AlertDialog.Viewport attribute styles. */
   readonly 'AlertDialog.Viewport': {
     /** Present when the dialog is closed.
@@ -996,22 +1348,22 @@ export type States<body> = {
   /** Autocomplete.Arrow attribute styles. */
   readonly 'Autocomplete.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/autocomplete#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/autocomplete#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/autocomplete#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/autocomplete#arrow
        */
       readonly end?: body
@@ -1210,7 +1562,7 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/autocomplete#input
      */
     readonly readonly?: body
-    /** Present when the component is required.
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
@@ -1334,26 +1686,32 @@ export type States<body> = {
     readonly highlighted?: body
   }
   /** Autocomplete.List attribute styles. */
-  readonly 'Autocomplete.List': {}
+  readonly 'Autocomplete.List': {
+    /** Supplemental empty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-empty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/list/ComboboxList.tsx
+     */
+    readonly empty?: body
+  }
   /** Autocomplete.Popup attribute styles. */
   readonly 'Autocomplete.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/autocomplete#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/autocomplete#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/autocomplete#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/autocomplete#popup
        */
       readonly end?: body
@@ -1430,22 +1788,22 @@ export type States<body> = {
   /** Autocomplete.Positioner attribute styles. */
   readonly 'Autocomplete.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/autocomplete#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/autocomplete#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/autocomplete#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/autocomplete#positioner
        */
       readonly end?: body
@@ -1596,7 +1954,7 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
     readonly readonly?: body
-    /** Present when the component is required.
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
@@ -1785,11 +2143,41 @@ export type States<body> = {
   }
   /** CheckboxGroup attribute styles. */
   readonly CheckboxGroup: {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly dirty?: body
     /** Present when the checkbox group is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox-group#checkbox-group
      */
     readonly disabled?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly filled?: body
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly focused?: body
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly invalid?: body
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly touched?: body
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly valid?: body
   }
   /** Collapsible.Panel attribute styles. */
   readonly 'Collapsible.Panel': {
@@ -1798,6 +2186,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/collapsible#panel
      */
     readonly closed?: body
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/panel/CollapsiblePanel.tsx
+     */
+    readonly disabled?: body
     /** Present when the panel is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#panel
@@ -1821,6 +2214,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/collapsible#root
      */
     readonly closed?: body
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/root/CollapsibleRoot.tsx
+     */
+    readonly disabled?: body
     /** Present when the collapsible is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#root
@@ -1839,6 +2237,11 @@ export type States<body> = {
   }
   /** Collapsible.Trigger attribute styles. */
   readonly 'Collapsible.Trigger': {
+    /** Present when the Collapsible.Root is disabled. Base UI 1.8.0 does not reflect the trigger-local disabled override in this attribute.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/trigger/CollapsibleTrigger.tsx
+     */
+    readonly disabled?: body
     /** Present when the collapsible panel is open.
      * Attribute: `data-panel-open`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#trigger
@@ -1848,22 +2251,22 @@ export type States<body> = {
   /** Combobox.Arrow attribute styles. */
   readonly 'Combobox.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/combobox#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/combobox#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/combobox#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/combobox#arrow
        */
       readonly end?: body
@@ -1944,9 +2347,21 @@ export type States<body> = {
     readonly startingStyle?: body
   }
   /** Combobox.Chip attribute styles. */
-  readonly 'Combobox.Chip': {}
+  readonly 'Combobox.Chip': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/chip/ComboboxChip.tsx
+     */
+    readonly disabled?: body
+  }
   /** Combobox.ChipRemove attribute styles. */
-  readonly 'Combobox.ChipRemove': {}
+  readonly 'Combobox.ChipRemove': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/chip-remove/ComboboxChipRemove.tsx
+     */
+    readonly disabled?: body
+  }
   /** Combobox.Chips attribute styles. */
   readonly 'Combobox.Chips': {}
   /** Combobox.Clear attribute styles. */
@@ -2068,7 +2483,7 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/combobox#input
      */
     readonly readonly?: body
-    /** Present when the component is required.
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
@@ -2208,6 +2623,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/combobox#item-indicator
      */
     readonly endingStyle?: body
+    /** Supplemental selected hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-selected`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/item-indicator/ComboboxItemIndicator.tsx
+     */
+    readonly selected?: body
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#item-indicator
@@ -2215,28 +2635,70 @@ export type States<body> = {
     readonly startingStyle?: body
   }
   /** Combobox.Label attribute styles. */
-  readonly 'Combobox.Label': {}
+  readonly 'Combobox.Label': {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly dirty?: body
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly disabled?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly filled?: body
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly focused?: body
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly invalid?: body
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly touched?: body
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly valid?: body
+  }
   /** Combobox.List attribute styles. */
-  readonly 'Combobox.List': {}
+  readonly 'Combobox.List': {
+    /** Supplemental empty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-empty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/list/ComboboxList.tsx
+     */
+    readonly empty?: body
+  }
   /** Combobox.Popup attribute styles. */
   readonly 'Combobox.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/combobox#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/combobox#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/combobox#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/combobox#popup
        */
       readonly end?: body
@@ -2313,22 +2775,22 @@ export type States<body> = {
   /** Combobox.Positioner attribute styles. */
   readonly 'Combobox.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/combobox#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/combobox#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/combobox#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/combobox#positioner
        */
       readonly end?: body
@@ -2484,7 +2946,7 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/combobox#trigger
      */
     readonly readonly?: body
-    /** Present when the component is required.
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
@@ -2503,22 +2965,22 @@ export type States<body> = {
   /** ContextMenu.Arrow attribute styles. */
   readonly 'ContextMenu.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/context-menu#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/context-menu#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/context-menu#arrow
        */
       readonly end?: body
@@ -2638,6 +3100,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
      */
     readonly endingStyle?: body
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.tsx
+     */
+    readonly highlighted?: body
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
@@ -2677,22 +3144,22 @@ export type States<body> = {
   /** ContextMenu.Popup attribute styles. */
   readonly 'ContextMenu.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/context-menu#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/context-menu#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/context-menu#popup
        */
       readonly end?: body
@@ -2733,6 +3200,11 @@ export type States<body> = {
        */
       readonly 'trigger-change'?: body
     }
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/popup/MenuPopup.tsx
+     */
+    readonly nested?: body
     /** Present when the menu is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#popup
@@ -2782,8 +3254,120 @@ export type States<body> = {
   }
   /** ContextMenu.Portal attribute styles. */
   readonly 'ContextMenu.Portal': {}
+  /** ContextMenu.Positioner attribute styles. */
+  readonly 'ContextMenu.Positioner': {
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly align?: {
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly center?: body
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly end?: body
+    }
+    /** Present when the anchor is hidden.
+     * Attribute: `data-anchor-hidden`. Presence selector.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly anchorHidden?: body
+    /** Present when the menu popup is closed.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly closed?: body
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly instant?: {
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+       */
+      readonly click?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+       */
+      readonly dismiss?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+       */
+      readonly group?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+       */
+      readonly 'trigger-change'?: body
+    }
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly nested?: body
+    /** Present when the menu popup is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly open?: body
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly side?: {
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly top?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly bottom?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly left?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly right?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly 'inline-end'?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#positioner
+       */
+      readonly 'inline-start'?: body
+    }
+  }
   /** ContextMenu.RadioGroup attribute styles. */
-  readonly 'ContextMenu.RadioGroup': {}
+  readonly 'ContextMenu.RadioGroup': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-group/MenuRadioGroup.tsx
+     */
+    readonly disabled?: body
+  }
   /** ContextMenu.RadioItem attribute styles. */
   readonly 'ContextMenu.RadioItem': {
     /** Present when the menu radio item is selected.
@@ -2824,6 +3408,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
     readonly endingStyle?: body
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-item-indicator/MenuRadioItemIndicator.tsx
+     */
+    readonly highlighted?: body
     /** Present when the radio indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
@@ -2834,6 +3423,25 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
     readonly unchecked?: body
+  }
+  /** ContextMenu.Separator attribute styles. */
+  readonly 'ContextMenu.Separator': {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#separator
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#separator
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/context-menu#separator
+       */
+      readonly vertical?: body
+    }
   }
   /** ContextMenu.SubmenuTrigger attribute styles. */
   readonly 'ContextMenu.SubmenuTrigger': {
@@ -2936,6 +3544,19 @@ export type States<body> = {
   readonly 'Dialog.Portal': {}
   /** Dialog.Title attribute styles. */
   readonly 'Dialog.Title': {}
+  /** Dialog.Trigger attribute styles. */
+  readonly 'Dialog.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/dialog#trigger
+     */
+    readonly disabled?: body
+    /** Present when the corresponding dialog is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/dialog#trigger
+     */
+    readonly popupOpen?: body
+  }
   /** Dialog.Viewport attribute styles. */
   readonly 'Dialog.Viewport': {
     /** Present when the dialog is closed.
@@ -2991,6 +3612,16 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/drawer#backdrop
      */
     readonly startingStyle?: body
+    /** Supplemental swipeDismiss hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-swipe-dismiss`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/backdrop/DrawerBackdrop.tsx
+     */
+    readonly swipeDismiss?: body
+    /** Supplemental swiping hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-swiping`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/backdrop/DrawerBackdrop.tsx
+     */
+    readonly swiping?: body
   }
   /** Drawer.Close attribute styles. */
   readonly 'Drawer.Close': {}
@@ -2999,9 +3630,31 @@ export type States<body> = {
   /** Drawer.Description attribute styles. */
   readonly 'Drawer.Description': {}
   /** Drawer.Indent attribute styles. */
-  readonly 'Drawer.Indent': {}
+  readonly 'Drawer.Indent': {
+    /** Supplemental active hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-active`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent/DrawerIndent.tsx
+     */
+    readonly active?: body
+    /** Supplemental inactive hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-inactive`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent/DrawerIndent.tsx
+     */
+    readonly inactive?: body
+  }
   /** Drawer.IndentBackground attribute styles. */
-  readonly 'Drawer.IndentBackground': {}
+  readonly 'Drawer.IndentBackground': {
+    /** Supplemental active hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-active`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent-background/DrawerIndentBackground.tsx
+     */
+    readonly active?: body
+    /** Supplemental inactive hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-inactive`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent-background/DrawerIndentBackground.tsx
+     */
+    readonly inactive?: body
+  }
   /** Drawer.Popup attribute styles. */
   readonly 'Drawer.Popup': {
     /** Present when the drawer is closed.
@@ -3040,30 +3693,30 @@ export type States<body> = {
      */
     readonly startingStyle?: body
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#popup
      */
     readonly swipeDirection?: {
       /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/drawer#popup
-       */
-      readonly up?: body
-      /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/drawer#popup
-       */
-      readonly down?: body
-      /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/drawer#popup
        */
       readonly left?: body
       /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/drawer#popup
        */
       readonly right?: body
+      /** Indicates the swipe direction.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/drawer#popup
+       */
+      readonly up?: body
+      /** Indicates the swipe direction.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/drawer#popup
+       */
+      readonly down?: body
     }
     /** Present when the drawer is dismissed by swiping.
      * Attribute: `data-swipe-dismiss`. Presence selector.
@@ -3096,30 +3749,30 @@ export type States<body> = {
      */
     readonly open?: body
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
     readonly swipeDirection?: {
       /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/drawer#swipe-area
-       */
-      readonly up?: body
-      /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/drawer#swipe-area
-       */
-      readonly down?: body
-      /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/drawer#swipe-area
        */
       readonly left?: body
       /** Indicates the swipe direction.
-       * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/drawer#swipe-area
        */
       readonly right?: body
+      /** Indicates the swipe direction.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/drawer#swipe-area
+       */
+      readonly up?: body
+      /** Indicates the swipe direction.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/drawer#swipe-area
+       */
+      readonly down?: body
     }
     /** Present when the drawer is being swiped.
      * Attribute: `data-swiping`. Presence selector.
@@ -3129,6 +3782,8 @@ export type States<body> = {
   }
   /** Drawer.Title attribute styles. */
   readonly 'Drawer.Title': {}
+  /** Drawer.Trigger attribute styles. */
+  readonly 'Drawer.Trigger': {}
   /** Drawer.Viewport attribute styles. */
   readonly 'Drawer.Viewport': {
     /** Present when the drawer is closed.
@@ -3396,9 +4051,23 @@ export type States<body> = {
     readonly valid?: body
   }
   /** Fieldset.Legend attribute styles. */
-  readonly 'Fieldset.Legend': {}
+  readonly 'Fieldset.Legend': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/fieldset/legend/FieldsetLegend.tsx
+     */
+    readonly disabled?: body
+  }
   /** Fieldset.Root attribute styles. */
-  readonly 'Fieldset.Root': {}
+  readonly 'Fieldset.Root': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/fieldset/root/FieldsetRoot.tsx
+     */
+    readonly disabled?: body
+  }
+  /** Form attribute styles. */
+  readonly Form: {}
   /** Input attribute styles. */
   readonly Input: {
     /** Present when the input's value has changed (when wrapped in Field.Root).
@@ -3440,22 +4109,22 @@ export type States<body> = {
   /** Menu.Arrow attribute styles. */
   readonly 'Menu.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/menu#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/menu#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/menu#arrow
        */
       readonly end?: body
@@ -3575,6 +4244,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
      */
     readonly endingStyle?: body
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.tsx
+     */
+    readonly highlighted?: body
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
@@ -3614,22 +4288,22 @@ export type States<body> = {
   /** Menu.Popup attribute styles. */
   readonly 'Menu.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/menu#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/menu#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/menu#popup
        */
       readonly end?: body
@@ -3670,6 +4344,11 @@ export type States<body> = {
        */
       readonly 'trigger-change'?: body
     }
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/popup/MenuPopup.tsx
+     */
+    readonly nested?: body
     /** Present when the menu is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/menu#popup
@@ -3719,8 +4398,120 @@ export type States<body> = {
   }
   /** Menu.Portal attribute styles. */
   readonly 'Menu.Portal': {}
+  /** Menu.Positioner attribute styles. */
+  readonly 'Menu.Positioner': {
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly align?: {
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly center?: body
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly end?: body
+    }
+    /** Present when the anchor is hidden.
+     * Attribute: `data-anchor-hidden`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly anchorHidden?: body
+    /** Present when the menu popup is closed.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly closed?: body
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly instant?: {
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+       */
+      readonly click?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+       */
+      readonly dismiss?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+       */
+      readonly group?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+       */
+      readonly 'trigger-change'?: body
+    }
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly nested?: body
+    /** Present when the menu popup is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly open?: body
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly side?: {
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly top?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly bottom?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly left?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly right?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly 'inline-end'?: body
+      /** Indicates which side the popup is positioned relative to the anchor.
+       * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#positioner
+       */
+      readonly 'inline-start'?: body
+    }
+  }
   /** Menu.RadioGroup attribute styles. */
-  readonly 'Menu.RadioGroup': {}
+  readonly 'Menu.RadioGroup': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-group/MenuRadioGroup.tsx
+     */
+    readonly disabled?: body
+  }
   /** Menu.RadioItem attribute styles. */
   readonly 'Menu.RadioItem': {
     /** Present when the menu radio item is selected.
@@ -3761,6 +4552,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
     readonly endingStyle?: body
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-item-indicator/MenuRadioItemIndicator.tsx
+     */
+    readonly highlighted?: body
     /** Present when the radio indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
@@ -3771,6 +4567,25 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
     readonly unchecked?: body
+  }
+  /** Menu.Separator attribute styles. */
+  readonly 'Menu.Separator': {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#separator
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#separator
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#separator
+       */
+      readonly vertical?: body
+    }
   }
   /** Menu.SubmenuTrigger attribute styles. */
   readonly 'Menu.SubmenuTrigger': {
@@ -3789,6 +4604,139 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/menu#submenu-trigger
      */
     readonly popupOpen?: body
+  }
+  /** Menu.Trigger attribute styles. */
+  readonly 'Menu.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#trigger
+     */
+    readonly disabled?: body
+    /** Present when the corresponding menu is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#trigger
+     */
+    readonly popupOpen?: body
+    /** Present when the trigger is pressed.
+     * Attribute: `data-pressed`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#trigger
+     */
+    readonly pressed?: body
+  }
+  /** Menu.Viewport attribute styles. */
+  readonly 'Menu.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly activationDirection?: {
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly ' '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly ' up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly ' down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'left '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'left up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'left down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'right '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'right up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'right down'?: body
+    }
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly current?: body
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly instant?: {
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly click?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly dismiss?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly group?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/menu#viewport
+       */
+      readonly 'trigger-change'?: body
+    }
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly previous?: body
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly transitioning?: body
   }
   /** Menubar attribute styles. */
   readonly Menubar: {
@@ -3832,22 +4780,22 @@ export type States<body> = {
   /** NavigationMenu.Arrow attribute styles. */
   readonly 'NavigationMenu.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/navigation-menu#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/navigation-menu#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/navigation-menu#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/navigation-menu#arrow
        */
       readonly end?: body
@@ -3995,26 +4943,32 @@ export type States<body> = {
     readonly active?: body
   }
   /** NavigationMenu.List attribute styles. */
-  readonly 'NavigationMenu.List': {}
+  readonly 'NavigationMenu.List': {
+    /** Supplemental open hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/list/NavigationMenuList.tsx
+     */
+    readonly open?: body
+  }
   /** NavigationMenu.Popup attribute styles. */
   readonly 'NavigationMenu.Popup': {
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to the specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/navigation-menu#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to the specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/navigation-menu#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to the specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/navigation-menu#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/navigation-menu#popup
        */
       readonly end?: body
@@ -4086,22 +5040,22 @@ export type States<body> = {
   /** NavigationMenu.Positioner attribute styles. */
   readonly 'NavigationMenu.Positioner': {
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to the specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/navigation-menu#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to the specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/navigation-menu#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to the specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/navigation-menu#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to the specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/navigation-menu#positioner
        */
       readonly end?: body
@@ -4162,6 +5116,19 @@ export type States<body> = {
        */
       readonly 'inline-start'?: body
     }
+  }
+  /** NavigationMenu.Root attribute styles. */
+  readonly 'NavigationMenu.Root': {
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/root/NavigationMenuRoot.tsx
+     */
+    readonly nested?: body
+    /** Supplemental open hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/root/NavigationMenuRoot.tsx
+     */
+    readonly open?: body
   }
   /** NavigationMenu.Trigger attribute styles. */
   readonly 'NavigationMenu.Trigger': {
@@ -4660,25 +5627,44 @@ export type States<body> = {
      */
     readonly valid?: body
   }
+  /** OTPField.Separator attribute styles. */
+  readonly 'OTPField.Separator': {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/otp-field#separator
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/otp-field#separator
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/otp-field#separator
+       */
+      readonly vertical?: body
+    }
+  }
   /** Popover.Arrow attribute styles. */
   readonly 'Popover.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/popover#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#arrow
        */
       readonly end?: body
@@ -4765,22 +5751,22 @@ export type States<body> = {
   /** Popover.Popup attribute styles. */
   readonly 'Popover.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/popover#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#popup
        */
       readonly end?: body
@@ -4796,30 +5782,30 @@ export type States<body> = {
      */
     readonly endingStyle?: body
     /** Present if animations should be instant.
-     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
     readonly instant?: {
       /** Present if animations should be instant.
-       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#popup
        */
       readonly click?: body
       /** Present if animations should be instant.
-       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#popup
        */
       readonly dismiss?: body
       /** Present if animations should be instant.
-       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/popover#popup
-       */
-      readonly focus?: body
-      /** Present if animations should be instant.
-       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#popup
        */
       readonly 'trigger-change'?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#popup
+       */
+      readonly focus?: body
     }
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
@@ -4873,22 +5859,22 @@ export type States<body> = {
   /** Popover.Positioner attribute styles. */
   readonly 'Popover.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/popover#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/popover#positioner
        */
       readonly end?: body
@@ -4903,6 +5889,32 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/popover#positioner
      */
     readonly closed?: body
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+     */
+    readonly instant?: {
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+       */
+      readonly click?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+       */
+      readonly dismiss?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+       */
+      readonly focus?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+       */
+      readonly 'trigger-change'?: body
+    }
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/popover#positioner
@@ -4947,25 +5959,158 @@ export type States<body> = {
   }
   /** Popover.Title attribute styles. */
   readonly 'Popover.Title': {}
+  /** Popover.Trigger attribute styles. */
+  readonly 'Popover.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#trigger
+     */
+    readonly disabled?: body
+    /** Present when the corresponding popover is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#trigger
+     */
+    readonly popupOpen?: body
+    /** Present when the trigger is pressed.
+     * Attribute: `data-pressed`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#trigger
+     */
+    readonly pressed?: body
+  }
+  /** Popover.Viewport attribute styles. */
+  readonly 'Popover.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly activationDirection?: {
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly ' '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly ' up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly ' down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'left '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'left up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'left down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'right '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'right up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'right down'?: body
+    }
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly current?: body
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly instant?: {
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly click?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly dismiss?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly 'trigger-change'?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/popover#viewport
+       */
+      readonly focus?: body
+    }
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly previous?: body
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly transitioning?: body
+  }
   /** PreviewCard.Arrow attribute styles. */
   readonly 'PreviewCard.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/preview-card#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/preview-card#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/preview-card#arrow
        */
       readonly end?: body
@@ -5048,22 +6193,22 @@ export type States<body> = {
   /** PreviewCard.Popup attribute styles. */
   readonly 'PreviewCard.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/preview-card#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/preview-card#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/preview-card#popup
        */
       readonly end?: body
@@ -5130,22 +6275,22 @@ export type States<body> = {
   /** PreviewCard.Positioner attribute styles. */
   readonly 'PreviewCard.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/preview-card#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/preview-card#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/preview-card#positioner
        */
       readonly end?: body
@@ -5160,6 +6305,22 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
     readonly closed?: body
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx
+     */
+    readonly instant?: {
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx
+       */
+      readonly dismiss?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx
+       */
+      readonly focus?: body
+    }
     /** Present when the preview card is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#positioner
@@ -5201,6 +6362,119 @@ export type States<body> = {
        */
       readonly 'inline-start'?: body
     }
+  }
+  /** PreviewCard.Trigger attribute styles. */
+  readonly 'PreviewCard.Trigger': {
+    /** Present when the corresponding preview card is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#trigger
+     */
+    readonly popupOpen?: body
+  }
+  /** PreviewCard.Viewport attribute styles. */
+  readonly 'PreviewCard.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly activationDirection?: {
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly ' '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly ' up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly ' down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly 'left '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly 'left up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly 'left down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly 'right '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly 'right up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly 'right down'?: body
+    }
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly current?: body
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly instant?: {
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly dismiss?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/preview-card#viewport
+       */
+      readonly focus?: body
+    }
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly previous?: body
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly transitioning?: body
   }
   /** Progress.Indicator attribute styles. */
   readonly 'Progress.Indicator': {
@@ -5357,6 +6631,112 @@ export type States<body> = {
     /** Present when the radio is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
+     */
+    readonly valid?: body
+  }
+  /** Radio.Root attribute styles. */
+  readonly 'Radio.Root': {
+    /** Present when the radio is checked.
+     * Attribute: `data-checked`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly checked?: body
+    /** Present when the radio's value has changed (when wrapped in Field.Root).
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly dirty?: body
+    /** Present when the radio is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly disabled?: body
+    /** Present when the radio is checked (when wrapped in Field.Root).
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly filled?: body
+    /** Present when the radio is focused (when wrapped in Field.Root).
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly focused?: body
+    /** Present when the radio is in an invalid state (when wrapped in Field.Root).
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly invalid?: body
+    /** Present when the radio is readonly.
+     * Attribute: `data-readonly`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly readonly?: body
+    /** Present when the radio is required.
+     * Attribute: `data-required`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly required?: body
+    /** Present when the radio has been touched (when wrapped in Field.Root).
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly touched?: body
+    /** Present when the radio is not checked.
+     * Attribute: `data-unchecked`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly unchecked?: body
+    /** Present when the radio is in a valid state (when wrapped in Field.Root).
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly valid?: body
+  }
+  /** RadioGroup attribute styles. */
+  readonly RadioGroup: {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly dirty?: body
+    /** Present when the radio group is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/radio-group#radio-group
+     */
+    readonly disabled?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly filled?: body
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly focused?: body
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly invalid?: body
+    /** Supplemental readOnly hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-readonly`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly readOnly?: body
+    /** Supplemental required hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-required`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly required?: body
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly touched?: body
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
      */
     readonly valid?: body
   }
@@ -5562,22 +6942,22 @@ export type States<body> = {
   /** Select.Arrow attribute styles. */
   readonly 'Select.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/select#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/select#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly end?: body
@@ -5592,42 +6972,42 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/select#arrow
      */
     readonly open?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
     readonly side?: {
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly none?: body
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly top?: body
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly bottom?: body
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly left?: body
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly right?: body
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
       readonly 'inline-end'?: body
-      /** Indicates which side the popup is positioned relative to the trigger.
+      /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
        * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#arrow
        */
@@ -5699,6 +7079,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/select#item-indicator
      */
     readonly endingStyle?: body
+    /** Supplemental selected hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-selected`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/item-indicator/SelectItemIndicator.tsx
+     */
+    readonly selected?: body
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#item-indicator
@@ -5708,28 +7093,64 @@ export type States<body> = {
   /** Select.ItemText attribute styles. */
   readonly 'Select.ItemText': {}
   /** Select.Label attribute styles. */
-  readonly 'Select.Label': {}
+  readonly 'Select.Label': {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly dirty?: body
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly disabled?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly filled?: body
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly focused?: body
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly invalid?: body
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly touched?: body
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly valid?: body
+  }
   /** Select.List attribute styles. */
   readonly 'Select.List': {}
   /** Select.Popup attribute styles. */
   readonly 'Select.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/select#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/select#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#popup
        */
       readonly end?: body
@@ -5801,22 +7222,22 @@ export type States<body> = {
   /** Select.Positioner attribute styles. */
   readonly 'Select.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/select#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/select#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/select#positioner
        */
       readonly end?: body
@@ -6127,6 +7548,25 @@ export type States<body> = {
      */
     readonly placeholder?: body
   }
+  /** Separator attribute styles. */
+  readonly Separator: {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/separator#separator
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/separator#separator
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the separator.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/separator#separator
+       */
+      readonly vertical?: body
+    }
+  }
   /** Slider.Control attribute styles. */
   readonly 'Slider.Control': {
     /** Present when the slider's value has changed (when wrapped in Field.Root).
@@ -6144,6 +7584,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/slider#control
      */
     readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/control/SliderControl.tsx
+     */
+    readonly filled?: body
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
@@ -6198,6 +7643,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/slider#indicator
      */
     readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/indicator/SliderIndicator.tsx
+     */
+    readonly filled?: body
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
@@ -6236,7 +7686,187 @@ export type States<body> = {
     readonly valid?: body
   }
   /** Slider.Label attribute styles. */
-  readonly 'Slider.Label': {}
+  readonly 'Slider.Label': {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly dirty?: body
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly disabled?: body
+    /** Supplemental dragging hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dragging`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly filled?: body
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly focused?: body
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly invalid?: body
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly orientation?: {
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+       */
+      readonly horizontal?: body
+      /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+       */
+      readonly vertical?: body
+    }
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly touched?: body
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly valid?: body
+  }
+  /** Slider.Root attribute styles. */
+  readonly 'Slider.Root': {
+    /** Present when the slider's value has changed (when wrapped in Field.Root).
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly dirty?: body
+    /** Present when the slider is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly disabled?: body
+    /** Present while the user is dragging.
+     * Attribute: `data-dragging`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/root/SliderRoot.tsx
+     */
+    readonly filled?: body
+    /** Present when the slider is focused (when wrapped in Field.Root).
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly focused?: body
+    /** Present when the slider is in an invalid state (when wrapped in Field.Root).
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly invalid?: body
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the slider.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/slider#root
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the slider.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/slider#root
+       */
+      readonly vertical?: body
+    }
+    /** Present when the slider has been touched (when wrapped in Field.Root).
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly touched?: body
+    /** Present when the slider is in a valid state (when wrapped in Field.Root).
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly valid?: body
+  }
+  /** Slider.Thumb attribute styles. */
+  readonly 'Slider.Thumb': {
+    /** Present when the slider's value has changed (when wrapped in Field.Root).
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly dirty?: body
+    /** Present when the slider is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly disabled?: body
+    /** Present while the user is dragging.
+     * Attribute: `data-dragging`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/thumb/SliderThumb.tsx
+     */
+    readonly filled?: body
+    /** Present when the slider is focused (when wrapped in Field.Root).
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly focused?: body
+    /** Indicates the index of the thumb in range sliders.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly index?: Readonly<Partial<Record<number | `${number}`, body>>>
+    /** Present when the slider is in an invalid state (when wrapped in Field.Root).
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly invalid?: body
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the slider.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/slider#thumb
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the slider.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/slider#thumb
+       */
+      readonly vertical?: body
+    }
+    /** Present when the slider has been touched (when wrapped in Field.Root).
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly touched?: body
+    /** Present when the slider is in a valid state (when wrapped in Field.Root).
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly valid?: body
+  }
   /** Slider.Track attribute styles. */
   readonly 'Slider.Track': {
     /** Present when the slider's value has changed (when wrapped in Field.Root).
@@ -6254,6 +7884,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/slider#track
      */
     readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/track/SliderTrack.tsx
+     */
+    readonly filled?: body
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
@@ -6308,6 +7943,11 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/slider#value
      */
     readonly dragging?: body
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/value/SliderValue.tsx
+     */
+    readonly filled?: body
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
@@ -6464,35 +8104,35 @@ export type States<body> = {
   /** Tabs.Indicator attribute styles. */
   readonly 'Tabs.Indicator': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
     readonly activationDirection?: {
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#indicator
+       */
+      readonly none?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#indicator
        */
       readonly left?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#indicator
        */
       readonly right?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#indicator
        */
       readonly up?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#indicator
        */
       readonly down?: body
-      /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tabs#indicator
-       */
-      readonly none?: body
     }
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
@@ -6514,35 +8154,35 @@ export type States<body> = {
   /** Tabs.List attribute styles. */
   readonly 'Tabs.List': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
     readonly activationDirection?: {
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#list
+       */
+      readonly none?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#list
        */
       readonly left?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#list
        */
       readonly right?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#list
        */
       readonly up?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#list
        */
       readonly down?: body
-      /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tabs#list
-       */
-      readonly none?: body
     }
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
@@ -6561,38 +8201,108 @@ export type States<body> = {
       readonly vertical?: body
     }
   }
+  /** Tabs.Panel attribute styles. */
+  readonly 'Tabs.Panel': {
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly activationDirection?: {
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly none?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly left?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly right?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly up?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly down?: body
+    }
+    /** Present when the panel is animating out.
+     * Attribute: `data-ending-style`. Presence selector.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly endingStyle?: body
+    /** Present when the panel is hidden.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly hidden?: body
+    /** Indicates the index of the tab panel.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly index?: Readonly<Partial<Record<number | `${number}`, body>>>
+    /** Indicates the orientation of the tabs.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the tabs.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the tabs.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#panel
+       */
+      readonly vertical?: body
+    }
+    /** Present when the panel begins animating in.
+     * Attribute: `data-starting-style`. Presence selector.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly startingStyle?: body
+  }
   /** Tabs.Root attribute styles. */
   readonly 'Tabs.Root': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
     readonly activationDirection?: {
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#root
+       */
+      readonly none?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#root
        */
       readonly left?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#root
        */
       readonly right?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#root
        */
       readonly up?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#root
        */
       readonly down?: body
-      /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tabs#root
-       */
-      readonly none?: body
     }
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
@@ -6614,35 +8324,35 @@ export type States<body> = {
   /** Tabs.Tab attribute styles. */
   readonly 'Tabs.Tab': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
     readonly activationDirection?: {
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tabs#tab
+       */
+      readonly none?: body
+      /** Indicates the direction of the activation (based on the previous active tab).
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#tab
        */
       readonly left?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#tab
        */
       readonly right?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#tab
        */
       readonly up?: body
       /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+       * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tabs#tab
        */
       readonly down?: body
-      /** Indicates the direction of the activation (based on the previous active tab).
-       * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tabs#tab
-       */
-      readonly none?: body
     }
     /** Present when the tab is active.
      * Attribute: `data-active`. Presence selector.
@@ -6671,25 +8381,33 @@ export type States<body> = {
       readonly vertical?: body
     }
   }
+  /** Toast.Action attribute styles. */
+  readonly 'Toast.Action': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#action
+     */
+    readonly type?: Readonly<Record<string, body>>
+  }
   /** Toast.Arrow attribute styles. */
   readonly 'Toast.Arrow': {
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
     readonly align?: {
       /** Indicates how the toast is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/toast#arrow
-       */
-      readonly start?: body
-      /** Indicates how the toast is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/toast#arrow
        */
       readonly center?: body
       /** Indicates how the toast is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toast#arrow
+       */
+      readonly start?: body
+      /** Indicates how the toast is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/toast#arrow
        */
       readonly end?: body
@@ -6736,27 +8454,56 @@ export type States<body> = {
      */
     readonly uncentered?: body
   }
+  /** Toast.Close attribute styles. */
+  readonly 'Toast.Close': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#close
+     */
+    readonly type?: Readonly<Record<string, body>>
+  }
+  /** Toast.Content attribute styles. */
+  readonly 'Toast.Content': {
+    /** Present when the toast is behind the frontmost toast in the stack.
+     * Attribute: `data-behind`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#content
+     */
+    readonly behind?: body
+    /** Present when the toast viewport is expanded.
+     * Attribute: `data-expanded`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#content
+     */
+    readonly expanded?: body
+  }
+  /** Toast.Description attribute styles. */
+  readonly 'Toast.Description': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#description
+     */
+    readonly type?: Readonly<Record<string, body>>
+  }
   /** Toast.Portal attribute styles. */
   readonly 'Toast.Portal': {}
   /** Toast.Positioner attribute styles. */
   readonly 'Toast.Positioner': {
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
     readonly align?: {
       /** Indicates how the toast is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/toast#positioner
-       */
-      readonly start?: body
-      /** Indicates how the toast is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/toast#positioner
        */
       readonly center?: body
       /** Indicates how the toast is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toast#positioner
+       */
+      readonly start?: body
+      /** Indicates how the toast is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/toast#positioner
        */
       readonly end?: body
@@ -6801,6 +8548,123 @@ export type States<body> = {
        * @see https://base-ui.com/react/components/toast#positioner
        */
       readonly 'inline-start'?: body
+    }
+  }
+  /** Toast.Root attribute styles. */
+  readonly 'Toast.Root': {
+    /** Present when the toast is animating out.
+     * Attribute: `data-ending-style`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly endingStyle?: body
+    /** Present when the toast is expanded in the viewport.
+     * Attribute: `data-expanded`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly expanded?: body
+    /** Present when the toast was limited because the toast limit was exceeded.
+     * Attribute: `data-limited`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly limited?: body
+    /** Present when the toast begins animating in.
+     * Attribute: `data-starting-style`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly startingStyle?: body
+    /** The direction the toast was swiped.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly swipeDirection?: {
+      /** The direction the toast was swiped.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toast#root
+       */
+      readonly left?: body
+      /** The direction the toast was swiped.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toast#root
+       */
+      readonly right?: body
+      /** The direction the toast was swiped.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toast#root
+       */
+      readonly up?: body
+      /** The direction the toast was swiped.
+       * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toast#root
+       */
+      readonly down?: body
+    }
+    /** Present when the toast is being swiped.
+     * Attribute: `data-swiping`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly swiping?: body
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly type?: Readonly<Record<string, body>>
+  }
+  /** Toast.Title attribute styles. */
+  readonly 'Toast.Title': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#title
+     */
+    readonly type?: Readonly<Record<string, body>>
+  }
+  /** Toast.Viewport attribute styles. */
+  readonly 'Toast.Viewport': {
+    /** Indicates toasts are expanded in the viewport.
+     * Attribute: `data-expanded`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#viewport
+     */
+    readonly expanded?: body
+  }
+  /** Toggle attribute styles. */
+  readonly Toggle: {
+    /** Present when the toggle button is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle#toggle
+     */
+    readonly disabled?: body
+    /** Present when the toggle button is pressed.
+     * Attribute: `data-pressed`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle#toggle
+     */
+    readonly pressed?: body
+  }
+  /** ToggleGroup attribute styles. */
+  readonly ToggleGroup: {
+    /** Present when the toggle group is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly disabled?: body
+    /** Present when the toggle group allows multiple buttons to be in the pressed state at the same time.
+     * Attribute: `data-multiple`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly multiple?: body
+    /** Indicates the orientation of the toggle group.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the toggle group.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toggle-group#toggle-group
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the toggle group.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toggle-group#toggle-group
+       */
+      readonly vertical?: body
     }
   }
   /** Toolbar.Button attribute styles. */
@@ -6928,25 +8792,44 @@ export type States<body> = {
       readonly vertical?: body
     }
   }
+  /** Toolbar.Separator attribute styles. */
+  readonly 'Toolbar.Separator': {
+    /** Indicates the orientation of the separator, which is perpendicular to the toolbar.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toolbar#separator
+     */
+    readonly orientation?: {
+      /** Indicates the orientation of the separator, which is perpendicular to the toolbar.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toolbar#separator
+       */
+      readonly horizontal?: body
+      /** Indicates the orientation of the separator, which is perpendicular to the toolbar.
+       * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/toolbar#separator
+       */
+      readonly vertical?: body
+    }
+  }
   /** Tooltip.Arrow attribute styles. */
   readonly 'Tooltip.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tooltip#arrow
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tooltip#arrow
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#arrow
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tooltip#arrow
        */
       readonly end?: body
@@ -7027,22 +8910,22 @@ export type States<body> = {
   /** Tooltip.Popup attribute styles. */
   readonly 'Tooltip.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tooltip#popup
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tooltip#popup
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#popup
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tooltip#popup
        */
       readonly end?: body
@@ -7130,22 +9013,22 @@ export type States<body> = {
   /** Tooltip.Positioner attribute styles. */
   readonly 'Tooltip.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
     readonly align?: {
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
-       * @see https://base-ui.com/react/components/tooltip#positioner
-       */
-      readonly start?: body
-      /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tooltip#positioner
        */
       readonly center?: body
       /** Indicates how the popup is aligned relative to specified side.
-       * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#positioner
+       */
+      readonly start?: body
+      /** Indicates how the popup is aligned relative to specified side.
+       * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
        * @see https://base-ui.com/react/components/tooltip#positioner
        */
       readonly end?: body
@@ -7160,6 +9043,32 @@ export type States<body> = {
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
     readonly closed?: body
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+     */
+    readonly instant?: {
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+       */
+      readonly delay?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+       */
+      readonly dismiss?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+       */
+      readonly focus?: body
+      /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+       * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+       */
+      readonly 'tracking-cursor'?: body
+    }
     /** Present when the tooltip is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#positioner
@@ -7202,22 +9111,322 @@ export type States<body> = {
       readonly 'inline-start'?: body
     }
   }
+  /** Tooltip.Trigger attribute styles. */
+  readonly 'Tooltip.Trigger': {
+    /** Present when the corresponding tooltip is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#trigger
+     */
+    readonly popupOpen?: body
+    /** Present when the trigger is disabled, either by the `disabled` prop or by a parent `<Tooltip.Root>` component.
+     * Attribute: `data-trigger-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#trigger
+     */
+    readonly triggerDisabled?: body
+  }
+  /** Tooltip.Viewport attribute styles. */
+  readonly 'Tooltip.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly activationDirection?: {
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly ' '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly ' up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly ' down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly 'left '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly 'left up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly 'left down'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly 'right '?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly 'right up'?: body
+      /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+       * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly 'right down'?: body
+    }
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly current?: body
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly instant?: {
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly delay?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly dismiss?: body
+      /** Present if animations should be instant.
+       * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+       * @see https://base-ui.com/react/components/tooltip#viewport
+       */
+      readonly focus?: body
+    }
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly previous?: body
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly transitioning?: body
+  }
 }
 
-/** Explicit selectors hints for each supported public part. */
-export type Selectors<body> = {
+/** Explicit selectors domains for each supported public part. */
+export type Selectors = {
+  /** Accordion.Header attribute styles. */
+  readonly 'Accordion.Header': {
+    /** Supplemental closed hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly '&[data-closed]'?: true
+    /** Present when the accordion item is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#header
+     */
+    readonly '&[data-disabled]'?: true
+    /** Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly '&[data-hidden]'?: true
+    /** Indicates the index of the accordion item.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/accordion#header
+     */
+    readonly '&[data-index]'?: true
+    /** Present when the accordion item is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#header
+     */
+    readonly '&[data-open]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly '&[data-orientation]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/header/AccordionHeader.tsx
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+  }
+  /** Accordion.Item attribute styles. */
+  readonly 'Accordion.Item': {
+    /** Supplemental closed hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly '&[data-closed]'?: true
+    /** Present when the accordion item is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#item
+     */
+    readonly '&[data-disabled]'?: true
+    /** Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly '&[data-hidden]'?: true
+    /** Indicates the index of the accordion item.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/accordion#item
+     */
+    readonly '&[data-index]'?: true
+    /** Present when the accordion item is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#item
+     */
+    readonly '&[data-open]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly '&[data-orientation]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/item/AccordionItem.tsx
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+  }
+  /** Accordion.Panel attribute styles. */
+  readonly 'Accordion.Panel': {
+    /** Present when the accordion item is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the panel is animating out.
+     * Attribute: `data-ending-style`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-ending-style]'?: true
+    /** Indicates the index of the accordion item.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-index]'?: true
+    /** Present when the accordion panel is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-open]'?: true
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+    /** Present when the panel begins animating in.
+     * Attribute: `data-starting-style`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#panel
+     */
+    readonly '&[data-starting-style]'?: true
+  }
+  /** Accordion.Root attribute styles. */
+  readonly 'Accordion.Root': {
+    /** Present when the accordion is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/accordion#root
+     */
+    readonly '&[data-disabled]'?: true
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#root
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#root
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the accordion.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/accordion#root
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+  }
   /** Accordion.Trigger attribute styles. */
   readonly 'Accordion.Trigger': {
     /** Present when the accordion item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/accordion#trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
+    /** Supplemental hidden hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly '&[data-hidden]'?: true
+    /** The item index. Base UI 1.8.0 omits this attribute for index zero.
+     * Attribute: `data-index`. Values: number.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly '&[data-index]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly '&[data-orientation]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/accordion/trigger/AccordionTrigger.tsx
+     */
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when the accordion panel is open.
      * Attribute: `data-panel-open`. Presence selector.
      * @see https://base-ui.com/react/components/accordion#trigger
      */
-    readonly '&[data-panel-open]'?: body
+    readonly '&[data-panel-open]'?: true
   }
   /** AlertDialog.Backdrop attribute styles. */
   readonly 'AlertDialog.Backdrop': {
@@ -7225,22 +9434,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the dialog is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the dialog is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the dialog begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** AlertDialog.Close attribute styles. */
   readonly 'AlertDialog.Close': {
@@ -7248,7 +9457,7 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#close
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
   }
   /** AlertDialog.Description attribute styles. */
   readonly 'AlertDialog.Description': {}
@@ -7258,142 +9467,155 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the dialog is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the dialog is nested within another dialog.
      * Attribute: `data-nested`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#popup
      */
-    readonly '&[data-nested]'?: body
+    readonly '&[data-nested]'?: true
     /** Present when the dialog has other open dialogs nested within it.
      * Attribute: `data-nested-dialog-open`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#popup
      */
-    readonly '&[data-nested-dialog-open]'?: body
+    readonly '&[data-nested-dialog-open]'?: true
     /** Present when the dialog is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the dialog begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** AlertDialog.Portal attribute styles. */
   readonly 'AlertDialog.Portal': {}
   /** AlertDialog.Title attribute styles. */
   readonly 'AlertDialog.Title': {}
+  /** AlertDialog.Trigger attribute styles. */
+  readonly 'AlertDialog.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/alert-dialog#trigger
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the corresponding alert dialog is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/alert-dialog#trigger
+     */
+    readonly '&[data-popup-open]'?: true
+  }
   /** AlertDialog.Viewport attribute styles. */
   readonly 'AlertDialog.Viewport': {
     /** Present when the dialog is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#viewport
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the dialog is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#viewport
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the dialog is nested within another dialog.
      * Attribute: `data-nested`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#viewport
      */
-    readonly '&[data-nested]'?: body
+    readonly '&[data-nested]'?: true
     /** Present when the dialog has other open dialogs nested within it.
      * Attribute: `data-nested-dialog-open`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#viewport
      */
-    readonly '&[data-nested-dialog-open]'?: body
+    readonly '&[data-nested-dialog-open]'?: true
     /** Present when the dialog is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#viewport
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the dialog begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/alert-dialog#viewport
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Autocomplete.Arrow attribute styles. */
   readonly 'Autocomplete.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** Autocomplete.Backdrop attribute styles. */
   readonly 'Autocomplete.Backdrop': {
@@ -7401,22 +9623,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Autocomplete.Clear attribute styles. */
   readonly 'Autocomplete.Clear': {
@@ -7424,27 +9646,27 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#clear
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the button is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#clear
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#clear
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Present when the button begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#clear
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the clear button is visible.
      * Attribute: `data-visible`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#clear
      */
-    readonly '&[data-visible]'?: body
+    readonly '&[data-visible]'?: true
   }
   /** Autocomplete.Empty attribute styles. */
   readonly 'Autocomplete.Empty': {}
@@ -7460,97 +9682,97 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the component is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the component has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the input is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the component is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the corresponding items list is empty.
      * Attribute: `data-list-empty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-list-empty]'?: body
+    readonly '&[data-list-empty]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the input is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the component is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-readonly]'?: body
-    /** Present when the component is required.
+    readonly '&[data-readonly]'?: true
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the component has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the component is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Autocomplete.InputGroup attribute styles. */
   readonly 'Autocomplete.InputGroup': {
@@ -7558,92 +9780,92 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the component is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the component has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the component is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the component is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the corresponding items list is empty.
      * Attribute: `data-list-empty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-list-empty]'?: body
+    readonly '&[data-list-empty]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the input group is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the component is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the component has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the component is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#input-group
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Autocomplete.Item attribute styles. */
   readonly 'Autocomplete.Item': {
@@ -7651,182 +9873,188 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
   }
   /** Autocomplete.List attribute styles. */
-  readonly 'Autocomplete.List': {}
+  readonly 'Autocomplete.List': {
+    /** Supplemental empty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-empty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/list/ComboboxList.tsx
+     */
+    readonly '&[data-empty]'?: true
+  }
   /** Autocomplete.Popup attribute styles. */
   readonly 'Autocomplete.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the items list is empty.
      * Attribute: `data-empty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-empty]'?: body
+    readonly '&[data-empty]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Autocomplete.Portal attribute styles. */
   readonly 'Autocomplete.Portal': {}
   /** Autocomplete.Positioner attribute styles. */
   readonly 'Autocomplete.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the items list is empty.
      * Attribute: `data-empty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-empty]'?: body
+    readonly '&[data-empty]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
   }
   /** Autocomplete.Row attribute styles. */
   readonly 'Autocomplete.Row': {}
@@ -7840,97 +10068,97 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the component is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the component has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the trigger is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the component is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the corresponding items list is empty.
      * Attribute: `data-list-empty`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-list-empty]'?: body
+    readonly '&[data-list-empty]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the trigger is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the component is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-readonly]'?: body
-    /** Present when the component is required.
+    readonly '&[data-readonly]'?: true
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the component has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the component is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/autocomplete#trigger
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Avatar.Fallback attribute styles. */
   readonly 'Avatar.Fallback': {}
@@ -7940,22 +10168,22 @@ export type Selectors<body> = {
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/avatar#image
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the image failed to load.
      * Attribute: `data-error`. Presence selector.
      * @see https://base-ui.com/react/components/avatar#image
      */
-    readonly '&[data-error]'?: body
+    readonly '&[data-error]'?: true
     /** Present while the image is loading.
      * Attribute: `data-loading`. Presence selector.
      * @see https://base-ui.com/react/components/avatar#image
      */
-    readonly '&[data-loading]'?: body
+    readonly '&[data-loading]'?: true
     /** Present when the image begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/avatar#image
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Avatar.Root attribute styles. */
   readonly 'Avatar.Root': {}
@@ -7965,7 +10193,7 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/button#button
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
   }
   /** Checkbox.Indicator attribute styles. */
   readonly 'Checkbox.Indicator': {
@@ -7973,72 +10201,72 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the checkbox's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the checkbox is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the checkbox indicator is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the checkbox is checked (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the checkbox is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the checkbox is in an indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present when the checkbox is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the checkbox is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the checkbox is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the checkbox indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the checkbox has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the checkbox is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
     /** Present when the checkbox is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#indicator
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Checkbox.Root attribute styles. */
   readonly 'Checkbox.Root': {
@@ -8046,70 +10274,100 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the checkbox's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the checkbox is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the checkbox is checked (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the checkbox is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the checkbox is in an indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present when the checkbox is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the checkbox is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the checkbox is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the checkbox has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the checkbox is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
     /** Present when the checkbox is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox#root
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** CheckboxGroup attribute styles. */
   readonly CheckboxGroup: {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly '&[data-dirty]'?: true
     /** Present when the checkbox group is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/checkbox-group#checkbox-group
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly '&[data-focused]'?: true
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly '&[data-invalid]'?: true
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly '&[data-touched]'?: true
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/checkbox-group/CheckboxGroup.tsx
+     */
+    readonly '&[data-valid]'?: true
   }
   /** Collapsible.Panel attribute styles. */
   readonly 'Collapsible.Panel': {
@@ -8117,22 +10375,27 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#panel
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/panel/CollapsiblePanel.tsx
+     */
+    readonly '&[data-disabled]'?: true
     /** Present when the panel is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#panel
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the collapsible panel is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#panel
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the panel begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#panel
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Collapsible.Root attribute styles. */
   readonly 'Collapsible.Root': {
@@ -8140,103 +10403,113 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#root
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/root/CollapsibleRoot.tsx
+     */
+    readonly '&[data-disabled]'?: true
     /** Present when the collapsible is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#root
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the collapsible is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#root
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the collapsible begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#root
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Collapsible.Trigger attribute styles. */
   readonly 'Collapsible.Trigger': {
+    /** Present when the Collapsible.Root is disabled. Base UI 1.8.0 does not reflect the trigger-local disabled override in this attribute.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/collapsible/trigger/CollapsibleTrigger.tsx
+     */
+    readonly '&[data-disabled]'?: true
     /** Present when the collapsible panel is open.
      * Attribute: `data-panel-open`. Presence selector.
      * @see https://base-ui.com/react/components/collapsible#trigger
      */
-    readonly '&[data-panel-open]'?: body
+    readonly '&[data-panel-open]'?: true
   }
   /** Combobox.Arrow attribute styles. */
   readonly 'Combobox.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** Combobox.Backdrop attribute styles. */
   readonly 'Combobox.Backdrop': {
@@ -8244,27 +10517,39 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Combobox.Chip attribute styles. */
-  readonly 'Combobox.Chip': {}
+  readonly 'Combobox.Chip': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/chip/ComboboxChip.tsx
+     */
+    readonly '&[data-disabled]'?: true
+  }
   /** Combobox.ChipRemove attribute styles. */
-  readonly 'Combobox.ChipRemove': {}
+  readonly 'Combobox.ChipRemove': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/chip-remove/ComboboxChipRemove.tsx
+     */
+    readonly '&[data-disabled]'?: true
+  }
   /** Combobox.Chips attribute styles. */
   readonly 'Combobox.Chips': {}
   /** Combobox.Clear attribute styles. */
@@ -8273,27 +10558,27 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#clear
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the button is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#clear
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#clear
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Present when the button begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#clear
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the clear button is visible.
      * Attribute: `data-visible`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#clear
      */
-    readonly '&[data-visible]'?: body
+    readonly '&[data-visible]'?: true
   }
   /** Combobox.Empty attribute styles. */
   readonly 'Combobox.Empty': {}
@@ -8309,97 +10594,97 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the component is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the component has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the input is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the component is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the corresponding items list is empty.
      * Attribute: `data-list-empty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-list-empty]'?: body
+    readonly '&[data-list-empty]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the input is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the component is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-readonly]'?: body
-    /** Present when the component is required.
+    readonly '&[data-readonly]'?: true
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the component has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the component is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Combobox.InputGroup attribute styles. */
   readonly 'Combobox.InputGroup': {
@@ -8407,97 +10692,97 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the component is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the component has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the component is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the component is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the corresponding items list is empty.
      * Attribute: `data-list-empty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-list-empty]'?: body
+    readonly '&[data-list-empty]'?: true
     /** Present when the combobox doesn't have a value.
      * Attribute: `data-placeholder`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-placeholder]'?: body
+    readonly '&[data-placeholder]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the input group is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the component is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the component has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the component is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#input-group
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Combobox.Item attribute styles. */
   readonly 'Combobox.Item': {
@@ -8505,17 +10790,17 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the item is selected.
      * Attribute: `data-selected`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#item
      */
-    readonly '&[data-selected]'?: body
+    readonly '&[data-selected]'?: true
   }
   /** Combobox.ItemIndicator attribute styles. */
   readonly 'Combobox.ItemIndicator': {
@@ -8523,184 +10808,231 @@ export type Selectors<body> = {
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#item-indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
+    /** Supplemental selected hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-selected`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/item-indicator/ComboboxItemIndicator.tsx
+     */
+    readonly '&[data-selected]'?: true
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#item-indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Combobox.Label attribute styles. */
-  readonly 'Combobox.Label': {}
+  readonly 'Combobox.Label': {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-dirty]'?: true
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-disabled]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-focused]'?: true
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-invalid]'?: true
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-touched]'?: true
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/label/ComboboxLabel.tsx
+     */
+    readonly '&[data-valid]'?: true
+  }
   /** Combobox.List attribute styles. */
-  readonly 'Combobox.List': {}
+  readonly 'Combobox.List': {
+    /** Supplemental empty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-empty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/combobox/list/ComboboxList.tsx
+     */
+    readonly '&[data-empty]'?: true
+  }
   /** Combobox.Popup attribute styles. */
   readonly 'Combobox.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the items list is empty.
      * Attribute: `data-empty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-empty]'?: body
+    readonly '&[data-empty]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Combobox.Portal attribute styles. */
   readonly 'Combobox.Portal': {}
   /** Combobox.Positioner attribute styles. */
   readonly 'Combobox.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the items list is empty.
      * Attribute: `data-empty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-empty]'?: body
+    readonly '&[data-empty]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
   }
   /** Combobox.Row attribute styles. */
   readonly 'Combobox.Row': {}
@@ -8714,175 +11046,175 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the component is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the component has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the trigger is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the component is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the corresponding items list is empty.
      * Attribute: `data-list-empty`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-list-empty]'?: body
+    readonly '&[data-list-empty]'?: true
     /** Present when the combobox doesn't have a value.
      * Attribute: `data-placeholder`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-placeholder]'?: body
+    readonly '&[data-placeholder]'?: true
     /** Present when the corresponding popup is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the trigger is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the component is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-readonly]'?: body
-    /** Present when the component is required.
+    readonly '&[data-readonly]'?: true
+    /** Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the component has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the component is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/combobox#trigger
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** ContextMenu.Arrow attribute styles. */
   readonly 'ContextMenu.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the menu popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the menu popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the menu arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** ContextMenu.Backdrop attribute styles. */
   readonly 'ContextMenu.Backdrop': {
@@ -8890,22 +11222,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the menu is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the menu is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the menu begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** ContextMenu.CheckboxItem attribute styles. */
   readonly 'ContextMenu.CheckboxItem': {
@@ -8913,22 +11245,22 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu checkbox item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the menu checkbox item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the menu checkbox item is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
   }
   /** ContextMenu.CheckboxItemIndicator attribute styles. */
   readonly 'ContextMenu.CheckboxItemIndicator': {
@@ -8936,27 +11268,32 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu checkbox item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the indicator is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.tsx
+     */
+    readonly '&[data-highlighted]'?: true
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the menu checkbox item is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#checkbox-item-indicator
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
   }
   /** ContextMenu.Group attribute styles. */
   readonly 'ContextMenu.Group': {}
@@ -8968,12 +11305,12 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the menu item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
   }
   /** ContextMenu.LinkItem attribute styles. */
   readonly 'ContextMenu.LinkItem': {
@@ -8981,137 +11318,251 @@ export type Selectors<body> = {
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#link-item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
   }
   /** ContextMenu.Popup attribute styles. */
   readonly 'ContextMenu.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the menu is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the menu is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-instant]'?: body
+    readonly '&[data-instant]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-instant="click"]'?: body
+    readonly '&[data-instant="click"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-instant="dismiss"]'?: body
+    readonly '&[data-instant="dismiss"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-instant="group"]'?: body
+    readonly '&[data-instant="group"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-instant="trigger-change"]'?: body
+    readonly '&[data-instant="trigger-change"]'?: true
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/popup/MenuPopup.tsx
+     */
+    readonly '&[data-nested]'?: true
     /** Present when the menu is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the menu begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** ContextMenu.Portal attribute styles. */
   readonly 'ContextMenu.Portal': {}
+  /** ContextMenu.Positioner attribute styles. */
+  readonly 'ContextMenu.Positioner': {
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-align]'?: true
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-align="center"]'?: true
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-align="start"]'?: true
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-align="end"]'?: true
+    /** Present when the anchor is hidden.
+     * Attribute: `data-anchor-hidden`. Presence selector.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-anchor-hidden]'?: true
+    /** Present when the menu popup is closed.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-closed]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly '&[data-instant]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly '&[data-instant="click"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly '&[data-instant="group"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly '&[data-instant="trigger-change"]'?: true
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/context-menu/positioner/ContextMenuPositioner.tsx
+     */
+    readonly '&[data-nested]'?: true
+    /** Present when the menu popup is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-open]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side="top"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side="bottom"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side="left"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side="right"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side="inline-end"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#positioner
+     */
+    readonly '&[data-side="inline-start"]'?: true
+  }
   /** ContextMenu.RadioGroup attribute styles. */
-  readonly 'ContextMenu.RadioGroup': {}
+  readonly 'ContextMenu.RadioGroup': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-group/MenuRadioGroup.tsx
+     */
+    readonly '&[data-disabled]'?: true
+  }
   /** ContextMenu.RadioItem attribute styles. */
   readonly 'ContextMenu.RadioItem': {
     /** Present when the menu radio item is selected.
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu radio item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the menu radio item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the menu radio item is not selected.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
   }
   /** ContextMenu.RadioItemIndicator attribute styles. */
   readonly 'ContextMenu.RadioItemIndicator': {
@@ -9119,27 +11570,50 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu radio item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the radio indicator is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-item-indicator/MenuRadioItemIndicator.tsx
+     */
+    readonly '&[data-highlighted]'?: true
     /** Present when the radio indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the menu radio item is not selected.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#radio-item-indicator
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
+  }
+  /** ContextMenu.Separator attribute styles. */
+  readonly 'ContextMenu.Separator': {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#separator
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#separator
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/context-menu#separator
+     */
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** ContextMenu.SubmenuTrigger attribute styles. */
   readonly 'ContextMenu.SubmenuTrigger': {
@@ -9147,17 +11621,17 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#submenu-trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the submenu trigger is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#submenu-trigger
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the corresponding submenu is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#submenu-trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
   }
   /** ContextMenu.Trigger attribute styles. */
   readonly 'ContextMenu.Trigger': {
@@ -9165,12 +11639,12 @@ export type Selectors<body> = {
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Present when the corresponding context menu is open.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/context-menu#trigger
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
   }
   /** Dialog.Backdrop attribute styles. */
   readonly 'Dialog.Backdrop': {
@@ -9178,22 +11652,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the dialog is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the dialog is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the dialog begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Dialog.Close attribute styles. */
   readonly 'Dialog.Close': {
@@ -9201,7 +11675,7 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#close
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
   }
   /** Dialog.Description attribute styles. */
   readonly 'Dialog.Description': {}
@@ -9211,69 +11685,82 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the dialog is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the dialog is nested within another dialog.
      * Attribute: `data-nested`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#popup
      */
-    readonly '&[data-nested]'?: body
+    readonly '&[data-nested]'?: true
     /** Present when the dialog has other open dialogs nested within it.
      * Attribute: `data-nested-dialog-open`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#popup
      */
-    readonly '&[data-nested-dialog-open]'?: body
+    readonly '&[data-nested-dialog-open]'?: true
     /** Present when the dialog is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the dialog begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Dialog.Portal attribute styles. */
   readonly 'Dialog.Portal': {}
   /** Dialog.Title attribute styles. */
   readonly 'Dialog.Title': {}
+  /** Dialog.Trigger attribute styles. */
+  readonly 'Dialog.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/dialog#trigger
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the corresponding dialog is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/dialog#trigger
+     */
+    readonly '&[data-popup-open]'?: true
+  }
   /** Dialog.Viewport attribute styles. */
   readonly 'Dialog.Viewport': {
     /** Present when the dialog is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#viewport
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the dialog is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#viewport
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the dialog is nested within another dialog.
      * Attribute: `data-nested`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#viewport
      */
-    readonly '&[data-nested]'?: body
+    readonly '&[data-nested]'?: true
     /** Present when the dialog has other open dialogs nested within it.
      * Attribute: `data-nested-dialog-open`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#viewport
      */
-    readonly '&[data-nested-dialog-open]'?: body
+    readonly '&[data-nested-dialog-open]'?: true
     /** Present when the dialog is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#viewport
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the dialog begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/dialog#viewport
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Drawer.Backdrop attribute styles. */
   readonly 'Drawer.Backdrop': {
@@ -9281,22 +11768,32 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the drawer is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the drawer is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the drawer begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
+    /** Supplemental swipeDismiss hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-swipe-dismiss`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/backdrop/DrawerBackdrop.tsx
+     */
+    readonly '&[data-swipe-dismiss]'?: true
+    /** Supplemental swiping hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-swiping`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/backdrop/DrawerBackdrop.tsx
+     */
+    readonly '&[data-swiping]'?: true
   }
   /** Drawer.Close attribute styles. */
   readonly 'Drawer.Close': {}
@@ -9305,81 +11802,103 @@ export type Selectors<body> = {
   /** Drawer.Description attribute styles. */
   readonly 'Drawer.Description': {}
   /** Drawer.Indent attribute styles. */
-  readonly 'Drawer.Indent': {}
+  readonly 'Drawer.Indent': {
+    /** Supplemental active hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-active`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent/DrawerIndent.tsx
+     */
+    readonly '&[data-active]'?: true
+    /** Supplemental inactive hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-inactive`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent/DrawerIndent.tsx
+     */
+    readonly '&[data-inactive]'?: true
+  }
   /** Drawer.IndentBackground attribute styles. */
-  readonly 'Drawer.IndentBackground': {}
+  readonly 'Drawer.IndentBackground': {
+    /** Supplemental active hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-active`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent-background/DrawerIndentBackground.tsx
+     */
+    readonly '&[data-active]'?: true
+    /** Supplemental inactive hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-inactive`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/drawer/indent-background/DrawerIndentBackground.tsx
+     */
+    readonly '&[data-inactive]'?: true
+  }
   /** Drawer.Popup attribute styles. */
   readonly 'Drawer.Popup': {
     /** Present when the drawer is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the drawer is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the drawer is at the expanded (full-height) snap point.
      * Attribute: `data-expanded`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-expanded]'?: body
+    readonly '&[data-expanded]'?: true
     /** Present when a nested drawer is open.
      * Attribute: `data-nested-drawer-open`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-nested-drawer-open]'?: body
+    readonly '&[data-nested-drawer-open]'?: true
     /** Present when a nested drawer is being swiped.
      * Attribute: `data-nested-drawer-swiping`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-nested-drawer-swiping]'?: body
+    readonly '&[data-nested-drawer-swiping]'?: true
     /** Present when the drawer is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the drawer begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swipe-direction]'?: body
+    readonly '&[data-swipe-direction]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swipe-direction="up"]'?: body
+    readonly '&[data-swipe-direction="left"]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swipe-direction="down"]'?: body
+    readonly '&[data-swipe-direction="right"]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swipe-direction="left"]'?: body
+    readonly '&[data-swipe-direction="up"]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swipe-direction="right"]'?: body
+    readonly '&[data-swipe-direction="down"]'?: true
     /** Present when the drawer is dismissed by swiping.
      * Attribute: `data-swipe-dismiss`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swipe-dismiss]'?: body
+    readonly '&[data-swipe-dismiss]'?: true
     /** Present when the drawer is being swiped.
      * Attribute: `data-swiping`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#popup
      */
-    readonly '&[data-swiping]'?: body
+    readonly '&[data-swiping]'?: true
   }
   /** Drawer.Portal attribute styles. */
   readonly 'Drawer.Portal': {}
@@ -9389,77 +11908,79 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the swipe area is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the drawer is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-swipe-direction]'?: body
+    readonly '&[data-swipe-direction]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-swipe-direction="up"]'?: body
+    readonly '&[data-swipe-direction="left"]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-swipe-direction="down"]'?: body
+    readonly '&[data-swipe-direction="right"]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-swipe-direction="left"]'?: body
+    readonly '&[data-swipe-direction="up"]'?: true
     /** Indicates the swipe direction.
-     * Attribute: `data-swipe-direction`. Values: `up`, `down`, `left`, `right`. A null upstream state omits the attribute.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-swipe-direction="right"]'?: body
+    readonly '&[data-swipe-direction="down"]'?: true
     /** Present when the drawer is being swiped.
      * Attribute: `data-swiping`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#swipe-area
      */
-    readonly '&[data-swiping]'?: body
+    readonly '&[data-swiping]'?: true
   }
   /** Drawer.Title attribute styles. */
   readonly 'Drawer.Title': {}
+  /** Drawer.Trigger attribute styles. */
+  readonly 'Drawer.Trigger': {}
   /** Drawer.Viewport attribute styles. */
   readonly 'Drawer.Viewport': {
     /** Present when the drawer is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#viewport
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the drawer is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#viewport
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the drawer is nested within another drawer.
      * Attribute: `data-nested`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#viewport
      */
-    readonly '&[data-nested]'?: body
+    readonly '&[data-nested]'?: true
     /** Present when the drawer is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#viewport
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the drawer begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/drawer#viewport
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Field.Control attribute styles. */
   readonly 'Field.Control': {
@@ -9467,37 +11988,37 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the field is filled.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the field control is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the field is in an invalid state.
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the field has been touched.
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the field is in a valid state.
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/field#control
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Field.Description attribute styles. */
   readonly 'Field.Description': {
@@ -9505,37 +12026,37 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the field is filled.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the field control is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the field is in an invalid state.
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the field has been touched.
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the field is in a valid state.
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/field#description
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Field.Error attribute styles. */
   readonly 'Field.Error': {
@@ -9543,47 +12064,47 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the error message is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the field is filled.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the field control is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the field is in an invalid state.
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the error message begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the field has been touched.
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the field is in a valid state.
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/field#error
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Field.Item attribute styles. */
   readonly 'Field.Item': {
@@ -9591,37 +12112,37 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the field is filled.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the field control is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the field is in an invalid state.
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the field has been touched.
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the field is in a valid state.
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/field#item
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Field.Label attribute styles. */
   readonly 'Field.Label': {
@@ -9629,37 +12150,37 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the field is filled.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the field control is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the field is in an invalid state.
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the field has been touched.
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the field is in a valid state.
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/field#label
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Field.Root attribute styles. */
   readonly 'Field.Root': {
@@ -9667,152 +12188,166 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the field is filled.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the field control is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the field is invalid.
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the field has been touched.
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the field is valid.
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/field#root
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Fieldset.Legend attribute styles. */
-  readonly 'Fieldset.Legend': {}
+  readonly 'Fieldset.Legend': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/fieldset/legend/FieldsetLegend.tsx
+     */
+    readonly '&[data-disabled]'?: true
+  }
   /** Fieldset.Root attribute styles. */
-  readonly 'Fieldset.Root': {}
+  readonly 'Fieldset.Root': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/fieldset/root/FieldsetRoot.tsx
+     */
+    readonly '&[data-disabled]'?: true
+  }
+  /** Form attribute styles. */
+  readonly Form: {}
   /** Input attribute styles. */
   readonly Input: {
     /** Present when the input's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the input is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the input is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the input is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the input is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the input has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the input is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/input#input
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Menu.Arrow attribute styles. */
   readonly 'Menu.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the menu popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the menu popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the menu arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/menu#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** Menu.Backdrop attribute styles. */
   readonly 'Menu.Backdrop': {
@@ -9820,22 +12355,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/menu#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the menu is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the menu is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/menu#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the menu begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Menu.CheckboxItem attribute styles. */
   readonly 'Menu.CheckboxItem': {
@@ -9843,22 +12378,22 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu checkbox item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the menu checkbox item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the menu checkbox item is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
   }
   /** Menu.CheckboxItemIndicator attribute styles. */
   readonly 'Menu.CheckboxItemIndicator': {
@@ -9866,27 +12401,32 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu checkbox item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the indicator is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/checkbox-item-indicator/MenuCheckboxItemIndicator.tsx
+     */
+    readonly '&[data-highlighted]'?: true
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the menu checkbox item is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#checkbox-item-indicator
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
   }
   /** Menu.Group attribute styles. */
   readonly 'Menu.Group': {}
@@ -9898,12 +12438,12 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/menu#item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the menu item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/menu#item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
   }
   /** Menu.LinkItem attribute styles. */
   readonly 'Menu.LinkItem': {
@@ -9911,137 +12451,251 @@ export type Selectors<body> = {
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/menu#link-item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
   }
   /** Menu.Popup attribute styles. */
   readonly 'Menu.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the menu is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the menu is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-instant]'?: body
+    readonly '&[data-instant]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-instant="click"]'?: body
+    readonly '&[data-instant="click"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-instant="dismiss"]'?: body
+    readonly '&[data-instant="dismiss"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-instant="group"]'?: body
+    readonly '&[data-instant="group"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-instant="trigger-change"]'?: body
+    readonly '&[data-instant="trigger-change"]'?: true
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/popup/MenuPopup.tsx
+     */
+    readonly '&[data-nested]'?: true
     /** Present when the menu is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the menu begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Menu.Portal attribute styles. */
   readonly 'Menu.Portal': {}
+  /** Menu.Positioner attribute styles. */
+  readonly 'Menu.Positioner': {
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-align]'?: true
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-align="center"]'?: true
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-align="start"]'?: true
+    /** Indicates how the popup is aligned relative to the specified side.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-align="end"]'?: true
+    /** Present when the anchor is hidden.
+     * Attribute: `data-anchor-hidden`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-anchor-hidden]'?: true
+    /** Present when the menu popup is closed.
+     * Attribute: `data-closed`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-closed]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly '&[data-instant]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly '&[data-instant="click"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly '&[data-instant="group"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly '&[data-instant="trigger-change"]'?: true
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/positioner/MenuPositioner.tsx
+     */
+    readonly '&[data-nested]'?: true
+    /** Present when the menu popup is open.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-open]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side="top"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side="bottom"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side="left"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side="right"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side="inline-end"]'?: true
+    /** Indicates which side the popup is positioned relative to the anchor.
+     * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#positioner
+     */
+    readonly '&[data-side="inline-start"]'?: true
+  }
   /** Menu.RadioGroup attribute styles. */
-  readonly 'Menu.RadioGroup': {}
+  readonly 'Menu.RadioGroup': {
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-group/MenuRadioGroup.tsx
+     */
+    readonly '&[data-disabled]'?: true
+  }
   /** Menu.RadioItem attribute styles. */
   readonly 'Menu.RadioItem': {
     /** Present when the menu radio item is selected.
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu radio item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the menu radio item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the menu radio item is not selected.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
   }
   /** Menu.RadioItemIndicator attribute styles. */
   readonly 'Menu.RadioItemIndicator': {
@@ -10049,27 +12703,50 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the menu radio item is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the radio indicator is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
+    /** Supplemental highlighted hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-highlighted`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/menu/radio-item-indicator/MenuRadioItemIndicator.tsx
+     */
+    readonly '&[data-highlighted]'?: true
     /** Present when the radio indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the menu radio item is not selected.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/menu#radio-item-indicator
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
+  }
+  /** Menu.Separator attribute styles. */
+  readonly 'Menu.Separator': {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#separator
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#separator
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#separator
+     */
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Menu.SubmenuTrigger attribute styles. */
   readonly 'Menu.SubmenuTrigger': {
@@ -10077,17 +12754,148 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/menu#submenu-trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the submenu trigger is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/menu#submenu-trigger
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the corresponding submenu is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/menu#submenu-trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
+  }
+  /** Menu.Trigger attribute styles. */
+  readonly 'Menu.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#trigger
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the corresponding menu is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#trigger
+     */
+    readonly '&[data-popup-open]'?: true
+    /** Present when the trigger is pressed.
+     * Attribute: `data-pressed`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#trigger
+     */
+    readonly '&[data-pressed]'?: true
+  }
+  /** Menu.Viewport attribute styles. */
+  readonly 'Menu.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction=" "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction=" up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction=" down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction="left "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction="left up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction="left down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction="right "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction="right up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-activation-direction="right down"]'?: true
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '& > [data-current]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-instant]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-instant="click"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-instant="group"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `group`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-instant="trigger-change"]'?: true
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '& > [data-previous]'?: true
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/menu#viewport
+     */
+    readonly '&[data-transitioning]'?: true
   }
   /** Menubar attribute styles. */
   readonly Menubar: {
@@ -10095,27 +12903,27 @@ export type Selectors<body> = {
      * Attribute: `data-has-submenu-open`. Presence selector.
      * @see https://base-ui.com/react/components/menubar#menubar
      */
-    readonly '&[data-has-submenu-open]'?: body
+    readonly '&[data-has-submenu-open]'?: true
     /** Present when the corresponding menubar is modal.
      * Attribute: `data-modal`. Presence selector.
      * @see https://base-ui.com/react/components/menubar#menubar
      */
-    readonly '&[data-modal]'?: body
+    readonly '&[data-modal]'?: true
     /** Determines the orientation of the menubar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menubar#menubar
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Determines the orientation of the menubar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menubar#menubar
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Determines the orientation of the menubar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/menubar#menubar
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Meter.Indicator attribute styles. */
   readonly 'Meter.Indicator': {}
@@ -10130,75 +12938,75 @@ export type Selectors<body> = {
   /** NavigationMenu.Arrow attribute styles. */
   readonly 'NavigationMenu.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the popup arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** NavigationMenu.Backdrop attribute styles. */
   readonly 'NavigationMenu.Backdrop': {
@@ -10206,22 +13014,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** NavigationMenu.Content attribute styles. */
   readonly 'NavigationMenu.Content': {
@@ -10229,47 +13037,47 @@ export type Selectors<body> = {
      * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-activation-direction]'?: body
+    readonly '&[data-activation-direction]'?: true
     /** Which direction another trigger was activated from.
      * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-activation-direction="left"]'?: body
+    readonly '&[data-activation-direction="left"]'?: true
     /** Which direction another trigger was activated from.
      * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-activation-direction="right"]'?: body
+    readonly '&[data-activation-direction="right"]'?: true
     /** Which direction another trigger was activated from.
      * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-activation-direction="up"]'?: body
+    readonly '&[data-activation-direction="up"]'?: true
     /** Which direction another trigger was activated from.
      * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-activation-direction="down"]'?: body
+    readonly '&[data-activation-direction="down"]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the content is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the content begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#content
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** NavigationMenu.Icon attribute styles. */
   readonly 'NavigationMenu.Icon': {
@@ -10277,7 +13085,7 @@ export type Selectors<body> = {
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#icon
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
   }
   /** NavigationMenu.Item attribute styles. */
   readonly 'NavigationMenu.Item': {}
@@ -10287,172 +13095,191 @@ export type Selectors<body> = {
      * Attribute: `data-active`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#link
      */
-    readonly '&[data-active]'?: body
+    readonly '&[data-active]'?: true
   }
   /** NavigationMenu.List attribute styles. */
-  readonly 'NavigationMenu.List': {}
+  readonly 'NavigationMenu.List': {
+    /** Supplemental open hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/list/NavigationMenuList.tsx
+     */
+    readonly '&[data-open]'?: true
+  }
   /** NavigationMenu.Popup attribute styles. */
   readonly 'NavigationMenu.Popup': {
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** NavigationMenu.Portal attribute styles. */
   readonly 'NavigationMenu.Portal': {}
   /** NavigationMenu.Positioner attribute styles. */
   readonly 'NavigationMenu.Positioner': {
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to the specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-instant]'?: body
+    readonly '&[data-instant]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/navigation-menu#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
+  }
+  /** NavigationMenu.Root attribute styles. */
+  readonly 'NavigationMenu.Root': {
+    /** Supplemental nested hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-nested`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/root/NavigationMenuRoot.tsx
+     */
+    readonly '&[data-nested]'?: true
+    /** Supplemental open hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-open`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/navigation-menu/root/NavigationMenuRoot.tsx
+     */
+    readonly '&[data-open]'?: true
   }
   /** NavigationMenu.Trigger attribute styles. */
   readonly 'NavigationMenu.Trigger': {
@@ -10460,17 +13287,17 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the corresponding navigation menu is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Present when the trigger is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/navigation-menu#trigger
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
   }
   /** NavigationMenu.Viewport attribute styles. */
   readonly 'NavigationMenu.Viewport': {}
@@ -10480,52 +13307,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#decrement
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** NumberField.Group attribute styles. */
   readonly 'NumberField.Group': {
@@ -10533,52 +13360,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#group
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** NumberField.Increment attribute styles. */
   readonly 'NumberField.Increment': {
@@ -10586,52 +13413,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#increment
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** NumberField.Input attribute styles. */
   readonly 'NumberField.Input': {
@@ -10639,52 +13466,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#input
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** NumberField.Root attribute styles. */
   readonly 'NumberField.Root': {
@@ -10692,52 +13519,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#root
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** NumberField.ScrubArea attribute styles. */
   readonly 'NumberField.ScrubArea': {
@@ -10745,52 +13572,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** NumberField.ScrubAreaCursor attribute styles. */
   readonly 'NumberField.ScrubAreaCursor': {
@@ -10798,52 +13625,52 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the number field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the number field is filled (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the number field is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the number field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the number field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the number field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present while scrubbing.
      * Attribute: `data-scrubbing`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-scrubbing]'?: body
+    readonly '&[data-scrubbing]'?: true
     /** Present when the number field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the number field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/number-field#scrub-area-cursor
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** OTPField.Input attribute styles. */
   readonly 'OTPField.Input': {
@@ -10851,52 +13678,52 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the OTP field's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the OTP field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the input contains a character.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when any OTP field input is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the OTP field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the OTP field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the OTP field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the OTP field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the OTP field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#input
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** OTPField.Root attribute styles. */
   readonly 'OTPField.Root': {
@@ -10904,125 +13731,143 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the OTP field's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the OTP field is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the OTP field contains at least one character.
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when one of the OTP field inputs is focused.
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the OTP field is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the OTP field is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the OTP field is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the OTP field has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the OTP field is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/otp-field#root
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
+  }
+  /** OTPField.Separator attribute styles. */
+  readonly 'OTPField.Separator': {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/otp-field#separator
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/otp-field#separator
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/otp-field#separator
+     */
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Popover.Arrow attribute styles. */
   readonly 'Popover.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the popover arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/popover#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** Popover.Backdrop attribute styles. */
   readonly 'Popover.Backdrop': {
@@ -11030,22 +13875,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/popover#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/popover#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/popover#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/popover#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Popover.Close attribute styles. */
   readonly 'Popover.Close': {}
@@ -11054,255 +13899,411 @@ export type Selectors<body> = {
   /** Popover.Popup attribute styles. */
   readonly 'Popover.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the popup is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present if animations should be instant.
-     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-instant]'?: body
+    readonly '&[data-instant]'?: true
     /** Present if animations should be instant.
-     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-instant="click"]'?: body
+    readonly '&[data-instant="click"]'?: true
     /** Present if animations should be instant.
-     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-instant="dismiss"]'?: body
+    readonly '&[data-instant="dismiss"]'?: true
     /** Present if animations should be instant.
-     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-instant="focus"]'?: body
+    readonly '&[data-instant="trigger-change"]'?: true
     /** Present if animations should be instant.
-     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-instant="trigger-change"]'?: body
+    readonly '&[data-instant="focus"]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the popup begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/popover#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Popover.Portal attribute styles. */
   readonly 'Popover.Portal': {}
   /** Popover.Positioner attribute styles. */
   readonly 'Popover.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+     */
+    readonly '&[data-instant]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+     */
+    readonly '&[data-instant="click"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+     */
+    readonly '&[data-instant="focus"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `focus`, `trigger-change`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/popover/positioner/PopoverPositioner.tsx
+     */
+    readonly '&[data-instant="trigger-change"]'?: true
     /** Present when the popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/popover#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
   }
   /** Popover.Title attribute styles. */
   readonly 'Popover.Title': {}
+  /** Popover.Trigger attribute styles. */
+  readonly 'Popover.Trigger': {
+    /** Present when the trigger is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#trigger
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the corresponding popover is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#trigger
+     */
+    readonly '&[data-popup-open]'?: true
+    /** Present when the trigger is pressed.
+     * Attribute: `data-pressed`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#trigger
+     */
+    readonly '&[data-pressed]'?: true
+  }
+  /** Popover.Viewport attribute styles. */
+  readonly 'Popover.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction=" "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction=" up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction=" down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction="left "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction="left up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction="left down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction="right "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction="right up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-activation-direction="right down"]'?: true
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '& > [data-current]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-instant]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-instant="click"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-instant="trigger-change"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `click`, `dismiss`, `trigger-change`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-instant="focus"]'?: true
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '& > [data-previous]'?: true
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/popover#viewport
+     */
+    readonly '&[data-transitioning]'?: true
+  }
   /** PreviewCard.Arrow attribute styles. */
   readonly 'PreviewCard.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the preview card is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the preview card is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the preview card arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** PreviewCard.Backdrop attribute styles. */
   readonly 'PreviewCard.Backdrop': {
@@ -11310,175 +14311,301 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the preview card is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the preview card is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the preview card begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** PreviewCard.Popup attribute styles. */
   readonly 'PreviewCard.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the preview card is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the preview card is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the preview card is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the preview card begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** PreviewCard.Portal attribute styles. */
   readonly 'PreviewCard.Portal': {}
   /** PreviewCard.Positioner attribute styles. */
   readonly 'PreviewCard.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the preview card is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx
+     */
+    readonly '&[data-instant]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/preview-card/positioner/PreviewCardPositioner.tsx
+     */
+    readonly '&[data-instant="focus"]'?: true
     /** Present when the preview card is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/preview-card#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
+  }
+  /** PreviewCard.Trigger attribute styles. */
+  readonly 'PreviewCard.Trigger': {
+    /** Present when the corresponding preview card is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#trigger
+     */
+    readonly '&[data-popup-open]'?: true
+  }
+  /** PreviewCard.Viewport attribute styles. */
+  readonly 'PreviewCard.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction=" "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction=" up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction=" down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction="left "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction="left up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction="left down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction="right "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction="right up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-activation-direction="right down"]'?: true
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '& > [data-current]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-instant]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-instant="focus"]'?: true
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '& > [data-previous]'?: true
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/preview-card#viewport
+     */
+    readonly '&[data-transitioning]'?: true
   }
   /** Progress.Indicator attribute styles. */
   readonly 'Progress.Indicator': {
@@ -11486,17 +14613,17 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/progress#indicator
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the progress is in indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/progress#indicator
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present while the progress is progressing.
      * Attribute: `data-progressing`. Presence selector.
      * @see https://base-ui.com/react/components/progress#indicator
      */
-    readonly '&[data-progressing]'?: body
+    readonly '&[data-progressing]'?: true
   }
   /** Progress.Label attribute styles. */
   readonly 'Progress.Label': {
@@ -11504,17 +14631,17 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/progress#label
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the progress is in indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/progress#label
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present while the progress is progressing.
      * Attribute: `data-progressing`. Presence selector.
      * @see https://base-ui.com/react/components/progress#label
      */
-    readonly '&[data-progressing]'?: body
+    readonly '&[data-progressing]'?: true
   }
   /** Progress.Root attribute styles. */
   readonly 'Progress.Root': {
@@ -11522,17 +14649,17 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/progress#root
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the progress is in indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/progress#root
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present while the progress is progressing.
      * Attribute: `data-progressing`. Presence selector.
      * @see https://base-ui.com/react/components/progress#root
      */
-    readonly '&[data-progressing]'?: body
+    readonly '&[data-progressing]'?: true
   }
   /** Progress.Track attribute styles. */
   readonly 'Progress.Track': {
@@ -11540,17 +14667,17 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/progress#track
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the progress is in indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/progress#track
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present while the progress is progressing.
      * Attribute: `data-progressing`. Presence selector.
      * @see https://base-ui.com/react/components/progress#track
      */
-    readonly '&[data-progressing]'?: body
+    readonly '&[data-progressing]'?: true
   }
   /** Progress.Value attribute styles. */
   readonly 'Progress.Value': {
@@ -11558,17 +14685,17 @@ export type Selectors<body> = {
      * Attribute: `data-complete`. Presence selector.
      * @see https://base-ui.com/react/components/progress#value
      */
-    readonly '&[data-complete]'?: body
+    readonly '&[data-complete]'?: true
     /** Present when the progress is in indeterminate state.
      * Attribute: `data-indeterminate`. Presence selector.
      * @see https://base-ui.com/react/components/progress#value
      */
-    readonly '&[data-indeterminate]'?: body
+    readonly '&[data-indeterminate]'?: true
     /** Present while the progress is progressing.
      * Attribute: `data-progressing`. Presence selector.
      * @see https://base-ui.com/react/components/progress#value
      */
-    readonly '&[data-progressing]'?: body
+    readonly '&[data-progressing]'?: true
   }
   /** Radio.Indicator attribute styles. */
   readonly 'Radio.Indicator': {
@@ -11576,67 +14703,173 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the radio's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the radio is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the radio indicator is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the radio is checked (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the radio is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the radio is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the radio is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the radio is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the radio indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the radio has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the radio is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
     /** Present when the radio is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/radio#indicator
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
+  }
+  /** Radio.Root attribute styles. */
+  readonly 'Radio.Root': {
+    /** Present when the radio is checked.
+     * Attribute: `data-checked`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-checked]'?: true
+    /** Present when the radio's value has changed (when wrapped in Field.Root).
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-dirty]'?: true
+    /** Present when the radio is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the radio is checked (when wrapped in Field.Root).
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-filled]'?: true
+    /** Present when the radio is focused (when wrapped in Field.Root).
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-focused]'?: true
+    /** Present when the radio is in an invalid state (when wrapped in Field.Root).
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-invalid]'?: true
+    /** Present when the radio is readonly.
+     * Attribute: `data-readonly`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-readonly]'?: true
+    /** Present when the radio is required.
+     * Attribute: `data-required`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-required]'?: true
+    /** Present when the radio has been touched (when wrapped in Field.Root).
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-touched]'?: true
+    /** Present when the radio is not checked.
+     * Attribute: `data-unchecked`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-unchecked]'?: true
+    /** Present when the radio is in a valid state (when wrapped in Field.Root).
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://base-ui.com/react/components/radio#root
+     */
+    readonly '&[data-valid]'?: true
+  }
+  /** RadioGroup attribute styles. */
+  readonly RadioGroup: {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-dirty]'?: true
+    /** Present when the radio group is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/radio-group#radio-group
+     */
+    readonly '&[data-disabled]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-focused]'?: true
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-invalid]'?: true
+    /** Supplemental readOnly hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-readonly`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-readonly]'?: true
+    /** Supplemental required hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-required`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-required]'?: true
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-touched]'?: true
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/radio-group/RadioGroup.tsx
+     */
+    readonly '&[data-valid]'?: true
   }
   /** ScrollArea.Content attribute styles. */
   readonly 'ScrollArea.Content': {
@@ -11644,37 +14877,37 @@ export type Selectors<body> = {
      * Attribute: `data-has-overflow-x`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-has-overflow-x]'?: body
+    readonly '&[data-has-overflow-x]'?: true
     /** Present when the scroll area content is taller than the viewport.
      * Attribute: `data-has-overflow-y`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-has-overflow-y]'?: body
+    readonly '&[data-has-overflow-y]'?: true
     /** Present when there is overflow on the horizontal end side.
      * Attribute: `data-overflow-x-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-overflow-x-end]'?: body
+    readonly '&[data-overflow-x-end]'?: true
     /** Present when there is overflow on the horizontal start side.
      * Attribute: `data-overflow-x-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-overflow-x-start]'?: body
+    readonly '&[data-overflow-x-start]'?: true
     /** Present when there is overflow on the vertical end side.
      * Attribute: `data-overflow-y-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-overflow-y-end]'?: body
+    readonly '&[data-overflow-y-end]'?: true
     /** Present when there is overflow on the vertical start side.
      * Attribute: `data-overflow-y-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-overflow-y-start]'?: body
+    readonly '&[data-overflow-y-start]'?: true
     /** Present when the user scrolls inside the scroll area.
      * Attribute: `data-scrolling`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#content
      */
-    readonly '&[data-scrolling]'?: body
+    readonly '&[data-scrolling]'?: true
   }
   /** ScrollArea.Corner attribute styles. */
   readonly 'ScrollArea.Corner': {}
@@ -11684,37 +14917,37 @@ export type Selectors<body> = {
      * Attribute: `data-has-overflow-x`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-has-overflow-x]'?: body
+    readonly '&[data-has-overflow-x]'?: true
     /** Present when the scroll area content is taller than the viewport.
      * Attribute: `data-has-overflow-y`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-has-overflow-y]'?: body
+    readonly '&[data-has-overflow-y]'?: true
     /** Present when there is overflow on the horizontal end side.
      * Attribute: `data-overflow-x-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-overflow-x-end]'?: body
+    readonly '&[data-overflow-x-end]'?: true
     /** Present when there is overflow on the horizontal start side.
      * Attribute: `data-overflow-x-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-overflow-x-start]'?: body
+    readonly '&[data-overflow-x-start]'?: true
     /** Present when there is overflow on the vertical end side.
      * Attribute: `data-overflow-y-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-overflow-y-end]'?: body
+    readonly '&[data-overflow-y-end]'?: true
     /** Present when there is overflow on the vertical start side.
      * Attribute: `data-overflow-y-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-overflow-y-start]'?: body
+    readonly '&[data-overflow-y-start]'?: true
     /** Present when the user scrolls inside the scroll area.
      * Attribute: `data-scrolling`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#root
      */
-    readonly '&[data-scrolling]'?: body
+    readonly '&[data-scrolling]'?: true
   }
   /** ScrollArea.Scrollbar attribute styles. */
   readonly 'ScrollArea.Scrollbar': {
@@ -11722,57 +14955,57 @@ export type Selectors<body> = {
      * Attribute: `data-has-overflow-x`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-has-overflow-x]'?: body
+    readonly '&[data-has-overflow-x]'?: true
     /** Present when the scroll area content is taller than the viewport.
      * Attribute: `data-has-overflow-y`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-has-overflow-y]'?: body
+    readonly '&[data-has-overflow-y]'?: true
     /** Present when the pointer is over the scroll area.
      * Attribute: `data-hovering`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-hovering]'?: body
+    readonly '&[data-hovering]'?: true
     /** Indicates the orientation of the scrollbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the scrollbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the scrollbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when there is overflow on the horizontal end side.
      * Attribute: `data-overflow-x-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-overflow-x-end]'?: body
+    readonly '&[data-overflow-x-end]'?: true
     /** Present when there is overflow on the horizontal start side.
      * Attribute: `data-overflow-x-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-overflow-x-start]'?: body
+    readonly '&[data-overflow-x-start]'?: true
     /** Present when there is overflow on the vertical end side.
      * Attribute: `data-overflow-y-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-overflow-y-end]'?: body
+    readonly '&[data-overflow-y-end]'?: true
     /** Present when there is overflow on the vertical start side.
      * Attribute: `data-overflow-y-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-overflow-y-start]'?: body
+    readonly '&[data-overflow-y-start]'?: true
     /** Present when the user scrolls inside the scroll area.
      * Attribute: `data-scrolling`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#scrollbar
      */
-    readonly '&[data-scrolling]'?: body
+    readonly '&[data-scrolling]'?: true
   }
   /** ScrollArea.Thumb attribute styles. */
   readonly 'ScrollArea.Thumb': {
@@ -11780,22 +15013,22 @@ export type Selectors<body> = {
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/scroll-area#thumb
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the scrollbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/scroll-area#thumb
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the scrollbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/scroll-area#thumb
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when the user scrolls inside the scroll area.
      * Attribute: `data-scrolling`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#thumb
      */
-    readonly '&[data-scrolling]'?: body
+    readonly '&[data-scrolling]'?: true
   }
   /** ScrollArea.Viewport attribute styles. */
   readonly 'ScrollArea.Viewport': {
@@ -11803,115 +15036,115 @@ export type Selectors<body> = {
      * Attribute: `data-has-overflow-x`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-has-overflow-x]'?: body
+    readonly '&[data-has-overflow-x]'?: true
     /** Present when the scroll area content is taller than the viewport.
      * Attribute: `data-has-overflow-y`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-has-overflow-y]'?: body
+    readonly '&[data-has-overflow-y]'?: true
     /** Present when there is overflow on the horizontal end side.
      * Attribute: `data-overflow-x-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-overflow-x-end]'?: body
+    readonly '&[data-overflow-x-end]'?: true
     /** Present when there is overflow on the horizontal start side.
      * Attribute: `data-overflow-x-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-overflow-x-start]'?: body
+    readonly '&[data-overflow-x-start]'?: true
     /** Present when there is overflow on the vertical end side.
      * Attribute: `data-overflow-y-end`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-overflow-y-end]'?: body
+    readonly '&[data-overflow-y-end]'?: true
     /** Present when there is overflow on the vertical start side.
      * Attribute: `data-overflow-y-start`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-overflow-y-start]'?: body
+    readonly '&[data-overflow-y-start]'?: true
     /** Present when the user scrolls inside the scroll area.
      * Attribute: `data-scrolling`. Presence selector.
      * @see https://base-ui.com/react/components/scroll-area#viewport
      */
-    readonly '&[data-scrolling]'?: body
+    readonly '&[data-scrolling]'?: true
   }
   /** Select.Arrow attribute styles. */
   readonly 'Select.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the select popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the select popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-open]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-open]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="none"]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side="none"]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="top"]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side="top"]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side="bottom"]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="left"]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side="left"]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="right"]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side="right"]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
-    /** Indicates which side the popup is positioned relative to the trigger.
+    readonly '&[data-side="inline-end"]'?: true
+    /** The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the select arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/select#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** Select.Backdrop attribute styles. */
   readonly 'Select.Backdrop': {
@@ -11919,22 +15152,22 @@ export type Selectors<body> = {
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/select#backdrop
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the select is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#backdrop
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the select is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/select#backdrop
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Present when the select begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#backdrop
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Select.Group attribute styles. */
   readonly 'Select.Group': {}
@@ -11946,7 +15179,7 @@ export type Selectors<body> = {
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/select#icon
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
   }
   /** Select.Item attribute styles. */
   readonly 'Select.Item': {
@@ -11954,17 +15187,17 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/select#item
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the select item is highlighted.
      * Attribute: `data-highlighted`. Presence selector.
      * @see https://base-ui.com/react/components/select#item
      */
-    readonly '&[data-highlighted]'?: body
+    readonly '&[data-highlighted]'?: true
     /** Present when the select item is selected.
      * Attribute: `data-selected`. Presence selector.
      * @see https://base-ui.com/react/components/select#item
      */
-    readonly '&[data-selected]'?: body
+    readonly '&[data-selected]'?: true
   }
   /** Select.ItemIndicator attribute styles. */
   readonly 'Select.ItemIndicator': {
@@ -11972,181 +15205,222 @@ export type Selectors<body> = {
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#item-indicator
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
+    /** Supplemental selected hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-selected`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/item-indicator/SelectItemIndicator.tsx
+     */
+    readonly '&[data-selected]'?: true
     /** Present when the indicator begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#item-indicator
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Select.ItemText attribute styles. */
   readonly 'Select.ItemText': {}
   /** Select.Label attribute styles. */
-  readonly 'Select.Label': {}
+  readonly 'Select.Label': {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-dirty]'?: true
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-disabled]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-focused]'?: true
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-invalid]'?: true
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-touched]'?: true
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/select/label/SelectLabel.tsx
+     */
+    readonly '&[data-valid]'?: true
+  }
   /** Select.List attribute styles. */
   readonly 'Select.List': {}
   /** Select.Popup attribute styles. */
   readonly 'Select.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the select is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the select is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present when the select is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="none"]'?: body
+    readonly '&[data-side="none"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the select begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Select.Portal attribute styles. */
   readonly 'Select.Portal': {}
   /** Select.Positioner attribute styles. */
   readonly 'Select.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the select popup is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the select popup is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="none"]'?: body
+    readonly '&[data-side="none"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
   }
   /** Select.ScrollDownArrow attribute styles. */
   readonly 'Select.ScrollDownArrow': {
@@ -12154,67 +15428,67 @@ export type Selectors<body> = {
      * Attribute: `data-direction`. Values: `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-direction]'?: body
+    readonly '&[data-direction]'?: true
     /** Indicates the direction of the scroll arrow.
      * Attribute: `data-direction`. Values: `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-direction="down"]'?: body
+    readonly '&[data-direction="down"]'?: true
     /** Present when the scroll arrow is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="none"]'?: body
+    readonly '&[data-side="none"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the scroll arrow begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the scroll arrow is visible.
      * Attribute: `data-visible`. Presence selector.
      * @see https://base-ui.com/react/components/select#scroll-down-arrow
      */
-    readonly '&[data-visible]'?: body
+    readonly '&[data-visible]'?: true
   }
   /** Select.ScrollUpArrow attribute styles. */
   readonly 'Select.ScrollUpArrow': {
@@ -12222,67 +15496,67 @@ export type Selectors<body> = {
      * Attribute: `data-direction`. Values: `up`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-direction]'?: body
+    readonly '&[data-direction]'?: true
     /** Indicates the direction of the scroll arrow.
      * Attribute: `data-direction`. Values: `up`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-direction="up"]'?: body
+    readonly '&[data-direction="up"]'?: true
     /** Present when the scroll arrow is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="none"]'?: body
+    readonly '&[data-side="none"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `none`, `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the scroll arrow begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
     /** Present when the scroll arrow is visible.
      * Attribute: `data-visible`. Presence selector.
      * @see https://base-ui.com/react/components/select#scroll-up-arrow
      */
-    readonly '&[data-visible]'?: body
+    readonly '&[data-visible]'?: true
   }
   /** Select.Separator attribute styles. */
   readonly 'Select.Separator': {}
@@ -12292,97 +15566,97 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the select is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the select has a value (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the select trigger is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the select is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the select doesn't have a value.
      * Attribute: `data-placeholder`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-placeholder]'?: body
+    readonly '&[data-placeholder]'?: true
     /** Present when the corresponding select is open.
      * Attribute: `data-popup-open`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-open]'?: body
+    readonly '&[data-popup-open]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side]'?: body
+    readonly '&[data-popup-side]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side="top"]'?: body
+    readonly '&[data-popup-side="top"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side="bottom"]'?: body
+    readonly '&[data-popup-side="bottom"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side="left"]'?: body
+    readonly '&[data-popup-side="left"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side="right"]'?: body
+    readonly '&[data-popup-side="right"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side="inline-end"]'?: body
+    readonly '&[data-popup-side="inline-end"]'?: true
     /** Indicates which side the corresponding popup is positioned relative to its anchor.
      * Attribute: `data-popup-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-popup-side="inline-start"]'?: body
+    readonly '&[data-popup-side="inline-start"]'?: true
     /** Present when the trigger is pressed.
      * Attribute: `data-pressed`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-pressed]'?: body
+    readonly '&[data-pressed]'?: true
     /** Present when the select is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the select is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the select has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the select is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/select#trigger
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Select.Value attribute styles. */
   readonly 'Select.Value': {
@@ -12390,7 +15664,25 @@ export type Selectors<body> = {
      * Attribute: `data-placeholder`. Presence selector.
      * @see https://base-ui.com/react/components/select#value
      */
-    readonly '&[data-placeholder]'?: body
+    readonly '&[data-placeholder]'?: true
+  }
+  /** Separator attribute styles. */
+  readonly Separator: {
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/separator#separator
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/separator#separator
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the separator.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/separator#separator
+     */
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Slider.Control attribute styles. */
   readonly 'Slider.Control': {
@@ -12398,52 +15690,57 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the slider is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present while the user is dragging.
      * Attribute: `data-dragging`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-dragging]'?: body
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/control/SliderControl.tsx
+     */
+    readonly '&[data-filled]'?: true
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the slider is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when the slider has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the slider is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#control
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Slider.Indicator attribute styles. */
   readonly 'Slider.Indicator': {
@@ -12451,107 +15748,294 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the slider is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present while the user is dragging.
      * Attribute: `data-dragging`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-dragging]'?: body
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/indicator/SliderIndicator.tsx
+     */
+    readonly '&[data-filled]'?: true
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the slider is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when the slider has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the slider is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#indicator
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Slider.Label attribute styles. */
-  readonly 'Slider.Label': {}
+  readonly 'Slider.Label': {
+    /** Supplemental dirty hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-dirty]'?: true
+    /** Supplemental disabled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-disabled]'?: true
+    /** Supplemental dragging hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-dragging`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Supplemental focused hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-focused]'?: true
+    /** Supplemental invalid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-invalid]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-orientation]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Supplemental orientation hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+    /** Supplemental touched hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-touched]'?: true
+    /** Supplemental valid hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/label/SliderLabel.tsx
+     */
+    readonly '&[data-valid]'?: true
+  }
+  /** Slider.Root attribute styles. */
+  readonly 'Slider.Root': {
+    /** Present when the slider's value has changed (when wrapped in Field.Root).
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-dirty]'?: true
+    /** Present when the slider is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present while the user is dragging.
+     * Attribute: `data-dragging`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/root/SliderRoot.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Present when the slider is focused (when wrapped in Field.Root).
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-focused]'?: true
+    /** Present when the slider is in an invalid state (when wrapped in Field.Root).
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-invalid]'?: true
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+    /** Present when the slider has been touched (when wrapped in Field.Root).
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-touched]'?: true
+    /** Present when the slider is in a valid state (when wrapped in Field.Root).
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#root
+     */
+    readonly '&[data-valid]'?: true
+  }
+  /** Slider.Thumb attribute styles. */
+  readonly 'Slider.Thumb': {
+    /** Present when the slider's value has changed (when wrapped in Field.Root).
+     * Attribute: `data-dirty`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-dirty]'?: true
+    /** Present when the slider is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present while the user is dragging.
+     * Attribute: `data-dragging`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/thumb/SliderThumb.tsx
+     */
+    readonly '&[data-filled]'?: true
+    /** Present when the slider is focused (when wrapped in Field.Root).
+     * Attribute: `data-focused`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-focused]'?: true
+    /** Indicates the index of the thumb in range sliders.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-index]'?: true
+    /** Present when the slider is in an invalid state (when wrapped in Field.Root).
+     * Attribute: `data-invalid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-invalid]'?: true
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the slider.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+    /** Present when the slider has been touched (when wrapped in Field.Root).
+     * Attribute: `data-touched`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-touched]'?: true
+    /** Present when the slider is in a valid state (when wrapped in Field.Root).
+     * Attribute: `data-valid`. Presence selector.
+     * @see https://base-ui.com/react/components/slider#thumb
+     */
+    readonly '&[data-valid]'?: true
+  }
   /** Slider.Track attribute styles. */
   readonly 'Slider.Track': {
     /** Present when the slider's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the slider is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present while the user is dragging.
      * Attribute: `data-dragging`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-dragging]'?: body
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/track/SliderTrack.tsx
+     */
+    readonly '&[data-filled]'?: true
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the slider is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when the slider has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the slider is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#track
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Slider.Value attribute styles. */
   readonly 'Slider.Value': {
@@ -12559,52 +16043,57 @@ export type Selectors<body> = {
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the slider is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present while the user is dragging.
      * Attribute: `data-dragging`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-dragging]'?: body
+    readonly '&[data-dragging]'?: true
+    /** Supplemental filled hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-filled`. Presence selector.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/slider/value/SliderValue.tsx
+     */
+    readonly '&[data-filled]'?: true
     /** Present when the slider is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the slider is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the slider.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
     /** Present when the slider has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the slider is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/slider#value
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Switch.Root attribute styles. */
   readonly 'Switch.Root': {
@@ -12612,57 +16101,57 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the switch's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the switch is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the switch is active (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the switch is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the switch is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the switch is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the switch is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the switch has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the switch is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
     /** Present when the switch is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/switch#root
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Switch.Thumb attribute styles. */
   readonly 'Switch.Thumb': {
@@ -12670,387 +16159,607 @@ export type Selectors<body> = {
      * Attribute: `data-checked`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-checked]'?: body
+    readonly '&[data-checked]'?: true
     /** Present when the switch's value has changed (when wrapped in Field.Root).
      * Attribute: `data-dirty`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-dirty]'?: body
+    readonly '&[data-dirty]'?: true
     /** Present when the switch is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the switch is active (when wrapped in Field.Root).
      * Attribute: `data-filled`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-filled]'?: body
+    readonly '&[data-filled]'?: true
     /** Present when the switch is focused (when wrapped in Field.Root).
      * Attribute: `data-focused`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-focused]'?: body
+    readonly '&[data-focused]'?: true
     /** Present when the switch is in an invalid state (when wrapped in Field.Root).
      * Attribute: `data-invalid`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-invalid]'?: body
+    readonly '&[data-invalid]'?: true
     /** Present when the switch is readonly.
      * Attribute: `data-readonly`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-readonly]'?: body
+    readonly '&[data-readonly]'?: true
     /** Present when the switch is required.
      * Attribute: `data-required`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-required]'?: body
+    readonly '&[data-required]'?: true
     /** Present when the switch has been touched (when wrapped in Field.Root).
      * Attribute: `data-touched`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-touched]'?: body
+    readonly '&[data-touched]'?: true
     /** Present when the switch is not checked.
      * Attribute: `data-unchecked`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-unchecked]'?: body
+    readonly '&[data-unchecked]'?: true
     /** Present when the switch is in a valid state (when wrapped in Field.Root).
      * Attribute: `data-valid`. Presence selector.
      * @see https://base-ui.com/react/components/switch#thumb
      */
-    readonly '&[data-valid]'?: body
+    readonly '&[data-valid]'?: true
   }
   /** Tabs.Indicator attribute styles. */
   readonly 'Tabs.Indicator': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-activation-direction]'?: body
+    readonly '&[data-activation-direction]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-activation-direction="left"]'?: body
+    readonly '&[data-activation-direction="none"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-activation-direction="right"]'?: body
+    readonly '&[data-activation-direction="left"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-activation-direction="up"]'?: body
+    readonly '&[data-activation-direction="right"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-activation-direction="down"]'?: body
+    readonly '&[data-activation-direction="up"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-activation-direction="none"]'?: body
+    readonly '&[data-activation-direction="down"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#indicator
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Tabs.List attribute styles. */
   readonly 'Tabs.List': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-activation-direction]'?: body
+    readonly '&[data-activation-direction]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-activation-direction="left"]'?: body
+    readonly '&[data-activation-direction="none"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-activation-direction="right"]'?: body
+    readonly '&[data-activation-direction="left"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-activation-direction="up"]'?: body
+    readonly '&[data-activation-direction="right"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-activation-direction="down"]'?: body
+    readonly '&[data-activation-direction="up"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-activation-direction="none"]'?: body
+    readonly '&[data-activation-direction="down"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#list
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
+  }
+  /** Tabs.Panel attribute styles. */
+  readonly 'Tabs.Panel': {
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-activation-direction]'?: true
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-activation-direction="none"]'?: true
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-activation-direction="left"]'?: true
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-activation-direction="right"]'?: true
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-activation-direction="up"]'?: true
+    /** Indicates the direction of the activation (based on the previous active tab).
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-activation-direction="down"]'?: true
+    /** Present when the panel is animating out.
+     * Attribute: `data-ending-style`. Presence selector.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-ending-style]'?: true
+    /** Present when the panel is hidden.
+     * Attribute: `data-hidden`. Presence selector.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-hidden]'?: true
+    /** Indicates the index of the tab panel.
+     * Attribute: `data-index`. Values: number.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-index]'?: true
+    /** Indicates the orientation of the tabs.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the tabs.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the tabs.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-orientation="vertical"]'?: true
+    /** Present when the panel begins animating in.
+     * Attribute: `data-starting-style`. Presence selector.
+     * @see https://base-ui.com/react/components/tabs#panel
+     */
+    readonly '&[data-starting-style]'?: true
   }
   /** Tabs.Root attribute styles. */
   readonly 'Tabs.Root': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-activation-direction]'?: body
+    readonly '&[data-activation-direction]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-activation-direction="left"]'?: body
+    readonly '&[data-activation-direction="none"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-activation-direction="right"]'?: body
+    readonly '&[data-activation-direction="left"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-activation-direction="up"]'?: body
+    readonly '&[data-activation-direction="right"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-activation-direction="down"]'?: body
+    readonly '&[data-activation-direction="up"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-activation-direction="none"]'?: body
+    readonly '&[data-activation-direction="down"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#root
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Tabs.Tab attribute styles. */
   readonly 'Tabs.Tab': {
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-activation-direction]'?: body
+    readonly '&[data-activation-direction]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-activation-direction="left"]'?: body
+    readonly '&[data-activation-direction="none"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-activation-direction="right"]'?: body
+    readonly '&[data-activation-direction="left"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-activation-direction="up"]'?: body
+    readonly '&[data-activation-direction="right"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-activation-direction="down"]'?: body
+    readonly '&[data-activation-direction="up"]'?: true
     /** Indicates the direction of the activation (based on the previous active tab).
-     * Attribute: `data-activation-direction`. Values: `left`, `right`, `up`, `down`, `none`. A null upstream state omits the attribute.
+     * Attribute: `data-activation-direction`. Values: `none`, `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-activation-direction="none"]'?: body
+    readonly '&[data-activation-direction="down"]'?: true
     /** Present when the tab is active.
      * Attribute: `data-active`. Presence selector.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-active]'?: body
+    readonly '&[data-active]'?: true
     /** Present when the tab is disabled.
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the tabs.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tabs#tab
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
+  }
+  /** Toast.Action attribute styles. */
+  readonly 'Toast.Action': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#action
+     */
+    readonly '&[data-type]'?: true
   }
   /** Toast.Arrow attribute styles. */
   readonly 'Toast.Arrow': {
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the toast is positioned relative to the anchor.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the toast arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/toast#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
+  }
+  /** Toast.Close attribute styles. */
+  readonly 'Toast.Close': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#close
+     */
+    readonly '&[data-type]'?: true
+  }
+  /** Toast.Content attribute styles. */
+  readonly 'Toast.Content': {
+    /** Present when the toast is behind the frontmost toast in the stack.
+     * Attribute: `data-behind`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#content
+     */
+    readonly '&[data-behind]'?: true
+    /** Present when the toast viewport is expanded.
+     * Attribute: `data-expanded`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#content
+     */
+    readonly '&[data-expanded]'?: true
+  }
+  /** Toast.Description attribute styles. */
+  readonly 'Toast.Description': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#description
+     */
+    readonly '&[data-type]'?: true
   }
   /** Toast.Portal attribute styles. */
   readonly 'Toast.Portal': {}
   /** Toast.Positioner attribute styles. */
   readonly 'Toast.Positioner': {
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the toast is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the toast is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toast#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
+  }
+  /** Toast.Root attribute styles. */
+  readonly 'Toast.Root': {
+    /** Present when the toast is animating out.
+     * Attribute: `data-ending-style`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-ending-style]'?: true
+    /** Present when the toast is expanded in the viewport.
+     * Attribute: `data-expanded`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-expanded]'?: true
+    /** Present when the toast was limited because the toast limit was exceeded.
+     * Attribute: `data-limited`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-limited]'?: true
+    /** Present when the toast begins animating in.
+     * Attribute: `data-starting-style`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-starting-style]'?: true
+    /** The direction the toast was swiped.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-swipe-direction]'?: true
+    /** The direction the toast was swiped.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-swipe-direction="left"]'?: true
+    /** The direction the toast was swiped.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-swipe-direction="right"]'?: true
+    /** The direction the toast was swiped.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-swipe-direction="up"]'?: true
+    /** The direction the toast was swiped.
+     * Attribute: `data-swipe-direction`. Values: `left`, `right`, `up`, `down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-swipe-direction="down"]'?: true
+    /** Present when the toast is being swiped.
+     * Attribute: `data-swiping`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-swiping]'?: true
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#root
+     */
+    readonly '&[data-type]'?: true
+  }
+  /** Toast.Title attribute styles. */
+  readonly 'Toast.Title': {
+    /** The type of the toast.
+     * Attribute: `data-type`. Values: string.
+     * @see https://base-ui.com/react/components/toast#title
+     */
+    readonly '&[data-type]'?: true
+  }
+  /** Toast.Viewport attribute styles. */
+  readonly 'Toast.Viewport': {
+    /** Indicates toasts are expanded in the viewport.
+     * Attribute: `data-expanded`. Presence selector.
+     * @see https://base-ui.com/react/components/toast#viewport
+     */
+    readonly '&[data-expanded]'?: true
+  }
+  /** Toggle attribute styles. */
+  readonly Toggle: {
+    /** Present when the toggle button is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle#toggle
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the toggle button is pressed.
+     * Attribute: `data-pressed`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle#toggle
+     */
+    readonly '&[data-pressed]'?: true
+  }
+  /** ToggleGroup attribute styles. */
+  readonly ToggleGroup: {
+    /** Present when the toggle group is disabled.
+     * Attribute: `data-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly '&[data-disabled]'?: true
+    /** Present when the toggle group allows multiple buttons to be in the pressed state at the same time.
+     * Attribute: `data-multiple`. Presence selector.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly '&[data-multiple]'?: true
+    /** Indicates the orientation of the toggle group.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the toggle group.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the toggle group.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toggle-group#toggle-group
+     */
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Toolbar.Button attribute styles. */
   readonly 'Toolbar.Button': {
@@ -13058,27 +16767,27 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/toolbar#button
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the button remains focusable when disabled.
      * Attribute: `data-focusable`. Presence selector.
      * @see https://base-ui.com/react/components/toolbar#button
      */
-    readonly '&[data-focusable]'?: body
+    readonly '&[data-focusable]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#button
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#button
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#button
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Toolbar.Group attribute styles. */
   readonly 'Toolbar.Group': {
@@ -13086,22 +16795,22 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/toolbar#group
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#group
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#group
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#group
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Toolbar.Input attribute styles. */
   readonly 'Toolbar.Input': {
@@ -13109,27 +16818,27 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/toolbar#input
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Present when the input remains focusable when disabled.
      * Attribute: `data-focusable`. Presence selector.
      * @see https://base-ui.com/react/components/toolbar#input
      */
-    readonly '&[data-focusable]'?: body
+    readonly '&[data-focusable]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#input
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#input
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#input
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Toolbar.Link attribute styles. */
   readonly 'Toolbar.Link': {
@@ -13137,17 +16846,17 @@ export type Selectors<body> = {
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#link
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#link
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#link
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Toolbar.Root attribute styles. */
   readonly 'Toolbar.Root': {
@@ -13155,1114 +16864,2153 @@ export type Selectors<body> = {
      * Attribute: `data-disabled`. Presence selector.
      * @see https://base-ui.com/react/components/toolbar#root
      */
-    readonly '&[data-disabled]'?: body
+    readonly '&[data-disabled]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#root
      */
-    readonly '&[data-orientation]'?: body
+    readonly '&[data-orientation]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#root
      */
-    readonly '&[data-orientation="horizontal"]'?: body
+    readonly '&[data-orientation="horizontal"]'?: true
     /** Indicates the orientation of the toolbar.
      * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/toolbar#root
      */
-    readonly '&[data-orientation="vertical"]'?: body
+    readonly '&[data-orientation="vertical"]'?: true
+  }
+  /** Toolbar.Separator attribute styles. */
+  readonly 'Toolbar.Separator': {
+    /** Indicates the orientation of the separator, which is perpendicular to the toolbar.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toolbar#separator
+     */
+    readonly '&[data-orientation]'?: true
+    /** Indicates the orientation of the separator, which is perpendicular to the toolbar.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toolbar#separator
+     */
+    readonly '&[data-orientation="horizontal"]'?: true
+    /** Indicates the orientation of the separator, which is perpendicular to the toolbar.
+     * Attribute: `data-orientation`. Values: `horizontal`, `vertical`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/toolbar#separator
+     */
+    readonly '&[data-orientation="vertical"]'?: true
   }
   /** Tooltip.Arrow attribute styles. */
   readonly 'Tooltip.Arrow': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the tooltip is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-instant]'?: body
+    readonly '&[data-instant]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-instant="delay"]'?: body
+    readonly '&[data-instant="delay"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-instant="dismiss"]'?: body
+    readonly '&[data-instant="dismiss"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-instant="focus"]'?: body
+    readonly '&[data-instant="focus"]'?: true
     /** Present when the tooltip is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the tooltip arrow is uncentered.
      * Attribute: `data-uncentered`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#arrow
      */
-    readonly '&[data-uncentered]'?: body
+    readonly '&[data-uncentered]'?: true
   }
   /** Tooltip.Popup attribute styles. */
   readonly 'Tooltip.Popup': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the tooltip is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
     /** Present when the tooltip is animating out.
      * Attribute: `data-ending-style`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-ending-style]'?: body
+    readonly '&[data-ending-style]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-instant]'?: body
+    readonly '&[data-instant]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-instant="delay"]'?: body
+    readonly '&[data-instant="delay"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-instant="dismiss"]'?: body
+    readonly '&[data-instant="dismiss"]'?: true
     /** Present if animations should be instant.
      * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-instant="focus"]'?: body
+    readonly '&[data-instant="focus"]'?: true
     /** Present when the tooltip is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
     /** Present when the tooltip begins animating in.
      * Attribute: `data-starting-style`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#popup
      */
-    readonly '&[data-starting-style]'?: body
+    readonly '&[data-starting-style]'?: true
   }
   /** Tooltip.Portal attribute styles. */
   readonly 'Tooltip.Portal': {}
   /** Tooltip.Positioner attribute styles. */
   readonly 'Tooltip.Positioner': {
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-align]'?: body
+    readonly '&[data-align]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-align="start"]'?: body
+    readonly '&[data-align="center"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-align="center"]'?: body
+    readonly '&[data-align="start"]'?: true
     /** Indicates how the popup is aligned relative to specified side.
-     * Attribute: `data-align`. Values: `start`, `center`, `end`. A null upstream state omits the attribute.
+     * Attribute: `data-align`. Values: `center`, `start`, `end`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-align="end"]'?: body
+    readonly '&[data-align="end"]'?: true
     /** Present when the anchor is hidden.
      * Attribute: `data-anchor-hidden`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-anchor-hidden]'?: body
+    readonly '&[data-anchor-hidden]'?: true
     /** Present when the tooltip is closed.
      * Attribute: `data-closed`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-closed]'?: body
+    readonly '&[data-closed]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+     */
+    readonly '&[data-instant]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+     */
+    readonly '&[data-instant="delay"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+     */
+    readonly '&[data-instant="focus"]'?: true
+    /** Supplemental instant hook emitted by Base UI 1.8.0, absent from its attribute declarations.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`, `tracking-cursor`. A null upstream state omits the attribute.
+     * @see https://github.com/mui/base-ui/blob/v1.8.0/packages/react/src/tooltip/positioner/TooltipPositioner.tsx
+     */
+    readonly '&[data-instant="tracking-cursor"]'?: true
     /** Present when the tooltip is open.
      * Attribute: `data-open`. Presence selector.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-open]'?: body
+    readonly '&[data-open]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side]'?: body
+    readonly '&[data-side]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side="top"]'?: body
+    readonly '&[data-side="top"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side="bottom"]'?: body
+    readonly '&[data-side="bottom"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side="left"]'?: body
+    readonly '&[data-side="left"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side="right"]'?: body
+    readonly '&[data-side="right"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side="inline-end"]'?: body
+    readonly '&[data-side="inline-end"]'?: true
     /** Indicates which side the popup is positioned relative to the trigger.
      * Attribute: `data-side`. Values: `top`, `bottom`, `left`, `right`, `inline-end`, `inline-start`. A null upstream state omits the attribute.
      * @see https://base-ui.com/react/components/tooltip#positioner
      */
-    readonly '&[data-side="inline-start"]'?: body
+    readonly '&[data-side="inline-start"]'?: true
+  }
+  /** Tooltip.Trigger attribute styles. */
+  readonly 'Tooltip.Trigger': {
+    /** Present when the corresponding tooltip is open.
+     * Attribute: `data-popup-open`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#trigger
+     */
+    readonly '&[data-popup-open]'?: true
+    /** Present when the trigger is disabled, either by the `disabled` prop or by a parent `<Tooltip.Root>` component.
+     * Attribute: `data-trigger-disabled`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#trigger
+     */
+    readonly '&[data-trigger-disabled]'?: true
+  }
+  /** Tooltip.Viewport attribute styles. */
+  readonly 'Tooltip.Viewport': {
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction=" "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction=" up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction=" down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction="left "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction="left up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction="left down"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction="right "]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction="right up"]'?: true
+    /** Indicates the direction from which the popup was activated.
+This can be used to create directional animations based on how the popup was triggered.
+Contains space-separated values for both horizontal and vertical axes.
+     * Attribute: `data-activation-direction`. Values: ` `, ` up`, ` down`, `left `, `left up`, `left down`, `right `, `right up`, `right down`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-activation-direction="right down"]'?: true
+    /** Applied to the direct child of the viewport when no transitions are present or the new content when it's entering.
+     * Attribute: `data-current`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '& > [data-current]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-instant]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-instant="delay"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-instant="dismiss"]'?: true
+    /** Present if animations should be instant.
+     * Attribute: `data-instant`. Values: `delay`, `dismiss`, `focus`. A null upstream state omits the attribute.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-instant="focus"]'?: true
+    /** Applied to the direct child of the viewport that contains the exiting content when transitions are present.
+     * Attribute: `data-previous`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '& > [data-previous]'?: true
+    /** Indicates that the viewport is currently transitioning between old and new content.
+     * Attribute: `data-transitioning`. Presence selector.
+     * @see https://base-ui.com/react/components/tooltip#viewport
+     */
+    readonly '&[data-transitioning]'?: true
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/accordion' {
+  interface AccordionHeaderProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Accordion.Header identity hint. */
+      readonly 'Accordion.Header'?: true
+    }
+  }
+  interface AccordionItemProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Accordion.Item identity hint. */
+      readonly 'Accordion.Item'?: true
+    }
+  }
+  interface AccordionPanelProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Accordion.Panel identity hint. */
+      readonly 'Accordion.Panel'?: true
+      /** Accordion.Root identity hint. */
+      readonly 'Accordion.Root'?: never
+    }
+  }
+  interface AccordionRootProps<Value = any> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Accordion.Root identity hint. */
+      readonly 'Accordion.Root'?: true
+    }
+  }
   interface AccordionTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Accordion.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Accordion.Trigger identity hint. */
+      readonly 'Accordion.Trigger'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
-declare module '@base-ui/react/alert-dialog' {}
+declare module '@base-ui/react/alert-dialog' {
+  interface AlertDialogTriggerProps<Payload = unknown> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Trigger identity hint. */
+      readonly 'AlertDialog.Trigger'?: true
+      /** Dialog.Trigger identity hint. */
+      readonly 'Dialog.Trigger'?: never
+    }
+  }
+}
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/autocomplete' {
   interface AutocompleteInputGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.InputGroup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.InputGroup identity hint. */
+      readonly 'Autocomplete.InputGroup'?: true
+    }
   }
   interface AutocompleteItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Item'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Item identity hint. */
+      readonly 'Autocomplete.Item'?: true
+    }
   }
   interface AutocompleteSeparatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Separator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Separator identity hint. */
+      readonly 'Autocomplete.Separator'?: true
+    }
   }
   interface AutocompleteTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Trigger identity hint. */
+      readonly 'Autocomplete.Trigger'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/avatar' {
   interface AvatarFallbackProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Avatar.Fallback'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Avatar.Fallback identity hint. */
+      readonly 'Avatar.Fallback'?: true
+    }
   }
   interface AvatarImageProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Avatar.Image'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Avatar.Image identity hint. */
+      readonly 'Avatar.Image'?: true
+    }
   }
   interface AvatarRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Avatar.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Avatar.Root identity hint. */
+      readonly 'Avatar.Root'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/button' {
   interface ButtonProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Button'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Button identity hint. */
+      readonly Button?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/checkbox' {
   interface CheckboxIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Checkbox.Indicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Checkbox.Indicator identity hint. */
+      readonly 'Checkbox.Indicator'?: true
+    }
   }
   interface CheckboxRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Checkbox.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Checkbox.Root identity hint. */
+      readonly 'Checkbox.Root'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/checkbox-group' {
   interface CheckboxGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'CheckboxGroup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** CheckboxGroup identity hint. */
+      readonly CheckboxGroup?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/collapsible' {
   interface CollapsiblePanelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Collapsible.Panel'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Collapsible.Panel identity hint. */
+      readonly 'Collapsible.Panel'?: true
+    }
   }
   interface CollapsibleRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Collapsible.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Collapsible.Root identity hint. */
+      readonly 'Collapsible.Root'?: true
+    }
   }
   interface CollapsibleTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Collapsible.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Collapsible.Trigger identity hint. */
+      readonly 'Collapsible.Trigger'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/combobox' {
   interface ComboboxArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Arrow' | 'Combobox.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Arrow identity hint. */
+      readonly 'Autocomplete.Arrow'?: true
+      /** Combobox.Arrow identity hint. */
+      readonly 'Combobox.Arrow'?: true
+    }
   }
   interface ComboboxBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Backdrop' | 'Combobox.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Backdrop identity hint. */
+      readonly 'Autocomplete.Backdrop'?: true
+      /** Combobox.Backdrop identity hint. */
+      readonly 'Combobox.Backdrop'?: true
+    }
   }
   interface ComboboxClearProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Clear' | 'Combobox.Clear'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Clear identity hint. */
+      readonly 'Autocomplete.Clear'?: true
+      /** Combobox.Clear identity hint. */
+      readonly 'Combobox.Clear'?: true
+    }
   }
   interface ComboboxEmptyProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Empty' | 'Combobox.Empty'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Empty identity hint. */
+      readonly 'Autocomplete.Empty'?: true
+      /** Combobox.Empty identity hint. */
+      readonly 'Combobox.Empty'?: true
+    }
   }
   interface ComboboxGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Group' | 'Combobox.Group'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Group identity hint. */
+      readonly 'Autocomplete.Group'?: true
+      /** Combobox.Group identity hint. */
+      readonly 'Combobox.Group'?: true
+    }
   }
   interface ComboboxGroupLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.GroupLabel' | 'Combobox.GroupLabel'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.GroupLabel identity hint. */
+      readonly 'Autocomplete.GroupLabel'?: true
+      /** Combobox.GroupLabel identity hint. */
+      readonly 'Combobox.GroupLabel'?: true
+    }
   }
   interface ComboboxIconProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Icon' | 'Combobox.Icon'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Icon identity hint. */
+      readonly 'Autocomplete.Icon'?: true
+      /** Combobox.Icon identity hint. */
+      readonly 'Combobox.Icon'?: true
+    }
   }
   interface ComboboxInputProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Input' | 'Combobox.Input'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Input identity hint. */
+      readonly 'Autocomplete.Input'?: true
+      /** Combobox.Input identity hint. */
+      readonly 'Combobox.Input'?: true
+    }
   }
   interface ComboboxListProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.List' | 'Combobox.List'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.List identity hint. */
+      readonly 'Autocomplete.List'?: true
+      /** Combobox.List identity hint. */
+      readonly 'Combobox.List'?: true
+    }
   }
   interface ComboboxPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Popup' | 'Combobox.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Popup identity hint. */
+      readonly 'Autocomplete.Popup'?: true
+      /** Combobox.Popup identity hint. */
+      readonly 'Combobox.Popup'?: true
+    }
   }
   interface ComboboxPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Portal' | 'Combobox.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Portal identity hint. */
+      readonly 'Autocomplete.Portal'?: true
+      /** Combobox.Portal identity hint. */
+      readonly 'Combobox.Portal'?: true
+    }
   }
   interface ComboboxPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Positioner' | 'Combobox.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Positioner identity hint. */
+      readonly 'Autocomplete.Positioner'?: true
+      /** Combobox.Positioner identity hint. */
+      readonly 'Combobox.Positioner'?: true
+    }
   }
   interface ComboboxRowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Row' | 'Combobox.Row'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Row identity hint. */
+      readonly 'Autocomplete.Row'?: true
+      /** Combobox.Row identity hint. */
+      readonly 'Combobox.Row'?: true
+    }
   }
   interface ComboboxStatusProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Autocomplete.Status' | 'Combobox.Status'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Autocomplete.Status identity hint. */
+      readonly 'Autocomplete.Status'?: true
+      /** Combobox.Status identity hint. */
+      readonly 'Combobox.Status'?: true
+    }
   }
   interface ComboboxChipProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.Chip'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.Chip identity hint. */
+      readonly 'Combobox.Chip'?: true
+    }
   }
   interface ComboboxChipRemoveProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.ChipRemove'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.ChipRemove identity hint. */
+      readonly 'Combobox.ChipRemove'?: true
+    }
   }
   interface ComboboxChipsProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.Chips'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.Chips identity hint. */
+      readonly 'Combobox.Chips'?: true
+    }
   }
   interface ComboboxInputGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.InputGroup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.InputGroup identity hint. */
+      readonly 'Combobox.InputGroup'?: true
+    }
   }
   interface ComboboxItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.Item'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.Item identity hint. */
+      readonly 'Combobox.Item'?: true
+    }
   }
   interface ComboboxItemIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.ItemIndicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.ItemIndicator identity hint. */
+      readonly 'Combobox.ItemIndicator'?: true
+    }
   }
   interface ComboboxLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.Label'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.Label identity hint. */
+      readonly 'Combobox.Label'?: true
+    }
   }
   interface ComboboxSeparatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.Separator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.Separator identity hint. */
+      readonly 'Combobox.Separator'?: true
+    }
   }
   interface ComboboxTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Combobox.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Combobox.Trigger identity hint. */
+      readonly 'Combobox.Trigger'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/context-menu' {
+  interface ContextMenuPositionerProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Positioner identity hint. */
+      readonly 'ContextMenu.Positioner'?: true
+      /** Menu.Positioner identity hint. */
+      readonly 'Menu.Positioner'?: never
+    }
+  }
   interface ContextMenuTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Trigger identity hint. */
+      readonly 'ContextMenu.Trigger'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/dialog' {
   interface DialogBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Backdrop' | 'Dialog.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Backdrop identity hint. */
+      readonly 'AlertDialog.Backdrop'?: true
+      /** Dialog.Backdrop identity hint. */
+      readonly 'Dialog.Backdrop'?: true
+    }
   }
   interface DialogCloseProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Close' | 'Dialog.Close'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Close identity hint. */
+      readonly 'AlertDialog.Close'?: true
+      /** Dialog.Close identity hint. */
+      readonly 'Dialog.Close'?: true
+    }
   }
   interface DialogDescriptionProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Description' | 'Dialog.Description'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Description identity hint. */
+      readonly 'AlertDialog.Description'?: true
+      /** Dialog.Description identity hint. */
+      readonly 'Dialog.Description'?: true
+    }
   }
   interface DialogPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Popup' | 'Dialog.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Popup identity hint. */
+      readonly 'AlertDialog.Popup'?: true
+      /** Dialog.Popup identity hint. */
+      readonly 'Dialog.Popup'?: true
+    }
   }
   interface DialogPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Portal' | 'Dialog.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Portal identity hint. */
+      readonly 'AlertDialog.Portal'?: true
+      /** Dialog.Portal identity hint. */
+      readonly 'Dialog.Portal'?: true
+    }
   }
   interface DialogTitleProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Title' | 'Dialog.Title'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Title identity hint. */
+      readonly 'AlertDialog.Title'?: true
+      /** Dialog.Title identity hint. */
+      readonly 'Dialog.Title'?: true
+    }
   }
   interface DialogViewportProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'AlertDialog.Viewport' | 'Dialog.Viewport'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** AlertDialog.Viewport identity hint. */
+      readonly 'AlertDialog.Viewport'?: true
+      /** Dialog.Viewport identity hint. */
+      readonly 'Dialog.Viewport'?: true
+    }
+  }
+  interface DialogTriggerProps<Payload = unknown> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Dialog.Trigger identity hint. */
+      readonly 'Dialog.Trigger'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/drawer' {
   interface DrawerBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Backdrop identity hint. */
+      readonly 'Drawer.Backdrop'?: true
+    }
   }
   interface DrawerCloseProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Close'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Close identity hint. */
+      readonly 'Drawer.Close'?: true
+    }
   }
   interface DrawerContentProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Content'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Content identity hint. */
+      readonly 'Drawer.Content'?: true
+    }
   }
   interface DrawerDescriptionProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Description'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Description identity hint. */
+      readonly 'Drawer.Description'?: true
+    }
   }
   interface DrawerIndentProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Indent'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Indent identity hint. */
+      readonly 'Drawer.Indent'?: true
+    }
   }
   interface DrawerIndentBackgroundProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.IndentBackground'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.IndentBackground identity hint. */
+      readonly 'Drawer.IndentBackground'?: true
+    }
   }
   interface DrawerPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Popup identity hint. */
+      readonly 'Drawer.Popup'?: true
+    }
   }
   interface DrawerPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Portal identity hint. */
+      readonly 'Drawer.Portal'?: true
+    }
   }
   interface DrawerSwipeAreaProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.SwipeArea'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.SwipeArea identity hint. */
+      readonly 'Drawer.SwipeArea'?: true
+    }
   }
   interface DrawerTitleProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Title'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Title identity hint. */
+      readonly 'Drawer.Title'?: true
+    }
+  }
+  interface DrawerTriggerProps<Payload = unknown> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Trigger identity hint. */
+      readonly 'Drawer.Trigger'?: true
+    }
   }
   interface DrawerViewportProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Drawer.Viewport'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Drawer.Viewport identity hint. */
+      readonly 'Drawer.Viewport'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/field' {
   interface FieldControlProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Field.Control'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Field.Control identity hint. */
+      readonly 'Field.Control'?: true
+    }
   }
   interface FieldDescriptionProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Field.Description'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Field.Description identity hint. */
+      readonly 'Field.Description'?: true
+    }
   }
   interface FieldErrorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Field.Error'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Field.Error identity hint. */
+      readonly 'Field.Error'?: true
+    }
   }
   interface FieldItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Field.Item'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Field.Item identity hint. */
+      readonly 'Field.Item'?: true
+    }
   }
   interface FieldLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Field.Label'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Field.Label identity hint. */
+      readonly 'Field.Label'?: true
+    }
   }
   interface FieldRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Field.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Field.Root identity hint. */
+      readonly 'Field.Root'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/fieldset' {
   interface FieldsetLegendProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Fieldset.Legend'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Fieldset.Legend identity hint. */
+      readonly 'Fieldset.Legend'?: true
+    }
   }
   interface FieldsetRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Fieldset.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Fieldset.Root identity hint. */
+      readonly 'Fieldset.Root'?: true
+    }
+  }
+}
+
+// Importing this type module opts into identity augmentation.
+declare module '@base-ui/react/form' {
+  interface FormProps<
+    FormValues extends Record<string, any> = Record<string, any>,
+  > {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Form identity hint. */
+      readonly Form?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/input' {
   interface InputProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Input'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Input identity hint. */
+      readonly Input?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/menu' {
   interface MenuArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Arrow' | 'Menu.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Arrow identity hint. */
+      readonly 'ContextMenu.Arrow'?: true
+      /** Menu.Arrow identity hint. */
+      readonly 'Menu.Arrow'?: true
+    }
   }
   interface MenuBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Backdrop' | 'Menu.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Backdrop identity hint. */
+      readonly 'ContextMenu.Backdrop'?: true
+      /** Menu.Backdrop identity hint. */
+      readonly 'Menu.Backdrop'?: true
+    }
   }
   interface MenuCheckboxItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.CheckboxItem' | 'Menu.CheckboxItem'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.CheckboxItem identity hint. */
+      readonly 'ContextMenu.CheckboxItem'?: true
+      /** Menu.CheckboxItem identity hint. */
+      readonly 'Menu.CheckboxItem'?: true
+    }
   }
   interface MenuCheckboxItemIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?:
-      | 'ContextMenu.CheckboxItemIndicator'
-      | 'Menu.CheckboxItemIndicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.CheckboxItemIndicator identity hint. */
+      readonly 'ContextMenu.CheckboxItemIndicator'?: true
+      /** Menu.CheckboxItemIndicator identity hint. */
+      readonly 'Menu.CheckboxItemIndicator'?: true
+    }
   }
   interface MenuGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Group' | 'Menu.Group'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Group identity hint. */
+      readonly 'ContextMenu.Group'?: true
+      /** Menu.Group identity hint. */
+      readonly 'Menu.Group'?: true
+    }
   }
   interface MenuGroupLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.GroupLabel' | 'Menu.GroupLabel'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.GroupLabel identity hint. */
+      readonly 'ContextMenu.GroupLabel'?: true
+      /** Menu.GroupLabel identity hint. */
+      readonly 'Menu.GroupLabel'?: true
+    }
   }
   interface MenuItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Item' | 'Menu.Item'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Item identity hint. */
+      readonly 'ContextMenu.Item'?: true
+      /** Menu.Item identity hint. */
+      readonly 'Menu.Item'?: true
+    }
   }
   interface MenuLinkItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.LinkItem' | 'Menu.LinkItem'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.LinkItem identity hint. */
+      readonly 'ContextMenu.LinkItem'?: true
+      /** Menu.LinkItem identity hint. */
+      readonly 'Menu.LinkItem'?: true
+    }
   }
   interface MenuPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Popup' | 'Menu.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Popup identity hint. */
+      readonly 'ContextMenu.Popup'?: true
+      /** Menu.Popup identity hint. */
+      readonly 'Menu.Popup'?: true
+    }
   }
   interface MenuPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.Portal' | 'Menu.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Portal identity hint. */
+      readonly 'ContextMenu.Portal'?: true
+      /** Menu.Portal identity hint. */
+      readonly 'Menu.Portal'?: true
+    }
   }
   interface MenuRadioGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.RadioGroup' | 'Menu.RadioGroup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.RadioGroup identity hint. */
+      readonly 'ContextMenu.RadioGroup'?: true
+      /** Menu.RadioGroup identity hint. */
+      readonly 'Menu.RadioGroup'?: true
+    }
   }
   interface MenuRadioItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.RadioItem' | 'Menu.RadioItem'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.RadioItem identity hint. */
+      readonly 'ContextMenu.RadioItem'?: true
+      /** Menu.RadioItem identity hint. */
+      readonly 'Menu.RadioItem'?: true
+    }
   }
   interface MenuRadioItemIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?:
-      | 'ContextMenu.RadioItemIndicator'
-      | 'Menu.RadioItemIndicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.RadioItemIndicator identity hint. */
+      readonly 'ContextMenu.RadioItemIndicator'?: true
+      /** Menu.RadioItemIndicator identity hint. */
+      readonly 'Menu.RadioItemIndicator'?: true
+    }
   }
   interface MenuSubmenuTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ContextMenu.SubmenuTrigger' | 'Menu.SubmenuTrigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.SubmenuTrigger identity hint. */
+      readonly 'ContextMenu.SubmenuTrigger'?: true
+      /** Menu.SubmenuTrigger identity hint. */
+      readonly 'Menu.SubmenuTrigger'?: true
+    }
+  }
+  interface MenuPositionerProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Menu.Positioner identity hint. */
+      readonly 'Menu.Positioner'?: true
+    }
+  }
+  interface MenuTriggerProps<Payload = unknown> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Menu.Trigger identity hint. */
+      readonly 'Menu.Trigger'?: true
+    }
+  }
+  interface MenuViewportProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Menu.Viewport identity hint. */
+      readonly 'Menu.Viewport'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/menubar' {
   interface MenubarProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Menubar'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Menubar identity hint. */
+      readonly Menubar?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/meter' {
   interface MeterIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Meter.Indicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Meter.Indicator identity hint. */
+      readonly 'Meter.Indicator'?: true
+    }
   }
   interface MeterLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Meter.Label'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Meter.Label identity hint. */
+      readonly 'Meter.Label'?: true
+    }
   }
   interface MeterRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Meter.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Meter.Root identity hint. */
+      readonly 'Meter.Root'?: true
+    }
   }
   interface MeterTrackProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Meter.Track'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Meter.Track identity hint. */
+      readonly 'Meter.Track'?: true
+    }
   }
   interface MeterValueProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Meter.Value'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Meter.Value identity hint. */
+      readonly 'Meter.Value'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/navigation-menu' {
   interface NavigationMenuArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Arrow identity hint. */
+      readonly 'NavigationMenu.Arrow'?: true
+    }
   }
   interface NavigationMenuBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Backdrop identity hint. */
+      readonly 'NavigationMenu.Backdrop'?: true
+    }
   }
   interface NavigationMenuContentProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Content'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Content identity hint. */
+      readonly 'NavigationMenu.Content'?: true
+    }
   }
   interface NavigationMenuIconProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Icon'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Icon identity hint. */
+      readonly 'NavigationMenu.Icon'?: true
+    }
   }
   interface NavigationMenuItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Item'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Item identity hint. */
+      readonly 'NavigationMenu.Item'?: true
+    }
   }
   interface NavigationMenuLinkProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Link'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Link identity hint. */
+      readonly 'NavigationMenu.Link'?: true
+    }
   }
   interface NavigationMenuListProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.List'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.List identity hint. */
+      readonly 'NavigationMenu.List'?: true
+    }
   }
   interface NavigationMenuPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Popup identity hint. */
+      readonly 'NavigationMenu.Popup'?: true
+    }
   }
   interface NavigationMenuPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Portal identity hint. */
+      readonly 'NavigationMenu.Portal'?: true
+    }
   }
   interface NavigationMenuPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Positioner identity hint. */
+      readonly 'NavigationMenu.Positioner'?: true
+    }
+  }
+  interface NavigationMenuRootProps<Value = any> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Root identity hint. */
+      readonly 'NavigationMenu.Root'?: true
+    }
   }
   interface NavigationMenuTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Trigger identity hint. */
+      readonly 'NavigationMenu.Trigger'?: true
+    }
   }
   interface NavigationMenuViewportProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NavigationMenu.Viewport'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NavigationMenu.Viewport identity hint. */
+      readonly 'NavigationMenu.Viewport'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/number-field' {
   interface NumberFieldDecrementProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.Decrement'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.Decrement identity hint. */
+      readonly 'NumberField.Decrement'?: true
+    }
   }
   interface NumberFieldGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.Group'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.Group identity hint. */
+      readonly 'NumberField.Group'?: true
+    }
   }
   interface NumberFieldIncrementProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.Increment'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.Increment identity hint. */
+      readonly 'NumberField.Increment'?: true
+    }
   }
   interface NumberFieldInputProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.Input'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.Input identity hint. */
+      readonly 'NumberField.Input'?: true
+    }
   }
   interface NumberFieldRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.Root identity hint. */
+      readonly 'NumberField.Root'?: true
+    }
   }
   interface NumberFieldScrubAreaProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.ScrubArea'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.ScrubArea identity hint. */
+      readonly 'NumberField.ScrubArea'?: true
+    }
   }
   interface NumberFieldScrubAreaCursorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'NumberField.ScrubAreaCursor'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** NumberField.ScrubAreaCursor identity hint. */
+      readonly 'NumberField.ScrubAreaCursor'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/otp-field' {
   interface OTPFieldInputProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'OTPField.Input'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** OTPField.Input identity hint. */
+      readonly 'OTPField.Input'?: true
+    }
   }
   interface OTPFieldRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'OTPField.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** OTPField.Root identity hint. */
+      readonly 'OTPField.Root'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/popover' {
   interface PopoverArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Arrow identity hint. */
+      readonly 'Popover.Arrow'?: true
+    }
   }
   interface PopoverBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Backdrop identity hint. */
+      readonly 'Popover.Backdrop'?: true
+    }
   }
   interface PopoverCloseProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Close'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Close identity hint. */
+      readonly 'Popover.Close'?: true
+    }
   }
   interface PopoverDescriptionProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Description'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Description identity hint. */
+      readonly 'Popover.Description'?: true
+    }
   }
   interface PopoverPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Popup identity hint. */
+      readonly 'Popover.Popup'?: true
+    }
   }
   interface PopoverPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Portal identity hint. */
+      readonly 'Popover.Portal'?: true
+    }
   }
   interface PopoverPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Positioner identity hint. */
+      readonly 'Popover.Positioner'?: true
+    }
   }
   interface PopoverTitleProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Popover.Title'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Title identity hint. */
+      readonly 'Popover.Title'?: true
+    }
+  }
+  interface PopoverTrigger {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Trigger identity hint. */
+      readonly 'Popover.Trigger'?: true
+    }
+  }
+  interface PopoverViewportProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Popover.Viewport identity hint. */
+      readonly 'Popover.Viewport'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/preview-card' {
   interface PreviewCardArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'PreviewCard.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Arrow identity hint. */
+      readonly 'PreviewCard.Arrow'?: true
+    }
   }
   interface PreviewCardBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'PreviewCard.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Backdrop identity hint. */
+      readonly 'PreviewCard.Backdrop'?: true
+    }
   }
   interface PreviewCardPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'PreviewCard.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Popup identity hint. */
+      readonly 'PreviewCard.Popup'?: true
+    }
   }
   interface PreviewCardPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'PreviewCard.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Portal identity hint. */
+      readonly 'PreviewCard.Portal'?: true
+    }
   }
   interface PreviewCardPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'PreviewCard.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Positioner identity hint. */
+      readonly 'PreviewCard.Positioner'?: true
+    }
+  }
+  interface PreviewCardTriggerProps<Payload = unknown> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Trigger identity hint. */
+      readonly 'PreviewCard.Trigger'?: true
+    }
+  }
+  interface PreviewCardViewportProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** PreviewCard.Viewport identity hint. */
+      readonly 'PreviewCard.Viewport'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/progress' {
   interface ProgressIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Progress.Indicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Progress.Indicator identity hint. */
+      readonly 'Progress.Indicator'?: true
+    }
   }
   interface ProgressLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Progress.Label'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Progress.Label identity hint. */
+      readonly 'Progress.Label'?: true
+    }
   }
   interface ProgressRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Progress.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Progress.Root identity hint. */
+      readonly 'Progress.Root'?: true
+    }
   }
   interface ProgressTrackProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Progress.Track'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Progress.Track identity hint. */
+      readonly 'Progress.Track'?: true
+    }
   }
   interface ProgressValueProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Progress.Value'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Progress.Value identity hint. */
+      readonly 'Progress.Value'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/radio' {
   interface RadioIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Radio.Indicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Radio.Indicator identity hint. */
+      readonly 'Radio.Indicator'?: true
+    }
+  }
+  interface RadioRootProps<Value = any> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Radio.Root identity hint. */
+      readonly 'Radio.Root'?: true
+    }
+  }
+}
+
+// Importing this type module opts into identity augmentation.
+declare module '@base-ui/react/radio-group' {
+  interface RadioGroupProps<Value = any> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** RadioGroup identity hint. */
+      readonly RadioGroup?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/scroll-area' {
   interface ScrollAreaContentProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ScrollArea.Content'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ScrollArea.Content identity hint. */
+      readonly 'ScrollArea.Content'?: true
+    }
   }
   interface ScrollAreaCornerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ScrollArea.Corner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ScrollArea.Corner identity hint. */
+      readonly 'ScrollArea.Corner'?: true
+    }
   }
   interface ScrollAreaRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ScrollArea.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ScrollArea.Root identity hint. */
+      readonly 'ScrollArea.Root'?: true
+    }
   }
   interface ScrollAreaScrollbarProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ScrollArea.Scrollbar'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ScrollArea.Scrollbar identity hint. */
+      readonly 'ScrollArea.Scrollbar'?: true
+    }
   }
   interface ScrollAreaThumbProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ScrollArea.Thumb'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ScrollArea.Thumb identity hint. */
+      readonly 'ScrollArea.Thumb'?: true
+    }
   }
   interface ScrollAreaViewportProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'ScrollArea.Viewport'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ScrollArea.Viewport identity hint. */
+      readonly 'ScrollArea.Viewport'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/select' {
   interface SelectArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Arrow identity hint. */
+      readonly 'Select.Arrow'?: true
+    }
   }
   interface SelectBackdropProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Backdrop'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Backdrop identity hint. */
+      readonly 'Select.Backdrop'?: true
+    }
   }
   interface SelectGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Group'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Group identity hint. */
+      readonly 'Select.Group'?: true
+    }
   }
   interface SelectGroupLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.GroupLabel'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.GroupLabel identity hint. */
+      readonly 'Select.GroupLabel'?: true
+    }
   }
   interface SelectIconProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Icon'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Icon identity hint. */
+      readonly 'Select.Icon'?: true
+    }
   }
   interface SelectItemProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Item'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Item identity hint. */
+      readonly 'Select.Item'?: true
+    }
   }
   interface SelectItemIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.ItemIndicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.ItemIndicator identity hint. */
+      readonly 'Select.ItemIndicator'?: true
+    }
   }
   interface SelectItemTextProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.ItemText'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.ItemText identity hint. */
+      readonly 'Select.ItemText'?: true
+    }
   }
   interface SelectLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Label'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Label identity hint. */
+      readonly 'Select.Label'?: true
+    }
   }
   interface SelectListProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.List'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.List identity hint. */
+      readonly 'Select.List'?: true
+    }
   }
   interface SelectPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Popup identity hint. */
+      readonly 'Select.Popup'?: true
+    }
   }
   interface SelectPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Portal identity hint. */
+      readonly 'Select.Portal'?: true
+    }
   }
   interface SelectPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Positioner identity hint. */
+      readonly 'Select.Positioner'?: true
+    }
   }
   interface SelectScrollDownArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.ScrollDownArrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.ScrollDownArrow identity hint. */
+      readonly 'Select.ScrollDownArrow'?: true
+    }
   }
   interface SelectScrollUpArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.ScrollUpArrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.ScrollUpArrow identity hint. */
+      readonly 'Select.ScrollUpArrow'?: true
+    }
   }
   interface SelectSeparatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Separator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Separator identity hint. */
+      readonly 'Select.Separator'?: true
+    }
   }
   interface SelectTriggerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Trigger'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Trigger identity hint. */
+      readonly 'Select.Trigger'?: true
+    }
   }
   interface SelectValueProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Select.Value'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Select.Value identity hint. */
+      readonly 'Select.Value'?: true
+    }
+  }
+}
+
+// Importing this type module opts into identity augmentation.
+declare module '@base-ui/react/separator' {
+  interface SeparatorProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Separator identity hint. */
+      readonly 'ContextMenu.Separator'?: true
+      /** Menu.Separator identity hint. */
+      readonly 'Menu.Separator'?: true
+      /** OTPField.Separator identity hint. */
+      readonly 'OTPField.Separator'?: true
+      /** Separator identity hint. */
+      readonly Separator?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/slider' {
   interface SliderControlProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Slider.Control'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Control identity hint. */
+      readonly 'Slider.Control'?: true
+    }
   }
   interface SliderIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Slider.Indicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Indicator identity hint. */
+      readonly 'Slider.Indicator'?: true
+    }
   }
   interface SliderLabelProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Slider.Label'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Label identity hint. */
+      readonly 'Slider.Label'?: true
+    }
+  }
+  interface SliderRootProps<
+    Value extends number | readonly number[] = number | readonly number[],
+  > {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Root identity hint. */
+      readonly 'Slider.Root'?: true
+    }
+  }
+  interface SliderThumbProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Thumb identity hint. */
+      readonly 'Slider.Thumb'?: true
+    }
   }
   interface SliderTrackProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Slider.Track'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Track identity hint. */
+      readonly 'Slider.Track'?: true
+    }
   }
   interface SliderValueProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Slider.Value'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Slider.Value identity hint. */
+      readonly 'Slider.Value'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/switch' {
   interface SwitchRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Switch.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Switch.Root identity hint. */
+      readonly 'Switch.Root'?: true
+    }
   }
   interface SwitchThumbProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Switch.Thumb'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Switch.Thumb identity hint. */
+      readonly 'Switch.Thumb'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/tabs' {
   interface TabsIndicatorProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tabs.Indicator'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tabs.Indicator identity hint. */
+      readonly 'Tabs.Indicator'?: true
+    }
   }
   interface TabsListProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tabs.List'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tabs.List identity hint. */
+      readonly 'Tabs.List'?: true
+    }
+  }
+  interface TabsPanelProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tabs.Panel identity hint. */
+      readonly 'Tabs.Panel'?: true
+    }
   }
   interface TabsRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tabs.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tabs.Root identity hint. */
+      readonly 'Tabs.Root'?: true
+    }
   }
   interface TabsTabProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tabs.Tab'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tabs.Tab identity hint. */
+      readonly 'Tabs.Tab'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/toast' {
+  interface ToastActionProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Action identity hint. */
+      readonly 'Toast.Action'?: true
+    }
+  }
   interface ToastArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toast.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Arrow identity hint. */
+      readonly 'Toast.Arrow'?: true
+    }
+  }
+  interface ToastCloseProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Close identity hint. */
+      readonly 'Toast.Close'?: true
+    }
+  }
+  interface ToastContentProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Content identity hint. */
+      readonly 'Toast.Content'?: true
+    }
+  }
+  interface ToastDescriptionProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Description identity hint. */
+      readonly 'Toast.Description'?: true
+    }
   }
   interface ToastPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toast.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Portal identity hint. */
+      readonly 'Toast.Portal'?: true
+    }
   }
   interface ToastPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toast.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Positioner identity hint. */
+      readonly 'Toast.Positioner'?: true
+    }
+  }
+  interface ToastRootProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Root identity hint. */
+      readonly 'Toast.Root'?: true
+    }
+  }
+  interface ToastTitleProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Title identity hint. */
+      readonly 'Toast.Title'?: true
+    }
+  }
+  interface ToastViewportProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toast.Viewport identity hint. */
+      readonly 'Toast.Viewport'?: true
+    }
+  }
+}
+
+// Importing this type module opts into identity augmentation.
+declare module '@base-ui/react/toggle' {
+  interface ToggleProps<Value extends string> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toggle identity hint. */
+      readonly Toggle?: true
+    }
+  }
+}
+
+// Importing this type module opts into identity augmentation.
+declare module '@base-ui/react/toggle-group' {
+  interface ToggleGroupProps<Value extends string> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ToggleGroup identity hint. */
+      readonly ToggleGroup?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/toolbar' {
   interface ToolbarButtonProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toolbar.Button'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toolbar.Button identity hint. */
+      readonly 'Toolbar.Button'?: true
+    }
   }
   interface ToolbarGroupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toolbar.Group'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toolbar.Group identity hint. */
+      readonly 'Toolbar.Group'?: true
+    }
   }
   interface ToolbarInputProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toolbar.Input'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toolbar.Input identity hint. */
+      readonly 'Toolbar.Input'?: true
+    }
   }
   interface ToolbarLinkProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toolbar.Link'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toolbar.Link identity hint. */
+      readonly 'Toolbar.Link'?: true
+    }
   }
   interface ToolbarRootProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Toolbar.Root'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Toolbar.Root identity hint. */
+      readonly 'Toolbar.Root'?: true
+    }
+  }
+  interface ToolbarSeparatorProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** ContextMenu.Separator identity hint. */
+      readonly 'ContextMenu.Separator'?: never
+      /** Menu.Separator identity hint. */
+      readonly 'Menu.Separator'?: never
+      /** OTPField.Separator identity hint. */
+      readonly 'OTPField.Separator'?: never
+      /** Separator identity hint. */
+      readonly Separator?: never
+      /** Toolbar.Separator identity hint. */
+      readonly 'Toolbar.Separator'?: true
+    }
   }
 }
 
 // Importing this type module opts into identity augmentation.
 declare module '@base-ui/react/tooltip' {
   interface TooltipArrowProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tooltip.Arrow'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tooltip.Arrow identity hint. */
+      readonly 'Tooltip.Arrow'?: true
+    }
   }
   interface TooltipPopupProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tooltip.Popup'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tooltip.Popup identity hint. */
+      readonly 'Tooltip.Popup'?: true
+    }
   }
   interface TooltipPortalProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tooltip.Portal'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tooltip.Portal identity hint. */
+      readonly 'Tooltip.Portal'?: true
+    }
   }
   interface TooltipPositionerProps {
-    /** Documented component or compatible alias hint, absent at runtime. Not an exact wrapper identity. */
-    readonly [part]?: 'Tooltip.Positioner'
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tooltip.Positioner identity hint. */
+      readonly 'Tooltip.Positioner'?: true
+    }
+  }
+  interface TooltipTriggerProps<Payload = unknown> {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tooltip.Trigger identity hint. */
+      readonly 'Tooltip.Trigger'?: true
+    }
+  }
+  interface TooltipViewportProps {
+    /** Documented part and inherited contracts, absent at runtime. */
+    readonly [part]?: {
+      /** Tooltip.Viewport identity hint. */
+      readonly 'Tooltip.Viewport'?: true
+    }
   }
 }

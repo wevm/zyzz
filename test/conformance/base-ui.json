@@ -1,73 +1,5 @@
 {
-  "deferred": {
-    "Accordion.Header": "Unbounded or unhandled @type for index",
-    "Accordion.Item": "Unbounded or unhandled @type for index",
-    "Accordion.Panel": "Inherited Props identity is unsafe with Accordion.Root",
-    "Accordion.Root": "Props identity inherited by Accordion.Panel",
-    "AlertDialog.Root": "Inherited Props identity is unsafe with Dialog.Root",
-    "AlertDialog.Trigger": "Inherited Props identity is unsafe with Dialog.Trigger",
-    "Autocomplete.Collection": "No className contract (provider, root, or non-DOM component)",
-    "Autocomplete.Root": "Generic Props interface requires explicit augmentation review",
-    "Autocomplete.Value": "No className contract (provider, root, or non-DOM component)",
-    "Combobox.Collection": "No className contract (provider, root, or non-DOM component)",
-    "Combobox.Root": "No public mergeable component Props interface",
-    "Combobox.Value": "No className contract (provider, root, or non-DOM component)",
-    "ContextMenu.Positioner": "Inherited Props identity is unsafe with Menu.Positioner",
-    "ContextMenu.Root": "Inherited Props identity is unsafe with Menu.Root",
-    "ContextMenu.Separator": "Props identity inherited by Toolbar.Separator",
-    "ContextMenu.SubmenuRoot": "Inherited Props identity is unsafe with Menu.Root",
-    "CSPProvider": "No className contract (provider, root, or non-DOM component)",
-    "Dialog.Root": "Props identity inherited by AlertDialog.Root",
-    "Dialog.Trigger": "Props identity inherited by AlertDialog.Trigger",
-    "DirectionProvider": "No className contract (provider, root, or non-DOM component)",
-    "Drawer.Provider": "No className contract (provider, root, or non-DOM component)",
-    "Drawer.Root": "Generic Props interface requires explicit augmentation review",
-    "Drawer.Trigger": "Generic Props interface requires explicit augmentation review",
-    "Drawer.VirtualKeyboardProvider": "No className contract (provider, root, or non-DOM component)",
-    "Field.Validity": "No className contract (provider, root, or non-DOM component)",
-    "Form": "Generic Props interface requires explicit augmentation review",
-    "Menu.Positioner": "Props identity inherited by ContextMenu.Positioner",
-    "Menu.Root": "Props identity inherited by Menu.SubmenuRoot",
-    "Menu.Separator": "Props identity inherited by Toolbar.Separator",
-    "Menu.SubmenuRoot": "Inherited Props identity is unsafe with Menu.Root",
-    "Menu.Trigger": "Generic Props interface requires explicit augmentation review",
-    "Menu.Viewport": "Missing value domain for transitioning",
-    "NavigationMenu.Root": "Generic Props interface requires explicit augmentation review",
-    "OTPField.Separator": "Props identity inherited by Toolbar.Separator",
-    "Popover.Root": "Generic Props interface requires explicit augmentation review",
-    "Popover.Trigger": "No public mergeable component Props interface",
-    "Popover.Viewport": "Missing value domain for transitioning",
-    "PreviewCard.Root": "Generic Props interface requires explicit augmentation review",
-    "PreviewCard.Trigger": "Generic Props interface requires explicit augmentation review",
-    "PreviewCard.Viewport": "Missing value domain for transitioning",
-    "Radio.Root": "Generic Props interface requires explicit augmentation review",
-    "RadioGroup": "Generic Props interface requires explicit augmentation review",
-    "Select.Root": "Generic Props interface requires explicit augmentation review",
-    "Separator": "Props identity inherited by Toolbar.Separator",
-    "Slider.Root": "Generic Props interface requires explicit augmentation review",
-    "Slider.Thumb": "Missing value domain for index",
-    "Tabs.Panel": "Missing value domain for index",
-    "Toast.Action": "Unbounded or unhandled @type for type",
-    "Toast.Close": "Unbounded or unhandled @type for type",
-    "Toast.Content": "Unbounded or unhandled @type for expanded",
-    "Toast.Description": "Unbounded or unhandled @type for type",
-    "Toast.Provider": "No className contract (provider, root, or non-DOM component)",
-    "Toast.Root": "Unbounded or unhandled @type for type",
-    "Toast.Title": "Unbounded or unhandled @type for type",
-    "Toast.Viewport": "Unbounded or unhandled @type for expanded",
-    "Toggle": "Generic Props interface requires explicit augmentation review",
-    "ToggleGroup": "Generic Props interface requires explicit augmentation review",
-    "Toolbar.Separator": "Inherited Props identity is unsafe with Separator",
-    "Tooltip.Provider": "No className contract (provider, root, or non-DOM component)",
-    "Tooltip.Root": "Generic Props interface requires explicit augmentation review",
-    "Tooltip.Trigger": "Generic Props interface requires explicit augmentation review",
-    "Tooltip.Viewport": "Missing value domain for transitioning",
-    "autocomplete/clear/AutocompleteClearDataAttributes.d.ts": "Attribute module not associated with a public component declaration",
-    "internals/TransitionStatusDataAttributes.d.ts": "Attribute module not associated with a public component declaration",
-    "utils/CommonPopupDataAttributes.d.ts": "Attribute module not associated with a public component declaration",
-    "utils/CommonTriggerDataAttributes.d.ts": "Attribute module not associated with a public component declaration",
-    "utils/CommonViewportDataAttributes.d.ts": "Attribute module not associated with a public component declaration"
-  },
+  "deferred": {},
   "inputs": {
     "accordion/header/AccordionHeader.d.ts": "546d955d02e97715e6695474786af5a06c19229adc5fe8fdfe514771ae213211",
     "accordion/header/AccordionHeaderDataAttributes.d.ts": "fb6f37440363486e2fe0316f5eba025b6aec73232e1eae5d6647fc43d78c4442",
@@ -871,7 +803,490 @@
     "package": "@base-ui/react",
     "version": "1.8.0"
   },
+  "nonDom": [
+    "AlertDialog.Root",
+    "Autocomplete.Collection",
+    "Autocomplete.Root",
+    "Autocomplete.Value",
+    "CSPProvider",
+    "Combobox.Collection",
+    "Combobox.Root",
+    "Combobox.Value",
+    "ContextMenu.Root",
+    "ContextMenu.SubmenuRoot",
+    "Dialog.Root",
+    "DirectionProvider",
+    "Drawer.Provider",
+    "Drawer.Root",
+    "Drawer.VirtualKeyboardProvider",
+    "Field.Validity",
+    "Menu.Root",
+    "Menu.SubmenuRoot",
+    "Popover.Root",
+    "PreviewCard.Root",
+    "Select.Root",
+    "Toast.Provider",
+    "Tooltip.Provider",
+    "Tooltip.Root"
+  ],
+  "supplements": {
+    "Accordion.Header": {
+      "closed": {
+        "values": null
+      },
+      "hidden": {
+        "values": null
+      },
+      "orientation": {
+        "values": ["horizontal", "vertical"]
+      }
+    },
+    "Accordion.Item": {
+      "closed": {
+        "values": null
+      },
+      "hidden": {
+        "values": null
+      },
+      "orientation": {
+        "values": ["horizontal", "vertical"]
+      }
+    },
+    "Accordion.Panel": {
+      "orientation": {
+        "values": ["horizontal", "vertical"]
+      }
+    },
+    "Accordion.Root": {
+      "orientation": {
+        "values": ["horizontal", "vertical"]
+      }
+    },
+    "Accordion.Trigger": {
+      "hidden": {
+        "values": null
+      },
+      "index": {
+        "description": "The item index. Base UI 1.8.0 omits this attribute for index zero.",
+        "values": "number"
+      },
+      "orientation": {
+        "values": ["horizontal", "vertical"]
+      }
+    },
+    "Autocomplete.Input": {
+      "required": {
+        "description": "Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes."
+      }
+    },
+    "Autocomplete.List": {
+      "empty": {
+        "values": null
+      }
+    },
+    "Autocomplete.Trigger": {
+      "required": {
+        "description": "Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes."
+      }
+    },
+    "CheckboxGroup": {
+      "dirty": {
+        "values": null
+      },
+      "disabled": {
+        "values": null
+      },
+      "filled": {
+        "values": null
+      },
+      "focused": {
+        "values": null
+      },
+      "invalid": {
+        "values": null
+      },
+      "touched": {
+        "values": null
+      },
+      "valid": {
+        "values": null
+      }
+    },
+    "Collapsible.Panel": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Collapsible.Root": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Collapsible.Trigger": {
+      "disabled": {
+        "description": "Present when the Collapsible.Root is disabled. Base UI 1.8.0 does not reflect the trigger-local disabled override in this attribute.",
+        "values": null
+      }
+    },
+    "Combobox.Chip": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Combobox.ChipRemove": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Combobox.Input": {
+      "required": {
+        "description": "Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes."
+      }
+    },
+    "Combobox.ItemIndicator": {
+      "selected": {
+        "values": null
+      }
+    },
+    "Combobox.Label": {
+      "dirty": {
+        "values": null
+      },
+      "disabled": {
+        "values": null
+      },
+      "filled": {
+        "values": null
+      },
+      "focused": {
+        "values": null
+      },
+      "invalid": {
+        "values": null
+      },
+      "touched": {
+        "values": null
+      },
+      "valid": {
+        "values": null
+      }
+    },
+    "Combobox.List": {
+      "empty": {
+        "values": null
+      }
+    },
+    "Combobox.Trigger": {
+      "required": {
+        "description": "Declared upstream, but Base UI 1.8.0 does not emit data-required on this part. Native required and aria-required are separate attributes."
+      }
+    },
+    "ContextMenu.CheckboxItemIndicator": {
+      "highlighted": {
+        "values": null
+      }
+    },
+    "ContextMenu.Popup": {
+      "nested": {
+        "values": null
+      }
+    },
+    "ContextMenu.Positioner": {
+      "instant": {
+        "values": ["click", "dismiss", "group", "trigger-change"]
+      },
+      "nested": {
+        "values": null
+      }
+    },
+    "ContextMenu.RadioGroup": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "ContextMenu.RadioItemIndicator": {
+      "highlighted": {
+        "values": null
+      }
+    },
+    "Drawer.Backdrop": {
+      "swipeDismiss": {
+        "values": null
+      },
+      "swiping": {
+        "values": null
+      }
+    },
+    "Drawer.Indent": {
+      "active": {
+        "values": null
+      },
+      "inactive": {
+        "values": null
+      }
+    },
+    "Drawer.IndentBackground": {
+      "active": {
+        "values": null
+      },
+      "inactive": {
+        "values": null
+      }
+    },
+    "Fieldset.Legend": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Fieldset.Root": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Menu.CheckboxItemIndicator": {
+      "highlighted": {
+        "values": null
+      }
+    },
+    "Menu.Popup": {
+      "nested": {
+        "values": null
+      }
+    },
+    "Menu.Positioner": {
+      "instant": {
+        "values": ["click", "dismiss", "group", "trigger-change"]
+      },
+      "nested": {
+        "values": null
+      }
+    },
+    "Menu.RadioGroup": {
+      "disabled": {
+        "values": null
+      }
+    },
+    "Menu.RadioItemIndicator": {
+      "highlighted": {
+        "values": null
+      }
+    },
+    "Menu.Viewport": {
+      "current": {
+        "selector": "& > [data-current]",
+        "values": null
+      },
+      "previous": {
+        "selector": "& > [data-previous]",
+        "values": null
+      },
+      "transitioning": {
+        "values": null
+      }
+    },
+    "NavigationMenu.List": {
+      "open": {
+        "values": null
+      }
+    },
+    "NavigationMenu.Root": {
+      "nested": {
+        "values": null
+      },
+      "open": {
+        "values": null
+      }
+    },
+    "Popover.Positioner": {
+      "instant": {
+        "values": ["click", "dismiss", "focus", "trigger-change"]
+      }
+    },
+    "Popover.Viewport": {
+      "current": {
+        "selector": "& > [data-current]",
+        "values": null
+      },
+      "previous": {
+        "selector": "& > [data-previous]",
+        "values": null
+      },
+      "transitioning": {
+        "values": null
+      }
+    },
+    "PreviewCard.Positioner": {
+      "instant": {
+        "values": ["dismiss", "focus"]
+      }
+    },
+    "PreviewCard.Viewport": {
+      "current": {
+        "selector": "& > [data-current]",
+        "values": null
+      },
+      "previous": {
+        "selector": "& > [data-previous]",
+        "values": null
+      },
+      "transitioning": {
+        "values": null
+      }
+    },
+    "RadioGroup": {
+      "dirty": {
+        "values": null
+      },
+      "disabled": {
+        "values": null
+      },
+      "filled": {
+        "values": null
+      },
+      "focused": {
+        "values": null
+      },
+      "invalid": {
+        "values": null
+      },
+      "touched": {
+        "values": null
+      },
+      "valid": {
+        "values": null
+      },
+      "readOnly": {
+        "attribute": "data-readonly",
+        "values": null
+      },
+      "required": {
+        "values": null
+      }
+    },
+    "Select.Arrow": {
+      "side": {
+        "description": "The positioned side. The upstream declaration includes none, but Base UI 1.8.0 does not render the Arrow in that mode."
+      }
+    },
+    "Select.ItemIndicator": {
+      "selected": {
+        "values": null
+      }
+    },
+    "Select.Label": {
+      "dirty": {
+        "values": null
+      },
+      "disabled": {
+        "values": null
+      },
+      "filled": {
+        "values": null
+      },
+      "focused": {
+        "values": null
+      },
+      "invalid": {
+        "values": null
+      },
+      "touched": {
+        "values": null
+      },
+      "valid": {
+        "values": null
+      }
+    },
+    "Slider.Control": {
+      "filled": {
+        "values": null
+      }
+    },
+    "Slider.Indicator": {
+      "filled": {
+        "values": null
+      }
+    },
+    "Slider.Label": {
+      "dirty": {
+        "values": null
+      },
+      "disabled": {
+        "values": null
+      },
+      "filled": {
+        "values": null
+      },
+      "focused": {
+        "values": null
+      },
+      "invalid": {
+        "values": null
+      },
+      "touched": {
+        "values": null
+      },
+      "valid": {
+        "values": null
+      },
+      "dragging": {
+        "values": null
+      },
+      "orientation": {
+        "values": ["horizontal", "vertical"]
+      }
+    },
+    "Slider.Root": {
+      "filled": {
+        "values": null
+      }
+    },
+    "Slider.Thumb": {
+      "filled": {
+        "values": null
+      },
+      "index": {
+        "values": "number"
+      }
+    },
+    "Slider.Track": {
+      "filled": {
+        "values": null
+      }
+    },
+    "Slider.Value": {
+      "filled": {
+        "values": null
+      }
+    },
+    "Tabs.Panel": {
+      "index": {
+        "values": "number"
+      }
+    },
+    "Tooltip.Positioner": {
+      "instant": {
+        "values": ["delay", "dismiss", "focus", "tracking-cursor"]
+      }
+    },
+    "Tooltip.Viewport": {
+      "current": {
+        "selector": "& > [data-current]",
+        "values": null
+      },
+      "previous": {
+        "selector": "& > [data-previous]",
+        "values": null
+      },
+      "transitioning": {
+        "values": null
+      }
+    }
+  },
   "supported": [
+    "Accordion.Header",
+    "Accordion.Item",
+    "Accordion.Panel",
+    "Accordion.Root",
     "Accordion.Trigger",
     "AlertDialog.Backdrop",
     "AlertDialog.Close",
@@ -879,6 +1294,7 @@
     "AlertDialog.Popup",
     "AlertDialog.Portal",
     "AlertDialog.Title",
+    "AlertDialog.Trigger",
     "AlertDialog.Viewport",
     "Autocomplete.Arrow",
     "Autocomplete.Backdrop",
@@ -941,9 +1357,11 @@
     "ContextMenu.LinkItem",
     "ContextMenu.Popup",
     "ContextMenu.Portal",
+    "ContextMenu.Positioner",
     "ContextMenu.RadioGroup",
     "ContextMenu.RadioItem",
     "ContextMenu.RadioItemIndicator",
+    "ContextMenu.Separator",
     "ContextMenu.SubmenuTrigger",
     "ContextMenu.Trigger",
     "Dialog.Backdrop",
@@ -952,6 +1370,7 @@
     "Dialog.Popup",
     "Dialog.Portal",
     "Dialog.Title",
+    "Dialog.Trigger",
     "Dialog.Viewport",
     "Drawer.Backdrop",
     "Drawer.Close",
@@ -963,6 +1382,7 @@
     "Drawer.Portal",
     "Drawer.SwipeArea",
     "Drawer.Title",
+    "Drawer.Trigger",
     "Drawer.Viewport",
     "Field.Control",
     "Field.Description",
@@ -972,6 +1392,7 @@
     "Field.Root",
     "Fieldset.Legend",
     "Fieldset.Root",
+    "Form",
     "Input",
     "Menu.Arrow",
     "Menu.Backdrop",
@@ -983,10 +1404,14 @@
     "Menu.LinkItem",
     "Menu.Popup",
     "Menu.Portal",
+    "Menu.Positioner",
     "Menu.RadioGroup",
     "Menu.RadioItem",
     "Menu.RadioItemIndicator",
+    "Menu.Separator",
     "Menu.SubmenuTrigger",
+    "Menu.Trigger",
+    "Menu.Viewport",
     "Menubar",
     "Meter.Indicator",
     "Meter.Label",
@@ -1003,6 +1428,7 @@
     "NavigationMenu.Popup",
     "NavigationMenu.Portal",
     "NavigationMenu.Positioner",
+    "NavigationMenu.Root",
     "NavigationMenu.Trigger",
     "NavigationMenu.Viewport",
     "NumberField.Decrement",
@@ -1014,6 +1440,7 @@
     "NumberField.ScrubAreaCursor",
     "OTPField.Input",
     "OTPField.Root",
+    "OTPField.Separator",
     "Popover.Arrow",
     "Popover.Backdrop",
     "Popover.Close",
@@ -1022,17 +1449,23 @@
     "Popover.Portal",
     "Popover.Positioner",
     "Popover.Title",
+    "Popover.Trigger",
+    "Popover.Viewport",
     "PreviewCard.Arrow",
     "PreviewCard.Backdrop",
     "PreviewCard.Popup",
     "PreviewCard.Portal",
     "PreviewCard.Positioner",
+    "PreviewCard.Trigger",
+    "PreviewCard.Viewport",
     "Progress.Indicator",
     "Progress.Label",
     "Progress.Root",
     "Progress.Track",
     "Progress.Value",
     "Radio.Indicator",
+    "Radio.Root",
+    "RadioGroup",
     "ScrollArea.Content",
     "ScrollArea.Corner",
     "ScrollArea.Root",
@@ -1057,28 +1490,44 @@
     "Select.Separator",
     "Select.Trigger",
     "Select.Value",
+    "Separator",
     "Slider.Control",
     "Slider.Indicator",
     "Slider.Label",
+    "Slider.Root",
+    "Slider.Thumb",
     "Slider.Track",
     "Slider.Value",
     "Switch.Root",
     "Switch.Thumb",
     "Tabs.Indicator",
     "Tabs.List",
+    "Tabs.Panel",
     "Tabs.Root",
     "Tabs.Tab",
+    "Toast.Action",
     "Toast.Arrow",
+    "Toast.Close",
+    "Toast.Content",
+    "Toast.Description",
     "Toast.Portal",
     "Toast.Positioner",
+    "Toast.Root",
+    "Toast.Title",
+    "Toast.Viewport",
+    "Toggle",
+    "ToggleGroup",
     "Toolbar.Button",
     "Toolbar.Group",
     "Toolbar.Input",
     "Toolbar.Link",
     "Toolbar.Root",
+    "Toolbar.Separator",
     "Tooltip.Arrow",
     "Tooltip.Popup",
     "Tooltip.Portal",
-    "Tooltip.Positioner"
+    "Tooltip.Positioner",
+    "Tooltip.Trigger",
+    "Tooltip.Viewport"
   ]
 }

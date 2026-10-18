@@ -8,7 +8,22 @@ export const attributes = {
   activationDirection: {
     attribute: 'data-activation-direction',
     presence: false,
-    values: ['left', 'right', 'up', 'down', 'none'],
+    values: [
+      ' ',
+      ' up',
+      ' down',
+      'left ',
+      'left up',
+      'left down',
+      'right ',
+      'right up',
+      'right down',
+      'left',
+      'right',
+      'up',
+      'down',
+      'none',
+    ],
   },
   active: {
     attribute: 'data-active',
@@ -18,10 +33,15 @@ export const attributes = {
   align: {
     attribute: 'data-align',
     presence: false,
-    values: ['start', 'center', 'end'],
+    values: ['center', 'start', 'end'],
   },
   anchorHidden: {
     attribute: 'data-anchor-hidden',
+    presence: true,
+    values: [],
+  },
+  behind: {
+    attribute: 'data-behind',
     presence: true,
     values: [],
   },
@@ -38,6 +58,12 @@ export const attributes = {
   complete: {
     attribute: 'data-complete',
     presence: true,
+    values: [],
+  },
+  current: {
+    attribute: 'data-current',
+    presence: true,
+    selector: '& > [data-current]',
     values: [],
   },
   direction: {
@@ -110,6 +136,11 @@ export const attributes = {
     presence: true,
     values: [],
   },
+  hidden: {
+    attribute: 'data-hidden',
+    presence: true,
+    values: [],
+  },
   highlighted: {
     attribute: 'data-highlighted',
     presence: true,
@@ -120,18 +151,42 @@ export const attributes = {
     presence: true,
     values: [],
   },
+  inactive: {
+    attribute: 'data-inactive',
+    presence: true,
+    values: [],
+  },
   indeterminate: {
     attribute: 'data-indeterminate',
     presence: true,
     values: [],
   },
+  index: {
+    attribute: 'data-index',
+    presence: false,
+    values: [],
+    domain: 'number',
+  },
   instant: {
     attribute: 'data-instant',
     presence: true,
-    values: ['click', 'dismiss', 'group', 'trigger-change', 'focus', 'delay'],
+    values: [
+      'click',
+      'dismiss',
+      'group',
+      'trigger-change',
+      'focus',
+      'delay',
+      'tracking-cursor',
+    ],
   },
   invalid: {
     attribute: 'data-invalid',
+    presence: true,
+    values: [],
+  },
+  limited: {
+    attribute: 'data-limited',
     presence: true,
     values: [],
   },
@@ -147,6 +202,11 @@ export const attributes = {
   },
   modal: {
     attribute: 'data-modal',
+    presence: true,
+    values: [],
+  },
+  multiple: {
+    attribute: 'data-multiple',
     presence: true,
     values: [],
   },
@@ -225,12 +285,23 @@ export const attributes = {
     presence: true,
     values: [],
   },
+  previous: {
+    attribute: 'data-previous',
+    presence: true,
+    selector: '& > [data-previous]',
+    values: [],
+  },
   progressing: {
     attribute: 'data-progressing',
     presence: true,
     values: [],
   },
   readonly: {
+    attribute: 'data-readonly',
+    presence: true,
+    values: [],
+  },
+  readOnly: {
     attribute: 'data-readonly',
     presence: true,
     values: [],
@@ -276,7 +347,7 @@ export const attributes = {
   swipeDirection: {
     attribute: 'data-swipe-direction',
     presence: false,
-    values: ['up', 'down', 'left', 'right'],
+    values: ['left', 'right', 'up', 'down'],
   },
   swipeDismiss: {
     attribute: 'data-swipe-dismiss',
@@ -292,6 +363,22 @@ export const attributes = {
     attribute: 'data-touched',
     presence: true,
     values: [],
+  },
+  transitioning: {
+    attribute: 'data-transitioning',
+    presence: true,
+    values: [],
+  },
+  triggerDisabled: {
+    attribute: 'data-trigger-disabled',
+    presence: true,
+    values: [],
+  },
+  type: {
+    attribute: 'data-type',
+    presence: false,
+    values: [],
+    domain: 'string',
   },
   uncentered: {
     attribute: 'data-uncentered',

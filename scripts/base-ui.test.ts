@@ -2,6 +2,7 @@
  * Verifies pinned Base UI attribute generation through the command-line boundary.
  * @module
  */
+import * as BaseUi from '@base-ui/react'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
@@ -34,7 +35,7 @@ describe('generate', () => {
     )
 
     expect(output).toMatchInlineSnapshot(`
-      "Base UI 1.8.0: 208 supported parts, 67 deferred entries
+      "Base UI 1.8.0: 246 supported DOM parts, 24 non-DOM parts, 0 deferred entries
       "
     `)
   }, 30_000)
@@ -80,47 +81,81 @@ describe('generate', () => {
         Path.resolve(import.meta.dirname, '../test/conformance/base-ui.json'),
         'utf8',
       ),
-    ) as { deferred: Record<string, string> }
-    expect(inventory.deferred['Accordion.Item']).toMatchInlineSnapshot(
-      `"Unbounded or unhandled @type for index"`,
+    ) as {
+      deferred: Record<string, string>
+      nonDom: readonly string[]
+      supported: readonly string[]
+    }
+    expect(inventory.deferred).toMatchInlineSnapshot(`{}`)
+    expect(catalog['Accordion.Item'].states.index.values).toMatchInlineSnapshot(
+      `"number"`,
     )
-    expect(inventory.deferred['Slider.Thumb']).toMatchInlineSnapshot(
-      `"Missing value domain for index"`,
+    expect(catalog['Slider.Thumb'].states.index.values).toMatchInlineSnapshot(
+      `"number"`,
     )
-    expect(inventory.deferred.DirectionProvider).toMatchInlineSnapshot(
-      `"No className contract (provider, root, or non-DOM component)"`,
+    expect(catalog['Toast.Root'].states.type.values).toMatchInlineSnapshot(
+      `"string"`,
     )
+    expect(
+      catalog['Popover.Viewport'].states.current.selector,
+    ).toMatchInlineSnapshot(`"& > [data-current]"`)
+    expect(catalog['Popover.Viewport'].states.activationDirection.values)
+      .toMatchInlineSnapshot(`
+      [
+        " ",
+        " up",
+        " down",
+        "left ",
+        "left up",
+        "left down",
+        "right ",
+        "right up",
+        "right down",
+      ]
+    `)
     expect('DirectionProvider' in catalog).toMatchInlineSnapshot(`false`)
     expect(catalog['AlertDialog.Popup'].member).toMatchInlineSnapshot(`"Popup"`)
     expect(catalog['Autocomplete.Clear'].member).toMatchInlineSnapshot(
       `"Clear"`,
     )
+
+    // Independently enumerate the package's runtime exports. Handle classes are
+    // imperative controllers, not components. Everything else must be classified.
+    const components = Object.entries(BaseUi).flatMap((entry) => {
+      const [name, value] = entry
+      if (!/^[A-Z]/u.test(name)) return []
+      if (typeof value === 'function') return [name]
+      if (!value || typeof value !== 'object') return []
+      if ('$$typeof' in value) return [name]
+      return Object.keys(value)
+        .filter((key) => /^[A-Z]/u.test(key) && key !== 'Handle')
+        .map((key) => `${name}.${key}`)
+    })
+    expect(
+      components.filter(
+        (name) => ![...inventory.supported, ...inventory.nonDom].includes(name),
+      ),
+    ).toMatchInlineSnapshot(`[]`)
+    expect(
+      [...inventory.supported, ...inventory.nonDom].filter(
+        (name) => !components.includes(name),
+      ),
+    ).toMatchInlineSnapshot(`[]`)
   })
 
   test('checks augmentation without skipLibCheck and offers language-service hints', () => {
     const root = Path.resolve(import.meta.dirname, '..')
     const file = Path.join(root, '.base-ui-consumer.mts')
     const source = `
-import type { ComponentProps, ElementType } from 'react'
-import { AlertDialog } from '@base-ui/react/alert-dialog'
-import { Dialog } from '@base-ui/react/dialog'
-import { Menu } from '@base-ui/react/menu'
-import { Toolbar } from '@base-ui/react/toolbar'
-import { part, type States, type Selectors } from './src/base-ui/react/internal/Types.generated.js'
-type Hint<c extends ElementType> = ComponentProps<c> extends { readonly [part]?: infer identity } ? NonNullable<identity> : never
-const alias: Hint<typeof AlertDialog.Popup> = 'Dialog.Popup'
-const canonical: Hint<typeof Dialog.Popup> = 'AlertDialog.Popup'
-// @ts-expect-error Unrelated DOM contracts do not share a hint.
-const unrelated: Hint<typeof Dialog.Popup> = 'Select.Popup'
-type HasHint<t> = typeof part extends keyof t ? true : false
-const parent: HasHint<ComponentProps<typeof Menu.Separator>> = false
-const child: HasHint<ComponentProps<typeof Toolbar.Separator>> = false
-const triggerParent: HasHint<ComponentProps<typeof Dialog.Trigger>> = false
-const triggerChild: HasHint<ComponentProps<typeof AlertDialog.Trigger>> = false
-const states: States<{}>['Select.Trigger'] = { popupSide: { top: {} } }
+import * as BaseUi from '@base-ui/react'
+import { style } from './src/base-ui/react/index.js'
+style(BaseUi.Select.Trigger, { states: { popupSide: { top: {} } } })
 // @ts-expect-error Null means the attribute is absent, not a literal value.
-const absent: States<{}>['Select.Trigger'] = { popupSide: { null: {} } }
-const selectors: Selectors<{}>['Select.Trigger'] = { '&[data-popup-side="top"]': {} }
+style(BaseUi.Select.Trigger, { states: { popupSide: { null: {} } } })
+style(BaseUi.Select.Trigger, { selectors: { '&[data-popup-side="top"]': {} } })
+${Object.keys(catalog)
+  .map((name) => `style(BaseUi.${name}, { color: 'red' })`)
+  .join('\n')}
 `
     const options: Ts.CompilerOptions = {
       exactOptionalPropertyTypes: true,
@@ -202,5 +237,5 @@ const selectors: Selectors<{}>['Select.Trigger'] = { '&[data-popup-side="top"]':
     expect(
       JSON.stringify(mapping) === JSON.stringify(catalog),
     ).toMatchInlineSnapshot(`true`)
-  }, 30_000)
+  }, 60_000)
 })

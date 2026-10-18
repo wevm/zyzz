@@ -1340,7 +1340,6 @@ impl<'a> Static<'a> {
     ///
     /// Returns `Themes.InvalidError` from resolution.
     pub fn exported(&self, name: &str) -> Result<Option<&'a Expression<'a>>> {
-        let start = self.program.span.end + 1;
         let mut binding = None;
 
         'statements: for statement in &self.program.body {
@@ -1395,6 +1394,18 @@ impl<'a> Static<'a> {
         let Some((binding, span)) = binding else {
             return Ok(None);
         };
+        let _ = span;
+
+        self.constant(name, binding).map(Some)
+    }
+
+    /// Normalizes a known constant binding, rejecting mutation and runtime escapes.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Themes.InvalidError` from resolution.
+    pub(crate) fn constant(&self, name: &str, binding: u32) -> Result<&'a Expression<'a>> {
+        let start = self.program.span.end + 1;
 
         // A synthetic reference after the program end resolves through the binding.
         let name: &'a str = self.allocator.alloc_str(name);
@@ -1403,7 +1414,6 @@ impl<'a> Static<'a> {
             name,
             &self.builder,
         ));
-        let _ = span;
 
         self.synthetic.borrow_mut().insert(start, binding);
         let result = self.normalize(
@@ -1414,6 +1424,6 @@ impl<'a> Static<'a> {
         );
         self.synthetic.borrow_mut().remove(&start);
 
-        result.map(Some)
+        result
     }
 }

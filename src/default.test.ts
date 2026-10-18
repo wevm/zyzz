@@ -254,6 +254,76 @@ variants({base:{color:'missing'}});`,
           )
         }
 
+        await Fs.writeFile(
+          Path.join(root, 'config.ts'),
+          `import {defineConfig} from 'zyzz/base-ui/react';
+import {tokens} from 'zyzz/default';
+// Configure ordinary and component-first styles from packed literal tokens.
+export const {style} = defineConfig({id:'default',vars:tokens});`,
+        )
+        await Fs.writeFile(
+          Path.join(root, 'app.ts'),
+          `import {Toggle} from '@base-ui/react/toggle';
+import {createElement} from 'react';
+import {createRoot} from 'react-dom/client';
+import {style} from './config';
+// Base UI owns the pressed attribute. Both branches use configured tokens.
+function App(){return createElement(Toggle,styles.toggle(),'Toggle')}
+createRoot(document.querySelector('main')!).render(createElement(App));
+namespace styles {
+  export const toggle=style(Toggle,{padding:7,color:'gray.900',states:{pressed:{color:'blue.900'}}});
+}`,
+        )
+
+        for (const optimize of [true, false]) {
+          await Vite.build({ ...config, plugins: [zyzz({ optimize })] })
+          const preview = await Vite.preview({
+            ...config,
+            preview: { host: '127.0.0.1', port: 0 },
+          })
+          const browser = await chromium.launch({ args: ['--no-sandbox'] })
+          try {
+            const page = await browser.newPage({ colorScheme: 'light' })
+            await page.goto(preview.resolvedUrls!.local[0]!)
+            const toggle = page.getByRole('button', { name: 'Toggle' })
+            await toggle.waitFor()
+            expect(
+              await toggle.evaluate(
+                (element) => getComputedStyle(element).padding,
+              ),
+            ).toMatchInlineSnapshot(`"28px"`)
+            expect(
+              await toggle.evaluate(
+                (element) => getComputedStyle(element).color,
+              ),
+            ).toMatchInlineSnapshot(`"rgb(77, 77, 77)"`)
+            await toggle.click()
+            expect(
+              await toggle.getAttribute('aria-pressed'),
+            ).toMatchInlineSnapshot(`"true"`)
+            expect(
+              await toggle.evaluate(
+                (element) => getComputedStyle(element).color,
+              ),
+            ).toMatchInlineSnapshot(`"rgb(0, 104, 214)"`)
+            await page.evaluate(() => {
+              document.documentElement.style.colorScheme = 'dark'
+            })
+            expect(
+              await toggle.evaluate(
+                (element) => getComputedStyle(element).color,
+              ),
+            ).toMatchInlineSnapshot(`"rgb(82, 168, 255)"`)
+          } finally {
+            await browser.close()
+            await new Promise<void>((resolve, reject) =>
+              preview.httpServer.close((error) =>
+                error ? reject(error) : resolve(),
+              ),
+            )
+          }
+        }
+
         const bundled = await Esbuild.build({
           stdin: {
             contents: "export {variants} from 'zyzz'",
@@ -275,7 +345,7 @@ variants({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot(`31`)
+        ).toMatchInlineSnapshot(`35`)
         expect(
           (
             await Fs.readFile(

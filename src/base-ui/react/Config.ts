@@ -15,6 +15,16 @@ type Values<options> = options extends { vars: infer values }
  * Creates configured authoring with component-first Base UI styles.
  * The ordinary variable sets, layers, mappings, shorthands, and recipes are retained.
  * Output is React props. Component-first variants and callbacks are not supported.
+ * Pass `tokens` from `zyzz/default` as `vars` to retain default token strings,
+ * including inside component states. The unconfigured entrypoint stays token-free.
+ * @example
+ * ```ts
+ * import { defineConfig } from 'zyzz/base-ui/react'
+ * import { tokens } from 'zyzz/default'
+ *
+ * // Share default tokens with ordinary and component-first styles.
+ * export const { style, variants, vars } = defineConfig({ id: 'default', vars: tokens })
+ * ```
  * @param options - The ordinary defineConfig options, with React output.
  * @returns Configured helpers whose style also accepts imported Base UI parts.
  */

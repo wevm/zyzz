@@ -23,6 +23,7 @@ fn repack(text: &str, module_id: &str) -> String {
         class_rules: &class_rules,
         configurations: &[],
         links: &library.links,
+        literals: &library.literals,
         module_id,
         stylesheets: &library.stylesheets,
         themes: &library.themes,

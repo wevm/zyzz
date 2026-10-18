@@ -5,10 +5,12 @@
 
 use std::sync::Arc;
 
+use oxc_allocator::Allocator;
 use rustc_hash::FxHashMap;
 
 use crate::compiler::internal::configurations;
 use crate::compiler::internal::identifiers;
+use crate::compiler::internal::literals;
 use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::stylesheets::{self, Section};
 use crate::compiler::internal::themes::{
@@ -31,6 +33,8 @@ pub struct Library {
     pub class_rules: Record<Arc<str>>,
     /// Exported authoring values by export name.
     pub links: Record<Link>,
+    /// Validated literal expressions by export name, never executed.
+    pub literals: Record<Arc<str>>,
     /// Packed stylesheet sections.
     pub stylesheets: Vec<Section>,
     /// Theme and variable-set definitions by scope key.
@@ -530,7 +534,7 @@ fn supported(value: &Data) -> Option<u32> {
         return None;
     };
 
-    (1..=34).find(|candidate| *version == f64::from(*candidate))
+    (1..=35).find(|candidate| *version == f64::from(*candidate))
 }
 
 fn empty_theme() -> Result<Arc<theme::Definition>> {
@@ -749,6 +753,30 @@ pub fn read(
         links.insert(Arc::clone(name), reader.link(value, root_controls)?);
     }
 
+    let mut literals = Record::new();
+    let raw_literals = get(data, "literals");
+
+    if !raw_literals.is_undefined() {
+        if version < 35 {
+            return Err(message(
+                "Literal exports require contract version 35 or later.",
+            ));
+        }
+
+        let mut allocator = Allocator::default();
+
+        for (name, value) in record(raw_literals)?.iter() {
+            let value = string(value)?;
+
+            if links.get(name).is_some() || literals::read(&allocator, &value).is_none() {
+                return Err(message("Invalid packed literal export."));
+            }
+
+            literals.insert(Arc::clone(name), value);
+            allocator.reset();
+        }
+    }
+
     let mut class_rules = Record::new();
     let rules = get(data, "classRules");
 
@@ -768,6 +796,7 @@ pub fn read(
     Ok(Library {
         class_rules,
         links,
+        literals,
         stylesheets,
         themes: reader.themes,
     })
@@ -806,7 +835,7 @@ impl Reader<'_> {
                     },
                     reference.to_lowercase()
                 );
-                let valid = (9..=34).contains(&version)
+                let valid = (9..=35).contains(&version)
                     && kind.is_some()
                     && (identity_like(&name, "z-") || identity_like(&name, "--z-"))
                     && name.starts_with(&prefix)
@@ -1346,6 +1375,8 @@ pub struct Write<'w> {
     pub configurations: &'w [Configuration],
     /// Exported authoring values by export name.
     pub links: &'w Record<Link>,
+    /// Validated literal expressions by export name.
+    pub literals: &'w Record<Arc<str>>,
     /// Portable identity of the module that publishes the contract.
     pub module_id: &'w str,
     /// Owned stylesheet sections.
@@ -1361,6 +1392,14 @@ pub struct Write<'w> {
 /// Returns the TypeScript message when a native style catalog has no packed theme.
 pub fn write(options: &Write<'_>) -> Result<String> {
     let mut output = String::from("{");
+
+    if !options.literals.is_empty() {
+        output.push_str("\"literals\":");
+        js::write_object(&mut output, options.literals.iter(), |output, value| {
+            js::write_string(output, value);
+        });
+        output.push(',');
+    }
 
     if !options.class_rules.is_empty() {
         output.push_str("\"classRules\":");
@@ -1441,7 +1480,9 @@ pub fn write(options: &Write<'_>) -> Result<String> {
 
     output.push_str("},\"version\":");
 
-    let version = if options
+    let version = if !options.literals.is_empty() {
+        35
+    } else if options
         .themes
         .values()
         .any(|theme| theme.metadata.contract.composition.is_some())

@@ -26,7 +26,7 @@ use crate::compiler::internal::contributions::FACTORIES;
 use crate::compiler::internal::stylesheets::{self, Rendered, Section};
 use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Link, LinkKind, Owner, VarsRead};
-use crate::compiler::internal::{identifiers, native_vars, relative, statics, vars};
+use crate::compiler::internal::{identifiers, literals, native_vars, relative, statics, vars};
 use crate::compiler::native;
 use crate::compiler::source::{self, Code, Diagnostic, ExtractError, Extracted, Target};
 use crate::compiler::transform::{self, Owners};
@@ -231,6 +231,7 @@ struct Module {
     calls: Vec<CallSummary>,
     contribution_starts: Vec<u32>,
     contributions: Vec<Contribution>,
+    literals: Record<Arc<str>>,
     namespaces: Vec<namespace::Definition>,
     native_vars: Vec<VarsRead>,
     /// Whether exports supply neither constants nor authoring links.
@@ -279,6 +280,7 @@ impl Module {
                 .collect(),
             contribution_starts: extracted.contribution_starts.clone(),
             contributions: extracted.contributions.clone(),
+            literals: Record::new(),
             namespaces: extracted.namespaces.clone(),
             native_vars: extracted.native_vars.clone(),
             opaque: false,
@@ -628,6 +630,7 @@ struct Build<'p, 'a> {
 struct Linked<'a> {
     extracted: Extracted<'a>,
     imports: Arc<[Arc<str>]>,
+    literals: Record<Arc<str>>,
     opaque: bool,
 }
 
@@ -1037,6 +1040,7 @@ impl<'p, 'a> Build<'p, 'a> {
                                 class_rules: &[],
                                 configurations: &[],
                                 links: &Record::new(),
+                                literals: &Record::new(),
                                 module_id: "",
                                 stylesheets: &[],
                                 themes: &themes,
@@ -1142,6 +1146,17 @@ impl<'p, 'a> Build<'p, 'a> {
 
         if let Some(value) = self.constants.get(&key) {
             return Ok(*value);
+        }
+
+        if let Some(library) = self.libraries.get(module_id) {
+            let value = library.literals.get(name).and_then(|value| {
+                self.allocators
+                    .first()
+                    .and_then(|allocator| literals::read(allocator, value))
+            });
+            self.constants.insert(key, value);
+
+            return Ok(value);
         }
 
         if active.contains(&key)
@@ -1539,6 +1554,7 @@ impl<'p, 'a> Build<'p, 'a> {
         let mut values: Record<&'a Expression<'a>> = Record::new();
         let mut links: Record<Link> = Record::new();
         let mut forwarded: Record<Link> = Record::new();
+        let mut forwarded_literals = Record::new();
         let mut explicit: FxHashSet<String> = FxHashSet::default();
         let mut stars: Vec<Input> = Vec::new();
         let mut imports: IndexSet<Arc<str>, FxBuildHasher> = IndexSet::default();
@@ -1732,6 +1748,16 @@ impl<'p, 'a> Build<'p, 'a> {
                             forwarded.insert(exported.as_str(), link.clone());
                         }
 
+                        let literal = match &input {
+                            Input::Library(library) => library.literals.get(&name),
+                            Input::Module(module) => module.literals.get(&name),
+                            Input::Runtime => None,
+                        };
+
+                        if let Some(value) = literal {
+                            forwarded_literals.insert(exported.as_str(), Arc::clone(value));
+                        }
+
                         explicit.insert(exported);
                     }
                 }
@@ -1785,6 +1811,18 @@ impl<'p, 'a> Build<'p, 'a> {
                     factories.insert(specifier.local.name.as_str(), found);
                 }
             }
+        }
+
+        let mut published_literals = if !options.lean && options.entry.is_none() {
+            self.allocator(module_id)
+                .map(|allocator| literals::exports(allocator, parsed, &values))
+                .unwrap_or_default()
+        } else {
+            Record::new()
+        };
+
+        for (name, value) in forwarded_literals.iter() {
+            published_literals.insert(Arc::clone(name), Arc::clone(value));
         }
 
         let context = themes::Context {
@@ -1848,9 +1886,45 @@ impl<'p, 'a> Build<'p, 'a> {
 
         extracted.theme_exports = Some(exports);
 
+        let mut star_literals = Record::new();
+        let mut ambiguous = FxHashSet::default();
+
+        for input in &stars {
+            let source = match input {
+                Input::Library(library) => &library.literals,
+                Input::Module(module) => &module.literals,
+                Input::Runtime => continue,
+            };
+
+            for (name, value) in source.iter() {
+                if &**name == "default" || explicit.contains(&**name) {
+                    continue;
+                }
+                if star_literals
+                    .get(name)
+                    .is_some_and(|previous| !Arc::ptr_eq(previous, value))
+                {
+                    ambiguous.insert(Arc::clone(name));
+                }
+
+                star_literals.insert(Arc::clone(name), Arc::clone(value));
+            }
+        }
+
+        for (name, value) in star_literals.iter() {
+            if !ambiguous.contains(name) {
+                published_literals.insert(Arc::clone(name), Arc::clone(value));
+            }
+        }
+
+        if options.lean || options.entry.is_some() {
+            published_literals = Record::new();
+        }
+
         Ok(Linked {
             extracted,
             imports: imports.into_iter().collect(),
+            literals: published_literals,
             opaque: opaque(parsed.program),
         })
     }
@@ -1948,6 +2022,7 @@ impl<'p, 'a> Build<'p, 'a> {
 
         let linked = self.link(module_id)?;
         let module = Arc::new(Module {
+            literals: linked.literals,
             opaque: linked.opaque,
             ..Module::detach(&linked.extracted)
         });
@@ -2945,7 +3020,7 @@ impl Build<'_, '_> {
                 continue;
             };
 
-            if module.theme_exports.is_empty() {
+            if module.theme_exports.is_empty() && module.literals.is_empty() {
                 continue;
             }
 
@@ -2961,6 +3036,7 @@ impl Build<'_, '_> {
                     class_rules: &[],
                     configurations: &[],
                     links: &links,
+                    literals: &module.literals,
                     module_id: id,
                     stylesheets: &[],
                     themes: &self.themes,
@@ -3579,6 +3655,7 @@ impl Build<'_, '_> {
                                 class_rules: &[],
                                 configurations: &configurations,
                                 links: &links,
+                                literals: &Record::new(),
                                 module_id: id,
                                 stylesheets: &[],
                                 themes: &shared_themes,
@@ -3593,6 +3670,7 @@ impl Build<'_, '_> {
                 let configurations = Self::configurations(&module, &shared_themes);
 
                 if module.theme_exports.is_empty()
+                    && module.literals.is_empty()
                     && reached.is_empty()
                     && configurations.is_empty()
                 {
@@ -3637,6 +3715,7 @@ impl Build<'_, '_> {
                         class_rules: &rules,
                         configurations: &configurations,
                         links: &links,
+                        literals: &module.literals,
                         module_id: id,
                         stylesheets: &owned,
                         themes: &shared_themes,

@@ -1244,11 +1244,22 @@ fn block_return<'a>(body: &'a FunctionBody<'a>) -> Option<Input<'a>> {
 
 /// The configuration-literal reader the theme collector supplies.
 struct ConfigReader<'t, 'a> {
+    statics: &'t statics::Static<'a>,
     themes: &'t mut Themes<'a>,
 }
 
 impl<'a> Reader<'a> for ConfigReader<'_, 'a> {
     fn data(&mut self, node: Input<'a>) -> Result<Data> {
+        let node = match node {
+            Input::Expression(expression) => Input::Expression(self.statics.normalize(
+                expression,
+                &FxHashSet::from_iter([expression.span().start]),
+                &FxHashSet::default(),
+                false,
+            )?),
+            node @ Input::Spread(_) => node,
+        };
+
         self.themes.data(node, None)
     }
 
@@ -1271,7 +1282,11 @@ impl<'a> Reader<'a> for ConfigReader<'_, 'a> {
 ///
 /// Returns `Source.ThemeInvalidError` for unsupported or invalid theme syntax, and a plain error
 /// for malformed definition options, which the extractor does not locate.
-pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Themes<'a>>> {
+pub fn collect<'a>(
+    parsed: &Parsed<'a>,
+    options: Options,
+    statics: &statics::Static<'a>,
+) -> Result<Option<Themes<'a>>> {
     let program = parsed.program;
     let mut themes = Themes {
         aliases: Vec::new(),
@@ -1502,7 +1517,7 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
 
         for variable in &declaration.declarations {
             themes.register_alias(declaration, exported, variable)?;
-            themes.factory(declaration, exported, variable)?;
+            themes.factory(declaration, exported, variable, statics)?;
         }
     }
 
@@ -2013,6 +2028,7 @@ impl<'a> Themes<'a> {
         declaration: &'a VariableDeclaration<'a>,
         exported: bool,
         variable: &'a VariableDeclarator<'a>,
+        statics: &statics::Static<'a>,
     ) -> Result<()> {
         let Some(Expression::CallExpression(expression)) = &variable.init else {
             return Ok(());
@@ -2134,22 +2150,23 @@ impl<'a> Themes<'a> {
                 );
             }
 
-            return self
-                .config(
-                    expression,
-                    variable,
-                    &bindings,
-                    &name,
-                    exported,
-                    native_provider,
-                )
-                .map_err(|error| match error {
-                    Error::Config(_) | Error::Vars { .. } => Error::Themes {
-                        message: error.text(),
-                        span: expression.span,
-                    },
-                    error => error,
-                });
+            return configurations::collect(
+                &mut ConfigReader {
+                    statics,
+                    themes: self,
+                },
+                expression,
+                &name,
+                native_provider,
+            )
+            .and_then(|link| self.config(expression, variable, &bindings, link, exported))
+            .map_err(|error| match error {
+                Error::Config(_) | Error::Vars { .. } => Error::Themes {
+                    message: error.text(),
+                    span: expression.span,
+                },
+                error => error,
+            });
         }
 
         let (mut definition, token_type, output) =
@@ -2241,17 +2258,9 @@ impl<'a> Themes<'a> {
         expression: &'a CallExpression<'a>,
         variable: &'a VariableDeclarator<'a>,
         bindings: &[Binding<'a>],
-        name: &str,
+        mut link: Link,
         exported: bool,
-        native_provider: bool,
     ) -> Result<()> {
-        let mut link = configurations::collect(
-            &mut ConfigReader { themes: self },
-            expression,
-            name,
-            native_provider,
-        )?;
-
         if let Expression::Identifier(identifier) = &expression.callee {
             link.call.base_ui = self.base_ui_factories.contains(identifier.name.as_str());
         }

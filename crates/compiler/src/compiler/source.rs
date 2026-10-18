@@ -2203,6 +2203,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             native: options.target == Target::Native,
             static_bindings: statics.bindings().collect(),
         },
+        &statics,
     ) {
         Ok(themes) => themes,
         Err(error) => {

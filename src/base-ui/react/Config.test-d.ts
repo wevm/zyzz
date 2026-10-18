@@ -3,8 +3,27 @@ import { Select } from '@base-ui/react/select'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { defineVars, type style as rootStyle } from 'zyzz'
 import { defineConfig } from 'zyzz/base-ui/react'
+import { tokens } from 'zyzz/default'
 
 describe('defineConfig', () => {
+  test('retains default token strings for component states', () => {
+    const { style } = defineConfig({ id: 'default', vars: tokens })
+    const item = style(Select.Item, {
+      padding: 7,
+      states: { highlighted: { color: 'blue.900' } },
+    })
+
+    expectTypeOf(item()).toEqualTypeOf<rootStyle.Props>()
+    style(Select.Item, {
+      states: {
+        highlighted: {
+          // @ts-expect-error Default token names remain checked in states.
+          color: 'blue.999',
+        },
+      },
+    })
+  })
+
   test('preserves configured token domains inside state branches', () => {
     const base = defineVars({
       color: { ink: 'black' },

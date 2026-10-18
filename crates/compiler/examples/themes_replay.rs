@@ -511,7 +511,7 @@ fn module(
         native: case.native,
         static_bindings: statics.bindings().collect(),
     };
-    let mut themes = match themes::collect(&parsed, options) {
+    let mut themes = match themes::collect(&parsed, options, &statics) {
         Ok(themes) => themes,
         Err(error) => {
             let writer = Writer {

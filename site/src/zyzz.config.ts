@@ -1,8 +1,12 @@
 /** Defines the site's global styles and self-hosted fonts. @module */
-import { vars } from 'zyzz/default'
+import { defineConfig } from 'zyzz/base-ui/react'
+import { tokens } from 'zyzz/default'
 import { fontFace, global } from 'zyzz/web'
 
-export { style, variants, vars } from 'zyzz/default'
+export const { style, variants, vars } = defineConfig({
+  id: 'default',
+  vars: tokens,
+})
 
 const fonts = { mono: 'Geist Mono', sans: 'Geist' }
 

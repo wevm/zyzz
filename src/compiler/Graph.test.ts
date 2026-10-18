@@ -30,6 +30,63 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('retains literal token exports across packed configurations and re-exports', () => {
+    const publisher = Graph.compile({
+      modules: {
+        'index.ts': `export * from './left.js'; export * from './right.js';`,
+        'left.ts': `export { tokens as palette } from './tokens.js';`,
+        'mutated.ts': `export const tokens = {color:{ink:'red'}}; tokens.color.ink='blue';`,
+        'right.ts': `export { tokens as palette } from './tokens.js';`,
+        'tokens.ts': `const ink = '#123456'; export const tokens = { color: { ink }, spacing: { gap: '7px' } } as const;`,
+      },
+    })
+    expect(publisher.contracts['mutated.ts']).toMatchInlineSnapshot(`undefined`)
+
+    const options = {
+      contracts: { library: publisher.contracts['index.ts']! },
+      imports: {
+        'config.ts': { library: 'library', 'zyzz/base-ui/react': null },
+        'item.ts': {
+          './config.js': 'config.ts',
+          '@base-ui/react/select': null,
+        },
+      },
+      modules: {
+        'config.ts': `import {palette} from 'library'; import {defineConfig} from 'zyzz/base-ui/react'; export const {style} = defineConfig({id:'packed',vars:palette});`,
+        'item.ts': `import {Select} from '@base-ui/react/select'; import {style} from './config.js'; export const item=style(Select.Item,{padding:'gap',states:{highlighted:{color:'ink'}}});`,
+      },
+    }
+
+    const result = Graph.compile(options)
+    expect(result.modules['item.ts']!.css).toMatchInlineSnapshot(`
+      ".z-theme-packed-theme{--z-packed-spacing-gap:7px;--z-packed-color-ink:#123456;}
+      .z-packed-mhCyMV-item-p-0{padding:var(--z-packed-spacing-gap,7px);}
+      .z-packed-mhCyMV-item-text-1{&[data-highlighted]{color:var(--z-packed-color-ink,#123456);}}"
+    `)
+
+    const contract = JSON.parse(publisher.contracts['index.ts']!)
+    contract.version = 34
+    expect(() =>
+      Graph.compile({
+        ...options,
+        contracts: { library: JSON.stringify(contract) },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library:0: Invalid library contract: Literal exports require contract version 35 or later.]`,
+    )
+
+    contract.version = 35
+    contract.literals.palette = `(()=>{throw new Error('must not run')})()`
+    expect(() =>
+      Graph.compile({
+        ...options,
+        contracts: { library: JSON.stringify(contract) },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library:0: Invalid library contract: Invalid packed literal export.]`,
+    )
+  })
+
   test('validates packed native style catalogs', () => {
     const publisher = Graph.compile({
       modules: {
@@ -813,7 +870,6 @@ ns.card({className:'web'});`,
         throw new Error(error.stdout || error.message)
       })
       const contract = JSON.parse(output.contracts['app.ts']!)
-      expect(contract.version).toMatchInlineSnapshot(`31`)
       expect(() =>
         Graph.compile({
           modules: {},

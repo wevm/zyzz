@@ -17,6 +17,7 @@ pub mod functions;
 pub mod identifiers;
 pub mod keyframes;
 pub mod lightning;
+pub(crate) mod literals;
 pub mod names;
 pub mod namespaces;
 pub mod native_bindings;

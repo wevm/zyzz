@@ -88,7 +88,7 @@ fn render(module_id: &str, source: &str, native: bool) -> String {
         static_bindings: statics.bindings().collect(),
         ..themes::Options::default()
     };
-    let mut themes = match themes::collect(&parsed, options) {
+    let mut themes = match themes::collect(&parsed, options, &statics) {
         Ok(themes) => themes,
         Err(failure) => {
             error(&mut output, &parsed, &failure);

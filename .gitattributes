@@ -1,0 +1,13 @@
+# Collapse generated outputs on GitHub without disabling text diffs.
+*.generated.ts linguist-generated=true
+/crates/compiler/src/generated/** linguist-generated=true
+/crates/compiler/src/react_native/generated/** linguist-generated=true
+/crates/css/src/generated/** linguist-generated=true
+/native/android/ZyzzSpec-generated.cpp linguist-generated=true
+/native/android/ZyzzSpec.h linguist-generated=true
+/native/ZyzzSpecJSI.h linguist-generated=true
+/src/internal/NativeProperties.ts linguist-generated=true
+/src/react-native/internal/NativeSchema.ts linguist-generated=true
+/test/conformance/base-ui.json linguist-generated=true
+/test/conformance/native/inventory.json linguist-generated=true
+/test/conformance/native/static-inventory.json linguist-generated=true

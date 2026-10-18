@@ -1,6 +1,25 @@
 /** Compiles virtual projects using the same Rust graph operation as the Node binding. @module */
+import type { Source } from 'zyzz/compiler'
 import * as Wasm from '../../../src/internal/Wasm.js'
 import type * as Project from './Project.js'
+
+/** A compiler failure with any source ranges available for editor diagnostics. */
+export class CompileError extends Error {
+  /** Source-owned failures, with UTF-16 offsets into the authored files. */
+  readonly diagnostics: readonly Diagnostic[]
+
+  /** Namespaced error identity for playground compilation failures. */
+  override name = 'Compiler.CompileError'
+
+  /** Preserves the compiler message and structured diagnostics without parsing its text. */
+  constructor(options: NonNullable<Result['error']>) {
+    super(`${options.name}: ${options.message}`)
+    this.diagnostics = options.diagnostics ?? []
+  }
+}
+
+/** A located error emitted by the source compiler. */
+export type Diagnostic = Source.Diagnostic
 
 /** Artifacts sent to the preview and output viewers. */
 export type Output = {
@@ -11,7 +30,11 @@ export type Output = {
 }
 
 type Result = {
-  error?: { message: string; name: string }
+  error?: {
+    diagnostics?: readonly Diagnostic[]
+    message: string
+    name: string
+  }
   modules: Record<string, { code: string; css: string }>
   shared?: { css: string }
 }
@@ -26,8 +49,7 @@ export function create(bytes: BufferSource) {
       const result: Result = JSON.parse(
         engine.call('graph.compile', JSON.stringify({ modules: files })),
       )
-      if (result.error)
-        throw new Error(`${result.error.name}: ${result.error.message}`)
+      if (result.error) throw new CompileError(result.error)
 
       return {
         css: [

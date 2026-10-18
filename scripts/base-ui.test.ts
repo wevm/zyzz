@@ -143,6 +143,7 @@ describe('generate', () => {
     ).toMatchInlineSnapshot(`[]`)
   })
 
+  // Full upstream declaration checking can exceed one minute on shared CI runners.
   test('checks augmentation without skipLibCheck and offers language-service hints', () => {
     const root = Path.resolve(import.meta.dirname, '..')
     const file = Path.join(root, '.base-ui-consumer.mts')
@@ -237,5 +238,5 @@ ${Object.keys(catalog)
     expect(
       JSON.stringify(mapping) === JSON.stringify(catalog),
     ).toMatchInlineSnapshot(`true`)
-  }, 60_000)
+  }, 180_000)
 })

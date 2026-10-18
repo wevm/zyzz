@@ -12,6 +12,8 @@ export type Request = {
 
 /** Compilation result or diagnostic for the corresponding edit. */
 export type Response = {
+  /** Located source errors for the corresponding files. */
+  diagnostics?: readonly Compiler.Diagnostic[]
   /** Human-readable compilation or loading failure. */
   error?: string
   /** Original edit identifier. */
@@ -38,6 +40,8 @@ self.onmessage = async (event: MessageEvent<Request>) => {
     self.postMessage({ id, output } satisfies Response)
   } catch (error) {
     self.postMessage({
+      diagnostics:
+        error instanceof Compiler.CompileError ? error.diagnostics : [],
       error: error instanceof Error ? error.message : String(error),
       id,
     } satisfies Response)

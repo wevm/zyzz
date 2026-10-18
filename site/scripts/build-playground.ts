@@ -37,7 +37,7 @@ await Fs.mkdir(directory, { recursive: true })
 await Fs.writeFile(Path.join(directory, name), bytes)
 
 const files: Record<string, { code: string }> = {}
-for (const entry of ['index', 'runtime/index']) {
+for (const entry of ['base-ui/react/index', 'index', 'runtime/index']) {
   const result = await Esbuild.build({
     bundle: true,
     entryPoints: [Path.join(root, `src/${entry}.ts`)],
@@ -58,7 +58,7 @@ files['/node_modules/zyzz/package.json'] = {
 }
 
 const dependencies: Record<string, string> = {}
-for (const name of ['react', 'react-dom']) {
+for (const name of ['@base-ui/react', 'react', 'react-dom']) {
   const manifest = JSON.parse(
     await Fs.readFile(require.resolve(`${name}/package.json`), 'utf8'),
   )

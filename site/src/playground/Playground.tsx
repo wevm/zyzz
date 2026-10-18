@@ -47,6 +47,9 @@ export default function Playground() {
   const [tab, setTab] = useState('Preview')
   const [scheme, setScheme] = useState<ThemeToggle.Scheme>('light dark')
   const [systemDark, setSystemDark] = useState(false)
+  const [diagnostics, setDiagnostics] = useState<
+    readonly Compiler.Diagnostic[]
+  >([])
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [copied, setCopied] = useState(false)
@@ -118,11 +121,13 @@ export default function Playground() {
     instance.onmessage = (event: MessageEvent<WorkerProtocol.Response>) => {
       if (event.data.id !== sequence.current) return
       clearTimeout(timeout.current)
+      setDiagnostics(event.data.diagnostics ?? [])
       setError(event.data.error ?? '')
       if (event.data.output) setOutput(event.data.output)
     }
     instance.onerror = (event) => {
       clearTimeout(timeout.current)
+      setDiagnostics([])
       setError(
         event.message ||
           'The compiler worker could not start. Try restarting it.',
@@ -137,6 +142,7 @@ export default function Playground() {
   useEffect(() => {
     if (!ready) return
     const id = ++sequence.current
+    setDiagnostics([])
     clearTimeout(timeout.current)
     const timer = setTimeout(() => {
       worker.current?.postMessage({
@@ -513,6 +519,7 @@ export default function Playground() {
             <Suspense fallback={sourceFallback}>
               {ready ? (
                 <CodeEditor
+                  diagnostics={diagnostics}
                   language="typescript"
                   loading={sourceFallback}
                   onChange={(value) =>

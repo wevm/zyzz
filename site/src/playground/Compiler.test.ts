@@ -105,7 +105,7 @@ describe('create', () => {
         ).files,
       ),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Source.ExtractError: App.tsx:30: Expected \`}\` but found \`EOF\`]`,
+      `[Compiler.CompileError: Source.ExtractError: App.tsx:30: Expected \`}\` but found \`EOF\`]`,
     )
     const fixed = compiler.compile({
       'App.tsx': `import { style } from 'zyzz'; export const box = style({ paddingTop: '7px', paddingLeft: '13px' }); export default function App() { return <div {...box()}>修正 ✓</div> }`,
@@ -116,6 +116,48 @@ describe('create', () => {
     `)
     expect(fixed.files['App.tsx']?.includes('修正 ✓')).toMatchInlineSnapshot(
       'true',
+    )
+  })
+
+  test('preserves located Base UI diagnostics across files and Unicode source', () => {
+    const source = `// 😀
+import { Select } from '@base-ui/react/select'
+import { style } from 'zyzz/base-ui/react'
+export const popup = style(Select.Popup, {
+  states: { side: { botom: { color: 'red' } } },
+})`
+    const files = {
+      'App.tsx': "export { popup } from './Popup.js'",
+      'Popup.tsx': source,
+    }
+    const diagnostics = (() => {
+      try {
+        compiler.compile(files)
+      } catch (error) {
+        if (error instanceof Compiler.CompileError) return error.diagnostics
+        throw error
+      }
+      return []
+    })()
+
+    expect(diagnostics).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "unsupported_syntax",
+          "end": 182,
+          "message": "Unknown Base UI state value: side.botom.",
+          "source": "Popup.tsx",
+          "start": 159,
+        },
+      ]
+    `)
+
+    const fixed = compiler.compile({
+      ...files,
+      'Popup.tsx': source.replace('botom', 'bottom'),
+    })
+    expect(fixed.css).toMatchInlineSnapshot(
+      `".z-NIbkau-popup-text-0{&[data-side="bottom"]{color:red;}}"`,
     )
   })
 })

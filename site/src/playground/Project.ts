@@ -249,6 +249,251 @@ namespace styles {
       'zyzz.config.ts': config,
     },
   },
+  'Base UI': {
+    description: 'React · Component-aware Base UI styles',
+    framework: 'react',
+    files: {
+      'App.tsx': `import { Select } from '@base-ui/react/select'
+import AccordionExample from './Accordion.js'
+import SwitchExample from './Switch.js'
+import { style } from './zyzz.config.js'
+
+const fruits = [
+  { label: 'Apple', value: 'apple' },
+  { label: 'Banana', value: 'banana' },
+  { label: 'Cherry (unavailable)', value: 'cherry' },
+]
+
+export default function App() {
+  return (
+    <main {...styles.page()}>
+      <h1>Base UI states</h1>
+      <p>Explore component states with the pointer or keyboard.</p>
+      <Select.Root defaultValue="apple" items={fruits}>
+        <Select.Trigger aria-label="Fruit" {...styles.trigger()}>
+          <Select.Value />
+          <Select.Icon>▾</Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Positioner alignItemWithTrigger={false} sideOffset={8}>
+            <Select.Popup {...styles.popup()}>
+              <Select.List>
+                {fruits.map((fruit) => (
+                  <Select.Item
+                    key={fruit.value}
+                    value={fruit.value}
+                    disabled={fruit.value === 'cherry'}
+                    {...styles.item()}
+                  >
+                    <Select.ItemText>{fruit.label}</Select.ItemText>
+                    <Select.ItemIndicator>✓</Select.ItemIndicator>
+                  </Select.Item>
+                ))}
+              </Select.List>
+            </Select.Popup>
+          </Select.Positioner>
+        </Select.Portal>
+      </Select.Root>
+      <SwitchExample />
+      <AccordionExample />
+    </main>
+  )
+}
+
+namespace styles {
+  export const page = style({
+    backgroundColor: 'canvas',
+    color: 'ink',
+    minHeight: '100vh !custom',
+    padding: '32px !custom',
+  })
+
+  // Component states compile to Base UI's ordinary data attributes.
+  export const trigger = style(Select.Trigger, {
+    alignItems: 'center',
+    backgroundColor: 'paper',
+    border: '1px solid',
+    borderColor: 'border',
+    borderRadius: '8px',
+    color: 'ink',
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: '24px !custom',
+    maxWidth: '100% !custom',
+    padding: '12px 16px !custom',
+    width: '240px !custom',
+    states: { popupOpen: { borderColor: 'accent' } },
+    ':focus-visible': { outline: '2px solid', outlineColor: 'accent', outlineOffset: '3px' },
+  })
+
+  // Value states group styles under their supported values.
+  export const popup = style(Select.Popup, {
+    backgroundColor: 'paper',
+    border: '1px solid',
+    borderColor: 'border',
+    borderRadius: '8px',
+    color: 'ink',
+    padding: '4px !custom',
+    width: 'var(--anchor-width) !custom',
+    states: {
+      side: {
+        bottom: { borderTopColor: 'accent' },
+        top: { borderBottomColor: 'accent' },
+      },
+    },
+  })
+
+  export const item = style(Select.Item, {
+    alignItems: 'center',
+    borderRadius: '4px',
+    cursor: 'default',
+    display: 'flex',
+    gap: 'gap',
+    justifyContent: 'space-between',
+    padding: '12px !custom',
+    states: {
+      disabled: { opacity: 0.4 },
+      highlighted: { backgroundColor: 'accent', color: 'onAccent' },
+      selected: { fontWeight: 600 },
+    },
+  })
+}
+`,
+      'Switch.tsx': `import { Switch } from '@base-ui/react/switch'
+import { style } from './zyzz.config.js'
+
+export default function SwitchExample() {
+  return (
+    <section aria-label="Notifications" {...styles.section()}>
+      <label {...styles.label()}>
+        <Switch.Root defaultChecked {...styles.control()}>
+          <Switch.Thumb {...styles.thumb()} />
+        </Switch.Root>
+        Email notifications
+      </label>
+      <label {...styles.label()}>
+        <Switch.Root disabled {...styles.control()}>
+          <Switch.Thumb {...styles.thumb()} />
+        </Switch.Root>
+        SMS notifications (unavailable)
+      </label>
+    </section>
+  )
+}
+
+namespace styles {
+  export const section = style({
+    display: 'grid',
+    gap: 'gap',
+    marginTop: '32px !custom',
+  })
+
+  export const label = style({
+    alignItems: 'center',
+    display: 'flex',
+    gap: 'gap',
+  })
+
+  // The root and thumb receive the same checked state from Base UI.
+  export const control = style(Switch.Root, {
+    backgroundColor: 'border',
+    border: 'none',
+    borderRadius: '999px',
+    display: 'flex',
+    flexShrink: 0,
+    padding: '3px !custom',
+    width: '44px !custom',
+    states: {
+      checked: { backgroundColor: 'accent' },
+      disabled: { cursor: 'not-allowed', opacity: 0.4 },
+    },
+    ':focus-visible': { outline: '2px solid', outlineColor: 'accent', outlineOffset: '3px' },
+  })
+
+  export const thumb = style(Switch.Thumb, {
+    backgroundColor: 'canvas',
+    borderRadius: '50%',
+    height: '20px !custom',
+    width: '20px !custom',
+    states: { checked: { transform: 'translateX(18px)' } },
+  })
+}
+`,
+      'Accordion.tsx': `import { Accordion } from '@base-ui/react/accordion'
+import { style } from './zyzz.config.js'
+
+const questions = [
+  {
+    answer: 'Component-aware styles compile to data-attribute selectors ahead of time.',
+    title: 'How are states styled?',
+    value: 'states',
+  },
+  {
+    answer: 'Base UI owns keyboard navigation, focus, and ARIA attributes. Zyzz supplies the classes.',
+    title: 'Who handles interaction?',
+    value: 'behavior',
+  },
+]
+
+export default function AccordionExample() {
+  return (
+    <Accordion.Root defaultValue={['states']} {...styles.root()}>
+      {questions.map((question) => (
+        <Accordion.Item key={question.value} value={question.value}>
+          <Accordion.Header {...styles.header()}>
+            <Accordion.Trigger {...styles.trigger()}>
+              {question.title}
+            </Accordion.Trigger>
+          </Accordion.Header>
+          <Accordion.Panel {...styles.panel()}>
+            <p>{question.answer}</p>
+          </Accordion.Panel>
+        </Accordion.Item>
+      ))}
+    </Accordion.Root>
+  )
+}
+
+namespace styles {
+  export const root = style({
+    borderTop: '1px solid',
+    borderColor: 'border',
+    marginTop: '32px !custom',
+    maxWidth: '400px !custom',
+  })
+
+  export const header = style({ margin: '0 !custom' })
+
+  // Each part exposes its own state names: panelOpen on the trigger, open on the panel.
+  export const trigger = style(Accordion.Trigger, {
+    backgroundColor: 'transparent !custom',
+    border: 'none',
+    color: 'ink',
+    cursor: 'pointer',
+    fontWeight: 600,
+    padding: '16px 0 !custom',
+    textAlign: 'left',
+    width: '100% !custom',
+    states: { panelOpen: { color: 'accent' } },
+    ':focus-visible': { outline: '2px solid', outlineColor: 'accent', outlineOffset: '3px' },
+  })
+
+  export const panel = style(Accordion.Panel, {
+    borderLeft: '2px solid',
+    borderColor: 'border',
+    fontSize: '14px',
+    marginBottom: '16px !custom',
+    paddingLeft: '16px !custom',
+    states: { open: { borderColor: 'accent' } },
+  })
+}
+`,
+      'zyzz.config.ts': config.replace(
+        "from 'zyzz'",
+        "from 'zyzz/base-ui/react'",
+      ),
+    },
+  },
   'Vanilla JS': {
     description: 'DOM · No framework required',
     framework: 'vanilla',

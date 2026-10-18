@@ -26,8 +26,17 @@ describe('defineConfig', () => {
     style(Select.Item, {
       states: { selected: { '@layer components': { color: 'ink' } } },
     })
+    style(Select.Popup, {
+      states: { side: { bottom: { color: 'ink', px: 'gap' } } },
+    })
 
     expectTypeOf(item()).toEqualTypeOf<rootStyle.Props>()
+    // @ts-expect-error Configured styles reject misspelled state names.
+    style(Select.Item, { states: { higlighted: { color: 'ink' } } })
+    // @ts-expect-error Configured states remain specific to the component part.
+    style(Select.Item, { states: { side: { bottom: { color: 'ink' } } } })
+    // @ts-expect-error Configured placement states reject misspelled values.
+    style(Select.Popup, { states: { side: { botom: { color: 'ink' } } } })
     // @ts-expect-error Unknown configured color token.
     style(Select.Item, { states: { highlighted: { color: 'missing' } } })
     // @ts-expect-error Shorthands preserve their configured domains.

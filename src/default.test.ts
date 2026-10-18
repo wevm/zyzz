@@ -275,8 +275,8 @@ namespace styles {
 }`,
         )
 
-        for (const optimize of [true, false]) {
-          await Vite.build({ ...config, plugins: [zyzz({ optimize })] })
+        for (const compiler of [true, false]) {
+          await Vite.build({ ...config, plugins: [zyzz({ compiler })] })
           const preview = await Vite.preview({
             ...config,
             preview: { host: '127.0.0.1', port: 0 },

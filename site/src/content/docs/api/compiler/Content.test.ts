@@ -893,15 +893,21 @@ export const vars = defineVars({ spacing: { gap: '4px' } })
     `)
   })
 
-  test('emits contracts only for modules with compiler exports', () => {
+  test('publishes literal exports without evaluating runtime exports', () => {
     const output = Graph.compile({
       modules: {
         'app/constants.ts': `export const size = 1
 `,
+        'app/runtime.ts': `export const size = () => 1
+`,
       },
     })
 
-    expect(output.contracts).toMatchInlineSnapshot(`{}`)
+    expect(output.contracts).toMatchInlineSnapshot(`
+      {
+        "app/constants.ts": "{"literals":{"size":"1"},"exports":{},"themes":{},"version":35}",
+      }
+    `)
   })
 
   test('emits contracts for private appearance and script reads', () => {
@@ -910,12 +916,12 @@ export const vars = defineVars({ spacing: { gap: '4px' } })
         'app/a.ts': `import { defineConfig } from 'zyzz'
 const { appearance } = defineConfig({ vars: { color: { brand: { light: '#000', dark: '#fff' } } } })
 const props = appearance('dark')
-export const size = 1
+export const size = () => 1
 `,
         'app/b.ts': `import { defineConfig } from 'zyzz'
 const { script } = defineConfig({ vars: { color: { brand: '#000' } } })
 script()
-export const size = 2
+export const size = () => 2
 `,
       },
     })
@@ -933,7 +939,7 @@ export const size = 2
       'app/a.ts': `import { defineConfig } from 'zyzz'
 const { appearance } = defineConfig({ vars: { color: { brand: { light: '#000', dark: '#fff' } } } })
 const props = appearance('dark')
-export const size = 1
+export const size = () => 1
 `,
     }
 
@@ -990,9 +996,9 @@ export const size = 1
 global({ body: { margin: 0 } })
 `,
         'app/index.ts': `import './global.js'
-export const size = 1
+export const size = () => 1
 `,
-        'app/plain.ts': `export const size = 2
+        'app/plain.ts': `export const size = () => 2
 `,
       },
     })

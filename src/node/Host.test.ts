@@ -2201,6 +2201,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
           "plain.ts.css",
           "plain.ts.css.map",
           "plain.ts.map",
+          "plain.ts.zyzz.json",
           "zyzz.css",
           "zyzz.css.map",
         ]

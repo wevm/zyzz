@@ -373,7 +373,7 @@ await using host = await Host.create({ packageId: 'my-app', root: 'src' })
 
 ## Output Layout
 
-In a default web build, each source module publishes its rewritten module, a stylesheet, and their source maps under the same relative path. A module that exports styles, variables, or configuration also publishes compiler metadata. Rewritten modules stay TypeScript or JSX, so a later step transpiles them.
+In a default web build, each source module publishes its rewritten module, a stylesheet, and their source maps under the same relative path. Exports of styles, variables, configuration, or statically resolved literals also produce compiler metadata. Rewritten modules stay TypeScript or JSX, so a later step transpiles them.
 
 ```sh /zyzz.css/
 # Output for src/Button.tsx and src/zyzz.config.ts

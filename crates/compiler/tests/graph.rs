@@ -422,7 +422,7 @@ mod repack {
 
         insta::assert_snapshot!(
             output["contracts"]["wrapper/index.ts"].as_str().unwrap_or_default(),
-            @r#"{"stylesheets":[{"source":"index.ts","namespaces":[],"key":"0","css":"body{background-image:url(./pixel.svg);}","layers":[],"start":32,"dependency":["dep"],"content":"import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});"}],"exports":{},"themes":{},"version":31}"#
+            @r#"{"literals":{"loaded":"true"},"stylesheets":[{"source":"index.ts","namespaces":[],"key":"0","css":"body{background-image:url(./pixel.svg);}","layers":[],"start":32,"dependency":["dep"],"content":"import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});"}],"exports":{},"themes":{},"version":35}"#
         );
     }
 }

@@ -106,7 +106,7 @@ export declare namespace compile {
     readonly [Stylesheets.packed]?: readonly Stylesheets.Resource[]
     /** Independently loaded reset for module-based hosts. */
     readonly [Stylesheets.reset]?: Stylesheets.Resource | undefined
-    /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
+    /** Versioned compiler-only JSON, including static literal exports. Publish beside the compiled entrypoint as <entry>.zyzz.json. */
     readonly contracts: Readonly<Record<string, string>>
     /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>

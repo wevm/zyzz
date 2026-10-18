@@ -49,6 +49,8 @@ pub struct Options<'s, 'a> {
     pub calls: &'s [&'a CallExpression<'a>],
     /// Identifier and member entries of composition arrays.
     pub composed: &'s [&'a Expression<'a>],
+    /// Component-first calls whose identity options are the third argument.
+    pub component_calls: &'s FxHashSet<u32>,
     /// Configuration namespaces of bound definitions, by call start.
     pub css_namespaces: &'s FxHashMap<u32, Arc<str>>,
     /// Links imported into this module, by local name.
@@ -318,7 +320,14 @@ impl<'s, 'a> Resolver<'s, 'a> {
 
     /// Names a local definition by its authored binding or explicit id, and claims that name.
     fn link(&mut self, call: &CallExpression<'a>) -> Result<Link> {
-        let id = identifiers::explicit(call, 1)?;
+        let id = identifiers::explicit(
+            call,
+            if self.options.component_calls.contains(&call.span.start) {
+                2
+            } else {
+                1
+            },
+        )?;
         let prefix = self
             .options
             .css_namespaces

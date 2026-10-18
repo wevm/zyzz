@@ -2305,6 +2305,7 @@ impl<'a> Generator<'_, 'a> {
                 continue;
             };
             let names: &[&str] = match node.source.value.as_str() {
+                "zyzz/base-ui/react" => &["defineConfig", "style"],
                 "zyzz" => &[
                     "Config",
                     "cx",

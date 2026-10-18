@@ -65,6 +65,8 @@ jobs:
         run: pnpm check:native >> "$GITHUB_STEP_SUMMARY"
       - name: Check at-rule inventory
         run: pnpm check:at-rules >> "$GITHUB_STEP_SUMMARY"
+      - name: Check Base UI inventory
+        run: pnpm check:base-ui >> "$GITHUB_STEP_SUMMARY"
       - name: Check generated Rust tables
         run: pnpm check:tables
   conformance:

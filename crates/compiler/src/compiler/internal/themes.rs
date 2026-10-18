@@ -128,6 +128,8 @@ pub fn write_parameter(output: &mut String, parameter: &FunctionParameter) {
     reason = "Each flag is an independent property of the authored call."
 )]
 pub struct Call {
+    /// Whether component-aware Base UI authoring is enabled.
+    pub base_ui: bool,
     /// Whether the configuration only names a catalog of sets.
     pub catalog_only: bool,
     /// Whether the call reads variables directly.
@@ -411,6 +413,8 @@ pub struct StaticToken {
 /// A style or recipe call bound to a theme.
 #[derive(Clone, Debug)]
 pub struct StyleCall<'a> {
+    /// Whether component-aware Base UI authoring is enabled.
+    pub base_ui: bool,
     /// The call.
     pub call: &'a CallExpression<'a>,
     /// `html` when the configuration emits HTML attributes.
@@ -481,6 +485,7 @@ pub struct Themes<'a> {
     alias_bindings: FxHashMap<u32, Arc<Alias>>,
     alias_names: IndexMap<Arc<str>, Alias, FxBuildHasher>,
     alias_references: FxHashSet<u32>,
+    base_ui_factories: FxHashSet<Arc<str>>,
     config_bindings: FxHashMap<u32, Arc<Link>>,
     config_imports: FxHashSet<u32>,
     config_namespaces: FxHashSet<Arc<str>>,
@@ -1286,6 +1291,7 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
         alias_bindings: FxHashMap::default(),
         alias_names: IndexMap::default(),
         alias_references: FxHashSet::default(),
+        base_ui_factories: FxHashSet::default(),
         config_bindings: FxHashMap::default(),
         config_imports: FxHashSet::default(),
         config_namespaces: FxHashSet::default(),
@@ -1314,7 +1320,7 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
 
         if !matches!(
             source,
-            "zyzz" | "zyzz/react-native" | "zyzz/react-native/react"
+            "zyzz" | "zyzz/base-ui/react" | "zyzz/react-native" | "zyzz/react-native/react"
         ) || import.import_kind.is_type()
         {
             continue;
@@ -1332,7 +1338,7 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
             let imported = export_name(&named.imported);
             let start = named.span.start;
 
-            if source != "zyzz" {
+            if !matches!(source, "zyzz" | "zyzz/base-ui/react") {
                 if imported == "defineConfig" {
                     themes.factory_imports.insert(start, Factory::Create);
                     themes
@@ -1353,6 +1359,12 @@ pub fn collect<'a>(parsed: &Parsed<'a>, options: Options) -> Result<Option<Theme
                 }
                 "defineConfig" => {
                     themes.factory_imports.insert(start, Factory::Create);
+
+                    if source == "zyzz/base-ui/react" {
+                        themes
+                            .base_ui_factories
+                            .insert(Arc::from(named.local.name.as_str()));
+                    }
                 }
                 "defineVars" => {
                     themes.factory_imports.insert(start, Factory::Define);
@@ -2233,12 +2245,23 @@ impl<'a> Themes<'a> {
         exported: bool,
         native_provider: bool,
     ) -> Result<()> {
-        let link = configurations::collect(
+        let mut link = configurations::collect(
             &mut ConfigReader { themes: self },
             expression,
             name,
             native_provider,
         )?;
+
+        if let Expression::Identifier(identifier) = &expression.callee {
+            link.call.base_ui = self.base_ui_factories.contains(identifier.name.as_str());
+        }
+
+        if link.call.base_ui && link.call.output == Some(Output::Html) {
+            return fail(
+                "Base UI configuration requires React output.",
+                expression.span,
+            );
+        }
 
         if let BindingPattern::BindingIdentifier(id) = &variable.id {
             self.configs
@@ -2639,6 +2662,7 @@ impl<'a> Themes<'a> {
             self.styles.insert(
                 call.span.start,
                 StyleCall {
+                    base_ui: alias.call.base_ui,
                     call,
                     output,
                     recipe: alias.call.recipe,
@@ -2892,6 +2916,7 @@ impl<'a> Themes<'a> {
                 self.styles.insert(
                     style.span.start,
                     StyleCall {
+                        base_ui: call.base_ui,
                         call: style,
                         output: html(call),
                         recipe: first == Some("variants"),
@@ -3133,6 +3158,7 @@ impl<'a> Themes<'a> {
             self.styles.insert(
                 call.span.start,
                 StyleCall {
+                    base_ui: theme.base_ui,
                     call,
                     output: theme.output,
                     recipe: property == "variants",

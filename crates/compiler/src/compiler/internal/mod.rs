@@ -2,6 +2,7 @@
 
 pub mod applications;
 pub mod at_rules;
+pub(crate) mod base_ui;
 pub mod color_profiles;
 pub mod composition_bindings;
 pub mod compositions;

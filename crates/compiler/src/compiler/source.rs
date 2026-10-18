@@ -37,8 +37,8 @@ use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Alias, Context, Link, Output, Themes, VarsRead};
 use crate::compiler::internal::vars::{self, Variables};
 use crate::compiler::internal::{
-    at_rules, compositions, contributions, identifiers, names, packed_styles, recipe_payloads,
-    recipes, selectors,
+    at_rules, base_ui, compositions, contributions, identifiers, names, packed_styles,
+    recipe_payloads, recipes, selectors,
 };
 use crate::data::{Data, Object};
 use crate::error::{Error, Result};
@@ -519,7 +519,9 @@ impl<'a> Walker<'_, '_, 'a> {
         let zyzz = binding
             .as_ref()
             .and_then(|binding| binding.import)
-            .is_some_and(|import| import.source.value == "zyzz");
+            .is_some_and(|import| {
+                matches!(import.source.value.as_str(), "zyzz" | "zyzz/base-ui/react")
+            });
 
         if zyzz || self.themes.is_some() || self.variables.declares() {
             self.chain(kind);
@@ -547,7 +549,7 @@ impl<'a> Walker<'_, '_, 'a> {
         };
         let Some(import) = binding.import.filter(|import| {
             binding.kind == scope::Kind::Import
-                && import.source.value == "zyzz"
+                && matches!(import.source.value.as_str(), "zyzz" | "zyzz/base-ui/react")
                 && !import.import_kind.is_type()
         }) else {
             return Ok(());
@@ -830,6 +832,7 @@ type Path = SmallVec<[Arc<str>; 4]>;
 
 /// Converts one call's literal body into style data, reporting unsupported syntax.
 struct Converter<'c, 'm, 'p, 'a> {
+    component: bool,
     call: &'a CallExpression<'a>,
     condition_keys: FxHashMap<String, Span>,
     dynamic: Option<Bindings<'c, 'a>>,
@@ -1162,7 +1165,7 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                 continue;
             }
 
-            let key: Arc<str> = match (variable, condition, query) {
+            let mut key: Arc<str> = match (variable, condition, query) {
                 (Some(variable), _, _) => Arc::from(variable.reference.name.as_str()),
                 (None, Some(condition), _) => Arc::clone(condition),
                 (None, None, Some(query)) => Arc::clone(query),
@@ -1171,6 +1174,17 @@ impl<'a> Converter<'_, '_, '_, 'a> {
                     key => Arc::from(key.unwrap_or_default()),
                 },
             };
+
+            if self.component && condition::is(&key) && values.has(&key) {
+                // Comments distinguish ordered condition entries without changing specificity.
+                let selector = Arc::clone(&key);
+                let mut occurrence = 1;
+
+                while values.has(&key) {
+                    key = Arc::from(format!("{selector}/*base-ui-{occurrence}*/"));
+                    occurrence += 1;
+                }
+            }
 
             if values.has(&key) {
                 self.report(
@@ -2247,19 +2261,93 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         FxHashMap::default();
     let mut selector_keys = FxHashSet::default();
     let mut composed: Vec<&'a Expression<'a>> = Vec::new();
+    let mut component_calls = FxHashSet::default();
+    let mut component_conditions = FxHashMap::default();
 
     for call in &pending {
         // A spread argument has no static value, and the call reports it below.
-        let Some(argument) = call.arguments.first().and_then(Argument::as_expression) else {
+        let Some(mut argument) = call.arguments.first().and_then(Argument::as_expression) else {
             continue;
         };
-        let value = match statics.normalize(argument, &static_calls, &opaque, false) {
+        let opted_in = themes
+            .as_ref()
+            .and_then(|themes| themes.styles.get(&call.span.start))
+            .is_some_and(|entry| entry.base_ui && !entry.recipe)
+            || match unwrap(&call.callee) {
+                Expression::Identifier(identifier) => scope::resolve(&parsed.semantic, identifier)
+                    .is_some_and(|binding| binding.imported_from("zyzz/base-ui/react")),
+                _ => false,
+            };
+        let first = statics.normalize(argument, &static_calls, &opaque, false);
+        let component = if opted_in
+            && call.arguments.len() >= 2
+            && !matches!(
+                &first,
+                Ok(Expression::ObjectExpression(_)
+                    | Expression::ArrayExpression(_)
+                    | Expression::ArrowFunctionExpression(_))
+            ) {
+            component_calls.insert(call.span.start);
+
+            if options.target == Target::Native {
+                normalized.insert(
+                    call.span.start,
+                    Err(invalid(
+                        "Base UI component styles require a web compilation target.",
+                        call.span,
+                    )),
+                );
+                continue;
+            }
+
+            match base_ui::component(&parsed.semantic, argument) {
+                Ok(component) => {
+                    let Some(body) = call.arguments.get(1).and_then(Argument::as_expression) else {
+                        normalized.insert(
+                            call.span.start,
+                            Err(invalid(
+                                "Base UI component styles require a static object.",
+                                call.span,
+                            )),
+                        );
+                        continue;
+                    };
+
+                    argument = body;
+                    Some(component)
+                }
+                Err(error) => {
+                    normalized.insert(call.span.start, Err(error));
+                    continue;
+                }
+            }
+        } else {
+            None
+        };
+        let value = match if component.is_some() {
+            statics.normalize(argument, &static_calls, &opaque, false)
+        } else {
+            first
+        } {
             Ok(value) => value,
             Err(error @ Error::Themes { .. }) => {
                 normalized.insert(call.span.start, Err(error));
                 continue;
             }
             Err(error) => return Err(error),
+        };
+        let value = if let Some(component) = component {
+            match base_ui::lower(allocator, value, component, &mut component_conditions, 0) {
+                // Normalization already resolved authored data. Re-normalizing would
+                // merge conditions expanded from distinct state and selector blocks.
+                Ok(value) => allocator.alloc(value),
+                Err(error) => {
+                    normalized.insert(call.span.start, Err(error));
+                    continue;
+                }
+            }
+        } else {
+            value
         };
 
         if let Expression::ArrayExpression(array) = value {
@@ -2307,7 +2395,14 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     }
 
     for call in &pending {
-        if let Err(error) = identifiers::explicit(call, 1) {
+        if let Err(error) = identifiers::explicit(
+            call,
+            if component_calls.contains(&call.span.start) {
+                2
+            } else {
+                1
+            },
+        ) {
             reporter.report(Code::UnsupportedSyntax, error.text(), Some(call.span));
         }
     }
@@ -2330,11 +2425,12 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
                 .map(|identity| (*start, Arc::from(identity)))
         })
         .collect();
-    let selectors = match selectors::scan(
+    let mut selectors = match selectors::scan(
         parsed,
         selectors::Options {
             calls: &pending,
             composed: &composed,
+            component_calls: &component_calls,
             css_namespaces: &css_namespaces,
             links,
             module_id: options.module_id,
@@ -2348,6 +2444,10 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             return Err(reporter.fail());
         }
     };
+    selectors
+        .local_conditions
+        .extend(component_conditions.values().cloned());
+    selectors.conditions.extend(component_conditions);
     let builder = AstBuilder::new(allocator);
     let compact = identity::compact(options.module_id);
     let suffix = compact.get(compact.len().saturating_sub(6)..).unwrap_or("");
@@ -2379,7 +2479,14 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let mut scratch = String::with_capacity(64);
 
     for (index, call) in pending.iter().copied().enumerate() {
-        let explicit = match identifiers::explicit(call, 1) {
+        let explicit = match identifiers::explicit(
+            call,
+            if component_calls.contains(&call.span.start) {
+                2
+            } else {
+                1
+            },
+        ) {
             Ok(explicit) => explicit,
             Err(error) => {
                 reporter.report(Code::UnsupportedSyntax, error.text(), Some(call.span));
@@ -2509,7 +2616,12 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             _ => None,
         };
 
-        if call.arguments.len() > 2
+        if call.arguments.len()
+            > if component_calls.contains(&call.span.start) {
+                3
+            } else {
+                2
+            }
             || (!matches!(argument, Some(Expression::ObjectExpression(_))) && entries.is_none())
         {
             reporter.report(
@@ -2593,6 +2705,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             (None, None) => None,
         };
         let mut converter = Converter {
+            component: component_calls.contains(&call.span.start),
             call,
             condition_keys: FxHashMap::default(),
             dynamic: slots,

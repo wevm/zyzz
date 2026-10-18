@@ -322,6 +322,25 @@ export const marker = 'original-location'
 })
 
 describe('web', () => {
+  test('recognizes the Base UI entrypoint before extracting state styles', () => {
+    const result = Babel.transformSync(
+      "import {Select} from '@base-ui/react/select'; import {style} from 'zyzz/base-ui/react'; export const item=style(Select.Item,{states:{highlighted:{color:'red'}}},{id:'item'});",
+      {
+        babelrc: false,
+        configFile: false,
+        filename: Path.resolve('base-ui.js'),
+        plugins: [[zyzz, { target: 'web' }]],
+      },
+    )!
+
+    expect(result.metadata!.zyzz!.css).toMatchInlineSnapshot(
+      '".z-item-text-0{&[data-highlighted]{color:red;}}"',
+    )
+    expect(result.code?.includes('zyzz/base-ui/react')).toMatchInlineSnapshot(
+      'false',
+    )
+  })
+
   test('injects the optional reset without duplicating explicit imports', async () => {
     for (const source of [
       'export const value = 1',

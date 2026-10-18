@@ -18,6 +18,7 @@
     "check:at-rules:legacy-full": "node scripts/at-rule-conformance.ts --require-full",
     "check:at-rules:rendering": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts --require-rendering",
     "check:at-rules:targets": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts --require-targets",
+    "check:base-ui": "node scripts/base-ui.ts --check",
     "check:binding": "node scripts/check-binding.ts",
     "check:css": "node scripts/css-conformance.ts",
     "check:css:full": "node scripts/css-conformance.ts --require-full",
@@ -29,6 +30,7 @@
     "dev": "pnpm build && pnpm --filter \"./examples/*\" rebuild",
     "test": "vp test",
     "update:at-rules": "node scripts/at-rule-conformance.ts --update",
+    "update:base-ui": "node scripts/base-ui.ts --update",
     "update:css": "node scripts/css-conformance.ts --update",
     "update:tables": "node scripts/build-rust-tables.ts && node scripts/build-rust-native-tables.ts && node scripts/build-css-syntax-tables.ts",
     "update:types": "node scripts/type-benches.ts --update"
@@ -163,6 +165,11 @@
       "types": "./dist/babel/index.d.ts",
       "default": "./dist/babel/index.js"
     },
+    "./base-ui/react": {
+      "src": "./src/base-ui/react/index.ts",
+      "types": "./dist/base-ui/react/index.d.ts",
+      "default": "./dist/base-ui/react/index.js"
+    },
     "./compiler": {
       "src": "./src/compiler/index.ts",
       "types": "./dist/compiler/index.d.ts",
@@ -292,6 +299,7 @@
   },
   "peerDependencies": {
     "@babel/core": "catalog:peers",
+    "@base-ui/react": "catalog:peers",
     "next": "catalog:peers",
     "react": "catalog:peers",
     "react-native": "catalog:peers",
@@ -300,6 +308,9 @@
   },
   "peerDependenciesMeta": {
     "@babel/core": {
+      "optional": true
+    },
+    "@base-ui/react": {
       "optional": true
     },
     "next": {

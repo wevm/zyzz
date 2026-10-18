@@ -1754,7 +1754,10 @@ impl<'p, 'a> Build<'p, 'a> {
                             if specifier.import_kind == ImportOrExportKind::Type
                     )
                 })
-                || matches!(declaration.source.value.as_str(), "zyzz" | "zyzz/web")
+                || matches!(
+                    declaration.source.value.as_str(),
+                    "zyzz" | "zyzz/base-ui/react" | "zyzz/web"
+                )
             {
                 continue;
             }

@@ -109,7 +109,8 @@ export function zyzz(
         (node.type === 'ExportNamedDeclaration' ||
           node.type === 'ExportAllDeclaration') &&
         node.exportKind !== 'type' &&
-        node.source?.value === 'zyzz'
+        (node.source?.value === 'zyzz' ||
+          node.source?.value === 'zyzz/base-ui/react')
       )
         throw new Error(
           'Zyzz Babel does not support re-exporting authoring helpers. Export compiled style definitions instead.',
@@ -118,6 +119,16 @@ export function zyzz(
         continue
       if (
         node.source.value === 'zyzz/default' ||
+        (node.source.value === 'zyzz/base-ui/react' &&
+          node.specifiers.some(
+            (specifier) =>
+              specifier.type === 'ImportNamespaceSpecifier' ||
+              (specifier.type === 'ImportSpecifier' &&
+                specifier.importKind !== 'type' &&
+                (specifier.imported.type === 'Identifier'
+                  ? specifier.imported.name
+                  : specifier.imported.value) === 'defineConfig'),
+          )) ||
         (node.source.value === 'zyzz' &&
           node.specifiers.some(
             (specifier) =>
@@ -137,6 +148,7 @@ export function zyzz(
       (node) =>
         node.type === 'ImportDeclaration' &&
         (node.source.value === 'zyzz' ||
+          node.source.value === 'zyzz/base-ui/react' ||
           node.source.value === 'zyzz/default' ||
           node.source.value === 'zyzz/web'),
     )

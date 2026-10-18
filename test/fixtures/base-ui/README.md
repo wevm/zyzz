@@ -1,53 +1,83 @@
-# Base UI Prototype
+# Base UI Integration
 
-> [!NOTE]
-> This is a type-only experiment, not a published integration. `Style.ts` declares an API for editor exploration. It has no runtime implementation and must not be executed. No compiler, generated CSS, or existing public API changes are included.
+`Select.tsx` renders the real Base UI Select with styles from `zyzz/base-ui/react`. `Config.ts` supplies shared tokens and shorthands. The integration suite compiles this graph and exercises it in Chromium with source rewriting enabled and disabled.
 
-## Authoring
-
-Pass the imported component directly. The proposed `zyzz/base-ui/react` entrypoint opts into Base UI types without adding React dependencies to the core. No component wrapper, registry configuration, or duplicate component namespace is needed at the call site.
-
-This entrypoint is not exported yet. The example shows the intended public API. For editor exploration today, the adjacent type fixtures import the local `./Style.js` declaration instead.
-
-```ts
+```tsx
 import { Select } from '@base-ui/react/select'
 import { style } from 'zyzz/base-ui/react'
 
+// Spread ordinary styling props onto the original component.
+function Fruit() {
+  return (
+    <Select.Root defaultValue="apple">
+      <Select.Trigger>
+        <Select.Value />
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Positioner>
+          <Select.Popup>
+            <Select.Item value="apple" {...styles.item()}>
+              Apple
+            </Select.Item>
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
+  )
+}
+
 namespace styles {
-  // The component supplies selector suggestions, not component props.
   export const item = style(Select.Item, {
-    selectors: {
-      '&[data-highlighted]': { backgroundColor: 'blue' },
-      '&[data-selected]': { fontWeight: 600 },
+    states: {
+      // Suggested and checked against Select.Item's documented data attributes.
+      highlighted: { backgroundColor: 'lightblue' },
+      selected: { fontWeight: 700 },
     },
+    // Attribute completions are also available here, alongside arbitrary CSS.
+    selectors: { '&[data-app-state="busy"]': { opacity: 0.5 } },
   })
 }
 ```
 
-The prototype covers `Select.Item`, `Select.Popup`, and `Select.Trigger` against the locked Base UI 1.8.0 types. A Zyzz-owned catalog matches callback-state shapes and supplies explicit DOM attribute names. String-valued attributes derive their values from Base UI state types. Ordinary CSS selectors remain accepted and nested declarations retain Zyzz validation.
+## Configuration
 
-## Evidence
+Import `defineConfig` from `zyzz/base-ui/react` to bind the same component-first overload to configured variables, layers, and shorthands. Other helpers retain their existing contracts. The entrypoint produces React props and does not load Base UI components at runtime.
 
-```sh
-# Exercise the real TypeScript language service against installed Base UI types.
-pnpm test run test/fixtures/base-ui/Style.test.ts
+```ts
+import { defineConfig } from 'zyzz/base-ui/react'
 
-# Check the consumer type fixtures with the repository's TypeScript compiler.
-pnpm check:types
+// The existing variable configuration also applies inside states.
+export const { style, vars } = defineConfig({
+  vars: { color: { accent: 'blue' } },
+})
 ```
 
-The completion test queries positions inside partially typed selector keys. It checks Item, Popup, Trigger, popup side values, nested selector blocks, an unsupported component, and an intentional structural collision. Consumer fixtures check callable props, ordinary overloads, arbitrary selectors, and rejected declarations. This is language-service evidence, not a VS Code UI recording.
+## Synchronization
+
+The pinned Base UI 1.8.0 declarations are the input for `scripts/base-ui.ts`. It follows public component and DataAttributes aliases, reads documented attribute values, and generates component hints, TSDoc links, runtime spellings, and the Rust catalog. CI checks deterministic output and declaration fingerprints without fetching upstream data.
+
+```sh
+# Review upstream changes and coverage before committing regenerated files.
+pnpm update:base-ui
+pnpm check:base-ui
+
+# Check language-service hints and real rendered state transitions.
+pnpm test run src/base-ui/react/Style.test.ts scripts/base-ui.test.ts
+```
+
+`test/conformance/base-ui.json` lists supported parts and explicit deferrals. Generic or inherited prop interfaces, unbounded attribute domains, and non-DOM parts remain outside the component-first contract. Ordinary `style({ selectors: … })` remains available for those parts.
 
 ## Limits
 
-- **Structural identity:** A custom component with an identical callback-state shape receives the same hints. Unsupported state shapes receive no Base UI hints. Matching props or import names in conditional types cannot establish nominal identity.
-- **DOM mappings:** State keys cannot be mechanically converted to attributes. Popup `open` maps to `data-open` and `data-closed`. Trigger `open` uses `data-popup-open`. Transitions use `data-starting-style` and `data-ending-style`.
-- **Completion scope:** The experiment suggests whole selector keys, including enumerated values. It is not a CSS language server for arbitrary selector expressions. Hints do not reject misspelled attribute names or prove attributes reach the DOM through a custom `render` element.
-- **Implementation scope:** Configured themes, variants, dynamic styles, component unions, other component libraries, runtime dispatch, and source extraction are not implemented by this prototype. Binding the integration to an app's configured tokens and shorthands remains undecided.
+- **Component references:** The compiler accepts direct imports from the Base UI root or documented component subpaths, including aliases and namespace imports. Local wrappers, dynamic component expressions, and re-exported component aliases are not supported.
+- **Authoring:** Component-first calls accept static objects. Dynamic callbacks, composition arrays, and component-first variants are not supported. Ordinary style and variants overloads remain available.
+- **Validation:** `states` checks names and finite values. `selectors` supplies whole-key suggestions but accepts arbitrary CSS, including application-owned attributes. It is not a CSS language server for compound selector fragments.
+- **Type identity:** Optional, type-only props augmentation distinguishes documented parts and compatible aliases. Props-preserving wrappers retain hints structurally, but compiler import validation still rejects those wrappers. Custom `render` elements must forward Base UI attributes.
+- **CSS-only mode:** The runtime expands attribute spellings without a component registry. Types and source extraction validate component-specific domains. No CSS rules are inserted at runtime.
 
 ## Upstream Contract
 
-Base UI could attach an optional, type-only attribute schema to each exported component declaration. This describes DOM attributes directly rather than requiring consumers to reconstruct runtime state mappings.
+Base UI could publish an optional type-only attribute schema on each final component export. Zyzz could then infer the documented DOM contract directly, without augmenting props or maintaining component identities. The consumer call would remain `style(Select.Item, declarations)`.
 
 ```ts
 // Illustrative upstream declaration, not an existing Base UI API.
@@ -60,10 +90,4 @@ declare const SelectItem: ExistingSelectItemComponent & {
 }
 ```
 
-Here `true` means a presence attribute. A popup schema would give `data-side` its literal value union and list both transition attributes. A shared unique-symbol key could replace the illustrative property name. The schema must remain visible on the final `memo` or `forwardRef` export, but needs no runtime property.
-
-Zyzz could infer that schema from `typeof Select.Item` without a state-shape catalog. Base UI could generate the declarations alongside its documented data attributes and check them against rendered output. The consumer syntax could stay `style(Select.Item, {...})` while the metadata source changes.
-
-## Production Follow-Up
-
-Before publishing this overload, normalize component-first calls consistently in runtime authoring and Rust extraction, retain configured token inference, and verify emitted CSS and interactions with real Base UI components. Define which component references are accepted at compile time, preserve expression side effects, and measure inference cost. The component must not become part of CSS identity or create a runtime React dependency in the core.
+Here `true` denotes presence. A popup schema would give `data-side` its literal value union. A shared unique-symbol key could replace the illustrative property name. Metadata must remain visible on the final `memo` or `forwardRef` export, but requires no runtime property.

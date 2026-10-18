@@ -6,6 +6,45 @@ mod compile {
     use super::api;
 
     #[test]
+    fn base_ui_linked_configuration() {
+        let input = serde_json::json!({
+            "imports": {
+                "config.ts": {"zyzz/base-ui/react": null},
+                "select.ts": {"./config.js": "config.ts", "@base-ui/react/select": null}
+            },
+            "modules": {
+                "config.ts": "import {defineConfig} from 'zyzz/base-ui/react';export const {style,vars}=defineConfig({vars:{color:{brand:'red'}}});",
+                "select.ts": "import {style,vars} from './config.js';import {Select} from '@base-ui/react/select';export const item=style(Select.Item,{states:{highlighted:{color:vars.color.brand}}});"
+            }
+        });
+        let output: serde_json::Value =
+            serde_json::from_str(&api::call("graph.compile", &input.to_string())).unwrap();
+
+        insta::assert_snapshot!(output["error"], @"null");
+        insta::assert_snapshot!(output["modules"]["select.ts"]["css"].as_str().unwrap_or_default(), @"
+        .z-theme-theme{--z-color-brand:red;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-PAxzm4-item-text-0{&[data-highlighted]{color:var(--z-color-brand,red);}}
+        ");
+
+        let packed = serde_json::json!({
+            "contracts": {"config.ts": output["contracts"]["config.ts"]},
+            "imports": input["imports"],
+            "modules": {"select.ts": input["modules"]["select.ts"]}
+        });
+        let output: serde_json::Value =
+            serde_json::from_str(&api::call("graph.compile", &packed.to_string())).unwrap();
+
+        insta::assert_snapshot!(output["error"], @"null");
+        insta::assert_snapshot!(output["modules"]["select.ts"]["css"].as_str().unwrap_or_default(), @"
+        .z-theme-theme{--z-color-brand:red;}
+        .z-PAxzm4-item-text-0{&[data-highlighted]{color:var(--z-color-brand,red);}}
+        ");
+    }
+
+    #[test]
     fn empty_graph() {
         insta::assert_snapshot!(
             api::call("graph.compile", r#"{"modules":{}}"#),
@@ -182,6 +221,139 @@ mod create {
 
 mod transform {
     use super::api;
+
+    #[test]
+    fn base_ui_ordinary_styles() {
+        for entrypoint in ["zyzz", "zyzz/base-ui/react"] {
+            let input = serde_json::json!({
+                "moduleId": "select.ts",
+                "source": format!("import {{style}} from '{entrypoint}';const body={{color:'red'}};export const item=style(body,{{id:'item'}});")
+            });
+            let (output, _) = compile(&input.to_string());
+
+            insta::allow_duplicates! {
+                insta::assert_snapshot!(output["error"], @"null");
+                insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
+            }
+        }
+
+        let input = serde_json::json!({
+            "moduleId": "select.ts",
+            "source": "import {style} from 'zyzz';import {Select} from '@base-ui/react/select';export const item=style(Select.Item,{states:{highlighted:{color:'red'}}});"
+        });
+        let (output, _) = compile(&input.to_string());
+
+        insta::assert_snapshot!(output["error"].is_object(), @"true");
+    }
+
+    #[test]
+    fn base_ui_selector_interpolation() {
+        let input = serde_json::json!({
+            "moduleId": "select.ts",
+            "source": "import {style} from 'zyzz/base-ui/react';import {Select} from '@base-ui/react/select';const parent=style({}, {id:'parent'});export const item=style(Select.Item,{selectors:{[`${parent}:hover &`]:{states:{highlighted:{color:'red'}}}}},{id:'item'});"
+        });
+        let (output, _) = compile(&input.to_string());
+
+        insta::assert_snapshot!(output["error"], @"null");
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-item-text-0{.z-style-id-parent:hover &{&[data-highlighted]{color:red;}}}");
+    }
+
+    #[test]
+    fn base_ui_states() {
+        let input = serde_json::json!({
+            "moduleId": "select.ts",
+            "source": "import {style} from 'zyzz/base-ui/react';import {Select} from '@base-ui/react/select';export const item=style(Select.Item,{states:{highlighted:{color:'red'}},selectors:{'&[data-highlighted]':{color:'blue'}},'&[data-highlighted]':{color:'green',states:{disabled:{opacity:0.5}}}},{id:'item'});export const popup=style(Select.Popup,{states:{side:{bottom:{color:'red'}}}});"
+        });
+
+        let (output, _) = compile(&input.to_string());
+
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @r#"
+        .z-item-text-0{&[data-highlighted]{color:red;}}
+        .z-item-text-1{&[data-highlighted]/*base-ui-1*/{color:blue;}}
+        .z-item-text-2{&[data-highlighted]/*base-ui-2*/{color:green;}}
+        .z-item-opacity-3{&[data-highlighted]/*base-ui-2*/{&[data-disabled]{opacity:0.5;}}}
+        .z-PAxzm4-popup-text-0{&[data-side="bottom"]{color:red;}}
+        "#);
+        insta::assert_snapshot!(output["error"], @"null");
+        insta::assert_snapshot!(output["code"].as_str().unwrap_or_default().contains("zyzz/base-ui/react"), @"false");
+    }
+
+    #[test]
+    fn base_ui_import_forms() {
+        for imports in [
+            "import {Select as S} from '@base-ui/react';",
+            "import * as S from '@base-ui/react/select';",
+        ] {
+            let input = serde_json::json!({
+                "moduleId": "select.ts",
+                "source": format!("import {{style}} from 'zyzz/base-ui/react';{imports}export const item=style(S{} ,{{states:{{highlighted:{{color:'red'}}}}}});", if imports.contains("* as") { ".Select.Item" } else { ".Item" })
+            });
+            let (output, _) = compile(&input.to_string());
+
+            insta::allow_duplicates! {
+                insta::assert_snapshot!(output["error"], @"null");
+                insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-PAxzm4-item-text-0{&[data-highlighted]{color:red;}}");
+            }
+        }
+
+        let input = serde_json::json!({
+            "moduleId": "button.ts",
+            "source": "import {style} from 'zyzz/base-ui/react';import {Button} from '@base-ui/react/button';export const button=style(Button,{states:{disabled:{color:'red'}}},{id:'button'});"
+        });
+        let (output, _) = compile(&input.to_string());
+
+        insta::assert_snapshot!(output["error"], @"null");
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-button-text-0{&[data-disabled]{color:red;}}");
+    }
+
+    #[test]
+    fn base_ui_diagnostics() {
+        let mut diagnostics = Vec::new();
+
+        for body in [
+            "style(Select.Item,{states:{unknown:{color:'red'}}})",
+            "style(Select.Popup,{states:{side:{unknown:{color:'red'}}}})",
+            "style(wrap(Select.Item),{color:'red'})",
+            "style(Local,{color:'red'})",
+            "style(Select.Item,()=>({color:'red'}))",
+        ] {
+            let input = serde_json::json!({
+                "moduleId": "select.ts",
+                "source": format!("import {{style}} from 'zyzz/base-ui/react';import {{Select}} from '@base-ui/react/select';const Local=()=>null;export const item={body};")
+            });
+            let (output, _) = compile(&input.to_string());
+
+            diagnostics.push(output["error"]["diagnostics"][0]["message"].clone());
+        }
+
+        insta::assert_snapshot!(serde_json::to_string_pretty(&diagnostics).unwrap(), @r#"
+        [
+          "Unknown Base UI state: unknown.",
+          "Unknown Base UI state value: side.unknown.",
+          "Base UI components must resolve to imports from @base-ui/react.",
+          "Definition options require one nonempty literal id.",
+          "Base UI component styles require static object bodies."
+        ]
+        "#);
+    }
+
+    #[test]
+    fn base_ui_configuration() {
+        let input = serde_json::json!({
+            "moduleId": "select.ts",
+            "source": "import {defineConfig} from 'zyzz/base-ui/react';import {Select} from '@base-ui/react/select';const {style,vars}=defineConfig({vars:{color:{brand:'red'}}});export const item=style(Select.Item,{states:{highlighted:{color:vars.color.brand}}});"
+        });
+        let (output, _) = compile(&input.to_string());
+
+        insta::assert_snapshot!(output["error"], @"null");
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @"
+        .z-theme-theme{--z-color-brand:red;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-PAxzm4-item-text-0{&[data-highlighted]{color:var(--z-color-brand,red);}}
+        ");
+    }
 
     /// A `transform.compile` result's module and the records that follow it after a NUL.
     fn compile(input: &str) -> (serde_json::Value, String) {

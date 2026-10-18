@@ -1273,6 +1273,7 @@ impl Reader<'_> {
             binding: string(get(entry, "binding"))?,
             call: Call {
                 appearance,
+                base_ui: is_true(get(entry, "baseUi")),
                 catalog_only,
                 direct_variables,
                 initialization,
@@ -1654,6 +1655,7 @@ fn write_entry(output: &mut String, link: &Link, options: &Write<'_>) -> Result<
             };
 
             flag(output, "variableSet", call.variable_set);
+            flag(output, "baseUi", call.base_ui);
             flag(output, "nativeProvider", call.native_provider);
             flag(output, "directVariables", call.direct_variables);
 

@@ -12,6 +12,21 @@ import { catalog } from '../src/base-ui/react/internal/Catalog.generated.js'
 
 describe('generate', () => {
   test('checks the installed declarations against all reviewed outputs', () => {
+    // Repository formatting must not change generated JSON before the drift check.
+    ChildProcess.execFileSync(
+      Path.resolve(import.meta.dirname, '../node_modules/.bin/vp'),
+      [
+        'fmt',
+        '--check',
+        Path.resolve(
+          import.meta.dirname,
+          '../crates/compiler/src/generated/base_ui.json',
+        ),
+        Path.resolve(import.meta.dirname, '../test/conformance/base-ui.json'),
+      ],
+      { encoding: 'utf8' },
+    )
+
     const output = ChildProcess.execFileSync(
       process.execPath,
       [Path.join(import.meta.dirname, 'base-ui.ts'), '--check'],

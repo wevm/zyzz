@@ -22,9 +22,13 @@ describe('type benchmark shards', () => {
     expect([...first, ...second]).toEqual(all)
     expect(new Set([...first, ...second]).size).toBe(all.length)
     expect(Math.abs(first.length - second.length)).toBeLessThanOrEqual(1)
-    expect(list('--fixture', 'Style.bench-d.ts', '--shard', '1/1')).toEqual([
-      'src/Style.bench-d.ts',
-    ])
+    expect(list('--fixture', 'Style.bench-d.ts', '--shard', '1/1'))
+      .toMatchInlineSnapshot(`
+        [
+          "src/Style.bench-d.ts",
+          "src/base-ui/react/Style.bench-d.ts",
+        ]
+      `)
   })
 
   test.each(['0/2', '3/2', '1/0', '1/1000', 'invalid', ''])(

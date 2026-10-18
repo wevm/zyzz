@@ -175,11 +175,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/autocomplete#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -518,11 +514,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/autocomplete#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -590,11 +582,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/autocomplete#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -1068,11 +1056,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/combobox#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -1466,11 +1450,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/combobox#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -1538,11 +1518,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/combobox#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -1708,11 +1684,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/context-menu#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -1899,11 +1871,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/context-menu#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -1921,12 +1889,7 @@
         "attribute": "data-instant",
         "description": "Present if animations should be instant.",
         "url": "https://base-ui.com/react/components/context-menu#popup",
-        "values": [
-          "click",
-          "dismiss",
-          "group",
-          "trigger-change"
-        ]
+        "values": ["click", "dismiss", "group", "trigger-change"]
       },
       "open": {
         "attribute": "data-open",
@@ -2339,12 +2302,7 @@
         "attribute": "data-swipe-direction",
         "description": "Indicates the swipe direction.",
         "url": "https://base-ui.com/react/components/drawer#popup",
-        "values": [
-          "up",
-          "down",
-          "left",
-          "right"
-        ]
+        "values": ["up", "down", "left", "right"]
       },
       "swipeDismiss": {
         "attribute": "data-swipe-dismiss",
@@ -2393,12 +2351,7 @@
         "attribute": "data-swipe-direction",
         "description": "Indicates the swipe direction.",
         "url": "https://base-ui.com/react/components/drawer#swipe-area",
-        "values": [
-          "up",
-          "down",
-          "left",
-          "right"
-        ]
+        "values": ["up", "down", "left", "right"]
       },
       "swiping": {
         "attribute": "data-swiping",
@@ -2827,11 +2780,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/menu#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -3018,11 +2967,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/menu#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -3040,12 +2985,7 @@
         "attribute": "data-instant",
         "description": "Present if animations should be instant.",
         "url": "https://base-ui.com/react/components/menu#popup",
-        "values": [
-          "click",
-          "dismiss",
-          "group",
-          "trigger-change"
-        ]
+        "values": ["click", "dismiss", "group", "trigger-change"]
       },
       "open": {
         "attribute": "data-open",
@@ -3200,10 +3140,7 @@
         "attribute": "data-orientation",
         "description": "Determines the orientation of the menubar.",
         "url": "https://base-ui.com/react/components/menubar#menubar",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -3246,11 +3183,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/navigation-menu#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -3325,12 +3258,7 @@
         "attribute": "data-activation-direction",
         "description": "Which direction another trigger was activated from.",
         "url": "https://base-ui.com/react/components/navigation-menu#content",
-        "values": [
-          "left",
-          "right",
-          "up",
-          "down"
-        ]
+        "values": ["left", "right", "up", "down"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -3405,11 +3333,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to the specified side.",
         "url": "https://base-ui.com/react/components/navigation-menu#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -3471,11 +3395,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to the specified side.",
         "url": "https://base-ui.com/react/components/navigation-menu#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -4159,11 +4079,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/popover#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -4250,11 +4166,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/popover#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -4272,12 +4184,7 @@
         "attribute": "data-instant",
         "description": "Present if animations should be instant.",
         "url": "https://base-ui.com/react/components/popover#popup",
-        "values": [
-          "click",
-          "dismiss",
-          "focus",
-          "trigger-change"
-        ]
+        "values": ["click", "dismiss", "focus", "trigger-change"]
       },
       "open": {
         "attribute": "data-open",
@@ -4321,11 +4228,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/popover#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -4375,11 +4278,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/preview-card#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -4454,11 +4353,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/preview-card#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -4514,11 +4409,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/preview-card#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -4894,10 +4785,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the scrollbar.",
         "url": "https://base-ui.com/react/components/scroll-area#scrollbar",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       },
       "overflowXEnd": {
         "attribute": "data-overflow-x-end",
@@ -4940,10 +4828,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the scrollbar.",
         "url": "https://base-ui.com/react/components/scroll-area#thumb",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       },
       "scrolling": {
         "attribute": "data-scrolling",
@@ -5011,11 +4896,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/select#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -5178,11 +5059,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/select#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -5239,11 +5116,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/select#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -5288,9 +5161,7 @@
         "attribute": "data-direction",
         "description": "Indicates the direction of the scroll arrow.",
         "url": "https://base-ui.com/react/components/select#scroll-down-arrow",
-        "values": [
-          "down"
-        ]
+        "values": ["down"]
       },
       "endingStyle": {
         "attribute": "data-ending-style",
@@ -5335,9 +5206,7 @@
         "attribute": "data-direction",
         "description": "Indicates the direction of the scroll arrow.",
         "url": "https://base-ui.com/react/components/select#scroll-up-arrow",
-        "values": [
-          "up"
-        ]
+        "values": ["up"]
       },
       "endingStyle": {
         "attribute": "data-ending-style",
@@ -5523,10 +5392,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the slider.",
         "url": "https://base-ui.com/react/components/slider#control",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       },
       "touched": {
         "attribute": "data-touched",
@@ -5581,10 +5447,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the slider.",
         "url": "https://base-ui.com/react/components/slider#indicator",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       },
       "touched": {
         "attribute": "data-touched",
@@ -5645,10 +5508,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the slider.",
         "url": "https://base-ui.com/react/components/slider#track",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       },
       "touched": {
         "attribute": "data-touched",
@@ -5703,10 +5563,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the slider.",
         "url": "https://base-ui.com/react/components/slider#value",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       },
       "touched": {
         "attribute": "data-touched",
@@ -5877,22 +5734,13 @@
         "attribute": "data-activation-direction",
         "description": "Indicates the direction of the activation (based on the previous active tab).",
         "url": "https://base-ui.com/react/components/tabs#indicator",
-        "values": [
-          "left",
-          "right",
-          "up",
-          "down",
-          "none"
-        ]
+        "values": ["left", "right", "up", "down", "none"]
       },
       "orientation": {
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the tabs.",
         "url": "https://base-ui.com/react/components/tabs#indicator",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -5905,22 +5753,13 @@
         "attribute": "data-activation-direction",
         "description": "Indicates the direction of the activation (based on the previous active tab).",
         "url": "https://base-ui.com/react/components/tabs#list",
-        "values": [
-          "left",
-          "right",
-          "up",
-          "down",
-          "none"
-        ]
+        "values": ["left", "right", "up", "down", "none"]
       },
       "orientation": {
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the tabs.",
         "url": "https://base-ui.com/react/components/tabs#list",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -5933,22 +5772,13 @@
         "attribute": "data-activation-direction",
         "description": "Indicates the direction of the activation (based on the previous active tab).",
         "url": "https://base-ui.com/react/components/tabs#root",
-        "values": [
-          "left",
-          "right",
-          "up",
-          "down",
-          "none"
-        ]
+        "values": ["left", "right", "up", "down", "none"]
       },
       "orientation": {
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the tabs.",
         "url": "https://base-ui.com/react/components/tabs#root",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -5961,13 +5791,7 @@
         "attribute": "data-activation-direction",
         "description": "Indicates the direction of the activation (based on the previous active tab).",
         "url": "https://base-ui.com/react/components/tabs#tab",
-        "values": [
-          "left",
-          "right",
-          "up",
-          "down",
-          "none"
-        ]
+        "values": ["left", "right", "up", "down", "none"]
       },
       "active": {
         "attribute": "data-active",
@@ -5985,10 +5809,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the tabs.",
         "url": "https://base-ui.com/react/components/tabs#tab",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -6001,11 +5822,7 @@
         "attribute": "data-align",
         "description": "Indicates how the toast is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/toast#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "side": {
         "attribute": "data-side",
@@ -6043,11 +5860,7 @@
         "attribute": "data-align",
         "description": "Indicates how the toast is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/toast#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",
@@ -6091,10 +5904,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the toolbar.",
         "url": "https://base-ui.com/react/components/toolbar#button",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -6113,10 +5923,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the toolbar.",
         "url": "https://base-ui.com/react/components/toolbar#group",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -6141,10 +5948,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the toolbar.",
         "url": "https://base-ui.com/react/components/toolbar#input",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -6157,10 +5961,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the toolbar.",
         "url": "https://base-ui.com/react/components/toolbar#link",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -6179,10 +5980,7 @@
         "attribute": "data-orientation",
         "description": "Indicates the orientation of the toolbar.",
         "url": "https://base-ui.com/react/components/toolbar#root",
-        "values": [
-          "horizontal",
-          "vertical"
-        ]
+        "values": ["horizontal", "vertical"]
       }
     }
   },
@@ -6195,11 +5993,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/tooltip#arrow",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -6211,11 +6005,7 @@
         "attribute": "data-instant",
         "description": "Present if animations should be instant.",
         "url": "https://base-ui.com/react/components/tooltip#arrow",
-        "values": [
-          "delay",
-          "dismiss",
-          "focus"
-        ]
+        "values": ["delay", "dismiss", "focus"]
       },
       "open": {
         "attribute": "data-open",
@@ -6253,11 +6043,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/tooltip#popup",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "closed": {
         "attribute": "data-closed",
@@ -6275,11 +6061,7 @@
         "attribute": "data-instant",
         "description": "Present if animations should be instant.",
         "url": "https://base-ui.com/react/components/tooltip#popup",
-        "values": [
-          "delay",
-          "dismiss",
-          "focus"
-        ]
+        "values": ["delay", "dismiss", "focus"]
       },
       "open": {
         "attribute": "data-open",
@@ -6323,11 +6105,7 @@
         "attribute": "data-align",
         "description": "Indicates how the popup is aligned relative to specified side.",
         "url": "https://base-ui.com/react/components/tooltip#positioner",
-        "values": [
-          "start",
-          "center",
-          "end"
-        ]
+        "values": ["start", "center", "end"]
       },
       "anchorHidden": {
         "attribute": "data-anchor-hidden",

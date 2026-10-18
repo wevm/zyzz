@@ -417,13 +417,11 @@ for (const [file, text] of [
   ['test/conformance/base-ui.json', `${JSON.stringify(inventory, null, 2)}\n`],
 ] as const) {
   const path = Path.join(root, file)
-  const formatted = file.endsWith('.ts')
-    ? ChildProcess.execFileSync(
-        Path.join(root, 'node_modules/.bin/oxfmt'),
-        ['--stdin-filepath', path],
-        { encoding: 'utf8', input: text, maxBuffer: 16 * 1024 * 1024 },
-      )
-    : text
+  const formatted = ChildProcess.execFileSync(
+    Path.join(root, 'node_modules/.bin/oxfmt'),
+    ['--stdin-filepath', path],
+    { encoding: 'utf8', input: text, maxBuffer: 16 * 1024 * 1024 },
+  )
   if (update) {
     Fs.mkdirSync(Path.dirname(path), { recursive: true })
     Fs.writeFileSync(path, formatted)

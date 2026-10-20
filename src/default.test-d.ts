@@ -22,6 +22,52 @@ describe('default', () => {
     style({ typography: ['heading.32', 'copy.14'] })
   })
 
+  test('reports invalid tokens on the offending property only', () => {
+    style({
+      alignItems: 'center',
+      // @ts-expect-error Unknown bundled color token.
+      color: 'missing',
+      display: 'flex',
+      padding: 4,
+    })
+    style({
+      display: 'flex',
+      // @ts-expect-error Unknown typography set.
+      typography: 'body.b2',
+    })
+    style({
+      '@media >=md': {
+        display: 'grid',
+        // @ts-expect-error Unknown typography set inside a condition.
+        typography: 'body.b2',
+      },
+      display: 'flex',
+    })
+    style([
+      {
+        display: 'flex',
+        // @ts-expect-error Unknown typography set inside a composition entry.
+        typography: 'body.b2',
+      },
+    ])
+    variants({
+      base: {
+        display: 'flex',
+        // @ts-expect-error Unknown typography set in a base declaration.
+        typography: 'body.b2',
+      },
+      variants: {
+        size: {
+          sm: {
+            display: 'flex',
+            // @ts-expect-error Unknown typography set in a variant choice.
+            typography: 'body.b2',
+          },
+        },
+      },
+    })
+  })
+
   test('exposes single-theme appearance controls and a server-safe script', () => {
     expectTypeOf(script()).toEqualTypeOf<string>()
     appearance.set({ colorScheme: 'dark' })

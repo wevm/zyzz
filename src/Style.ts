@@ -67,7 +67,10 @@ export type Accepted<
               : key extends 'typography'
                 ? literal extends true
                   ? never
-                  : Value.Atom<Typography.Names<tokens>>
+                  : style[key] extends Value.Atom<Typography.Names<tokens>>
+                    ? style[key]
+                    : // A disjoint literal would reduce the whole object to `never`, so the brand keeps the error on this property.
+                      Value.Unmatched<Typography.Names<tokens>>
                 : key extends keyof Literal.Properties
                   ? (literal extends true
                       ? LiteralDeclarations

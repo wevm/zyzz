@@ -201,6 +201,11 @@ export type Mismatch<tokens, property extends keyof Literal.Properties> =
       >
     : never
 
+/** Lists the named sets a property accepts, so mismatch diagnostics name them. */
+export type Unmatched<names> =
+  // Without configured names the property is unknown, and `never` reports it as such.
+  [names] extends [never] ? never : Expected<names>
+
 // An object brand never reduces with a string literal, so the diagnostic keeps the expected values.
 type Expected<values> = { readonly [expected]: values }
 

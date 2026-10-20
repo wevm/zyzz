@@ -103,6 +103,18 @@ describe('create', () => {
       px: `${values.width} !custom`,
     }))
   })
+  test('reports invalid alias tokens on the offending property only', () => {
+    const configured = Config.create({
+      shorthands: { px: ['paddingLeft', 'paddingRight'] },
+      vars: { padding: { sm: '8px' } },
+    })
+
+    configured.style({
+      display: 'flex',
+      // @ts-expect-error Unknown padding token.
+      px: 'huge',
+    })
+  })
   test('rejects malformed definitions', () => {
     // @ts-expect-error empty targets
     Config.create({ shorthands: { px: [] } })

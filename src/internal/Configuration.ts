@@ -19,6 +19,7 @@ import * as VariableSets from './VariableSets.js'
 import * as Vars from '../Vars.js'
 import * as Selection from '../runtime/Selection.js'
 import * as Token from './Token.js'
+import type * as Value from './Value.js'
 import type * as Completion from './Completion.js'
 
 /** Creates token-free authoring without a configuration file or global state. */
@@ -753,7 +754,9 @@ export type Body<
                       : target
                   }[mappings[key][number]] extends never
                   ? styles[key]
-                  : never
+                  : [Token.Names<tokens, mappings[key][number]>] extends [never]
+                    ? never
+                    : Value.Mismatch<tokens, mappings[key][number]>
                 : Style.Accepted<Pick<styles, key>, tokens>[key]
       }
     : never)

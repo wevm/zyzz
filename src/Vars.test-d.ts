@@ -419,6 +419,63 @@ test('infers numeric and compound token names', () => {
   })
 })
 
+describe('extend', () => {
+  test('removes null paths from references and style values', () => {
+    const base = Vars.define({
+      color: { ink: '#111111', paper: '#ffffff' },
+      radius: { sm: '4px', lg: '16px', xl: '24px' },
+      shadow: { sm: '0 1px 2px #000', md: '0 2px 4px #000' },
+    })
+    const trimmed = Vars.extend(
+      base,
+      { color: { accent: '#2563eb' }, radius: { xl: null }, shadow: null },
+      { id: 'trimmed' },
+    )
+
+    expectTypeOf(trimmed.radius).toEqualTypeOf<{
+      readonly sm: Vars.Reference<'spacing', '4px'>
+      readonly lg: Vars.Reference<'spacing', '16px'>
+    }>()
+    expectTypeOf(trimmed).not.toHaveProperty('shadow')
+    expectTypeOf(trimmed.color).toHaveProperty('accent')
+    expectTypeOf(trimmed.color).toHaveProperty('ink')
+
+    const { style } = Config.create({ id: 'trimmed', vars: trimmed })
+    style({ borderRadius: 'lg', color: 'accent' })
+    // @ts-expect-error Removed leaves are not style tokens.
+    style({ borderRadius: 'xl' })
+    // @ts-expect-error Removed categories are not style tokens.
+    style({ boxShadow: 'sm' })
+  })
+
+  test('removes paths from unnamed extensions and derive references', () => {
+    const base = Vars.define({ spacing: { sm: '4px', lg: '16px' } })
+    const trimmed = Vars.extend(base, { spacing: { lg: null } }, (vars) => {
+      expectTypeOf(vars.spacing).not.toHaveProperty('lg')
+      return { spacing: { md: vars.spacing.sm } }
+    })
+
+    expectTypeOf(trimmed.spacing).toHaveProperty('md')
+    expectTypeOf(trimmed.spacing).not.toHaveProperty('lg')
+  })
+
+  test('rejects removals of missing paths and queries', () => {
+    const base = Vars.define({
+      breakpoint: { md: '768px' },
+      color: { ink: '#111111' },
+    })
+
+    // @ts-expect-error Removals name existing paths.
+    Vars.extend(base, { color: { missing: null } })
+    // @ts-expect-error Removals name existing categories.
+    Vars.extend(base, { missing: null })
+    // @ts-expect-error A removal inside a leaf treats the leaf as a category.
+    Vars.extend(base, { color: { ink: { shade: null } } })
+    // @ts-expect-error Query thresholds are not removable.
+    Vars.extend(base, { breakpoint: null })
+  })
+})
+
 describe('defineVars', () => {
   test('preserves overloads, derived reference inference, and literal domains', () => {
     expectTypeOf(defineVars).toEqualTypeOf(Vars.define)

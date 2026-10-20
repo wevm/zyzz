@@ -39,6 +39,11 @@ export type Values = {
   readonly [key: string]: Value | Values | readonly string[]
 }
 
+/** Extension values: overrides, additions, and `null` removals of existing paths. */
+export type Changes = {
+  readonly [key: string]: Value | Changes | readonly string[] | null
+}
+
 /** Immutable references retaining their shared set contract. */
 export type Definition<values extends Values = Values> = (Values extends values
   ? {}
@@ -184,21 +189,25 @@ type Merge<base, derived> = {
 }
 
 /**
- * Overrides existing leaves and adds new ones. Without an id, the extension is an
- * alternative set sharing the base's identity; with one, it is a new set whose
- * inherited leaves reference the base's variables. Restating a base leaf, such as
- * `base.spacing.md` at `spacing.md`, keeps it.
- * @throws {InvalidError} If an override changes a domain or an addition replaces a leaf with a category, or the reverse.
+ * Overrides existing leaves, adds new ones, and removes paths set to `null`. Without
+ * an id, the extension is an alternative set sharing the base's identity; with one,
+ * it is a new set whose inherited leaves reference the base's variables. Restating a
+ * base leaf, such as `base.spacing.md` at `spacing.md`, keeps it. A removed path
+ * leaves the extension's references and emitted variables, and `null` at a category
+ * removes every leaf below it.
+ * @throws {InvalidError} If an override changes a domain, an addition replaces a leaf with a category or the reverse, or a removal names a path the base lacks.
  */
-export function extend<const base extends Values, const values extends Values>(
+export function extend<const base extends Values, const values extends Changes>(
   variables: Definition<base>,
   values: values & NoInfer<Extension<base, values>>,
   options?: style.DefinitionOptions,
-): Definition<Extended<base, values>>
+): Extended<base, values> extends infer extended extends Values
+  ? Definition<extended>
+  : never
 /** Deeply merges derived leaves over the extended set, rejecting existing paths. */
 export function extend<
   const base extends Values,
-  const values extends Values,
+  const values extends Changes,
   const derived extends Values,
 >(
   variables: Definition<base>,
@@ -210,10 +219,13 @@ export function extend<
       ) => Validated<derived, false, true>
     >,
   options?: style.DefinitionOptions,
-): Definition<Extended<Extended<base, values>, derived>>
+): Extended<Extended<base, values>, derived> extends infer extended extends
+  Values
+  ? Definition<extended>
+  : never
 export function extend(
   variables: Definition,
-  values: Values,
+  values: Changes,
   derive: style.DefinitionOptions | ((vars: References<Values>) => Values) = {},
   options: style.DefinitionOptions = {},
 ): Definition {
@@ -249,9 +261,13 @@ export function extend(
   })
 }
 
-/** Base values grown by an extension; overridden leaves keep their base types. Unexported so declarations inline it. */
+/** Base values grown by an extension; overridden leaves keep their base types and removed paths drop. Unexported so declarations inline it. */
 type Extended<base, values> = {
-  readonly [key in keyof base | keyof values]: key extends keyof base
+  readonly [key in keyof base | keyof values as key extends keyof values
+    ? values[key] extends null
+      ? never
+      : key
+    : key]: key extends keyof base
     ? key extends keyof values
       ? base[key] extends Value
         ? base[key]
@@ -264,20 +280,24 @@ type Extended<base, values> = {
       : never
 }
 
-/** Compatible overrides at existing leaves, plus new leaves and categories. */
+/** Compatible overrides and `null` removals at existing paths, plus new leaves and categories. */
 type Extension<base, values, typography extends boolean = false> = {
   readonly [key in keyof values]: key extends keyof base
     ? base[key] extends Value
-      ? Conditional<Compatible<Scalar<base[key]>>>
+      ? Conditional<Compatible<Scalar<base[key]>>> | null
       : base[key] extends readonly string[]
         ? readonly string[]
-        : values[key] extends Value
-          ? never
-          : Extension<
-              base[key],
-              values[key],
-              key extends 'typography' ? true : typography
-            >
+        : values[key] extends null
+          ? key extends 'breakpoint' | 'container'
+            ? never
+            : null
+          : values[key] extends Value
+            ? never
+            : Extension<
+                base[key],
+                values[key],
+                key extends 'typography' ? true : typography
+              >
     : key extends 'containerNames'
       ? readonly string[]
       : key extends

@@ -82,6 +82,28 @@ export function build(
   const conditions: string[][] = []
   const active = new Set<object>()
   function visit(input: unknown, path: string[]) {
+    if (input === null && base && path.length) {
+      if (options.derived)
+        throw new Vars.InvalidError(
+          path,
+          'Derived variables cannot remove paths.',
+        )
+      const key = JSON.stringify(path)
+      if (!leaves.has(key) && !categories.has(key))
+        throw new Vars.InvalidError(
+          path,
+          'Extensions can only remove existing paths.',
+        )
+      // A removed category takes every leaf below it, including typography conditions.
+      for (const name of Object.keys(values)) {
+        const parts = paths[name] ?? name.split('.')
+        if (path.every((part, index) => parts[index] === part)) {
+          delete values[name]
+          delete paths[name]
+        }
+      }
+      return
+    }
     if (
       typeof input === 'string' ||
       typeof input === 'number' ||

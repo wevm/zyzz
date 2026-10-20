@@ -2045,6 +2045,193 @@ describe('extend', () => {
     expect(css).toMatch(/spacing-page/)
     expect(css).toMatch(/#ffffff/)
   })
+
+  describe('removals', () => {
+    const base = Vars.define(
+      {
+        breakpoint: { md: '768px' },
+        color: { brand: '#2563eb', ink: '#111111' },
+        radius: { sm: '4px', xl: '24px' },
+        shadow: { sm: '0 1px 2px #000', md: '0 2px 4px #000' },
+        typography: {
+          heading: {
+            fontSize: '24px',
+            '@media >=md': { fontSize: '32px' },
+          },
+          body: { fontSize: '16px' },
+        },
+      },
+      (vars) => ({ color: { accent: vars.color.brand } }),
+      { id: 'extend/removals' },
+    )
+
+    test('removes leaves and categories, including typography conditions', () => {
+      const trimmed = Vars.extend(
+        base,
+        {
+          radius: { xl: null },
+          shadow: null,
+          typography: { heading: null },
+        },
+        { id: 'extend/trimmed' },
+      )
+
+      expect(Object.keys(trimmed)).toMatchInlineSnapshot(`
+        [
+          "color",
+          "radius",
+          "typography",
+        ]
+      `)
+      expect(Object.keys(trimmed.radius)).toMatchInlineSnapshot(`
+        [
+          "sm",
+        ]
+      `)
+      expect(Object.keys(trimmed.typography)).toMatchInlineSnapshot(`
+        [
+          "body",
+        ]
+      `)
+    })
+
+    test('removes unnamed paths before derive, which can add them again', () => {
+      const trimmed = Vars.extend(base, { radius: { xl: null } }, (vars) => ({
+        radius: { lg: vars.radius.sm },
+      }))
+      const restored = Vars.extend(base, { radius: { xl: null } }, (vars) => ({
+        radius: { xl: vars.radius.sm },
+      }))
+
+      expect(Object.keys(trimmed.radius)).toMatchInlineSnapshot(`
+        [
+          "sm",
+          "lg",
+        ]
+      `)
+      expect(restored.radius.xl.value).toMatchObject({ path: 'radius.sm' })
+    })
+
+    test('rejects missing paths, removals inside leaves, and derived removals', () => {
+      expect(() =>
+        Vars.extend(base, { radius: { lg: null } } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Vars.InvalidError: ["radius","lg"]: Extensions can only remove existing paths.]`,
+      )
+      expect(() =>
+        Vars.extend(base, { motion: null } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Vars.InvalidError: ["motion"]: Extensions can only remove existing paths.]`,
+      )
+      expect(() =>
+        Vars.extend(base, { radius: { sm: { shade: null } } } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Vars.InvalidError: ["radius","sm"]: Extensions cannot replace a variable leaf with a category.]`,
+      )
+      expect(() =>
+        Vars.extend(
+          base,
+          { radius: { sm: '8px' } },
+          () =>
+            ({
+              radius: { sm: null },
+            }) as never,
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Vars.InvalidError: ["radius","sm"]: Derived variables cannot remove paths.]`,
+      )
+      expect(() =>
+        Vars.extend(base, { breakpoint: null } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Vars.InvalidError: ["breakpoint"]: Expected a plain variable record.]`,
+      )
+    })
+
+    test('rejects unnamed removals that remaining leaves reference', () => {
+      expect(() =>
+        Vars.extend(base, { color: { brand: null } } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Vars.InvalidError: ["color","brand"]: Referenced variable path is missing.]`,
+      )
+    })
+
+    test('keeps named removals that remaining leaves reference through the base', () => {
+      const trimmed = Vars.extend(
+        base,
+        { color: { brand: null } },
+        { id: 'extend/trimmed' },
+      )
+
+      expect(Object.keys(trimmed.color)).toMatchInlineSnapshot(`
+        [
+          "ink",
+          "accent",
+        ]
+      `)
+      expect(trimmed.color.accent.value).toMatchObject({
+        path: 'color.accent',
+      })
+    })
+
+    test('rejects alternates whose removals change the default paths', () => {
+      expect(() =>
+        Config.create({
+          defaultVars: 'base',
+          id: 'extend/removals',
+          vars: { base, other: Vars.extend(base, { radius: { xl: null } }) },
+        } as never),
+      ).toThrow(
+        "must have the default theme's complete token paths and domains",
+      )
+    })
+
+    test('omits removed paths from compiled scopes', () => {
+      const result = Graph.compile({
+        modules: {
+          'index.ts': `import {Config,Vars} from 'zyzz';
+            const core = Vars.define({radius:{sm:'4px',xl:'24px'},shadow:{sm:'0 1px 2px #000'}},{id:'extend/core'});
+            const trimmed = Vars.extend(core,{radius:{xl:null},shadow:null});
+            export const {style} = Config.create({id:'extend/trimmed',vars:trimmed});
+            export const card = style({borderRadius:'sm'});`,
+        },
+      })
+
+      expect(result.modules['index.ts']!.css).toMatchInlineSnapshot(`
+        ".z-theme-extend_2f_trimmed-theme{--z-extend_2f_trimmed-radius-sm:4px;}
+        .z-extend_2f_trimmed-border-radius-\\5b var\\28 --z-extend_5f_2f_5f_trimmed-radius-sm\\2c 4px\\29 \\5d {border-radius:var(--z-extend_2f_trimmed-radius-sm,4px);}"
+      `)
+    })
+
+    test('rejects removed tokens in compiled styles', () => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'index.ts': `import {Config,Vars} from 'zyzz';
+              const core = Vars.define({radius:{sm:'4px',xl:'24px'}},{id:'extend/core'});
+              const trimmed = Vars.extend(core,{radius:{xl:null}},{id:'extend/trimmed-vars'});
+              export const {style} = Config.create({id:'extend/trimmed',vars:trimmed});
+              export const card = style({borderRadius:'xl'});`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: index.ts:361: Expected a configured token or a CSS value with the " !custom" suffix.]`,
+      )
+    })
+
+    test('rejects missing removals in compiled sources', () => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'index.ts': `import {Config,Vars} from 'zyzz';
+              const core = Vars.define({radius:{sm:'4px'}},{id:'extend/core'});
+              export const trimmed = Vars.extend(core,{radius:{xl:null}},{id:'extend/trimmed-vars'});`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: index.ts:151: ["radius","xl"]: Extensions can only remove existing paths.]`,
+      )
+    })
+  })
 })
 
 describe('defineVars', () => {

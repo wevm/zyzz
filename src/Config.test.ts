@@ -452,7 +452,7 @@ export const props = { anonymous: anonymous(), token: token(), button: button({s
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: config.ts:76: Theme values must be literal data; expressions are not evaluated.]`,
+      `[Source.ExtractError: config.ts:48: defaultLayer must be a CSS layer name.]`,
     )
   })
 

@@ -957,6 +957,8 @@ impl<'a> Themes<'a> {
         }
 
         match expression {
+            // `null` removes a path in `Vars.extend`, and other readers reject it.
+            Expression::NullLiteral(_) => Ok(Data::Null),
             Expression::StringLiteral(literal) => Ok(Data::from(literal.value.as_str())),
             Expression::NumericLiteral(literal) => Ok(Data::Number(literal.value)),
             Expression::UnaryExpression(unary)

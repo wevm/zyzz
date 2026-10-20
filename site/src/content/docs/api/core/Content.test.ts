@@ -918,6 +918,22 @@ describe('extendVars API page', () => {
     `)
   })
 
+  test('removes paths from style tokens', async () => {
+    const [config] = await examples('extendVars', 'Remove Paths')
+    const card = (radius: string) => ({
+      name: 'Card.ts',
+      source: `import { style } from './zyzz.config.js'\n\nexport const card = style({ borderRadius: '${radius}' })\n`,
+    })
+    const read = await build('extend-vars-removal', [config!, card('2xl')])
+
+    expect(await read('zyzz.css')).toMatch(/--z-default-radius-2xl/)
+    await expect(
+      build('extend-vars-removed', [config!, card('3xl')]),
+    ).rejects.toThrow(
+      'Expected a configured token or a CSS value with the " !custom" suffix.',
+    )
+  })
+
   test('adds paths and rejects conflicts and changed value types', () => {
     const base = defineVars({ spacing: { page: '1rem' } })
 
@@ -1261,7 +1277,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(82)
+    expect(files).toHaveLength(83)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

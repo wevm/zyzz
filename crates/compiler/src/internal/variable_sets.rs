@@ -302,6 +302,10 @@ fn is_leaf(input: &Data, path: &[Arc<str>]) -> bool {
 
 impl Builder<'_> {
     fn visit(&mut self, input: &Data, path: &[Arc<str>]) -> Result<()> {
+        if matches!(input, Data::Null) && self.base.is_some() && !path.is_empty() {
+            return self.remove(path);
+        }
+
         if is_leaf(input, path) {
             if path.is_empty() {
                 return Err(invalid(path, "Expected a variable record."));
@@ -406,6 +410,39 @@ impl Builder<'_> {
         }
 
         self.active.retain(|candidate| *candidate != identity);
+
+        Ok(())
+    }
+
+    /// Removes an inherited leaf, or every leaf below an inherited category.
+    fn remove(&mut self, path: &[Arc<str>]) -> Result<()> {
+        if self.derived {
+            return Err(invalid(path, "Derived variables cannot remove paths."));
+        }
+
+        if !self.leaves.contains(path) && !self.categories.contains(path) {
+            return Err(invalid(path, "Extensions can only remove existing paths."));
+        }
+
+        let paths = &mut *self.paths;
+
+        // A removed category takes every leaf below it, including typography conditions.
+        self.values.retain(|name, _| {
+            let matches = paths.get(name).map_or_else(
+                || {
+                    let mut parts = name.split('.');
+
+                    path.iter().all(|part| parts.next() == Some(&**part))
+                },
+                |parts| parts.starts_with(path),
+            );
+
+            if matches {
+                paths.shift_remove(name);
+            }
+
+            !matches
+        });
 
         Ok(())
     }

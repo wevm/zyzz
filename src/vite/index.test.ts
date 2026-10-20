@@ -229,10 +229,13 @@ export const Route = createRootRoute({ component: () => <html><head><HeadContent
           for (const state of ['error', 'missing']) {
             await page.goto(`${url}settings?${state}=true`)
             await page.locator(`#${state}`).waitFor()
+            // Hydration replaces a server-rendered error boundary, and a detached node has no
+            // computed style, so the lookup and the read share one evaluation.
             padding.push(
-              await page
-                .locator(`#${state}`)
-                .evaluate((node) => getComputedStyle(node).padding),
+              await page.evaluate(
+                (id) => getComputedStyle(document.getElementById(id)!).padding,
+                state,
+              ),
             )
           }
           expect(padding).toMatchInlineSnapshot(`

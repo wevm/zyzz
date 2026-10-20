@@ -1,5 +1,20 @@
 # zyzz
 
+## 0.0.35
+
+### Patch Changes
+
+- 38f75f4: Fixed invalid `typography` sets reducing the whole `style` or `variants` object type to `never`. The error now stays on the offending property and lists the accepted set names. Invalid shorthand alias tokens also list their accepted tokens.
+- 56a745b: Added path removal to `Vars.extend`. `null` at an existing leaf or category removes it from the extension's references, `style` tokens, and emitted CSS. A removal of a missing path, or a `null` inside a leaf, throws `Vars.InvalidError`.
+  
+  ```ts
+  const site = Vars.extend(
+    base,
+    { radius: { '3xl': null, '4xl': null }, shadow: null },
+    { id: 'site/vars' },
+  )
+  ```
+
 ## 0.0.34
 
 ### Patch Changes

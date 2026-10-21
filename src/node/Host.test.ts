@@ -2832,12 +2832,12 @@ describe('packageContracts', () => {
           `)
         expect(await Fs.readFile(Path.join(root, 'dist/view.ts'), 'utf8'))
           .toMatchInlineSnapshot(`
-          "
-          const __zyzzComposition103=/*#__PURE__*/__zyzzComposition.create({"className":"z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0 z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0","cases":["z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0","z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0 z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0"],"inputs":[{"className":"z_acme-u3iffL0","owners":[{"identity":"style-i08hjs5dvj5-175","attributes":[],"slots":[]}]},{"className":"z_acme-u3iffL1","condition":0,"owners":[{"identity":"style-i08hjs5dvj5-214","attributes":[],"slots":[]}]}]});
+            "
+            const __zyzzComposition103=/*#__PURE__*/[{className:"z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0"},{className:"z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0 z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0"}].map(Object.freeze);
 
-          import { Composition as __zyzzComposition, Props as __zyzzProps } from 'zyzz/runtime';
-          import {style} from '@acme/tokens';export function view(active:boolean){return __zyzzComposition103(styles.one(),active&&styles.two())}namespace styles{export const one=__zyzzProps.create({className:"z_acme-u3iffL0"});export const two=__zyzzProps.create({className:"z_acme-u3iffL1"})}"
-        `)
+            import { Props as __zyzzProps } from 'zyzz/runtime';
+            import {style} from '@acme/tokens';export function view(active:boolean){return __zyzzComposition103[((styles.one as unknown)||styles.one(),0)|((active)?((styles.two as unknown)||styles.two(),1):0)]}namespace styles{export const one=__zyzzProps.create({className:"z_acme-u3iffL0"});export const two=__zyzzProps.create({className:"z_acme-u3iffL1"})}"
+          `)
         expect(await Fs.readFile(Path.join(root, 'dist/view.ts.css'), 'utf8'))
           .toMatchInlineSnapshot(`
           ".z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}

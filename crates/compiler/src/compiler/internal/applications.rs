@@ -11,9 +11,10 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
-    Argument, CallExpression, Declaration, Expression, JSXAttributeItem, JSXAttributeName,
-    JSXElementName, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind,
-    Statement, TSNamespaceDeclarationBody, UnaryOperator, VariableDeclarationKind,
+    Argument, ArrayExpressionElement, CallExpression, Declaration, ExportDefaultDeclarationKind,
+    Expression, JSXAttributeItem, JSXAttributeName, JSXElementName, ObjectExpression,
+    ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement, TSNamespaceDeclarationBody,
+    UnaryOperator, VariableDeclarationKind,
 };
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
@@ -62,6 +63,15 @@ pub struct Bound<'a> {
     pub values: &'a ObjectExpression<'a>,
 }
 
+/// Bound applications of dynamic definitions.
+#[derive(Debug, Default)]
+pub struct Bounds<'a> {
+    /// Bound applications by definition name, in candidate order.
+    pub applications: FxHashMap<Arc<str>, Vec<Bound<'a>>>,
+    /// Definitions that some read applies other than as a bound application.
+    pub partial: FxHashSet<Arc<str>>,
+}
+
 /// The value of an application's only argument property, `className`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Override {
@@ -86,6 +96,9 @@ pub struct ClassRead {
 /// A namespace whose members can be erased.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Namespace {
+    /// Start of each member's declaration that declares that member alone without a type
+    /// annotation, by definition name.
+    pub declarations: crate::js::Record<u32>,
     /// End of the namespace statement.
     pub end: u32,
     /// End of each member's binding, by definition name.
@@ -99,6 +112,9 @@ pub struct Namespace {
 /// Definitions the transform may fold, and namespaces it may erase.
 #[derive(Clone, Debug, Default)]
 pub struct Definitions {
+    /// Member declaration starts and binding ends of namespaces that keep a runtime object, by
+    /// definition name.
+    pub declarations: crate::js::Record<(u32, u32)>,
     /// Erasable namespaces.
     pub namespaces: Vec<Namespace>,
     /// Foldable definitions, with whether every application follows initialization.
@@ -126,6 +142,8 @@ struct Candidate<'c, 'a> {
     /// Non-exported namespace members, which only sibling definitions can read.
     private: Members<'c, 'a>,
     ready: u32,
+    /// Start of the top-level statement that declares the candidate.
+    statement: u32,
 }
 
 /// What a lexical read is nested in.
@@ -133,7 +151,6 @@ struct Candidate<'c, 'a> {
 struct Read<'a> {
     /// The values object of a one-argument call spread alone onto a DOM element.
     bound: Option<&'a ObjectExpression<'a>>,
-    deferred: bool,
     /// Parent of the identifier.
     parent: Option<AstKind<'a>>,
     /// Parent of the identifier's member expression, when the parent is one.
@@ -144,10 +161,25 @@ struct Read<'a> {
     resolved: bool,
     span: Span,
     terminal: bool,
+    timing: Timing,
+}
+
+/// When a read evaluates relative to the module body.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Timing {
+    /// In a function declaration, class, or namespace, whose body can run before its statement.
+    Deferred,
+    /// At its position in the module body.
+    Immediate,
+    /// In an arrow or function expression outside namespaces, which runs only once module code
+    /// calls it.
+    Lazy,
 }
 
 /// The applications of one module's local definitions.
 pub struct Applications<'c, 'a> {
+    /// Start of the first top-level statement that can call a function, or `u32::MAX`.
+    active: u32,
     candidates: Vec<Candidate<'c, 'a>>,
     /// Each candidate's foldable applications and called definitions, read by several queries.
     collected: OnceCell<Vec<Collected>>,
@@ -214,6 +246,7 @@ pub fn create<'c, 'a>(
         {
             let mut members = Members::with_capacity_and_hasher(block.body.len(), FxBuildHasher);
             let mut private = Members::default();
+            let mut declarations = crate::js::Record::new();
             let mut ends = crate::js::Record::new();
             let mut bindings = Vec::with_capacity(block.body.len());
             let mut valid = true;
@@ -265,6 +298,10 @@ pub fn create<'c, 'a>(
                         private.insert(Arc::from(identifier.name.as_str()), call);
                     }
 
+                    if variable.declarations.len() == 1 && declarator.type_annotation.is_none() {
+                        declarations.insert(Arc::clone(&call.name), variable.span.start);
+                    }
+
                     ends.insert(Arc::clone(&call.name), end);
                     bindings.push((identifier.span.start, Arc::clone(&call.name)));
                     names.insert(identifier.name.as_str());
@@ -283,6 +320,7 @@ pub fn create<'c, 'a>(
                     members,
                     name: Arc::from(namespace.id.name.as_str()),
                     namespace: Some(Namespace {
+                        declarations,
                         end: namespace.span.end,
                         ends,
                         start: namespace.span.start,
@@ -290,6 +328,7 @@ pub fn create<'c, 'a>(
                     }),
                     private,
                     ready: namespace.span.end,
+                    statement: namespace.span.start,
                 });
             }
 
@@ -363,6 +402,7 @@ pub fn create<'c, 'a>(
                 namespace: None,
                 private: Members::default(),
                 ready: declarator.span.end,
+                statement: variable.span.start,
             });
         }
     }
@@ -404,7 +444,23 @@ pub fn create<'c, 'a>(
         }
     }
 
+    let namespaces: FxHashSet<u32> = candidates
+        .iter()
+        .filter_map(|candidate| {
+            candidate
+                .namespace
+                .as_ref()
+                .map(|namespace| namespace.start)
+        })
+        .collect();
+    let active = program
+        .body
+        .iter()
+        .find(|statement| !inert(statement, semantic, &definitions, &namespaces))
+        .map_or(u32::MAX, |statement| statement.span().start);
+
     Some(Applications {
+        active,
         candidates,
         collected: OnceCell::new(),
         evaluation: walker.evaluation,
@@ -442,6 +498,135 @@ fn defers(kind: &AstKind<'_>) -> bool {
             | AstKind::TSGlobalDeclaration(_)
             | AstKind::TSExternalModuleDeclaration(_)
     )
+}
+
+/// Whether evaluating a top-level statement calls no function, getter, or conversion. Definition
+/// calls and candidate namespaces count as inert because their rewrites run no authored code.
+fn inert<'a>(
+    statement: &Statement<'a>,
+    semantic: &Semantic<'a>,
+    definitions: &FxHashMap<u32, &Call<'a>>,
+    namespaces: &FxHashSet<u32>,
+) -> bool {
+    let declaration = match statement {
+        Statement::EmptyStatement(_)
+        | Statement::ExportAllDeclaration(_)
+        | Statement::ExportFromDeclaration(_)
+        | Statement::ExportNamedDeclaration(_)
+        | Statement::ImportDeclaration(_)
+        | Statement::TSNamespaceExportDeclaration(_) => return true,
+        Statement::ExportDefaultDeclaration(export) => {
+            return match &export.declaration {
+                ExportDefaultDeclarationKind::FunctionDeclaration(_)
+                | ExportDefaultDeclarationKind::TSInterfaceDeclaration(_) => true,
+                ExportDefaultDeclarationKind::ClassDeclaration(_) => false,
+                kind => kind
+                    .as_expression()
+                    .is_some_and(|expression| inert_expression(expression, semantic, definitions)),
+            };
+        }
+        Statement::ExportDeclaration(export) => &export.declaration,
+        other => match other.as_declaration() {
+            Some(declaration) => declaration,
+            None => return false,
+        },
+    };
+
+    match declaration {
+        Declaration::FunctionDeclaration(_)
+        | Declaration::TSInterfaceDeclaration(_)
+        | Declaration::TSTypeAliasDeclaration(_) => true,
+        Declaration::ClassDeclaration(class) => class.declare,
+        Declaration::TSEnumDeclaration(enumeration) => enumeration.declare,
+        Declaration::TSExternalModuleDeclaration(module) => module.declare,
+        Declaration::TSGlobalDeclaration(global) => global.declare,
+        Declaration::TSNamespaceDeclaration(namespace) => {
+            namespace.declare || namespaces.contains(&namespace.span.start)
+        }
+        Declaration::TSImportEqualsDeclaration(_) => false,
+        Declaration::VariableDeclaration(variable) => {
+            variable.declare
+                || (matches!(
+                    variable.kind,
+                    VariableDeclarationKind::Const
+                        | VariableDeclarationKind::Let
+                        | VariableDeclarationKind::Var
+                ) && variable.declarations.iter().all(|declarator| {
+                    matches!(
+                        declarator.id,
+                        oxc_ast::ast::BindingPattern::BindingIdentifier(_)
+                    ) && declarator
+                        .init
+                        .as_ref()
+                        .is_none_or(|init| inert_expression(init, semantic, definitions))
+                }))
+        }
+    }
+}
+
+/// Whether evaluating an expression calls no function, getter, or conversion. Functions it
+/// creates do not run. A global name can be an accessor of the global object, so only module
+/// bindings and `undefined` are plain reads.
+fn inert_expression<'a>(
+    expression: &Expression<'a>,
+    semantic: &Semantic<'a>,
+    definitions: &FxHashMap<u32, &Call<'a>>,
+) -> bool {
+    let expression = unwrap(expression);
+
+    if is_call_of(definitions, expression).is_some() {
+        return true;
+    }
+
+    match expression {
+        Expression::ArrowFunctionExpression(_)
+        | Expression::BigIntLiteral(_)
+        | Expression::BooleanLiteral(_)
+        | Expression::FunctionExpression(_)
+        | Expression::NullLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::RegExpLiteral(_)
+        | Expression::StringLiteral(_) => true,
+        Expression::Identifier(identifier) => {
+            identifier.name == "undefined" || scope::resolve(semantic, identifier).is_some()
+        }
+        Expression::ArrayExpression(array) => array.elements.iter().all(|element| {
+            matches!(element, ArrayExpressionElement::Elision(_))
+                || element
+                    .as_expression()
+                    .is_some_and(|element| inert_expression(element, semantic, definitions))
+        }),
+        Expression::ObjectExpression(object) => {
+            object.properties.iter().all(|property| match property {
+                ObjectPropertyKind::ObjectProperty(property) => {
+                    (!property.computed
+                        || property.key.as_expression().is_some_and(|key| {
+                            matches!(
+                                key,
+                                Expression::NumericLiteral(_) | Expression::StringLiteral(_)
+                            )
+                        }))
+                        && inert_expression(&property.value, semantic, definitions)
+                }
+                ObjectPropertyKind::SpreadProperty(_) => false,
+            })
+        }
+        Expression::ParenthesizedExpression(inner) => {
+            inert_expression(&inner.expression, semantic, definitions)
+        }
+        Expression::TemplateLiteral(template) => template.expressions.is_empty(),
+        Expression::UnaryExpression(unary) => {
+            unary.operator != UnaryOperator::Delete
+                && matches!(
+                    unary.argument,
+                    Expression::BooleanLiteral(_)
+                        | Expression::NullLiteral(_)
+                        | Expression::NumericLiteral(_)
+                        | Expression::StringLiteral(_)
+                )
+        }
+        _ => false,
+    }
 }
 
 const TYPE_CONTEXTS: [fn(&AstKind<'_>) -> bool; 6] = [
@@ -529,9 +714,24 @@ impl Walker<'_, '_> {
             self.ancestors.push(kind);
 
             let count = self.ancestors.len();
+            let namespaced = self.ancestors.iter().any(|kind| {
+                matches!(
+                    kind,
+                    AstKind::TSNamespaceDeclaration(_)
+                        | AstKind::TSGlobalDeclaration(_)
+                        | AstKind::TSExternalModuleDeclaration(_)
+                )
+            });
+            let timing = match self.ancestors.iter().find(|kind| defers(kind)) {
+                None => Timing::Immediate,
+                Some(AstKind::ArrowFunctionExpression(_)) if !namespaced => Timing::Lazy,
+                Some(AstKind::Function(function)) if function.is_expression() && !namespaced => {
+                    Timing::Lazy
+                }
+                Some(_) => Timing::Deferred,
+            };
             let read = Read {
                 bound: bound(&self.ancestors),
-                deferred: self.ancestors.iter().any(defers),
                 grandparent: count
                     .checked_sub(3)
                     .and_then(|index| self.ancestors.get(index))
@@ -546,6 +746,7 @@ impl Walker<'_, '_> {
                 resolved: extracted(&self.ancestors, self.definitions),
                 span: identifier.span,
                 terminal: terminal(&self.ancestors),
+                timing,
             };
 
             if let Some(reads) = self.references.get_mut(name) {
@@ -677,6 +878,18 @@ fn spread_of(kind: Option<AstKind<'_>>, call: Span) -> Option<Span> {
 }
 
 impl<'c, 'a> Applications<'c, 'a> {
+    /// Whether a read always evaluates after the candidate initializes. A read in a function
+    /// expression qualifies when no statement up to the declaration can call functions, since
+    /// the function cannot run before that. Hoisted function declarations stay callable from
+    /// importers in a cycle, so their reads never qualify.
+    fn follows(&self, candidate: &Candidate<'c, 'a>, reference: &Read<'a>) -> bool {
+        match reference.timing {
+            Timing::Deferred => false,
+            Timing::Immediate => reference.span.start >= candidate.ready,
+            Timing::Lazy => self.active > candidate.statement,
+        }
+    }
+
     /// Every candidate's collected applications, in candidate order.
     fn collected(&self) -> &[Collected] {
         self.collected.get_or_init(|| {
@@ -746,8 +959,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                 class_override,
                 class_read: class_read(span, read),
                 end: span.end,
-                initialized: !reference.deferred
-                    && reference.span.start >= candidate.ready
+                initialized: self.follows(candidate, reference)
                     && (candidate.namespace.is_none()
                         || self.namespace_counts.get(&candidate.name) == Some(&1)),
                 name: Arc::clone(&call.name),
@@ -836,8 +1048,9 @@ impl<'c, 'a> Applications<'c, 'a> {
         result
     }
 
-    /// Definitions whose every read is a foldable application.
-    pub fn definitions(&self) -> Definitions {
+    /// Definitions whose every read is a foldable application. `inlined` names dynamic and recipe
+    /// definitions whose every read the transform folds to props after initialization.
+    pub fn definitions(&self, inlined: &FxHashSet<Arc<str>>) -> Definitions {
         let mut output = Definitions::default();
 
         if self.evaluation {
@@ -880,8 +1093,8 @@ impl<'c, 'a> Applications<'c, 'a> {
             for call in calls {
                 if call.composition.is_some()
                     || call.runtime_composition.is_some()
-                    || call.slots.is_some()
-                    || call.recipe.is_some()
+                    || ((call.slots.is_some() || call.recipe.is_some())
+                        && !inlined.contains(&call.name))
                     || called.contains(&call.name)
                 {
                     erased = false;
@@ -894,18 +1107,26 @@ impl<'c, 'a> Applications<'c, 'a> {
                 erased &= initialized;
             }
 
-            if erased && let Some(namespace) = &candidate.namespace {
-                output.namespaces.push(namespace.clone());
+            if let Some(namespace) = &candidate.namespace {
+                if erased {
+                    output.namespaces.push(namespace.clone());
+                } else {
+                    for (name, start) in namespace.declarations.iter() {
+                        if let Some(end) = namespace.ends.get(name) {
+                            output.declarations.insert(Arc::clone(name), (*start, *end));
+                        }
+                    }
+                }
             }
         }
 
         output
     }
 
-    /// Applications of each dynamic definition that bind an object literal on a DOM element alone,
-    /// by definition name, in candidate order.
-    pub fn bound(&self) -> FxHashMap<Arc<str>, Vec<Bound<'a>>> {
-        let mut output: FxHashMap<Arc<str>, Vec<Bound<'a>>> = FxHashMap::default();
+    /// Applications of each dynamic or recipe definition that bind an object literal on a DOM
+    /// element alone, by definition name, in candidate order.
+    pub fn bound(&self) -> Bounds<'a> {
+        let mut output = Bounds::default();
 
         if self.evaluation {
             return output;
@@ -963,10 +1184,6 @@ impl<'c, 'a> Applications<'c, 'a> {
             }
 
             for reference in reads {
-                let Some(values) = reference.bound else {
-                    continue;
-                };
-
                 if bindings.contains(&reference.span.start) || reference.resolved {
                     continue;
                 }
@@ -984,35 +1201,36 @@ impl<'c, 'a> Applications<'c, 'a> {
 
                     (candidate, call, span, reference.grandparent)
                 };
-
-                if call.slots.is_none()
-                    || call.recipe.is_some()
-                    || call.composition.is_some()
-                    || call.runtime_composition.is_some()
-                {
-                    continue;
-                }
-
-                let Some(span) = call_of(application, callee)
-                    .filter(|call| call.arguments.len() == 1)
-                    .map(|call| call.span)
-                else {
+                let span = reference
+                    .bound
+                    .filter(|_| {
+                        call.slots.is_some() != call.recipe.is_some()
+                            && call.composition.is_none()
+                            && call.runtime_composition.is_none()
+                            // A merged namespace can exist before a member's declaration, so the
+                            // guard's bare call would skip evaluating the authored values before
+                            // it throws.
+                            && (candidate.namespace.is_none()
+                                || self.namespace_counts.get(name) == Some(&1))
+                    })
+                    .and_then(|values| {
+                        call_of(application, callee)
+                            .filter(|call| call.arguments.len() == 1)
+                            .map(|call| (call.span, values))
+                    });
+                let Some((span, values)) = span else {
+                    output.partial.insert(Arc::clone(&call.name));
                     continue;
                 };
 
-                // A merged namespace can exist before a member's declaration, so the guard's bare
-                // call would skip evaluating the authored values before it throws.
-                if candidate.namespace.is_some() && self.namespace_counts.get(name) != Some(&1) {
-                    continue;
-                }
-
                 output
+                    .applications
                     .entry(Arc::clone(&call.name))
                     .or_default()
                     .push(Bound {
                         callee_end: callee.end,
                         end: span.end,
-                        initialized: !reference.deferred && reference.span.start >= candidate.ready,
+                        initialized: self.follows(candidate, reference),
                         start: span.start,
                         values,
                     });

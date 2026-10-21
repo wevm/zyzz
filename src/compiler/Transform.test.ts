@@ -3533,6 +3533,129 @@ export const button=variants({base:{display:'flex'},variants:{active:{false:{opa
         `"<main>{&quot;className&quot;:&quot;z_l0kPgl0&quot;}{&quot;className&quot;:&quot;z_l0kPgl0 z_l0kPgl1&quot;}{&quot;className&quot;:&quot;z_l0kPgl0 z_l0kPgl1 external&quot;}{&quot;className&quot;:&quot;z_l0kPgl2 literal&quot;}{&quot;className&quot;:&quot;z_l0kPgl2&quot;,&quot;style&quot;:{&quot;color&quot;:&quot;red&quot;}}<span>z_l0kPgl0</span>{&quot;className&quot;:&quot;z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6&quot;,&quot;data-tone&quot;:&quot;quiet&quot;}{&quot;className&quot;:&quot;z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6&quot;,&quot;data-active&quot;:&quot;true&quot;}{&quot;className&quot;:&quot;z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6 x&quot;,&quot;style&quot;:{&quot;--a&quot;:&quot;1&quot;,&quot;color&quot;:&quot;red&quot;},&quot;data-active&quot;:&quot;false&quot;,&quot;data-tone&quot;:&quot;loud&quot;}</main>"`,
       )
     })
+
+    test('folds recipe and dynamic applications spread alone onto elements and erases their definitions', async () => {
+      const source = `import { style, variants } from 'zyzz'
+type Props = { active: boolean; tone?: 'loud' | 'quiet' | null | undefined; width: \`\${number}px\` }
+export const App = (props: Props) => <main>
+<button id="first" {...styles.button({ active: props.active, tone: props.tone })} />
+<button id="second" {...styles.button({ active: !props.active, tone: 'loud' })} />
+<div id="bar" {...styles.bar({ width: props.width })} />
+</main>
+namespace styles {
+export const button=variants({base:{display:'flex'},variants:{active:{false:{opacity:0.5},true:{}},tone:{loud:{color:'red'},quiet:{color:'gray'}}},defaultVariants:{tone:'quiet'}})
+export const bar=style((values:{width:\`\${number}px\`})=>({width:values.width}))
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      // Selections and fields fold in place, so the namespace keeps no runtime object.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        type Props = { active: boolean; tone?: 'loud' | 'quiet' | null | undefined; width: \`\${number}px\` }
+        export const App = (props: Props) => <main>
+        <button id="first" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3","data-active":(props.active)==null?void 0:String(props.active),"data-tone":(props.tone)===void 0?"quiet":(props.tone)===null?void 0:String(props.tone)})} />
+        <button id="second" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3","data-active":String(!props.active),"data-tone":"loud"})} />
+        <div id="bar" {...({className:"z_l0kPgl4",style:{"width":(props.width)||"unset"}})} />
+        </main>
+        "
+      `)
+
+      const bundle = await Esbuild.build({
+        bundle: true,
+        external: ['react'],
+        format: 'cjs',
+        jsx: 'automatic',
+        platform: 'node',
+        stdin: {
+          contents: output.code,
+          loader: 'tsx',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const module = {
+        exports: {} as { App: (props: object) => React.ReactNode },
+      }
+
+      new Function('module', 'exports', 'require', bundle.outputFiles[0]!.text)(
+        module,
+        module.exports,
+        Module.createRequire(import.meta.url),
+      )
+
+      const render = (props: object) =>
+        Server.renderToStaticMarkup(
+          React.createElement(module.exports.App, props),
+        )
+
+      // An omitted choice takes its default, and null omits the attribute, as the selector does.
+      expect(
+        render({ active: true, tone: undefined, width: '10px' }),
+      ).toMatchInlineSnapshot(
+        `"<main><button id="first" class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3" data-active="true" data-tone="quiet"></button><button id="second" class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3" data-active="false" data-tone="loud"></button><div id="bar" class="z_l0kPgl4" style="width:10px"></div></main>"`,
+      )
+      expect(
+        render({ active: false, tone: null, width: '20px' }),
+      ).toMatchInlineSnapshot(
+        `"<main><button id="first" class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3" data-active="false"></button><button id="second" class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3" data-active="true" data-tone="loud"></button><div id="bar" class="z_l0kPgl4" style="width:20px"></div></main>"`,
+      )
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style>${render({ active: false, tone: undefined, width: '30px' })}`,
+        )
+
+        expect(
+          await page
+            .locator('main > *')
+            .evaluateAll((elements) =>
+              elements.map((element) => [
+                element.id,
+                getComputedStyle(element).color,
+                getComputedStyle(element).opacity,
+                getComputedStyle(element).width,
+              ]),
+            ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "first",
+              "rgb(128, 128, 128)",
+              "0.5",
+              "16px",
+            ],
+            [
+              "second",
+              "rgb(255, 0, 0)",
+              "1",
+              "16px",
+            ],
+            [
+              "bar",
+              "rgb(0, 0, 0)",
+              "1",
+              "30px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+
+      // A value that calls a function keeps the selector, since the fold would reorder it.
+      const called = Transform.compile({
+        moduleId: 'App.tsx',
+        source: source.replace('tone: props.tone', 'tone: pick()'),
+      })
+
+      expect(called.code.includes('Object.hasOwn')).toMatchInlineSnapshot(
+        `true`,
+      )
+    })
   })
 })
 
@@ -7159,11 +7282,11 @@ namespace styles {
         ),
       ).toMatchInlineSnapshot(`
         "<main>
-        <div id="dot" {...(styles.dot?{className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label as \`\${number}px\`)||"unset"}}:styles.dot())} />
+        <div id="dot" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label as \`\${number}px\`)||"unset"}})} />
         <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
         <div id="later" {...styles.later({ width: props.label })} />
         <div id="hover" {...styles.hover({ width: props.label })} />
-        <div id="mixed" {...(styles.mixed?{className:"z_l0kPgl7 z_l0kPgl8",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label as \`\${number}px\`)||"unset"}}:styles.mixed())} />
+        <div id="mixed" {...({className:"z_l0kPgl7 z_l0kPgl8",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label as \`\${number}px\`)||"unset"}})} />
         <div id="keyword" {...styles.keyword({ width: props.label })} />
         "
       `)
@@ -11569,6 +11692,115 @@ describe('performance', () => {
               declare namespace styles {export const card: import('zyzz').style.ReturnType}
               export type Card = typeof styles.card
               export const classes=["z_iFQJXQ0"]"
+      `)
+    })
+
+    test('erases namespaces read only by functions that no earlier statement can call', async () => {
+      const { consumer, output } = await execute(`import {cx,style} from 'zyzz';
+      type Tone = 'quiet' | 'loud';
+      const tones: readonly Tone[] = ['quiet', 'loud'];
+      export const apply = () => [styles.card(), styles.label().className];
+      export const pick = (loud: boolean) => cx(styles.card(), loud && styles.label());
+      export const both = () => cx(styles.card(), styles.label());
+      export default function () { return tones }
+      namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}`)
+
+      // Function expressions run only when called, and every statement before the namespace only declares.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        const __zyzzComposition244=/*#__PURE__*/[{className:"z_iFQJXQ2"},{className:"z_iFQJXQ3 z_iFQJXQ4"}].map(Object.freeze);
+
+              type Tone = 'quiet' | 'loud';
+              const tones: readonly Tone[] = ['quiet', 'loud'];
+              export const apply = () => [({className:"z_iFQJXQ0"}), "z_iFQJXQ1"];
+              export const pick = (loud: boolean) => __zyzzComposition244[((loud)?1:0)];
+              export const both = () => ({className:"z_iFQJXQ3 z_iFQJXQ4"});
+              export default function () { return tones }
+              "
+      `)
+      expect(consumer.apply()).toMatchInlineSnapshot(`
+        [
+          {
+            "className": "z_iFQJXQ0",
+          },
+          "z_iFQJXQ1",
+        ]
+      `)
+      expect(consumer.pick(true)).toMatchInlineSnapshot(`
+        {
+          "className": "z_iFQJXQ3 z_iFQJXQ4",
+        }
+      `)
+      expect(consumer.pick(false)).toMatchInlineSnapshot(`
+        {
+          "className": "z_iFQJXQ2",
+        }
+      `)
+      expect(consumer.both()).toMatchInlineSnapshot(`
+        {
+          "className": "z_iFQJXQ3 z_iFQJXQ4",
+        }
+      `)
+    })
+
+    test('keeps guards when an earlier statement can call the reading function', async () => {
+      for (const statement of [
+        `try {apply()} catch(error){failed=error instanceof TypeError}`,
+        `const early = [apply].map((fn) => { try { return fn() } catch (error) { failed=error instanceof TypeError } })`,
+        `export const total = \`\${{ toString() { try { apply() } catch (error) { failed=error instanceof TypeError } return '' } }}\``,
+      ]) {
+        const { consumer, output } =
+          await execute(`import {cx,style} from 'zyzz';
+        export let failed=false;
+        export const apply = () => [styles.card(), cx(styles.card(), styles.label())];
+        ${statement}
+        namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}`)
+
+        expect(consumer.failed).toMatchInlineSnapshot(`true`)
+        expect(
+          output.code.includes('(styles.card?{className:'),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          output.code.includes('((styles.label as unknown)?'),
+        ).toMatchInlineSnapshot(`true`)
+      }
+
+      // A global name can be an accessor of the global object, which could call the function.
+      const { output } = await execute(`import {style} from 'zyzz';
+      export const apply = () => styles.card();
+      const root = globalThis;
+      namespace styles {export const card=style({color:'red'})}`)
+
+      expect(
+        output.code.includes('(styles.card?{className:'),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('declares unread members of namespaces that keep a runtime object', async () => {
+      const { consumer, output } = await execute(`import {style} from 'zyzz';
+      export const apply = (color: string) => [styles.card({style:{color}}), styles.label()];
+      namespace styles {export const card=style({color:'red'});export const label=style({color:'blue'})}`)
+
+      // The label folds after initialization, so only the card keeps a property.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+        import {style} from 'zyzz';
+              export const apply = (color: string) => [styles.card({style:{color}}), ({className:"z_iFQJXQ1"})];
+              namespace styles {export const card=/*#__PURE__*/__zyzzProps.create({className:"z_iFQJXQ0"});export declare const label: import('zyzz').style.ReturnType}"
+      `)
+      expect(consumer.apply('blue')).toMatchInlineSnapshot(`
+        [
+          {
+            "className": "z_iFQJXQ0",
+            "style": {
+              "color": "blue",
+            },
+          },
+          {
+            "className": "z_iFQJXQ1",
+          },
+        ]
       `)
     })
 

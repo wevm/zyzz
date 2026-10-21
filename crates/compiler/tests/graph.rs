@@ -72,12 +72,12 @@ mod compile {
         insta::assert_snapshot!(classes(&api::call("graph.compile", &input(false))), @r#"
 
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        export const card=__zyzzProps.create({className:"z_bgXhTU0 z-style-bgXhTU-card"});export const label=__zyzzProps.create({className:"z_bgXhTU1 z-style-bgXhTU-label"});
+        export const card=/*#__PURE__*/__zyzzProps.create({className:"z_bgXhTU0 z-style-bgXhTU-card"});export const label=/*#__PURE__*/__zyzzProps.create({className:"z_bgXhTU1 z-style-bgXhTU-label"});
         "#);
         insta::assert_snapshot!(classes(&api::call("graph.compile", &input(true))), @r#"
 
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        export const card=__zyzzProps.create({className:"z_bgXhTU0 z-style-bgXhTU-card"});export const label=__zyzzProps.create({className:"z_bgXhTU1"});
+        export const card=/*#__PURE__*/__zyzzProps.create({className:"z_bgXhTU0 z-style-bgXhTU-card"});export const label=/*#__PURE__*/__zyzzProps.create({className:"z_bgXhTU1"});
         "#);
     }
 

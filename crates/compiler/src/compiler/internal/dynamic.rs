@@ -329,7 +329,10 @@ pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots) -> Record<&'s str> {
 fn related(left: &str, right: &str) -> bool {
     let left = literal::alias(left).unwrap_or(left);
     let right = literal::alias(right).unwrap_or(right);
+    // `all` resets every property except `direction` and `unicode-bidi`.
     left == right
+        || left == "all"
+        || right == "all"
         || family(left) == family(right)
         || expands(left, right)
         || expands(right, left)

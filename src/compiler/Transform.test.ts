@@ -7204,6 +7204,21 @@ export const App = () => <div {...styles.dot({ width: '10px' })} />`
       ).toMatchInlineSnapshot(`"<div {...styles.dot({ width: '10px' })} />"`)
     })
 
+    test('keeps the variable when a later all resets the declaration', () => {
+      const source = `import { style } from 'zyzz'
+export const App = () => <div {...styles.reset({ width: '10px' })} />
+namespace styles {
+  export const reset = style((values: { width: string }) => ({ width: values.width, all: 'unset' }))
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      const start = output.code.indexOf('<div')
+
+      expect(
+        output.code.slice(start, output.code.indexOf('\n', start)),
+      ).toMatchInlineSnapshot(`"<div {...styles.reset({ width: '10px' })} />"`)
+    })
+
     test('mixes bound theme references with static and dynamic declarations', () => {
       expect(
         Transform.compile({

@@ -1,5 +1,21 @@
 # zyzz
 
+## 0.0.38
+
+### Patch Changes
+
+- 10d1aff: Compiled applications are cheaper. `styles.card()` spread into JSX becomes a `className` attribute, and `styles.card({ className })` joins classes without allocating a props callable. Unconditional recipes compile to an inline selector, so React bundles no longer include the `Recipe` and `Html` runtime helpers. Unused definitions are marked pure and tree-shake.
+- f30f33b: Compiled `cx` calls whose arguments are all known no-argument applications now select frozen props from a hoisted table instead of calling the runtime composition helper. Runtime compositions skip known inputs and emit smaller descriptors.
+- 1e00158: Added the half steps `0.5`, `1.5`, `2.5`, and `3.5` (`0.125rem` to `0.875rem`) to the `zyzz/default` `spacing` scale, so Tailwind's `gap-0.5` becomes `gap: 0.5`.
+- e39182e: Wrote dynamic style fields that fill one unconditional declaration directly as inline properties when the application is spread alone onto an element.
+- 686905f: Incremental graph compiles now reuse the extraction of every module that extracts as before an edit, and skip graph-wide work that an edit leaves unchanged, so editing one component recompiles that component instead of every module that imports it. In development, `zyzz/vite` announces each module update once until the environment loads it, keeps stylesheets current when a compiled-away theme begins to import a package, and leaves server stylesheets that no request transformed.
+- d687c05: Fixed `cx` applications of `namespace styles` members when the namespace also declares a non-exported `const` definition, such as a private `ring` composed by `style([{ color: '#fff' }, ring])`. Compilation previously failed with `Composition requires statically known local style applications.`
+- 0cab68d: Fixed atomic rules that several modules shared under one readable name, such as `z-text-red`, losing the cascade position of the module that defined them. Shared atomic names now include the module qualifier, such as `z-bgXhTU-text-red`, so an override from a consuming module wins over the imported component's declarations.
+- 87d810e: Production builds name contextual and shared atomic rules, grouped rules, recipe classes, and `cx` combinations with short module-scoped names, such as `z_X8T0-w3`, instead of readable paths. Development builds keep readable names. Vite and unplugin builds also add a style's `z-style-*` identity class only when a selector interpolates that style. Explicit style ids keep their identity classes.
+- 1e00158: Added dotted variable keys below a category, such as `spacing: { 0.5: '2px' }`, in `defineVars`, `extendVars`, and `defineConfig`. A dotted key resolves as a token name (`gap: 0.5`) and as a reference (`vars.spacing[0.5]`), and emits `--z-spacing-0-5`. Category and typography keys still reject dots, and two paths that join to one dotted name, such as `'0.5'` and `0: { 5 }`, throw `Vars.InvalidError`. Keys containing `!` now report `Expected a nonempty variable key without importance or conditions.`
+- da60577: Fixed `zyzz/vite` development stylesheet updates that Vite 8.3 clients ignored, so a style edit now applies without a reload. Development compiles also read only each module's own import closure, batch modules that arrive together, and start import lookups concurrently, so an edit or a newly loaded module no longer recompiles and invalidates the whole project.
+- daca50a: Fixed `zyzz/vite` rejecting server builds with a Node target, such as `build: { ssr: true, target: 'node20' }`. Server environments now skip the CSS target check, and a client build fails only when its emitted CSS contains `light-dark()` and a CSS target would lower it or names no browser. When `build.cssTarget` is unset and `build.target` names no browser, such as `node20` or `es2022`, CSS targets default to Chrome/Edge 123, Firefox 120, and Safari 17.5.
+
 ## 0.0.37
 
 ### Patch Changes

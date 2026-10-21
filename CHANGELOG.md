@@ -1,5 +1,13 @@
 # zyzz
 
+## 0.0.37
+
+### Patch Changes
+
+- 6f065a1: Added `--font`, `--px`, and `--rem` to `zyzz build` and `zyzz dev` for native targets. They pass the same `fonts` and `units` mappings the Metro adapter accepts, so a CLI native build can compile styles that author a `fontFamily` or `rem` lengths. Each is rejected for web builds, and a `--font` value without `<authored>=<registered>` fails before compiling.
+- 7098cd6: Rejected `fontWeight` tokens outside the `fontWeight` value domain in `defineConfig`. A numeric string such as `'500'` type-checked but dropped its token name, which left `fontWeight` accepting any literal. `defineConfig`, `Config.create`, and the compiler now report `Font weight token fontWeight.medium must be a number from 1 to 1000 or a fontWeight keyword, such as 500.`, and categories mapped to `fontWeight` follow the same rule.
+- 972d4e6: Rejected fractional numeric variable keys, such as `spacing: { 0.5: '2px' }`, in the `defineConfig`, `defineVars`, and `extendVars` types. Dots separate variable references, so the runtime and the compiler already reject these keys with `Expected a nonempty variable key without dots or conditions.` Type checking now reports the same key at its declaration instead of at build time.
+
 ## 0.0.36
 
 ### Patch Changes

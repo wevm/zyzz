@@ -60,7 +60,7 @@ export const card = style({ color: 'brand', padding: 'md' })
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style } from '@acme/theme'
 
-      export const card = __zyzzProps.create({className:"z_rnRBDm0 z_rnRBDm1 z-style-rnRBDm-card"})
+      export const card = /*#__PURE__*/__zyzzProps.create({className:"z_rnRBDm0 z_rnRBDm1 z-style-rnRBDm-card"})
       "
     `)
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`

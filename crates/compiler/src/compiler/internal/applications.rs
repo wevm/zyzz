@@ -2,7 +2,8 @@
 //!
 //! A candidate is a top-level `const` bound to a definition call, a top-level object of such
 //! calls, or a non-exported namespace of `const` calls. Applications are no-argument calls of a
-//! candidate or one of its exported members. Reads that escape keep the runtime callable.
+//! candidate or one of its exported members, or calls whose only argument overrides
+//! `className`. Reads that escape keep the runtime callable.
 
 use std::cell::OnceCell;
 use std::sync::Arc;
@@ -10,9 +11,9 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
-    Argument, Declaration, Expression, JSXAttributeItem, JSXAttributeName, JSXElementName,
-    ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement,
-    TSNamespaceDeclarationBody, UnaryOperator, VariableDeclarationKind,
+    Argument, CallExpression, Declaration, Expression, JSXAttributeItem, JSXAttributeName,
+    JSXElementName, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind,
+    Statement, TSNamespaceDeclarationBody, UnaryOperator, VariableDeclarationKind,
 };
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
@@ -22,11 +23,13 @@ use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::scope::{self, Mode};
 use crate::compiler::source::Call;
 
-/// One no-argument application of a definition.
+/// One application of a definition without arguments or with a `className` override alone.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Application {
     /// End of the callee expression.
     pub callee_end: u32,
+    /// The override value of a `{ className: value }` argument.
+    pub class_override: Option<Override>,
     /// A plain read of the applied class list, as in `styles.card().className`.
     pub class_read: Option<ClassRead>,
     /// End of the call.
@@ -35,6 +38,8 @@ pub struct Application {
     pub initialized: bool,
     /// Definition name.
     pub name: Arc<str>,
+    /// The JSX spread attribute whose argument is the call, as in `<a {...styles.card()} />`.
+    pub spread: Option<Span>,
     /// Start of the call.
     pub start: u32,
     /// Whether the application is the only class source of a DOM element.
@@ -55,6 +60,18 @@ pub struct Bound<'a> {
     pub start: u32,
     /// The authored values.
     pub values: &'a ObjectExpression<'a>,
+}
+
+/// The value of an application's only argument property, `className`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Override {
+    /// End of the value.
+    pub end: u32,
+    /// Whether the value is a read without calls or computed members, which can be repeated in
+    /// an initialization guard without changing evaluation.
+    pub simple: bool,
+    /// Start of the value.
+    pub start: u32,
 }
 
 /// A `.className` or `.class` read of an application's result, used only as a value.
@@ -600,11 +617,61 @@ fn member_name(kind: Option<AstKind<'_>>, object: Span) -> Option<(&str, Span)> 
 }
 
 /// Whether a parent is a non-optional call of a callee.
-fn call_of(kind: Option<AstKind<'_>>, callee: Span) -> Option<(Span, usize)> {
+fn call_of<'k, 'a>(kind: Option<AstKind<'a>>, callee: Span) -> Option<&'k CallExpression<'a>>
+where
+    'a: 'k,
+{
     match kind? {
         AstKind::CallExpression(call) if !call.optional && call.callee.span() == callee => {
-            Some((call.span, call.arguments.len()))
+            Some(call)
         }
+        _ => None,
+    }
+}
+
+/// The value of a call's only argument when that argument is `{ className: value }`.
+fn class_override(call: &CallExpression<'_>) -> Option<Override> {
+    let [argument] = call.arguments.as_slice() else {
+        return None;
+    };
+    let Some(Expression::ObjectExpression(object)) = argument.as_expression() else {
+        return None;
+    };
+    let [ObjectPropertyKind::ObjectProperty(property)] = object.properties.as_slice() else {
+        return None;
+    };
+
+    if property.computed || property.method || property.kind != PropertyKind::Init {
+        return None;
+    }
+
+    let named = match &property.key {
+        PropertyKey::StaticIdentifier(key) => key.name == "className",
+        PropertyKey::StringLiteral(key) => key.value == "className",
+        _ => false,
+    };
+    let span = property.value.span();
+
+    named.then(|| Override {
+        end: span.end,
+        simple: simple(&property.value),
+        start: span.start,
+    })
+}
+
+/// Matches identifiers and static member chains of them, whose reads call no function.
+fn simple(expression: &Expression<'_>) -> bool {
+    match expression {
+        Expression::Identifier(_) => true,
+        Expression::StaticMemberExpression(member) => !member.optional && simple(&member.object),
+        _ => false,
+    }
+}
+
+/// The JSX spread attribute whose argument is exactly a call.
+fn spread_of(kind: Option<AstKind<'_>>, call: Span) -> Option<Span> {
+    match kind? {
+        AstKind::JSXSpreadAttribute(spread) if spread.argument.span() == call => Some(spread.span),
         _ => None,
     }
 }
@@ -662,16 +729,21 @@ impl<'c, 'a> Applications<'c, 'a> {
             }
 
             let call = call?;
-            let (span, arguments) = call_of(application, callee)?;
-
-            // An override needs the runtime callable, but exposes no other definition.
-            if !self.options.dynamic && arguments > 0 {
+            let node = call_of(application, callee)?;
+            let span = node.span;
+            let class_override = if self.options.dynamic || node.arguments.is_empty() {
+                None
+            } else if let Some(value) = class_override(node) {
+                Some(value)
+            } else {
+                // Other overrides need the runtime callable, but expose no other definition.
                 called.insert(Arc::clone(&call.name));
                 continue;
-            }
+            };
 
             applications.push(Application {
                 callee_end: callee.end,
+                class_override,
                 class_read: class_read(span, read),
                 end: span.end,
                 initialized: !reference.deferred
@@ -679,6 +751,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                     && (candidate.namespace.is_none()
                         || self.namespace_counts.get(&candidate.name) == Some(&1)),
                 name: Arc::clone(&call.name),
+                spread: spread_of(read[0], span),
                 start: span.start,
                 terminal: reference.terminal,
             });
@@ -920,7 +993,10 @@ impl<'c, 'a> Applications<'c, 'a> {
                     continue;
                 }
 
-                let Some((span, 1)) = call_of(application, callee) else {
+                let Some(span) = call_of(application, callee)
+                    .filter(|call| call.arguments.len() == 1)
+                    .map(|call| call.span)
+                else {
                     continue;
                 };
 

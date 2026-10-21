@@ -170,11 +170,11 @@ describe('compile', () => {
         [
           [
             "matrix(1, 0, 0, 1, 20, 0)",
-            "rgb(0, 0, 255)",
+            "",
           ],
           [
             "matrix(1, 0, 0, 1, 10, 0)",
-            "rgb(255, 0, 0)",
+            "",
           ],
         ]
       `)
@@ -1808,7 +1808,7 @@ describe('names', () => {
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z_zugwnm0 z_zugwnm1 z-style-zugwnm-card"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=/*#__PURE__*/__zyzzProps.create({className:"z_zugwnm0 z_zugwnm1 z-style-zugwnm-card"});"
       `)
     })
 

@@ -7030,14 +7030,15 @@ describe('dynamic', () => {
     test('writes fields that fill one declaration inline on elements styled alone', async () => {
       const source = `import { style } from 'zyzz'
 export const App = (props: { label: string; x: number }) => <main>
-<div id="dot" {...styles.dot({ transform: \`translateX(\${props.x}px)\`, width: props.label })} />
+<div id="dot" {...styles.dot({ transform: \`translateX(\${props.x}px)\`, width: props.label as \`\${number}px\` })} />
 <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
 <div id="later" {...styles.later({ width: props.label })} />
 <div id="hover" {...styles.hover({ width: props.label })} />
-<div id="mixed" {...styles.mixed({ opacity: 0.5, width: props.label })} />
+<div id="mixed" {...styles.mixed({ opacity: 0.5, width: props.label as \`\${number}px\` })} />
+<div id="keyword" {...styles.keyword({ width: props.label })} />
 </main>
 namespace styles {
-  export const dot = style((values: { transform: \`translateX(\${number}px)\`; width: string }) => ({
+  export const dot = style((values: { transform: \`translateX(\${number}px)\`; width: \`\${number}px\` }) => ({
     display: 'block',
     width: values.width,
     transform: values.transform,
@@ -7047,11 +7048,13 @@ namespace styles {
 
   export const hover = style((values: { width: string }) => ({ width: values.width, selectors: { '&:hover': { width: '1px' } } }))
 
-  export const mixed = style((values: { opacity: number; width: string }) => ({ opacity: values.opacity, width: values.width }))
+  export const mixed = style((values: { opacity: number; width: \`\${number}px\` }) => ({ opacity: values.opacity, width: values.width }))
+
+  export const keyword = style((values: { width: string }) => ({ width: values.width }))
 }`
       const output = Transform.compile({ moduleId: 'App.tsx', source })
 
-      // Applications spread alone fold to their props, and other applications keep variables.
+      // Applications spread alone fold to their props, and other applications and fields that admit CSS-wide keywords keep variables.
       expect(
         output.code.slice(
           output.code.indexOf('<main>'),
@@ -7059,11 +7062,12 @@ namespace styles {
         ),
       ).toMatchInlineSnapshot(`
         "<main>
-        <div id="dot" {...(styles.dot?{className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label)||"unset"}}:styles.dot())} />
+        <div id="dot" {...(styles.dot?{className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label as \`\${number}px\`)||"unset"}}:styles.dot())} />
         <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
         <div id="later" {...styles.later({ width: props.label })} />
         <div id="hover" {...styles.hover({ width: props.label })} />
-        <div id="mixed" {...(styles.mixed?{className:"z_l0kPgl7 z_l0kPgl8",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label)||"unset"}}:styles.mixed())} />
+        <div id="mixed" {...(styles.mixed?{className:"z_l0kPgl7 z_l0kPgl8",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label as \`\${number}px\`)||"unset"}}:styles.mixed())} />
+        <div id="keyword" {...styles.keyword({ width: props.label })} />
         "
       `)
 
@@ -7143,6 +7147,12 @@ namespace styles {
               "10px",
               "0.5",
             ],
+            [
+              "keyword",
+              "none",
+              "10px",
+              "1",
+            ],
           ]
         `)
 
@@ -7178,6 +7188,12 @@ namespace styles {
               "none",
               "1264px",
               "0.5",
+            ],
+            [
+              "keyword",
+              "none",
+              "1264px",
+              "1",
             ],
           ]
         `)

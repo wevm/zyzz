@@ -838,17 +838,33 @@ impl<'c, 'a> Applications<'c, 'a> {
             return output;
         }
 
+        // Merged namespace declarations share one read list, so each name's reads are walked once.
+        let mut groups: IndexMap<&Arc<str>, Vec<&Candidate<'c, 'a>>, FxBuildHasher> =
+            IndexMap::default();
+
         for candidate in &self.candidates {
+            groups.entry(&candidate.name).or_default().push(candidate);
+        }
+
+        for (name, candidates) in groups {
             let reads = self
                 .references
-                .get(&candidate.name)
+                .get(name)
                 .map(Vec::as_slice)
                 .unwrap_or_default();
+            let bindings: FxHashSet<u32> = candidates
+                .iter()
+                .map(|candidate| candidate.binding.start)
+                .collect();
+            let direct = match candidates.as_slice() {
+                [candidate] => candidate.direct.map(|call| (*candidate, call)),
+                _ => None,
+            };
 
             // Any member read other than a call could replace the member, as `styles.dot = other` does.
-            if candidate.direct.is_none()
+            if direct.is_none()
                 && !reads.iter().all(|reference| {
-                    reference.span == candidate.binding
+                    bindings.contains(&reference.span.start)
                         || reference.resolved
                         || member_name(reference.parent, reference.span).is_some_and(
                             |(_, member)| call_of(reference.grandparent, member).is_some(),
@@ -858,36 +874,52 @@ impl<'c, 'a> Applications<'c, 'a> {
                 continue;
             }
 
+            // A member declared by two merged declarations has no single definition.
+            let mut members: FxHashMap<&str, Option<(&Candidate<'c, 'a>, &'c Call<'a>)>> =
+                FxHashMap::default();
+
+            if direct.is_none() {
+                for candidate in &candidates {
+                    for (member, call) in &candidate.members {
+                        members
+                            .entry(&**member)
+                            .and_modify(|entry| *entry = None)
+                            .or_insert(Some((*candidate, *call)));
+                    }
+                }
+            }
+
             for reference in reads {
                 let Some(values) = reference.bound else {
                     continue;
                 };
 
-                if reference.span == candidate.binding || reference.resolved {
+                if bindings.contains(&reference.span.start) || reference.resolved {
                     continue;
                 }
 
-                let (call, callee, application) = if let Some(direct) = candidate.direct {
-                    (Some(direct), reference.span, reference.parent)
+                let (candidate, call, callee, application) = if let Some((candidate, call)) = direct
+                {
+                    (candidate, call, reference.span, reference.parent)
                 } else {
-                    let Some((name, member)) = member_name(reference.parent, reference.span) else {
+                    let Some((member, span)) = member_name(reference.parent, reference.span) else {
+                        continue;
+                    };
+                    let Some(Some((candidate, call))) = members.get(member).copied() else {
                         continue;
                     };
 
-                    (
-                        candidate.members.get(name).copied(),
-                        member,
-                        reference.grandparent,
-                    )
+                    (candidate, call, span, reference.grandparent)
                 };
-                let Some(call) = call.filter(|call| {
-                    call.slots.is_some()
-                        && call.recipe.is_none()
-                        && call.composition.is_none()
-                        && call.runtime_composition.is_none()
-                }) else {
+
+                if call.slots.is_none()
+                    || call.recipe.is_some()
+                    || call.composition.is_some()
+                    || call.runtime_composition.is_some()
+                {
                     continue;
-                };
+                }
+
                 let Some((span, 1)) = call_of(application, callee) else {
                     continue;
                 };
@@ -901,7 +933,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                         initialized: !reference.deferred
                             && reference.span.start >= candidate.ready
                             && (candidate.namespace.is_none()
-                                || self.namespace_counts.get(&candidate.name) == Some(&1)),
+                                || self.namespace_counts.get(name) == Some(&1)),
                         start: span.start,
                         values,
                     });

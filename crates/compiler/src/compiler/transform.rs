@@ -1116,7 +1116,7 @@ pub fn compile<'a>(
         let Some(style) = named.get(&*call.name) else {
             continue;
         };
-        let properties = dynamic::inline(style, slots);
+        let properties = dynamic::inline(style, slots, &call.keywords);
 
         if properties.is_empty() {
             continue;

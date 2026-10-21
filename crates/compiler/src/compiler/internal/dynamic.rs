@@ -37,6 +37,8 @@ pub struct Read<'a> {
     pub body: &'a ObjectExpression<'a>,
     /// The concise body as an expression, without TypeScript wrappers.
     pub expression: &'a Expression<'a>,
+    /// Fields whose declared type admits a CSS-wide keyword such as `inherit`.
+    pub keywords: Vec<Arc<str>>,
     numeric: FxHashMap<Arc<str>, Vec<f64>>,
     parameter: &'a str,
     /// Slots by field name.
@@ -111,6 +113,7 @@ pub fn read<'a>(
     };
     let mut slots = Slots::new();
     let mut numeric = FxHashMap::default();
+    let mut keywords = Vec::new();
 
     for member in &fields.members {
         let TSSignature::TSPropertySignature(signature) = member else {
@@ -159,6 +162,10 @@ pub fn read<'a>(
             numeric.insert(Arc::from(key.as_str()), values);
         }
 
+        if kind != ScalarKind::Number && keyword(field) {
+            keywords.push(Arc::from(key.as_str()));
+        }
+
         slots.insert(key, slot);
     }
 
@@ -177,6 +184,7 @@ pub fn read<'a>(
     Ok(Some(Read {
         body,
         expression,
+        keywords,
         numeric,
         parameter: name.name.as_str(),
         slots,
@@ -260,7 +268,10 @@ impl<'a> Read<'a> {
 /// style without conditions or web branches, and no later declaration of the style can affect
 /// the same property. Writing such a value as an inline declaration then wins exactly where the
 /// variable-backed declaration did. Other fields keep their variables.
-pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots) -> Record<&'s str> {
+///
+/// A field in `keywords` stays on its variable: a CSS-wide keyword assigned to a custom property
+/// applies to the property itself, not to the declaration that reads it.
+pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots, keywords: &[Arc<str>]) -> Record<&'s str> {
     let mut output = Record::new();
 
     if style.rules.is_some()
@@ -295,7 +306,7 @@ pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots) -> Record<&'s str> {
     }
 
     for (field, slot) in slots.iter() {
-        if slot.domain != Domain::Length || slot.zero {
+        if slot.domain != Domain::Length || slot.zero || keywords.contains(field) {
             continue;
         }
 
@@ -380,6 +391,25 @@ fn sizing(property: &str) -> bool {
             | "width"
             | "Width"
     )
+}
+
+/// Whether a string type admits a CSS-wide keyword. String literals are already checked, and
+/// unresolved references count as unconstrained.
+fn keyword(node: &TSType<'_>) -> bool {
+    match node {
+        TSType::TSLiteralType(_) | TSType::TSNumberKeyword(_) => false,
+        TSType::TSTemplateLiteralType(template) => {
+            template.quasis.iter().all(|part| {
+                part.value
+                    .raw
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphabetic() || byte == b'-')
+            }) && template.types.iter().any(keyword)
+        }
+        TSType::TSIntersectionType(intersection) => intersection.types.iter().all(keyword),
+        TSType::TSUnionType(union) => union.types.iter().any(keyword),
+        _ => true,
+    }
 }
 
 fn is_safe_integer(value: f64) -> bool {

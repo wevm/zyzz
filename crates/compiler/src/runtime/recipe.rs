@@ -37,4 +37,6 @@ pub struct Definition {
     pub defaults: Record<Option<Arc<str>>>,
     /// Payload slot bindings.
     pub payloads: Option<Vec<Payload>>,
+    /// Class prefix of a recipe that selects choices with classes instead of `data-*` attributes.
+    pub prefix: Option<Arc<str>>,
 }

@@ -86,6 +86,7 @@ type Suggestions<
         readonly when: unknown
       }[]
     | undefined
+  readonly selection?: Selection | undefined
   readonly variants?: definition extends { variants: infer axes }
     ? {
         readonly [axis in keyof axes]: {
@@ -113,6 +114,17 @@ type Suggestions<
 }
 
 type Keys<value> = value extends unknown ? keyof value : never
+/** How applied props carry selections: `data-*` attributes, or one class per choice. */
+type Selection = 'attribute' | 'class'
+type Attributes<definition> = definition extends {
+  readonly selection: 'class'
+}
+  ? {}
+  : {
+      readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
+        | string
+        | undefined
+    }
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
@@ -182,41 +194,44 @@ type Checked<
                 Exclude<keyof definition[key], keyof Axes<definition>>,
                 never
               >
-          : key extends 'compoundVariants'
-            ? readonly {
-                readonly when: {
-                  readonly [axis in keyof Axes<definition>]?:
-                    | ChoiceName<Axes<definition>[axis]>
-                    | readonly ChoiceName<Axes<definition>[axis]>[]
-                }
-                readonly style: Record<string, unknown>
-              }[] & {
-                readonly [index in keyof definition[key]]: definition[key][index] extends {
-                  readonly style: infer style
-                  readonly when: infer when
-                }
-                  ? {
-                      readonly style: CheckedStyles<
-                        style,
-                        tokens,
-                        layers,
-                        mappings
-                      >
-                      readonly when: Record<
-                        Exclude<keyof when, keyof Axes<definition>>,
+          : key extends 'selection'
+            ? Selection
+            : key extends 'compoundVariants'
+              ? readonly {
+                  readonly when: {
+                    readonly [axis in keyof Axes<definition>]?:
+                      | ChoiceName<Axes<definition>[axis]>
+                      | readonly ChoiceName<Axes<definition>[axis]>[]
+                  }
+                  readonly style: Record<string, unknown>
+                }[] & {
+                  readonly [index in keyof definition[key]]: definition[key][index] extends {
+                    readonly style: infer style
+                    readonly when: infer when
+                  }
+                    ? {
+                        readonly style: CheckedStyles<
+                          style,
+                          tokens,
+                          layers,
+                          mappings
+                        >
+                        readonly when: Record<
+                          Exclude<keyof when, keyof Axes<definition>>,
+                          never
+                        >
+                      } & Record<
+                        Exclude<keyof definition[key][index], 'style' | 'when'>,
                         never
                       >
-                    } & Record<
-                      Exclude<keyof definition[key][index], 'style' | 'when'>,
-                      never
-                    >
-                  : definition[key][index]
-              }
-            : never
+                    : definition[key][index]
+                }
+              : never
 }
 
 /**
  * Declares base styles, variant axes, defaults, and ordered compounds.
+ * `selection: 'class'` selects each choice with its own class instead of a `data-*` attribute.
  * @param definition - Static recipe for one element.
  * @returns A callable selecting precompiled styles and returning one props object.
  * @throws {Error} When uncompiled authoring omits an explicit identity.
@@ -248,17 +263,16 @@ export declare namespace variants {
     options?: style.DefinitionOptions,
   ) => ReturnType<definition, output>
 
-  /** Callable selection; omitted values use defaults and null suppresses them. */
+  /**
+   * Callable selection; omitted values use defaults and null suppresses them.
+   * Props carry `data-*` selection attributes unless the definition selects with classes.
+   */
   type ReturnType<definition, output extends style.Output = 'react'> = <
     const input extends Input<definition, output> = Input<definition, output>,
   >(
     input?: input &
       Record<Exclude<Keys<input>, keyof Input<definition, output>>, never>,
-  ) => style.Props<output> & {
-    readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
-      | string
-      | undefined
-  }
+  ) => style.Props<output> & Attributes<definition>
 
   /** Missing source transformation diagnostic. */
   type ErrorType = Error

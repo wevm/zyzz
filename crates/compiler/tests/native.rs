@@ -376,6 +376,7 @@ mod compile {
                 native_context: None,
                 output: None,
                 packed: true,
+                prefixes: Vec::new(),
                 slots: Vec::new(),
                 static_recipe: Some(recipe::Definition {
                     axes: Vec::new(),

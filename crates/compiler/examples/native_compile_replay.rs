@@ -545,6 +545,9 @@ fn runtime_recipe<'j>(decoder: &mut Decoder<'j>, node: &'j Json) -> Outcome<runt
         payloads: present(decoder, node, "payloads")
             .map(|node| payloads(decoder, node))
             .transpose()?,
+        prefix: present(decoder, node, "prefix")
+            .map(|prefix| string(decoder.node(prefix)).map(Arc::from))
+            .transpose()?,
     })
 }
 
@@ -740,6 +743,7 @@ fn packed_style<'j>(
         native_context,
         output: output(present(decoder, node, "output"))?,
         packed: true,
+        prefixes: Vec::new(),
         slots,
         static_recipe,
         style: Arc::new(NamedStyle::default()),

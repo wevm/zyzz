@@ -290,6 +290,15 @@ describe('variants API page', () => {
     `)
   })
 
+  test('compiles class selection', async () => {
+    const [selection] = await examples('variants', 'definition.selection')
+
+    expect(css(selection!.source)).toMatchInlineSnapshot(`
+      ".z_0{&:where(.z-v-cVOY47Eaufh-0-0){padding:4px;}}
+      .z_1{&:where(.z-v-cVOY47Eaufh-0-1){padding:8px;}}"
+    `)
+  })
+
   test('selects choices without a compiler transform', () => {
     const button = variants(
       {
@@ -338,6 +347,19 @@ describe('variants API page', () => {
         "style": {
           "--z-button-2-1-0-padding": "16px",
         },
+      }
+    `)
+    expect(
+      variants(
+        {
+          selection: 'class',
+          variants: { size: { compact: {}, regular: {} } },
+        },
+        { id: 'button' },
+      )({ size: 'regular' }),
+    ).toMatchInlineSnapshot(`
+      {
+        "className": "z-style-id-button z-v-1AOB2t48t-P-0-1",
       }
     `)
     expect(() =>

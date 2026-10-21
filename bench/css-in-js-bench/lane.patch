@@ -84,7 +84,7 @@ new file mode 100644
 index 0000000..be8fd42
 --- /dev/null
 +++ b/techs/zyzz/case/btn-variant/index.tsx
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +import React, { type FunctionComponent } from "react";
 +import { variants } from "../../zyzz.config";
 +
@@ -96,8 +96,8 @@ index 0000000..be8fd42
 +}
 +
 +// One `variants` recipe: each prop selects a precompiled choice. Axes keep their authored
-+// order, so `variant` overrides `active` as later classes do in the vanilla lane. Axis names
-+// become data attributes, so they are lowercase.
++// order, so `variant` overrides `active` as later classes do in the vanilla lane. Class
++// selection adds one class per choice, so each button renders a single class list.
 +const Button: FunctionComponent<P> = ({ $active, $fullWidth, $variant, children }) => (
 +  <button {...styles.button({ active: !!$active, full: !!$fullWidth, variant: $variant })}>{children}</button>
 +);
@@ -125,6 +125,7 @@ index 0000000..be8fd42
 +      backgroundColor: "#2563eb",
 +      color: "#ffffff",
 +    },
++    selection: "class",
 +    variants: {
 +      active: {
 +        false: { backgroundColor: "#d1d5db", color: "#6b7280" },
@@ -1244,7 +1245,7 @@ new file mode 100644
 index 0000000..f1eb15c
 --- /dev/null
 +++ b/techs/zyzz/case/realistic-button/index.tsx
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,105 @@
 +import React from "react";
 +import { style, variants } from "../../zyzz.config";
 +
@@ -1321,6 +1322,7 @@ index 0000000..f1eb15c
 +        cursor: "default",
 +      },
 +    },
++    selection: "class",
 +    variants: {
 +      variant: {
 +        primary: {

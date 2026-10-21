@@ -24,6 +24,7 @@ use crate::compiler::internal::contributions::Factory;
 use crate::compiler::internal::dynamic;
 use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::packed_styles;
+use crate::compiler::internal::recipes;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
@@ -408,6 +409,76 @@ fn write_selector(
     }
 
     output.push_str("return result})");
+}
+
+/// Writes a selector equivalent to `Recipe.create` for one unconditional class-selection recipe
+/// without payloads. Each axis appends its precomputed choice class, so a call builds one class
+/// string and writes no attributes.
+fn write_class_selector(
+    output: &mut String,
+    recipe: &runtime::Definition,
+    prefix: &str,
+    class_name: &str,
+    typed: bool,
+) {
+    let parameter = if typed {
+        ":Record<string,unknown>&import('zyzz').style.Options"
+    } else {
+        ""
+    };
+
+    // An empty or absent class list starts empty, so each choice class keeps a leading space
+    // that the join below removes.
+    let listed = class_name.len() > 2 && class_name.starts_with('"');
+    let initial = if listed { class_name } else { "\"\"" };
+
+    let _ = write!(
+        output,
+        "((input{parameter}={{}})=>{{const external=input.className,style=input.style,vars=input.vars,inline=vars?{{...vars,...style}}:style;let value,className={initial};"
+    );
+
+    for (index, (axis, choices)) in recipe.axes.iter().enumerate() {
+        let mut key = String::new();
+
+        js::write_string(&mut key, axis);
+        let _ = write!(
+            output,
+            "value=Object.hasOwn(input,{key})?input[{key}]:void 0;"
+        );
+
+        if let Some(Some(fallback)) = recipe.defaults.get(axis) {
+            output.push_str("if(value===void 0)value=");
+            js::write_string(output, fallback);
+            output.push(';');
+        }
+
+        // `String` matches the attribute value an attribute recipe would write.
+        output.push_str("if(value!==null&&value!==void 0){value=String(value);className+=");
+
+        for (choice, name) in choices.iter().enumerate() {
+            output.push_str("value===");
+            js::write_string(output, name);
+            output.push('?');
+            js::write_string(
+                output,
+                &format!(" {}", recipes::class(prefix, index, choice, None)),
+            );
+            output.push(':');
+        }
+
+        output.push_str("\"\"}");
+    }
+
+    if listed {
+        output.push_str("if(external)className+=\" \"+external;");
+    } else {
+        let _ = write!(
+            output,
+            "className=className?className.slice(1):{class_name};if(external)className=className?className+\" \"+external:external;"
+        );
+    }
+
+    output.push_str("return inline?{className,style:inline}:{className}})");
 }
 
 /// `JSON.stringify({ ...recipe, html })`, in the key order `Recipes.expand` builds.
@@ -1914,6 +1985,14 @@ impl<'a> Generator<'_, 'a> {
                         .collect::<Vec<_>>(),
                 ),
                 (
+                    "prefixes",
+                    input
+                        .owners
+                        .iter()
+                        .flat_map(|owner| owner.prefixes.iter())
+                        .collect::<Vec<_>>(),
+                ),
+                (
                     "slots",
                     input
                         .owners
@@ -2215,7 +2294,9 @@ impl<'a> Generator<'_, 'a> {
                 let specialized = !conditional && !payload && !html && !self.shadowed;
                 let mut selection = String::new();
 
-                if specialized {
+                if specialized && let Some(prefix) = &recipe.prefix {
+                    write_class_selector(&mut selection, recipe, prefix, &class_name, typed);
+                } else if specialized {
                     write_selector(&mut selection, recipe, &class_name, typed);
                 } else {
                     if !conditional {
@@ -2227,6 +2308,11 @@ impl<'a> Generator<'_, 'a> {
                     write_axes(&mut selection, recipe);
                     selection.push_str(",\"defaults\":");
                     write_defaults(&mut selection, recipe);
+
+                    if let Some(prefix) = &recipe.prefix {
+                        selection.push_str(",\"prefix\":");
+                        js::write_string(&mut selection, prefix);
+                    }
 
                     if let Some(conditions) = &recipe.conditions {
                         selection.push_str(",\"conditions\":");
@@ -2298,8 +2384,13 @@ impl<'a> Generator<'_, 'a> {
                     _ => String::new(),
                 };
                 let output = if html { ",\"html\"" } else { "" };
+                let selection = if recipe.prefix.is_some() {
+                    "selection:'class';"
+                } else {
+                    ""
+                };
                 let kind = format!(
-                    "import('zyzz').variants.ReturnType<{{variants:{{{}}}{conditions}}}{output}>",
+                    "import('zyzz').variants.ReturnType<{{{selection}variants:{{{}}}{conditions}}}{output}>",
                     axes.join(";")
                 );
 

@@ -1481,6 +1481,404 @@ describe('payloads', () => {
   })
 })
 
+describe('selection', () => {
+  const recipes = (selection: string) => `
+  export const plain = variants({${selection}
+    base: { color: 'black', padding: '2px', opacity: 1, fontWeight: 400 },
+    variants: {
+      size: { sm: { padding: '4px' }, lg: { padding: '12px' } },
+      loading: { true: { opacity: 0.5 }, false: { opacity: 1 } },
+    },
+    defaultVariants: { size: 'sm', loading: false },
+    compoundVariants: [
+      { when: { size: ['sm', 'lg'], loading: true }, style: { color: 'red' } },
+      { when: { size: 'lg', loading: true }, style: { color: 'blue' } },
+      { when: { size: 'lg', loading: true }, style: { fontWeight: 700 } },
+    ],
+  })
+
+  export const payload = variants({${selection}
+    base: { padding: '2px' },
+    variants: { size: { sm: { padding: '4px' }, custom: (values: { padding: \`\${number}px\` }) => ({ padding: values.padding }) } },
+    defaultVariants: { size: { custom: { padding: '12px' } } },
+    compoundVariants: [{ when: { size: 'custom' }, style: { color: 'red' } }],
+  })
+
+  export const conditional = variants({${selection}
+    base: { color: 'black', padding: '2px', opacity: 1 },
+    conditions: { wide: '@media (width >= 600px)', tall: '@media (height >= 600px)' },
+    variants: {
+      size: { sm: { padding: '4px' }, lg: { padding: '12px' }, custom: (values: { padding: \`\${number}px\` }) => ({ padding: values.padding }) },
+      loading: { true: { opacity: 0.5 }, false: { opacity: 1 } },
+    },
+    defaultVariants: { size: 'sm' },
+    compoundVariants: [{ when: { size: 'lg', loading: true }, style: { color: 'blue' } }],
+  })
+
+  export const html = markup({${selection}
+    base: { padding: '2px' },
+    variants: { size: { sm: { padding: '4px' }, lg: { padding: '12px' } } },
+    defaultVariants: { size: 'sm' },
+  })`
+  const source = `import { Config, cx, style, variants } from 'zyzz'
+const { variants: markup } = Config.create({ output: 'html' })
+const focus = style({ outlineStyle: 'solid' })
+
+export function composeAttributes(first: {}, second: {}, flag: boolean) {
+  return cx(attributes.plain(first), focus(), flag && attributes.plain(second))
+}
+
+export function composeClasses(first: {}, second: {}, flag: boolean) {
+  return cx(classes.plain(first), focus(), flag && classes.plain(second))
+}
+
+export const attribute = {
+  conditional: (input: {}) => attributes.conditional(input),
+  html: (input: {}) => attributes.html(input),
+  payload: (input: {}) => attributes.payload(input),
+  plain: (input: {}) => attributes.plain(input),
+}
+
+export const selected = {
+  conditional: (input: {}) => classes.conditional(input),
+  html: (input: {}) => classes.html(input),
+  payload: (input: {}) => classes.payload(input),
+  plain: (input: {}) => classes.plain(input),
+}
+
+namespace attributes {${recipes('')}
+}
+
+namespace classes {${recipes("\n    selection: 'class',")}
+}`
+
+  describe('variants', () => {
+    test('matches attribute selection through choices, compounds, conditions, payloads, HTML, and cx', async () => {
+      const result = Graph.compile({ modules: { 'app.ts': source } })
+      const output = result.modules['app.ts']!
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': output.code },
+      })
+
+      expect(output.css.includes('[data-')).toMatchInlineSnapshot('true')
+      expect(output.css.includes(':where(.z-v-')).toMatchInlineSnapshot('true')
+
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 400, height: 400 },
+        })
+        await page.setContent(
+          `<style>${output.css}</style><button id="attribute">Attribute</button><button id="class">Class</button>`,
+        )
+        await page.addScriptTag({ content: code + ';globalThis.App=Fixture;' })
+        await page.evaluate(`{
+        window.paint = (id, props) => {
+          const element = document.getElementById(id);
+          for (const name of element.getAttributeNames()) if (name !== 'id') element.removeAttribute(name);
+          for (const [key, value] of Object.entries(props)) {
+            if (key === 'className' || key === 'class') element.setAttribute('class', value);
+            else if (key === 'style' && typeof value === 'string') element.setAttribute('style', value);
+            else if (key === 'style') for (const [name, bound] of Object.entries(value)) element.style.setProperty(name.startsWith('--') ? name : name.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase()), String(bound));
+            else element.setAttribute(key, value);
+          }
+          const style = getComputedStyle(element);
+          return [style.paddingTop, style.color, style.opacity, style.fontWeight, style.outlineStyle].join(' ');
+        };
+        window.compare = (name, ...input) => {
+          const attribute = paint('attribute', name === 'composed' ? App.composeAttributes(...input) : App.attribute[name](...input));
+          const selected = paint('class', name === 'composed' ? App.composeClasses(...input) : App.selected[name](...input));
+          return attribute === selected ? selected : attribute + ' != ' + selected;
+        };
+        window.cases = [
+          ['plain'],
+          ['plain', { size: 'lg', loading: true }],
+          ['plain', { size: 'sm', loading: true }],
+          ['plain', { size: null, loading: null, style: { color: 'green' } }],
+          ['plain', { size: undefined, loading: false, className: 'extra' }],
+          ['payload'],
+          ['payload', { size: { custom: { padding: '16px' } } }],
+          ['payload', { size: 'sm' }],
+          ['payload', { size: null }],
+          ['conditional', { conditions: { wide: { size: 'lg' }, tall: { size: null } } }],
+          ['conditional', { size: 'lg', loading: true, conditions: { wide: { size: { custom: { padding: '20px' } } } } }],
+          ['conditional', { conditions: { wide: { size: 'lg', loading: true }, tall: { loading: undefined } } }],
+          ['conditional', { size: null, conditions: { tall: { size: 'lg', loading: true } } }],
+          ['html'],
+          ['html', { size: 'lg', style: { color: 'red' } }],
+          ['composed', { size: 'lg' }, { size: 'sm', loading: true }, true],
+          ['composed', { size: 'lg', loading: true }, { size: null }, true],
+          ['composed', { size: 'lg', loading: true }, {}, false],
+        ];
+      }`)
+
+        const results: Record<string, unknown> = {}
+        for (const viewport of [
+          { width: 400, height: 400 },
+          { width: 800, height: 400 },
+          { width: 400, height: 800 },
+          { width: 800, height: 800 },
+        ]) {
+          await page.setViewportSize(viewport)
+          results[`${viewport.width}x${viewport.height}`] = await page.evaluate(
+            `cases.map((input) => compare(...input))`,
+          )
+        }
+
+        expect(results).toMatchInlineSnapshot(`
+          {
+            "400x400": [
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 700 none",
+              "4px rgb(255, 0, 0) 0.5 400 none",
+              "2px rgb(0, 128, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "16px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(255, 0, 0) 0.5 400 solid",
+              "2px rgb(0, 0, 0) 1 400 solid",
+              "12px rgb(0, 0, 255) 0.5 700 solid",
+            ],
+            "400x800": [
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 700 none",
+              "4px rgb(255, 0, 0) 0.5 400 none",
+              "2px rgb(0, 128, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "16px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(255, 0, 0) 0.5 400 solid",
+              "2px rgb(0, 0, 0) 1 400 solid",
+              "12px rgb(0, 0, 255) 0.5 700 solid",
+            ],
+            "800x400": [
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 700 none",
+              "4px rgb(255, 0, 0) 0.5 400 none",
+              "2px rgb(0, 128, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "16px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 0) 1 400 none",
+              "20px rgb(0, 0, 0) 0.5 400 none",
+              "12px rgb(0, 0, 255) 0.5 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(255, 0, 0) 0.5 400 solid",
+              "2px rgb(0, 0, 0) 1 400 solid",
+              "12px rgb(0, 0, 255) 0.5 700 solid",
+            ],
+            "800x800": [
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(0, 0, 255) 0.5 700 none",
+              "4px rgb(255, 0, 0) 0.5 400 none",
+              "2px rgb(0, 128, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "16px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "2px rgb(0, 0, 0) 1 400 none",
+              "20px rgb(0, 0, 0) 0.5 400 none",
+              "12px rgb(0, 0, 255) 0.5 400 none",
+              "12px rgb(0, 0, 255) 0.5 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "12px rgb(255, 0, 0) 1 400 none",
+              "4px rgb(255, 0, 0) 0.5 400 solid",
+              "2px rgb(0, 0, 0) 1 400 solid",
+              "12px rgb(0, 0, 255) 0.5 700 solid",
+            ],
+          }
+        `)
+        expect(
+          await page.evaluate(
+            `App.selected.plain({ size: 'lg', loading: true, className: 'extra' })`,
+          ),
+        ).toMatchInlineSnapshot(`
+          {
+            "className": "z_Zf5JrJ1e z_Zf5JrJ1f z_Zf5JrJ1g z_Zf5JrJ1h z_Zf5JrJ1i z_Zf5JrJ1j z_Zf5JrJ1k z_Zf5JrJ1l z_Zf5JrJ1m z_Zf5JrJ1n z_Zf5JrJ1o z-v-1xOvZXeSIPY-0-1 z-v-1xOvZXeSIPY-1-0 extra",
+          }
+        `)
+        expect(
+          await page.evaluate(
+            `Object.keys(App.selected.conditional({ conditions: { wide: { size: 'lg' } } }))`,
+          ),
+        ).toMatchInlineSnapshot(`
+          [
+            "className",
+          ]
+        `)
+        expect(await page.evaluate(`App.selected.html({ size: 'lg' })`))
+          .toMatchInlineSnapshot(`
+          {
+            "class": "z_Zf5JrJ2o z_Zf5JrJ2p z_Zf5JrJ2q z-v-6hr07stxA3r-0-1",
+          }
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('executes uncompiled class-selection authoring against compiled CSS', async () => {
+      const source = `import { variants } from 'zyzz'
+export const button = variants({
+  selection: 'class',
+  base: { padding: '2px', color: 'black' },
+  conditions: { wide: '@media (width >= 600px)' },
+  variants: { size: { sm: { padding: '4px' }, lg: { padding: '12px' } } },
+  compoundVariants: [{ when: { size: 'lg' }, style: { color: 'blue' } }],
+}, { id: 'button' })`
+      const uncompiled = Graph.compile({
+        compiler: false,
+        modules: { 'app.ts': source },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': source },
+      })
+
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 800, height: 400 },
+        })
+        await page.setContent(
+          `<style>${uncompiled.modules['app.ts']!.css}</style><button>Button</button>`,
+        )
+        await page.addScriptTag({ content: code + ';globalThis.App=Fixture;' })
+        await page.evaluate(`window.apply = (input) => {
+          const element = document.querySelector('button');
+          const props = App.button(input);
+          element.className = props.className;
+          const style = getComputedStyle(element);
+          return [Object.keys(props).join(), style.paddingTop, style.color].join(' ');
+        }`)
+
+        expect(await page.evaluate(`apply()`)).toMatchInlineSnapshot(
+          `"className 2px rgb(0, 0, 0)"`,
+        )
+        expect(
+          await page.evaluate(`apply({ size: 'lg' })`),
+        ).toMatchInlineSnapshot(`"className 12px rgb(0, 0, 255)"`)
+        expect(
+          await page.evaluate(
+            `apply({ size: 'lg', conditions: { wide: { size: 'sm' } } })`,
+          ),
+        ).toMatchInlineSnapshot(`"className 4px rgb(0, 0, 0)"`)
+        expect(
+          await page.evaluate(
+            `apply({ size: 'lg', conditions: { wide: { size: null } } })`,
+          ),
+        ).toMatchInlineSnapshot(`"className 2px rgb(0, 0, 0)"`)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('replaces repeated packed applications in cx through contract ownership', async () => {
+      const publisher = Graph.compile({
+        modules: {
+          'library.ts': `import { variants } from 'zyzz'
+export const button = variants({
+  selection: 'class',
+  base: { padding: '2px', color: 'black' },
+  variants: { size: { sm: { padding: '4px' }, lg: { padding: '12px' } }, tone: { quiet: { color: 'gray' }, loud: { color: 'red' } } },
+  defaultVariants: { size: 'sm' },
+})`,
+        },
+      })
+      const consumer = Graph.compile({
+        modules: {
+          'app.ts': `import { cx } from 'zyzz'
+import { button } from './library.js'
+export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' }), flag && button({ size: 'sm' }))`,
+        },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { zyzz: null, './library.js': 'library.ts' } },
+      })
+
+      expect(
+        consumer.modules['app.ts']!.code.includes('"prefixes":["z-v-'),
+      ).toMatchInlineSnapshot(`true`)
+
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: {
+          'library.ts': publisher.modules['library.ts']!.code,
+          'app.ts': consumer.modules['app.ts']!.code,
+        },
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${publisher.modules['library.ts']!.css}\n${consumer.modules['app.ts']!.css}</style><button>Button</button>`,
+        )
+        await page.addScriptTag({ content: code + ';globalThis.App=Fixture;' })
+        await page.evaluate(`window.apply = (flag) => {
+          const element = document.querySelector('button');
+          const props = App.repeated(flag);
+          element.className = props.className;
+          const style = getComputedStyle(element);
+          return [Object.keys(props).join(), style.paddingTop, style.color].join(' ');
+        }`)
+
+        expect(await page.evaluate(`apply(false)`)).toMatchInlineSnapshot(
+          `"className 12px rgb(255, 0, 0)"`,
+        )
+        expect(await page.evaluate(`apply(true)`)).toMatchInlineSnapshot(
+          `"className 4px rgb(0, 0, 0)"`,
+        )
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('rejects unknown selection modes at their value', () => {
+      expect(() =>
+        Source.extract({
+          moduleId: 'recipe.ts',
+          source: `import {variants} from 'zyzz'; variants({selection:'classes',variants:{size:{sm:{}}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: recipe.ts:51: Recipe selection must be 'attribute' or 'class'.]`,
+      )
+    })
+  })
+})
+
 describe('watch', () => {
   describe('variants', () => {
     test('preserves imported ownership across edits, failed builds, renames, and removal', async () => {

@@ -115,6 +115,11 @@ export function composition(names: readonly string[]): string {
   return `z-compose-${name(JSON.stringify(names))}`
 }
 
+/** Names the choice-class prefix of a class-selection recipe from its definition identity. */
+export function recipe(id: string): string {
+  return `z-v-${compact(id)}`
+}
+
 /** Names a stylesheet declaration with a caller-owned identity. */
 export function contribution(kind: string, id: string | undefined): string {
   const identity = requireId(id, kind)

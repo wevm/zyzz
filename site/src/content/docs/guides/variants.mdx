@@ -457,6 +457,38 @@ namespace styles {
 
 Styling calls also accept `className`, `style`, and `vars` overrides, such as `styles.button({ size: 'compact', style: { opacity: 0.5 } })`. TypeScript checks application inputs, and runtime selection does not validate them.
 
+## Select with Classes
+
+Set `selection: 'class'` to select each choice with its own generated class instead of a `data-*` attribute. Applications then return only `className` and `style`, so each element renders one class list, as a hand-written class string would.
+
+```tsx title="StatusBadge.tsx"
+import { variants } from 'zyzz'
+
+export function StatusBadge() {
+  // Renders a class list with the success choice class and no data-tone attribute
+  return <span {...styles.badge({ tone: 'success' })}>Paid</span>
+}
+
+namespace styles {
+  export const badge = variants({
+    base: { borderRadius: '999px', padding: '2px 8px' },
+    // [!code hl:2]
+    // Each selected choice adds a class instead of an attribute
+    selection: 'class',
+    variants: {
+      tone: {
+        neutral: { backgroundColor: '#eee', color: '#333' },
+        success: { backgroundColor: '#e6f6ec', color: '#05612c' },
+      },
+    },
+  })
+}
+```
+
+The emitted rules keep their order and zero-specificity `:where()` wrappers, matching `:where(.class)` where attribute selection matches `:where([data-tone="success"])`. Defaults, `null`, compounds, conditions, payloads, and `cx` therefore resolve the same declarations in both modes.
+
+Class selection gives up readable selection state. Choice classes are generated names, so stylesheets, tests, and selectors outside the recipe cannot match a choice the way they match `[data-tone="success"]`, and the return type has no `data-*` keys. Native output ignores the option.
+
 ## More
 
 <Card.Group>

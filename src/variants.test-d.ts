@@ -1,7 +1,7 @@
 /** Verifies recipe inference and rejected authoring through the public entrypoint. @module */
 import type { CSSProperties } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config as PublicConfig, variants } from 'zyzz'
+import { Config as PublicConfig, type style, variants } from 'zyzz'
 import * as Theme from './internal/Theme.js'
 import * as Config from './internal/Configuration.js'
 
@@ -104,6 +104,25 @@ describe('variants', () => {
     button({ disabled: true })
     // @ts-expect-error Boolean axes take booleans.
     button({ loading: 'true' })
+  })
+
+  test('returns class-only props for class selection', () => {
+    const button = variants({
+      selection: 'class',
+      variants: { size: { sm: { padding: '4px' } } },
+      defaultVariants: { size: 'sm' },
+    })
+    const attributes = variants({
+      selection: 'attribute',
+      variants: { size: { sm: { padding: '4px' } } },
+    })
+
+    expectTypeOf(button({ size: 'sm' })).toEqualTypeOf<style.Props>()
+    expectTypeOf(attributes()['data-size']).toEqualTypeOf<string | undefined>()
+    // @ts-expect-error Class selection writes no data attributes.
+    void button()['data-size']
+    // @ts-expect-error Selection names one of the two modes.
+    variants({ selection: 'classes', variants: { size: { sm: {} } } })
   })
 
   test('rejects invalid properties and recipe structure', () => {

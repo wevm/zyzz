@@ -1497,6 +1497,8 @@ impl Compiler<'_, '_> {
                     .map(|(axis, choice)| (Arc::clone(axis), choice.clone()))
                     .collect(),
                 payloads: dynamic.payloads.clone(),
+                // Native selection reads tables, never classes.
+                prefix: None,
             }),
             slots: dynamic.map(|dynamic| dynamic.slots.clone()),
             ..Call::default()

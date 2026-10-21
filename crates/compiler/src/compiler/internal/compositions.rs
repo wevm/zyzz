@@ -232,6 +232,7 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                             attributes: style.attributes.clone(),
                             identity: Arc::clone(&name),
                             identity_first: false,
+                            prefixes: style.prefixes.clone(),
                             slots: style.slots.clone(),
                         }),
                         portable: style.class_name.clone(),
@@ -346,23 +347,11 @@ fn owners(call: &Call<'_>) -> Vec<Owner> {
             .collect();
     }
 
-    let conditions = call
+    let (attributes, prefixes) = call
         .recipe
         .as_ref()
-        .and_then(|recipe| recipe.conditions.as_ref())
-        .map_or(0, Vec::len);
-    let attributes = call
-        .recipe
-        .iter()
-        .flat_map(|recipe| recipe.axes.keys())
-        .flat_map(|axis| {
-            std::iter::once(Arc::from(format!("data-{axis}")))
-                .chain(
-                    (0..conditions)
-                        .map(move |condition| Arc::from(recipes::attribute(axis, condition))),
-                )
-                .collect::<Vec<Arc<str>>>()
-        });
+        .map(recipes::ownership)
+        .unwrap_or_default();
     let slots = call
         .slots
         .iter()
@@ -378,8 +367,9 @@ fn owners(call: &Call<'_>) -> Vec<Owner> {
 
     vec![Owner {
         identity_first: true,
-        attributes: attributes.collect(),
+        attributes,
         identity: Arc::clone(&call.name),
+        prefixes,
         slots: slots.collect(),
     }]
 }

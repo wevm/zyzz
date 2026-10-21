@@ -239,8 +239,9 @@ pub struct Expression {
     pub parts: Vec<Part>,
 }
 
-/// Contract, values, and query metadata for one theme or variable set.
-#[derive(Clone, Debug, PartialEq)]
+/// Contract, values, and query metadata for one theme or variable set. Metadata compares its
+/// contract by identity, as references do.
+#[derive(Clone, Debug)]
 pub struct Metadata {
     /// Contract that owns every token.
     pub contract: Arc<Contract>,
@@ -252,6 +253,16 @@ pub struct Metadata {
     pub queries: Option<Arc<query::Metadata>>,
     /// Token values keyed by dotted path.
     pub values: Arc<Map<Value>>,
+}
+
+impl PartialEq for Metadata {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.contract, &other.contract)
+            && self.css_name == other.css_name
+            && self.paths == other.paths
+            && self.queries == other.queries
+            && self.values == other.values
+    }
 }
 
 /// Creates a token reference.

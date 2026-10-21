@@ -317,6 +317,47 @@ mod create {
         insta::assert_snapshot!((output == &fresh["modules"]["card.ts"]).to_string(), @"true");
     }
 
+    fn themed(note: &str) -> String {
+        let theme = json(&format!(
+            "import {{Vars}} from 'zyzz';export const theme=Vars.define({{color:{{brand:'#06c'}}}});export const note='{note}';"
+        ));
+        let config = json(
+            "import {Config} from 'zyzz';import {theme} from './theme.js';export const {style,vars}=Config.create({id:'app',vars:{base:theme},defaultVars:'base'});",
+        );
+        let card = json(
+            "import {style,vars} from './config.js';export const card=style({color:'brand'});export const scope=vars();",
+        );
+
+        format!(
+            r#"{{"imports":{{"card.ts":{{"./config.js":"config.ts"}},"config.ts":{{"./theme.js":"theme.ts","zyzz":null}},"theme.ts":{{"zyzz":null}}}},"modules":{{"card.ts":{card},"config.ts":{config},"theme.ts":{theme}}}}}"#
+        )
+    }
+
+    #[test]
+    fn themed_edits() {
+        let mut compiler = Compiler::default();
+        let parse =
+            |text: String| -> serde_json::Value { serde_json::from_str(&text).unwrap_or_default() };
+        let before = parse(compiler.compile(&themed("one")));
+        let edited = parse(compiler.compile(&themed("two")));
+        let fresh = parse(Compiler::default().compile(&themed("two")));
+
+        insta::assert_snapshot!(edited["error"], @"null");
+
+        // The theme module re-extracts with a new definition, which the configuration reads.
+        for id in ["card.ts", "config.ts", "theme.ts"] {
+            let output = match &edited["modules"][id] {
+                serde_json::Value::Number(_) => &before["modules"][id],
+                output => output,
+            };
+
+            assert_eq!(output, &fresh["modules"][id], "{id}");
+        }
+
+        assert_eq!(edited["shared"], fresh["shared"]);
+        assert_eq!(edited["contracts"], fresh["contracts"]);
+    }
+
     #[test]
     fn unchanged_sources() {
         let mut compiler = Compiler::default();

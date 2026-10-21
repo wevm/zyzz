@@ -446,9 +446,22 @@ fn check(reference: &Reference, value: &Value, property: &str) -> bool {
     }
 }
 
-/// Reads a token tree leaf by dotted path.
-fn leaf<'a>(tokens: &'a Data, path: &str) -> Option<&'a Data> {
-    let mut node = tokens;
+/// Reads a token tree leaf by dotted path, or by recorded segments for dotted keys.
+fn leaf<'a>(theme: &'a theme::Definition, path: &str) -> Option<&'a Data> {
+    let mut node = &theme.tokens;
+
+    if let Some(parts) = theme
+        .metadata
+        .paths
+        .as_ref()
+        .and_then(|paths| paths.get(path))
+    {
+        for key in parts.iter() {
+            node = node.as_object()?.get(key)?;
+        }
+
+        return Some(node);
+    }
 
     for key in path.split('.') {
         node = node.as_object()?.get(key)?;
@@ -526,7 +539,7 @@ pub fn resolve(value: &Data, property: &str, theme: &theme::Definition) -> Data 
         }
 
         if let Some((_, path, entry, category)) = best {
-            let group = match leaf(&theme.tokens, path) {
+            let group = match leaf(theme, path) {
                 Some(Data::Token(reference)) => reference.group.clone(),
                 _ => Group::from(category),
             };
@@ -587,7 +600,7 @@ pub fn mapped(theme: &theme::Definition, property: &str) -> bool {
             }
         }
 
-        matches!(leaf(&theme.tokens, path), Some(Data::Token(reference)) if accepts_reference(reference, property))
+        matches!(leaf(theme, path), Some(Data::Token(reference)) if accepts_reference(reference, property))
     })
 }
 

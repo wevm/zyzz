@@ -2033,7 +2033,7 @@ describe('compile', () => {
           "import {Config} from 'zyzz';\nimport { Vars } from 'zyzz';\nconst theme = Vars.define({spacing:{md:'4px','md!':'8px'}}); const themeConfig=Config.create({vars:theme});\nexport const props = themeConfig.style({padding:'md!'})();",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/reserved.ts:72: ["spacing","md!"]: Expected a nonempty variable key without dots or conditions.]`,
+      `[Source.ExtractError: example/reserved.ts:72: ["spacing","md!"]: Expected a nonempty variable key without importance or conditions.]`,
     )
     expect(() =>
       Transform.compile({
@@ -2042,19 +2042,46 @@ describe('compile', () => {
           "import { Config } from 'zyzz';\nconst zyzz = Config.create({vars:{spacing:{'nested!':{md:'8px'}}}});\nexport const props = zyzz.style({padding:'nested!.md'})();",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Expected a nonempty variable key without dots or conditions.]`,
+      `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Expected a nonempty variable key without importance or conditions.]`,
     )
   })
 
-  test('fractional numeric variable keys report their path', () => {
+  test('fractional numeric variable keys resolve as tokens and references', () => {
+    const output = Transform.compile({
+      moduleId: 'example/fractional.ts',
+      source:
+        "import { defineConfig } from 'zyzz';\nconst { style, vars } = defineConfig({vars:{spacing:{0:'0px',0.5:'2px',2.5:'10px'}}});\nexport const props = style({gap:2.5,margin:vars.spacing[0.5],padding:vars.spacing['0']})();",
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-theme-theme{--z-spacing-2-5:10px;--z-spacing-0-5:2px;--z-spacing-0:0px;}
+      .z_scheme-dark{color-scheme:dark;}
+      .z_scheme-light{color-scheme:light;}
+      .z_scheme-light-dark{color-scheme:light dark;}
+      .z-gap-\\5b var\\28 --z-spacing-2-5\\2c 10px\\29 \\5d {gap:var(--z-spacing-2-5,10px);}
+      .z-m-\\5b var\\28 --z-spacing-0-5\\2c 2px\\29 \\5d {margin:var(--z-spacing-0-5,2px);}
+      .z-p-\\5b var\\28 --z-spacing-0\\2c 0px\\29 \\5d {padding:var(--z-spacing-0,0px);}"
+    `)
+  })
+
+  test('dotted variable categories and colliding paths report their path', () => {
     expect(() =>
       Transform.compile({
-        moduleId: 'example/fractional.ts',
+        moduleId: 'example/dotted-category.ts',
         source:
-          "import { defineConfig } from 'zyzz';\nconst { style } = defineConfig({vars:{spacing:{0.5:'2px',2.5:'10px'}}});\nexport const props = style({gap:2.5})();",
+          "import { defineConfig } from 'zyzz';\nconst { style } = defineConfig({vars:{'spacing.x':'2px'}});\nexport const props = style({gap:'x'})();",
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/fractional.ts:55: ["spacing","0.5"]: Expected a nonempty variable key without dots or conditions.]`,
+      `[Source.ExtractError: example/dotted-category.ts:55: ["spacing.x"]: Variable categories and typography keys cannot contain dots.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/colliding.ts',
+        source:
+          "import { defineConfig } from 'zyzz';\nconst { style } = defineConfig({vars:{spacing:{'0.5':'2px',0:{5:'4px'}}}});\nexport const props = style({gap:0.5})();",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/colliding.ts:55: ["spacing","0.5"]: Variable paths must join to distinct names.]`,
     )
   })
 

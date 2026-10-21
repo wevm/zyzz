@@ -262,19 +262,23 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'spacing' }))
       .toMatchInlineSnapshot(`
-      ".z-default-gap-\\[var\\(--z-default-spacing-px\\,1px\\)\\] {
-        gap: var(--z-default-spacing-px, 1px);
-      }
+        ".z-default-gap-\\[var\\(--z-default-spacing-px\\,1px\\)\\] {
+          gap: var(--z-default-spacing-px, 1px);
+        }
 
-      .z-default-p-\\[var\\(--z-default-spacing-4\\,1rem\\)\\] {
-        padding: var(--z-default-spacing-4, 1rem);
-      }
+        .z-default-p-\\[var\\(--z-default-spacing-4\\,1rem\\)\\] {
+          padding: var(--z-default-spacing-4, 1rem);
+        }
 
-      .z-default-mt-13px {
-        margin-top: 13px;
-      }
-      "
-    `)
+        .z-default-h-\\[var\\(--z-default-spacing-3-5\\,0\\.875rem\\)\\] {
+          height: var(--z-default-spacing-3-5, .875rem);
+        }
+
+        .z-default-mt-13px {
+          margin-top: 13px;
+        }
+        "
+      `)
   })
 
   test('builds the Set Fonts recipe', async () => {
@@ -718,17 +722,21 @@ describe('Default Theme guide', () => {
     expect(tokens.spacing).toMatchInlineSnapshot(`
       {
         "0": "0rem",
+        "0.5": "0.125rem",
         "1": "0.25rem",
+        "1.5": "0.375rem",
         "10": "2.5rem",
         "11": "2.75rem",
         "12": "3rem",
         "14": "3.5rem",
         "16": "4rem",
         "2": "0.5rem",
+        "2.5": "0.625rem",
         "20": "5rem",
         "24": "6rem",
         "28": "7rem",
         "3": "0.75rem",
+        "3.5": "0.875rem",
         "32": "8rem",
         "36": "9rem",
         "4": "1rem",

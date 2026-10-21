@@ -97,6 +97,8 @@ describe('default', () => {
       conditions: { wide: { size: null } },
     })
     style({ color: vars.color.blue[700], padding: 4 })
+    style({ gap: 0.5, margin: vars.spacing[1.5], padding: '2.5' })
+    expectTypeOf(tokens.spacing[3.5]).toEqualTypeOf<'0.875rem'>()
     style({ backgroundColor: 'background.primary' })
     style({ backgroundColor: 'background.surface' })
     expectTypeOf(

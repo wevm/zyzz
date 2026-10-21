@@ -862,7 +862,7 @@ describe('defineVars API page', () => {
     expect(() =>
       defineVars({ spacing: { 'md!': '1rem' } } as never),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Vars.InvalidError: ["spacing","md!"]: Expected a nonempty variable key without dots or conditions.]`,
+      `[Vars.InvalidError: ["spacing","md!"]: Expected a nonempty variable key without importance or conditions.]`,
     )
     expect(() =>
       defineVars({ color: { ink: '#171717' } }, () => ({

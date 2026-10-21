@@ -532,7 +532,7 @@ export function is(value: unknown): value is Reference {
 export type Metadata = {
   /** Authored scope name, independent of private graph ownership. */
   readonly cssName?: string | undefined
-  /** Original segments for typography paths containing query punctuation. */
+  /** Original segments for paths with dotted keys or typography conditions. */
   readonly paths?: Readonly<Record<string, readonly string[]>> | undefined
   readonly queries?: Query.Metadata | undefined
   readonly contract: Contract
@@ -736,7 +736,7 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
             options.theme,
             'tokens',
           )?.value
-          for (const key of path.split('.'))
+          for (const key of data.paths?.[path] ?? path.split('.'))
             leaf =
               leaf && typeof leaf === 'object'
                 ? Object.getOwnPropertyDescriptor(leaf, key)?.value
@@ -810,7 +810,7 @@ export function mapped(
     )
       return false
     let leaf: unknown = Object.getOwnPropertyDescriptor(theme, 'tokens')?.value
-    for (const key of path.split('.'))
+    for (const key of data.paths?.[path] ?? path.split('.'))
       leaf =
         leaf && typeof leaf === 'object'
           ? Object.getOwnPropertyDescriptor(leaf, key)?.value

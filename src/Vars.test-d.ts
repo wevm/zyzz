@@ -296,15 +296,19 @@ test('accepts root scalar names and restricts arrays to root containerNames', ()
   Vars.define({ spacing: { containerNames: ['card'] } })
   // @ts-expect-error Root variable keys cannot contain dots.
   Vars.define({ 'color.ink': '#fff' })
-  // @ts-expect-error Nested variable keys cannot contain dots.
+  // @ts-expect-error Typography keys cannot contain dots.
+  Vars.define({ typography: { 'copy.5': { fontSize: '12px' } } })
   Vars.define({ spacing: { 'half.step': '2px' } })
-  // @ts-expect-error Fractional numeric keys contain a dot.
-  Vars.define({ spacing: { 0.5: '2px' } })
+  expectTypeOf(
+    Vars.define({ spacing: { 0.5: '2px' } }).spacing[0.5].group,
+  ).toEqualTypeOf<'spacing'>()
   Vars.extend(Vars.define({ spacing: { 1: '4px' } }), {
-    // @ts-expect-error Extensions reject fractional numeric keys.
     spacing: { 2.5: '10px' },
   })
-  Vars.define({ spacing: { 0: '0px', 1: '4px' } })
+  Vars.extend(Vars.define({ spacing: { 1: '4px' } }), {
+    // @ts-expect-error Extensions cannot add dotted categories.
+    'size.x': '10px',
+  })
 })
 
 describe('full paths', () => {

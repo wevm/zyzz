@@ -70,7 +70,7 @@ export function build(
     base?.values,
   )
   const paths = { ...base?.paths }
-  // Segment keys keep dotted typography conditions distinct from nested paths.
+  // Segment keys keep dotted keys and typography conditions distinct from nested paths.
   const leaves = new Set<string>()
   const categories = new Set<string>()
   for (const path of Object.keys(base?.values ?? {})) {
@@ -125,6 +125,15 @@ export function build(
           'Extensions cannot replace a variable category with a leaf.',
         )
       const name = path.join('.')
+      // Dotted keys share the joined name space, so `{ 'a.b': x }` and `{ a: { b: y } }` collide.
+      if (
+        Object.hasOwn(values, name) &&
+        JSON.stringify(paths[name] ?? name.split('.')) !== JSON.stringify(path)
+      )
+        throw new Vars.InvalidError(
+          path,
+          'Variable paths must join to distinct names.',
+        )
       const previous =
         base && Object.hasOwn(base.values, name) ? base.values[name] : undefined
       if (previous !== undefined && options.derived)
@@ -148,7 +157,7 @@ export function build(
           path,
           'Variable overrides must preserve their domain.',
         )
-      if (path.some((part) => Typography.condition(part)))
+      if (path.some((part) => part.includes('.') || Typography.condition(part)))
         paths[name] = Object.freeze([...path])
       values[name] = value
       return
@@ -170,10 +179,20 @@ export function build(
     for (const [key, value] of entries) {
       const query = path[0] === 'typography' && Typography.condition(key)
       if (query) conditions.push([...path, key])
-      if (!query && (!key || /[.!]/.test(key) || key.startsWith('@')))
+      if (!query && (!key || key.includes('!') || key.startsWith('@')))
         throw new Vars.InvalidError(
           [...path, key],
-          'Expected a nonempty variable key without dots or conditions.',
+          'Expected a nonempty variable key without importance or conditions.',
+        )
+      // Categories select property groups, and typography presets are applied by dotted name.
+      if (
+        !query &&
+        key.includes('.') &&
+        (!path.length || path[0] === 'typography')
+      )
+        throw new Vars.InvalidError(
+          [...path, key],
+          'Variable categories and typography keys cannot contain dots.',
         )
       visit(value, [...path, key])
     }
@@ -563,12 +582,12 @@ export function rebind(
     if (Object.hasOwn(values, path)) return values[path]!
     if (active.has(path))
       throw new Vars.InvalidError(
-        path.split('.'),
+        metadata.paths?.[path] ?? path.split('.'),
         'Cyclic variables are not supported.',
       )
     if (!Object.hasOwn(metadata.values, path))
       throw new Vars.InvalidError(
-        path.split('.'),
+        metadata.paths?.[path] ?? path.split('.'),
         'Referenced variable path is missing.',
       )
 

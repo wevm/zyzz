@@ -146,9 +146,10 @@ const panel = style({
 
 ### Use Spacing
 
-The `spacing` group is an explicit quarter-rem table, so a number resolves only when the table contains it. Fractional steps are absent, since dots separate token paths. Margins, padding, insets, gaps, and sizes resolve through it.
+The `spacing` group is an explicit quarter-rem table, so a number resolves only when the table contains it. Margins, padding, insets, gaps, and sizes resolve through it.
 
 - **`0` to `12`:** Every step, from `0rem` to `3rem`.
+- **`0.5` to `3.5`:** Half steps `0.5`, `1.5`, `2.5`, and `3.5`, from `0.125rem` to `0.875rem`.
 - **`14` to `64`:** `14`, `16`, `20`, `24`, `28`, `32`, `36`, `40`, `44`, `48`, `52`, `56`, `60`, and `64`.
 - **`72`, `80`, `96`:** `18rem`, `20rem`, and `24rem`.
 - **`px`:** `1px`.
@@ -159,6 +160,8 @@ import { style } from 'zyzz/default'
 const stack = style({
   gap: 'px',
   padding: 4,
+  // Half steps are fractional numeric keys
+  height: 3.5,
   // [!code hl:2]
   // Steps outside the table need the custom suffix
   marginTop: '13px !custom',

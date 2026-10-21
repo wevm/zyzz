@@ -97,7 +97,7 @@ pub fn build(
     let mut values: Map<Value> = base.map(|base| (*base.values).clone()).unwrap_or_default();
     let mut paths: Map<Arc<[Arc<str>]>> =
         base.and_then(|base| base.paths.clone()).unwrap_or_default();
-    // Segment keys keep dotted typography conditions distinct from nested paths.
+    // Segment keys keep dotted keys and typography conditions distinct from nested paths.
     let mut leaves: FxHashSet<Vec<Arc<str>>> = FxHashSet::default();
     let mut categories: FxHashSet<Vec<Arc<str>>> = FxHashSet::default();
 
@@ -324,6 +324,17 @@ impl Builder<'_> {
                 .collect::<Vec<_>>()
                 .join(".")
                 .into();
+
+            // Dotted keys share the joined name space, so `{ 'a.b': x }` and `{ a: { b: y } }` collide.
+            if self.values.contains_key(&*name)
+                && !self.paths.get(&*name).map_or_else(
+                    || name.split('.').eq(path.iter().map(|part| &**part)),
+                    |parts| **parts == *path,
+                )
+            {
+                return Err(invalid(path, "Variable paths must join to distinct names."));
+            }
+
             let previous = self.base.and_then(|base| base.values.get(&*name));
 
             if previous.is_some() && self.derived {
@@ -355,7 +366,10 @@ impl Builder<'_> {
                 ));
             }
 
-            if path.iter().any(|part| typography::condition(part)) {
+            if path
+                .iter()
+                .any(|part| part.contains('.') || typography::condition(part))
+            {
                 self.paths.insert(Arc::clone(&name), path.into());
             }
 
@@ -399,10 +413,21 @@ impl Builder<'_> {
                 self.conditions.push(next.clone());
             }
 
-            if !query && (key.is_empty() || key.contains(['.', '!']) || key.starts_with('@')) {
+            if !query && (key.is_empty() || key.contains('!') || key.starts_with('@')) {
                 return Err(invalid(
                     &next,
-                    "Expected a nonempty variable key without dots or conditions.",
+                    "Expected a nonempty variable key without importance or conditions.",
+                ));
+            }
+
+            // Categories select property groups, and typography presets are applied by dotted name.
+            if !query
+                && key.contains('.')
+                && path.first().is_none_or(|part| &**part == "typography")
+            {
+                return Err(invalid(
+                    &next,
+                    "Variable categories and typography keys cannot contain dots.",
                 ));
             }
 
@@ -976,7 +1001,15 @@ pub fn rebind(metadata: &Metadata, contract: &Arc<Contract>) -> Result<Map<Value
                 return Ok(value.clone());
             }
 
-            let segments: Vec<Arc<str>> = path.split('.').map(Into::into).collect();
+            let segments: Vec<Arc<str>> = self
+                .metadata
+                .paths
+                .as_ref()
+                .and_then(|paths| paths.get(path))
+                .map_or_else(
+                    || path.split('.').map(Into::into).collect(),
+                    |parts| parts.to_vec(),
+                );
 
             if self.active.contains(path) {
                 return Err(invalid(&segments, "Cyclic variables are not supported."));

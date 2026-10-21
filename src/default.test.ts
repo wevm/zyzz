@@ -96,7 +96,7 @@ describe('default', () => {
           Path.join(root, 'app.ts'),
           `import {appearance,variants,vars} from 'zyzz/default';
         namespace styles {
-          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500',boxShadow:'sm',filter:\`blur(\${vars.blur.xs})\`,animation:'pulse',animationDelay:'-1s',animationPlayState:'paused'},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`\${values.padding} !custom\` as const})}},defaultVariants:{size:'sm'}});
+          export const button=variants({conditions:{wide:'@media >=md'},base:{typography:'button.14',color:'blue.500',boxShadow:'sm',filter:\`blur(\${vars.blur.xs})\`,animation:'pulse',animationDelay:'-1s',animationPlayState:'paused',gap:0.5,margin:vars.spacing[1.5]},variants:{size:{sm:{padding:4},custom:(values:{padding:\`\${number}px\`})=>({padding:\`\${values.padding} !custom\` as const})}},defaultVariants:{size:'sm'}});
         }
         document.querySelector('main')!.className=vars().className;
         const props=styles.button({conditions:{wide:{size:{custom:{padding:'24px'}}}}});
@@ -225,6 +225,16 @@ variants({base:{color:'missing'}});`,
               "opacity": "0.5",
             }
           `)
+          expect(
+            await page
+              .locator('button')
+              .evaluate((element) => getComputedStyle(element).rowGap),
+          ).toMatchInlineSnapshot(`"2px"`)
+          expect(
+            await page
+              .locator('button')
+              .evaluate((element) => getComputedStyle(element).margin),
+          ).toMatchInlineSnapshot(`"6px"`)
           await page.locator('button').click()
           expect(
             await page.locator('button').getAttribute('data-scheme'),
@@ -271,7 +281,7 @@ import {style} from './config';
 function App(){return createElement(Toggle,styles.toggle(),'Toggle')}
 createRoot(document.querySelector('main')!).render(createElement(App));
 namespace styles {
-  export const toggle=style(Toggle,{padding:7,color:'gray.900',states:{pressed:{color:'blue.900'}}});
+  export const toggle=style(Toggle,{padding:7,margin:2.5,color:'gray.900',states:{pressed:{color:'blue.900'}}});
 }`,
         )
 
@@ -292,6 +302,11 @@ namespace styles {
                 (element) => getComputedStyle(element).padding,
               ),
             ).toMatchInlineSnapshot(`"28px"`)
+            expect(
+              await toggle.evaluate(
+                (element) => getComputedStyle(element).margin,
+              ),
+            ).toMatchInlineSnapshot(`"10px"`)
             expect(
               await toggle.evaluate(
                 (element) => getComputedStyle(element).color,

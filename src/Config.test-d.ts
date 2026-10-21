@@ -436,11 +436,13 @@ describe('defineConfig', () => {
     defineConfig({ unknown: true })
   })
 
-  test('rejects fractional numeric variable keys', () => {
-    // @ts-expect-error Dots separate variable references.
-    defineConfig({ vars: { spacing: { 0.5: '2px', 2.5: '10px' } } })
-    defineConfig({ vars: { spacing: { 0: '0px', 1: '4px' } } }).style({
-      gap: 1,
+  test('accepts fractional numeric variable keys', () => {
+    const { style, vars } = defineConfig({
+      vars: { spacing: { 0: '0px', 0.5: '2px', 2.5: '10px' } },
     })
+
+    style({ gap: 0.5, margin: '2.5', padding: vars.spacing[0.5] })
+    // @ts-expect-error Unknown spacing tokens remain rejected.
+    style({ gap: 1.5 })
   })
 })

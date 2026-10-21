@@ -34,7 +34,9 @@ defineVars(values, derive, options?)
 
 - **Type:** `Vars.Values{:ts}`
 
-Nested categories of values. A leaf is a string, a finite number, a reference to another set or to the `vars` of a configuration, a light and dark color pair, or conditional values. A configuration reference follows that configuration's selected set. Keys cannot contain dots, conditions, or `!`.
+Nested categories of values. A leaf is a string, a finite number, a reference to another set or to the `vars` of a configuration, a light and dark color pair, or conditional values. A configuration reference follows that configuration's selected set. Keys cannot contain conditions or `!`.
+
+Keys below a category may contain dots, such as `0.5` in `spacing: { 0.5: '0.125rem' }`, and are referenced as `vars.spacing[0.5]`. Category and typography keys cannot contain dots, and two paths that join to one dotted name are rejected.
 
 ```ts
 import { defineVars } from 'zyzz'
@@ -166,7 +168,7 @@ import { defineVars } from 'zyzz'
 defineVars({ color: { foreground: { light: '#171717' } } })
 ```
 
-Derived values that replace an existing path, keys containing `!` or dots, and reference cycles introduced by an extension also throw `Vars.InvalidError`.
+Derived values that replace an existing path, keys containing `!`, dotted category or typography keys, paths that join to one dotted name, and reference cycles introduced by an extension also throw `Vars.InvalidError`.
 
 ## React Native
 

@@ -81,7 +81,7 @@ describe('zyzz', () => {
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-[var(--z-color-brand,red)] z-style-emHxp3-styles-card",
+          "className": "z-text-[var(--z-color-brand,red)]",
         }
       `)
     } finally {

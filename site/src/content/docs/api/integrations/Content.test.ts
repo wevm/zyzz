@@ -984,7 +984,7 @@ describe('Babel API page', () => {
     )
 
     expect(output.metadata?.css).toMatchInlineSnapshot(
-      `".z--mSYb5-title{color:red;padding:8px;}"`,
+      `".z_-mSYb50{color:red;padding:8px;}"`,
     )
   })
 

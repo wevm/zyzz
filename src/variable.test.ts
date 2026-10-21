@@ -170,9 +170,9 @@ export namespace styles {
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-Zf5JrJ-card---z-value-0{--z-value:inline-flex;}
-        .z-Zf5JrJ-card-display-1{display:var(--z-value);}
-        .z-Zf5JrJ-card-display-2{&:hover{display:var(--z-value);}}"
+        ".z_Zf5JrJ0{--z-value:inline-flex;}
+        .z_Zf5JrJ1{display:var(--z-value);}
+        .z_Zf5JrJ2{&:hover{display:var(--z-value);}}"
       `,
       )
 
@@ -245,15 +245,15 @@ export namespace styles {
       ).toMatchInlineSnapshot(`31`)
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-Zf5JrJ-label---z-variables-accent-0{--z-variables-accent:blue;}
-        .z-Zf5JrJ-label-text-1{color:var(--z-variables-accent);}
-        .z-Zf5JrJ-label---z-variables-accent-2{.z-style-tIp5Cr-styles-card:hover &{--z-variables-accent:green;}}"
+        ".z_Zf5JrJ0{--z-variables-accent:blue;}
+        .z_Zf5JrJ1{color:var(--z-variables-accent);}
+        .z_Zf5JrJ2{.z-style-tIp5Cr-styles-card:hover &{--z-variables-accent:green;}}"
       `,
       )
       expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-Zf5JrJ-label---z-variables-accent-0 z-Zf5JrJ-label-text-1 z-Zf5JrJ-label---z-variables-accent-2 z-style-Zf5JrJ-label"}); export const inline=accent.set('red')"
+         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z_Zf5JrJ0 z_Zf5JrJ1 z_Zf5JrJ2 z-style-Zf5JrJ-label"}); export const inline=accent.set('red')"
       `)
     })
 

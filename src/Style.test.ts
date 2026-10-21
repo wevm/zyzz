@@ -169,9 +169,9 @@ describe('define', () => {
       .z-bg-\\5b var\\28 --z0\\2c \\23 fff\\29 \\5d {background-color:var(--z0,#fff);}
       .z-border-color-\\5b var\\28 --z1\\2c \\23 000\\29 \\5d {border-color:var(--z1,#000);}
       .z-border-radius-\\5b var\\28 --z2\\2c 4px\\29 \\5d {border-radius:var(--z2,4px);}
-      .z-card-text-3{color:var(--z3,light-dark(#111,#fff));}
+      .z_0{color:var(--z3,light-dark(#111,#fff));}
       .z-p-\\5b var\\28 --z4\\2c 1rem\\29 \\5d {padding:var(--z4,1rem);}
-      .z-link-text-0{color:var(--z5,#06c);}"
+      .z_1{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===

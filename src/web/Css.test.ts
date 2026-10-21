@@ -89,14 +89,14 @@ describe('compile', () => {
         }),
       ).toMatchInlineSnapshot(`
         [
-          ".z-zKSbOi-shell-display-0 { display: block; }",
+          ".z_zKSbOi0 { display: block; }",
         ]
       `)
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-zKSbOi-shell-display-0{display:block;}
-        @media (max-width: 1023px){.z-zKSbOi-shell-display-1{&[data-mobile-menu]{display:grid;}}}
-        @media (max-width: 1023px){.z-zKSbOi-shell-min-height-2{&[data-mobile-menu]{& main{min-height:100px;}}}}
-        @media (max-width: 1023px){@supports (display: grid){.z-zKSbOi-shell-border-top-3{&[data-mobile-menu]{border-top:2px solid red;}}}}"
+        ".z_zKSbOi0{display:block;}
+        @media (max-width: 1023px){.z_zKSbOi1{&[data-mobile-menu]{display:grid;}}}
+        @media (max-width: 1023px){.z_zKSbOi2{&[data-mobile-menu]{& main{min-height:100px;}}}}
+        @media (max-width: 1023px){@supports (display: grid){.z_zKSbOi3{&[data-mobile-menu]{border-top:2px solid red;}}}}"
       `)
       await page.setViewportSize({ width: 390, height: 900 })
       expect(
@@ -130,8 +130,8 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text--webkit-font-smoothing-0{-webkit-font-smoothing:antialiased;}
-      .z-text--moz-osx-font-smoothing-1{-moz-osx-font-smoothing:grayscale;}
+      ".z_0{-webkit-font-smoothing:antialiased;}
+      .z_1{-moz-osx-font-smoothing:grayscale;}
       .z--webkit-animation-delay-\\5b 0s\\2c _20_250ms\\5d {-webkit-animation-delay:0s, 250ms;}
       .z-row-rule-color-\\5b repeat\\28 2\\2c _20_red\\2c _20_blue\\29 \\5d {row-rule-color:repeat(2, red, blue);}"
     `)
@@ -307,17 +307,17 @@ describe('compile', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "a": "z-a z-a__1",
-        "b": "z-a z-b",
-        "c": "z-a z-a__1",
-        "d": "z-a z-d",
+        "a": "z_0 z_1",
+        "b": "z_0 z_2",
+        "c": "z_0 z_1",
+        "d": "z_0 z_3",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{padding:1px;}
-      .z-a__1{display:block;display:grid;}
-      .z-b{display:grid;display:block;}
-      .z-d{display:block;display:grid!important;}"
+      ".z_0{padding:1px;}
+      .z_1{display:block;display:grid;}
+      .z_2{display:grid;display:block;}
+      .z_3{display:block;display:grid!important;}"
     `)
   })
 
@@ -341,15 +341,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-scroll-snap-align-0{scroll-snap-align:start end;}
-      .z-a-scroll-snap-stop-1{scroll-snap-stop:normal;}
-      .z-a-scroll-snap-type-2{scroll-snap-type:x proximity;}
-      .z-b-scroll-snap-align-0{scroll-snap-align:center;scroll-snap-align:none start!important;}
-      .z-b-scroll-snap-stop-1{scroll-snap-stop:always;}
-      .z-b-scroll-snap-type-2{scroll-snap-type:both mandatory;}
-      .z-c-scroll-snap-align-0{scroll-snap-align:start end;}
-      .z-c-scroll-snap-stop-1{scroll-snap-stop:normal;}
-      .z-c-scroll-snap-type-2{scroll-snap-type:x proximity;}"
+      ".z_0{scroll-snap-align:start end;}
+      .z_1{scroll-snap-stop:normal;}
+      .z_2{scroll-snap-type:x proximity;}
+      .z_3{scroll-snap-align:center;scroll-snap-align:none start!important;}
+      .z_4{scroll-snap-stop:always;}
+      .z_5{scroll-snap-type:both mandatory;}
+      .z_6{scroll-snap-align:start end;}
+      .z_7{scroll-snap-stop:normal;}
+      .z_8{scroll-snap-type:x proximity;}"
     `)
   })
 
@@ -373,15 +373,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-scroll-margin-0{scroll-margin:4px;}
-      .z-a-scroll-padding-1{scroll-padding:8px;}
-      .z-a-overscroll-behavior-2{overscroll-behavior:contain;}
-      .z-b-scroll-margin-inline-start-0{scroll-margin-inline-start:-2px;}
-      .z-b-scroll-padding-block-start-1{scroll-padding-block-start:20px;}
-      .z-b-overscroll-behavior-x-2{overscroll-behavior-x:none;}
-      .z-c-scroll-margin-0{scroll-margin:4px;}
-      .z-c-scroll-padding-1{scroll-padding:8px;}
-      .z-c-overscroll-behavior-2{overscroll-behavior:contain;}"
+      ".z_0{scroll-margin:4px;}
+      .z_1{scroll-padding:8px;}
+      .z_2{overscroll-behavior:contain;}
+      .z_3{scroll-margin-inline-start:-2px;}
+      .z_4{scroll-padding-block-start:20px;}
+      .z_5{overscroll-behavior-x:none;}
+      .z_6{scroll-margin:4px;}
+      .z_7{scroll-padding:8px;}
+      .z_8{overscroll-behavior:contain;}"
     `)
   })
 
@@ -600,18 +600,18 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-border-color-0{border-color:#000;}
-      .z-a-border-radius-1{border-radius:4px;}
-      .z-a-border-style-2{border-style:solid;}
-      .z-a-border-width-3{border-width:2px;}
-      .z-b-border-inline-start-color-0{border-inline-start-color:#fff;}
-      .z-b-border-start-start-radius-1{border-start-start-radius:8px;}
-      .z-b-border-inline-start-style-2{border-inline-start-style:dashed;}
-      .z-b-border-inline-start-width-3{border-inline-start-width:6px;}
-      .z-c-border-color-0{border-color:#000;}
-      .z-c-border-radius-1{border-radius:4px;}
-      .z-c-border-style-2{border-style:solid;}
-      .z-c-border-width-3{border-width:2px;}"
+      ".z_0{border-color:#000;}
+      .z_1{border-radius:4px;}
+      .z_2{border-style:solid;}
+      .z_3{border-width:2px;}
+      .z_4{border-inline-start-color:#fff;}
+      .z_5{border-start-start-radius:8px;}
+      .z_6{border-inline-start-style:dashed;}
+      .z_7{border-inline-start-width:6px;}
+      .z_8{border-color:#000;}
+      .z_9{border-radius:4px;}
+      .z_a{border-style:solid;}
+      .z_b{border-width:2px;}"
     `)
 
     const browser = await chromium.launch()
@@ -657,9 +657,9 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-overflow-0{overflow:hidden;}
-      .z-b-overflow-x-0{overflow-x:scroll;}
-      .z-c-overflow-0{overflow:hidden;}"
+      ".z_0{overflow:hidden;}
+      .z_1{overflow-x:scroll;}
+      .z_2{overflow:hidden;}"
     `)
 
     const browser = await chromium.launch()
@@ -695,18 +695,18 @@ describe('compile', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "a": "z-a-text-0 z-a-p-1",
-        "b": "z-a-text-0 z-a-p-1",
-        "c": "z-c-text-0 z-c-p-1",
-        "d": "z-d-text-0",
+        "a": "z_0 z_1",
+        "b": "z_0 z_1",
+        "c": "z_2 z_3",
+        "d": "z_4",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-text-0{color:red;}
-      .z-a-p-1{padding:8px;}
-      .z-c-text-0{color:blue;}
-      .z-c-p-1{padding:2px;}
-      .z-d-text-0{color:red;}"
+      ".z_0{color:red;}
+      .z_1{padding:8px;}
+      .z_2{color:blue;}
+      .z_3{padding:2px;}
+      .z_4{color:red;}"
     `)
 
     const browser = await chromium.launch()
@@ -775,9 +775,9 @@ describe('compile', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "a": "z-a-border-color-0",
-        "b": "z-b-border-0",
-        "c": "z-c-border-color-0",
+        "a": "z_0",
+        "b": "z_1",
+        "c": "z_2",
       }
     `)
 
@@ -879,36 +879,36 @@ describe('compile', () => {
   test('logical boxes compile the complete scalar property vocabulary', () => {
     expect(Css.compile({ styles: Style.define(Logical.styles) }).css)
       .toMatchInlineSnapshot(`
-        ".z-dimensions-block-size-0{block-size:40px;}
-        .z-dimensions-inline-size-1{inline-size:80px;}
-        .z-dimensions-max-block-size-2{max-block-size:100px;}
-        .z-dimensions-max-inline-size-3{max-inline-size:120px;}
-        .z-dimensions-min-block-size-4{min-block-size:10px;}
-        .z-dimensions-min-inline-size-5{min-inline-size:20px;}
+        ".z_0{block-size:40px;}
+        .z_1{inline-size:80px;}
+        .z_2{max-block-size:100px;}
+        .z_3{max-inline-size:120px;}
+        .z_4{min-block-size:10px;}
+        .z_5{min-inline-size:20px;}
         .z-position-relative{position:relative;}
-        .z-offsets-inset-1{inset:1px;}
-        .z-offsets-inset-block-2{inset-block:2px;}
-        .z-offsets-inset-block-start-3{inset-block-start:-3px;}
-        .z-offsets-inset-block-end-4{inset-block-end:4px;}
-        .z-offsets-inset-inline-5{inset-inline:5px;}
-        .z-offsets-inset-inline-start-6{inset-inline-start:-6px;}
-        .z-offsets-inset-inline-end-7{inset-inline-end:7px;}
-        .z-offsets-top-8{top:8px;}
-        .z-offsets-right-9{right:9px;}
-        .z-offsets-bottom-10{bottom:10px;}
-        .z-offsets-left-11{left:11px;}
-        .z-spacing-margin-block-0{margin-block:-2px;}
-        .z-spacing-margin-block-start-1{margin-block-start:3px;}
-        .z-spacing-margin-block-end-2{margin-block-end:4px;}
-        .z-spacing-margin-inline-3{margin-inline:5px;}
-        .z-spacing-margin-inline-start-4{margin-inline-start:6px;}
-        .z-spacing-margin-inline-end-5{margin-inline-end:7px;}
-        .z-spacing-padding-block-6{padding-block:8px;}
-        .z-spacing-padding-block-start-7{padding-block-start:9px;}
-        .z-spacing-padding-block-end-8{padding-block-end:10px;}
-        .z-spacing-padding-inline-9{padding-inline:11px;}
-        .z-spacing-padding-inline-start-10{padding-inline-start:12px;}
-        .z-spacing-padding-inline-end-11{padding-inline-end:13px;}"
+        .z_6{inset:1px;}
+        .z_7{inset-block:2px;}
+        .z_8{inset-block-start:-3px;}
+        .z_9{inset-block-end:4px;}
+        .z_a{inset-inline:5px;}
+        .z_b{inset-inline-start:-6px;}
+        .z_c{inset-inline-end:7px;}
+        .z_d{top:8px;}
+        .z_e{right:9px;}
+        .z_f{bottom:10px;}
+        .z_g{left:11px;}
+        .z_h{margin-block:-2px;}
+        .z_i{margin-block-start:3px;}
+        .z_j{margin-block-end:4px;}
+        .z_k{margin-inline:5px;}
+        .z_l{margin-inline-start:6px;}
+        .z_m{margin-inline-end:7px;}
+        .z_n{padding-block:8px;}
+        .z_o{padding-block-start:9px;}
+        .z_p{padding-block-end:10px;}
+        .z_q{padding-inline:11px;}
+        .z_r{padding-inline-start:12px;}
+        .z_s{padding-inline-end:13px;}"
       `)
   })
 
@@ -938,24 +938,24 @@ describe('compile', () => {
     const output = Css.compile({ styles })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-w-0{width:80px;}
-      .z-a-min-width-1{min-width:20px;}
-      .z-a-max-width-2{max-width:100px;}
-      .z-a-top-3{top:4px;}
-      .z-a-ml-4{margin-left:6px;}
-      .z-a-pl-5{padding-left:8px;}
-      .z-b-inline-size-0{inline-size:40px;}
-      .z-b-min-inline-size-1{min-inline-size:30px;}
-      .z-b-max-inline-size-2{max-inline-size:60px;}
-      .z-b-inset-block-start-3{inset-block-start:12px;}
-      .z-b-margin-inline-start-4{margin-inline-start:14px;}
-      .z-b-padding-inline-start-5{padding-inline-start:16px;}
-      .z-c-w-0{width:80px;}
-      .z-c-min-width-1{min-width:20px;}
-      .z-c-max-width-2{max-width:100px;}
-      .z-c-top-3{top:4px;}
-      .z-c-ml-4{margin-left:6px;}
-      .z-c-pl-5{padding-left:8px;}"
+      ".z_0{width:80px;}
+      .z_1{min-width:20px;}
+      .z_2{max-width:100px;}
+      .z_3{top:4px;}
+      .z_4{margin-left:6px;}
+      .z_5{padding-left:8px;}
+      .z_6{inline-size:40px;}
+      .z_7{min-inline-size:30px;}
+      .z_8{max-inline-size:60px;}
+      .z_9{inset-block-start:12px;}
+      .z_a{margin-inline-start:14px;}
+      .z_b{padding-inline-start:16px;}
+      .z_c{width:80px;}
+      .z_d{min-width:20px;}
+      .z_e{max-width:100px;}
+      .z_f{top:4px;}
+      .z_g{margin-left:6px;}
+      .z_h{padding-left:8px;}"
     `)
 
     const browser = await chromium.launch()
@@ -1059,9 +1059,9 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-first-text-0{color:#fff!important;color:#000!important;}
-      .z-normal-text-0{color:#fff;}
-      .z-last-text-0{color:#fff!important;}
+      ".z_0{color:#fff!important;color:#000!important;}
+      .z_1{color:#fff;}
+      .z_2{color:#fff!important;}
       .z-opacity-\\5b 0\\2e 5\\21 important\\5d {opacity:0.5!important;}
       .z-p-\\5b 0\\21 important\\5d {padding:0!important;}"
     `)
@@ -1238,9 +1238,9 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-card-all-0{all:unset;}
-      .z-card-text-1{color:red;}
-      @media (min-width: 0px){.z-card-all-2{all:initial;}}"
+      ".z_0{all:unset;}
+      .z_1{color:red;}
+      @media (min-width: 0px){.z_2{all:initial;}}"
     `)
 
     const browser = await chromium.launch()
@@ -1282,11 +1282,11 @@ describe('compile', () => {
           "1 space:💪": "z-mt--2px z-text-[#fff]",
           "_20_": "z-block",
           "__proto__": "z-block",
-          "card": "z-card-p-0 z-card-pl-1 z-opacity-[0.5]",
+          "card": "z_0 z_1 z-opacity-[0.5]",
           "empty": "",
         },
-        "css": ".z-card-p-0{padding:1rem;}
-      .z-card-pl-1{padding-left:0;}
+        "css": ".z_0{padding:1rem;}
+      .z_1{padding-left:0;}
       .z-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}
       .z-mt--2px{margin-top:-2px;}
       .z-text-\\5b \\23 fff\\5d {color:#fff;}
@@ -1758,14 +1758,12 @@ describe('names', () => {
       })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-card-w-0{width:calc(100% - 8px);}
-        .z-card-display-1{display:block;display:grid!important;}
-        .z-card-text-2{&:hover{color:blue;}}
-        .z-card-text-3{&:focus{color:blue;}}"
+        ".z_0{width:calc(100% - 8px);}
+        .z_1{display:block;display:grid!important;}
+        .z_2{&:hover{color:blue;}}
+        .z_3{&:focus{color:blue;}}"
       `)
-      expect(output.classes.card).toMatchInlineSnapshot(
-        `"z-card-w-0 z-card-display-1 z-card-text-2 z-card-text-3"`,
-      )
+      expect(output.classes.card).toMatchInlineSnapshot(`"z_0 z_1 z_2 z_3"`)
     })
 
     test('retains separate identities for repeated overrides', () => {
@@ -1778,15 +1776,15 @@ describe('names', () => {
       })
 
       expect(output.css).toMatchInlineSnapshot(`
-        ".z-first-p-0{padding:8px;}
-        .z-middle-pl-0{padding-left:2px;}
-        .z-last-p-0{padding:8px;}"
+        ".z_0{padding:8px;}
+        .z_1{padding-left:2px;}
+        .z_2{padding:8px;}"
       `)
       expect(output.classes).toMatchInlineSnapshot(`
         {
-          "first": "z-first-p-0",
-          "last": "z-last-p-0",
-          "middle": "z-middle-pl-0",
+          "first": "z_0",
+          "last": "z_2",
+          "middle": "z_1",
         }
       `)
     })
@@ -1885,9 +1883,9 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
 
       expect(Object.values(output.classes)).toMatchInlineSnapshot(`
         [
-          "z-collisionpybsvm1mvm-text-0",
-          "z-middle-text-0",
-          "z-collision1gqwj5h1wwv-text-0",
+          "z_0",
+          "z_1",
+          "z_2",
         ]
       `)
       const browser = await chromium.launch()
@@ -2193,18 +2191,21 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       )
     })
 
-    test('rejects incompatible contextual rules across packed and source modules', () => {
+    test('names contextual rules of equal style ids apart across packed and source modules', () => {
       const source =
         "import {style} from 'zyzz';export const card=style({selectors:{'&:hover':{color:'red'}}},{id:'card'})"
       const library = Graph.compile({ modules: { 'first.ts': source } })
+      const output = Graph.compile({
+        contracts: { 'library.js': library.contracts['first.ts']! },
+        modules: { 'second.ts': source.replace("'red'", "'blue'") },
+      })
 
-      expect(() =>
-        Graph.compile({
-          contracts: { 'library.js': library.contracts['first.ts']! },
-          modules: { 'second.ts': source.replace("'red'", "'blue'") },
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Css.CompileError: ["second.ts"]: Generated class z-card-text-0 conflicts with module library.js. Supply distinct config or style ids.]`,
+      // Production names carry a module hash, so equal ids no longer share a contextual class.
+      expect(library.modules['first.ts']!.css).toMatchInlineSnapshot(
+        `".z_zugwnm0{&:hover{color:red;}}"`,
+      )
+      expect(output.modules['second.ts']!.css).toMatchInlineSnapshot(
+        `".z_PWlT8s0{&:hover{color:blue;}}"`,
       )
     })
   })
@@ -2318,7 +2319,7 @@ describe('output', () => {
         }),
       })
       expect(output.css).toMatchInlineSnapshot(
-        `".z-card-layer-0{@layer{&.special{color:blue;}color:red;}}"`,
+        `".z_0{@layer{&.special{color:blue;}color:red;}}"`,
       )
       const browser = await chromium.launch()
       try {
@@ -2371,11 +2372,11 @@ describe('output', () => {
       expect(grouped).toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-card",
-            "label": "z-label",
+            "card": "z_0",
+            "label": "z_1",
           },
-          "css": ".z-card{color:red;padding:8px;}
-        .z-label{color:red;}",
+          "css": ".z_0{color:red;padding:8px;}
+        .z_1{color:red;}",
           "vars": {},
         }
       `)
@@ -2416,7 +2417,7 @@ describe('output', () => {
         else
           expect(output.css).toMatchInlineSnapshot(`
             "body{margin:0;}
-            .z-card{display:block;display:grid!important;color:red;}"
+            .z_0{display:block;display:grid!important;color:red;}"
           `)
         expect(output.contributionCss).toMatchInlineSnapshot(
           `"body{margin:0;}"`,
@@ -2439,15 +2440,15 @@ describe('output', () => {
       ).toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-card z-card__1",
-            "card-1": "z-card-1",
-            "card_s1": "z-card_5f_s1",
-            "x": "z-card",
+            "card": "z_0 z_1",
+            "card-1": "z_2",
+            "card_s1": "z_3",
+            "x": "z_0",
           },
-          "css": ".z-card{color:red;}
-        .z-card__1{padding:1px;}
-        .z-card-1{margin:2px;}
-        .z-card_5f_s1{display:block;}",
+          "css": ".z_0{color:red;}
+        .z_1{padding:1px;}
+        .z_2{margin:2px;}
+        .z_3{display:block;}",
           "vars": {},
         }
       `)

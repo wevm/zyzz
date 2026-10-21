@@ -60,8 +60,8 @@ describe('compile', () => {
     const result = Graph.compile(options)
     expect(result.modules['item.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-packed-theme{--z-packed-spacing-gap:7px;--z-packed-color-ink:#123456;}
-      .z-packed-mhCyMV-item-p-0{padding:var(--z-packed-spacing-gap,7px);}
-      .z-packed-mhCyMV-item-text-1{&[data-highlighted]{color:var(--z-packed-color-ink,#123456);}}"
+      .z_packed-mhCyMV0{padding:var(--z-packed-spacing-gap,7px);}
+      .z_packed-mhCyMV1{&[data-highlighted]{color:var(--z-packed-color-ink,#123456);}}"
     `)
 
     const contract = JSON.parse(publisher.contracts['index.ts']!)
@@ -177,7 +177,7 @@ describe('compile', () => {
     expect(Object.values(Css.compile({ styles: contextual.styles }).classes))
       .toMatchInlineSnapshot(`
         [
-          "z-mRVEHL-heading-opacity-0 z-mRVEHL-heading-opacity-1",
+          "z_0 z_1",
         ]
       `)
 
@@ -343,10 +343,10 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       right: { className: string }
     }
     expect(fixture.left.className).toMatchInlineSnapshot(
-      '"z-a_2d_b-card-text-0 z-a_2d_b-card-text-1"',
+      `"z_a_2d_b-A4MzJF0 z_a_2d_b-A4MzJF1"`,
     )
     expect(fixture.right.className).toMatchInlineSnapshot(
-      '"z-a-b_2d_card-text-0 z-a-b_2d_card-text-1"',
+      `"z_a-oRmHDO0 z_a-oRmHDO1"`,
     )
     const browser = await chromium.launch()
     try {
@@ -410,8 +410,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-first-bugww8-heading-text-0{color:var(--z-first-color-brand,red);}
-      .z-first-bugww8-heading-opacity-1{&:hover{opacity:1;}}"
+      .z_first-bugww80{color:var(--z-first-color-brand,red);}
+      .z_first-bugww81{&:hover{opacity:1;}}"
     `)
     expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
       ".z-theme-first-theme{--z-first-color-brand:red;}
@@ -419,8 +419,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z-second-XWlTb2-heading-text-0{color:var(--z-second-color-brand,blue);}
-      .z-second-XWlTb2-heading-opacity-1{&:hover{opacity:1;}}"
+      .z_second-XWlTb20{color:var(--z-second-color-brand,blue);}
+      .z_second-XWlTb21{&:hover{opacity:1;}}"
     `)
     const code = await Packed.bundle({
       entry: 'entry.js',
@@ -3568,14 +3568,14 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
         .z_ZYrHvJ0{opacity:0.5;}
-        .z-props-0-z-style-zugwnm-base-first_2d_local-style-0{color:red;padding:8px;}
-        .z-props-0-z-style-zugwnm-base-first_2d_local-opacity-1{opacity:0.5;}"
+        .z_ZYrHvJ1{color:red;padding:8px;}
+        .z_ZYrHvJ2{opacity:0.5;}"
       `)
       expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_first_2d_dcTfYzugwnm_2d_style{}
         .z_hYrPIe0{opacity:1;}
-        .z-props-0-z-style-zugwnm-base-second_2d_local-style-0{color:red;padding:8px;}
-        .z-props-0-z-style-zugwnm-base-second_2d_local-opacity-1{opacity:1;}"
+        .z_hYrPIe1{color:red;padding:8px;}
+        .z_hYrPIe2{opacity:1;}"
       `)
     })
 
@@ -3624,7 +3624,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       })
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-src_2d_config_2d_6Q0EnEZaLq6_2d_config{}
-        .z-consumer_2d_card{color:blue;padding:2px;}"
+        .z_Zf5JrJ0{color:blue;padding:2px;}"
       `)
     })
 
@@ -4598,9 +4598,9 @@ describe('variables', () => {
       })
 
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-        ".z-Zf5JrJ-styles-a-w-0{width:10px;}
-        .z-Zf5JrJ-styles-b-w-0{width:30px;}
-        .z-Zf5JrJ-styles-c-w-0{width:40px;}"
+        ".z_Zf5JrJ0{width:10px;}
+        .z_Zf5JrJ1{width:30px;}
+        .z_Zf5JrJ2{width:40px;}"
       `)
     })
 
@@ -5110,8 +5110,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
         "@property --z-vars-amount{syntax:"<percentage>";inherits:false;initial-value:25%;}
         @property --z-vars-gap{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px{height:20px;}
         .z-p-\\5b var\\28 --z-vars-gap\\29 \\5d {padding:var(--z-vars-gap);}
-        .z-Zf5JrJ-styles-registered-w-2{width:var(--z-vars-amount);}
-        .z-Zf5JrJ-styles-dynamic-w-0{width:var(--z-Zf5JrJ-styles-dynamic-width);}"
+        .z_Zf5JrJ0{width:var(--z-vars-amount);}
+        .z_Zf5JrJ1{width:var(--z-Zf5JrJ-styles-dynamic-width);}"
       `)
     })
     test('expands immutable members and shorthand while retaining dynamic intersections', () => {
@@ -5126,9 +5126,9 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
       })
 
       expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
-        ".z-r9-r0Q-styles-card-w-0{width:12px;}
+        ".z_r9-r0Q0{width:12px;}
         .z-p-8px{padding:8px;}
-        .z-r9-r0Q-styles-dynamic-w-0{width:var(--z-r9-r0Q-styles-dynamic-width);}
+        .z_r9-r0Q1{width:var(--z-r9-r0Q-styles-dynamic-width);}
         .z-opacity-\\5b var\\28 --z-r9-r0Q-styles-dynamic-opacity\\29 \\5d {opacity:var(--z-r9-r0Q-styles-dynamic-opacity);}"
       `)
       expect(graph.sharedCss).toMatchInlineSnapshot(

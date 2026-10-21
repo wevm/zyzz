@@ -65,14 +65,52 @@ fn compile_shares_atomic_domains_in_authored_order() {
     .expect("compiled");
 
     insta::assert_snapshot!(classes(&output), @"
-    card: z-text-red z-card-p-1
-    button: z-text-red z-button-p-0 z-button-padding-inline-1
+    card: z-text-red z_0
+    button: z-text-red z_1 z_2
     ");
     insta::assert_snapshot!(output.css, @"
     .z-text-red{color:red;}
-    .z-card-p-1{padding:8px;}
-    .z-button-p-0{padding:4px;}
-    .z-button-padding-inline-1{padding-inline:12px;}
+    .z_0{padding:8px;}
+    .z_1{padding:4px;}
+    .z_2{padding-inline:12px;}
+    ");
+}
+
+#[test]
+fn compile_keeps_readable_names_in_development() {
+    let definition = define(serde_json::json!({
+        "card": { "color": "red", "padding": "8px" },
+        "button": { "color": "red", "padding": "4px" },
+    }));
+    let atomic = css::compile(
+        &Options {
+            development: true,
+            styles: &definition.styles,
+            ..Options::default()
+        },
+        None,
+    )
+    .expect("compiled");
+
+    insta::assert_snapshot!(classes(&atomic), @"
+    card: z-text-red z-card-p-1
+    button: z-text-red z-button-p-0
+    ");
+
+    let grouped = css::compile(
+        &Options {
+            css_output: Some(CssOutput::Grouped),
+            development: true,
+            styles: &definition.styles,
+            ..Options::default()
+        },
+        None,
+    )
+    .expect("compiled");
+
+    insta::assert_snapshot!(classes(&grouped), @"
+    card: z-card
+    button: z-button
     ");
 }
 
@@ -95,14 +133,14 @@ fn compile_groups_independent_styles_with_shared_declarations() {
     .expect("compiled");
 
     insta::assert_snapshot!(classes(&output), @"
-    first: z-first z-first__1
-    second: z-first z-second
-    third: z-first z-second
+    first: z_0 z_1
+    second: z_0 z_2
+    third: z_0 z_2
     ");
     insta::assert_snapshot!(output.css, @"
-    .z-first{background-color:#fff;display:block;}
-    .z-first__1{padding:1px;}
-    .z-second{padding:2px;}
+    .z_0{background-color:#fff;display:block;}
+    .z_1{padding:1px;}
+    .z_2{padding:2px;}
     ");
 }
 
@@ -156,11 +194,11 @@ fn compile_keeps_inactive_conditions_outside_class_rules() {
     )
     .expect("compiled");
 
-    insta::assert_snapshot!(classes(&output), @"link: z-link-text-0 z-link-text-1 z-link-text-2");
+    insta::assert_snapshot!(classes(&output), @"link: z_0 z_1 z_2");
     insta::assert_snapshot!(output.css, @"
-    .z-link-text-0{color:blue;}
-    .z-link-text-1{&:hover{color:red;}}
-    @media (min-width: 40rem){.z-link-text-2{color:green;}}
+    .z_0{color:blue;}
+    .z_1{&:hover{color:red;}}
+    @media (min-width: 40rem){.z_2{color:green;}}
     ");
 }
 

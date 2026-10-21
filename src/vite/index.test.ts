@@ -2122,6 +2122,52 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('production keeps only the identity classes that selectors reference', async () => {
+    const { config, root } = await create({
+      'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
+      'card.ts': `import { style } from 'zyzz';export const card = style({ color: 'red' });export const label = style({ color: 'blue' });`,
+      'item.ts': `import { style } from 'zyzz';import { card } from './card';export const item = style({ selectors: { [\`\${card}:hover &\`]: { color: 'green' } } });`,
+      'main.ts': `import { card, label } from './card';import { item } from './item';document.body.className = [card().className, label().className, item().className].join(' ');`,
+    })
+
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false, write: false },
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const javascript = result.output
+        .filter((file) => file.type === 'chunk')
+        .map((file) => file.code)
+        .join('\n')
+      const stylesheet = result.output
+        .filter(
+          (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+        )
+        .map((file) => (file.type === 'asset' ? String(file.source) : ''))
+        .join('\n')
+
+      // The card module's graph includes the selector that interpolates card, so only card
+      // keeps its identity class.
+      expect([...new Set(javascript.match(/z-style-[\w-]+/g))])
+        .toMatchInlineSnapshot(`
+        [
+          "z-style-rnRBDm-card",
+        ]
+      `)
+      expect([...new Set(stylesheet.match(/z-style-[\w-]+/g))])
+        .toMatchInlineSnapshot(`
+        [
+          "z-style-rnRBDm-card",
+        ]
+      `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('derives contracts for installed packages without sidecars', async () => {
     const { config, root } = await create({
       'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
@@ -2280,8 +2326,8 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
         // The label keeps its own names, and the consumer's composition strips the card's classes.
         expect(await fixture.jsonValue()).toMatchInlineSnapshot(`
           {
-            "card": "z_rnRBDm0 z_rnRBDm1 z-style-rnRBDm-styles-card",
-            "composed": "z_YiE3S91 z_rnRBDm1 z-style-rnRBDm-styles-card",
+            "card": "z_rnRBDm0 z_rnRBDm1",
+            "composed": "z_YiE3S91 z_rnRBDm1",
             "label": "z_ya-T9A0 z_ya-T9A1",
           }
         `)

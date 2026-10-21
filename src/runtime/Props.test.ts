@@ -90,7 +90,7 @@ export const button = style({ color: '#f00' });`,
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-[var(--z-accent)] z-e2Ey6F-dynamic-opacity-0",
+        "className": "z-text-[var(--z-accent)] z_e2Ey6F0",
         "style": {
           "--z-accent": "blue",
           "--z-e2Ey6F-dynamic-opacity": 0.5,
@@ -106,7 +106,7 @@ export const button = style({ color: '#f00' });`,
     `)
     expect(consumer.variablesOnly).toMatchInlineSnapshot(`
       {
-        "className": "z-text-[var(--z-accent)] z-e2Ey6F-dynamic-opacity-0",
+        "className": "z-text-[var(--z-accent)] z_e2Ey6F0",
         "style": {
           "--z-accent": "red",
           "--z-e2Ey6F-dynamic-opacity": 0.5,
@@ -115,7 +115,7 @@ export const button = style({ color: '#f00' });`,
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-[var(--z-accent)] z-e2Ey6F-htmlDynamic-opacity-0",
+        "class": "z-text-[var(--z-accent)] z_e2Ey6F1",
         "style": "--z-accent:red;--z-e2Ey6F-htmlDynamic-opacity:0.25",
       }
     `)
@@ -157,13 +157,13 @@ export const text = '🎉';`
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-CVE4-Z-button-text-0 z-p-8px z-style-CVE4-Z-button",
+        "className": "z_CVE4-Z0 z-p-8px z-style-CVE4-Z-button",
       }
     `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
       {
-        "className": "z-CVE4-Z-inline-text-0",
+        "className": "z_CVE4-Z1",
       }
     `)
 
@@ -176,7 +176,7 @@ export const text = '🎉';`
     expect(consumer.button({ className: 'external', style }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-CVE4-Z-button-text-0 z-p-8px z-style-CVE4-Z-button external",
+          "className": "z_CVE4-Z0 z-p-8px z-style-CVE4-Z-button external",
           "style": {
             "color": "#000",
             "paddingLeft": "2px",

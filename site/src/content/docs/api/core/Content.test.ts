@@ -141,19 +141,19 @@ describe('style API page', () => {
       .z-p-16px{padding:16px;}"
     `)
     expect(css(conditions!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-link-text-0{color:blue;}
-      .z-3oDDjY-link-text-1{&:hover{color:navy;}}
-      @media (width >= 48rem){.z-3oDDjY-link-font-size-2{font-size:1.125rem;}}"
+      ".z_0{color:blue;}
+      .z_1{&:hover{color:navy;}}
+      @media (width >= 48rem){.z_2{font-size:1.125rem;}}"
     `)
     expect(css(callback!.source)).toMatchInlineSnapshot(`
       ".z-bg-green{background-color:green;}
       .z-w-\\5b var\\28 --z-3oDDjY-meter-amount\\29 \\5d {width:var(--z-3oDDjY-meter-amount);}"
     `)
     expect(css(exported(composition!.source))).toMatchInlineSnapshot(`
-      ".z-3oDDjY-button-text-0{color:black;}
-      .z-3oDDjY-button-p-1{padding:8px 16px;}
-      .z-3oDDjY-primary-text-0{color:black;}
-      .z-3oDDjY-primary-text-1{color:white;}"
+      ".z_0{color:black;}
+      .z_1{padding:8px 16px;}
+      .z_2{color:black;}
+      .z_3{color:white;}"
     `)
   })
 
@@ -161,9 +161,9 @@ describe('style API page', () => {
     const [label] = await examples('style', 'styles.selectors')
 
     expect(css(label!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-styles-label-text-0{color:gray;}
-      .z-3oDDjY-styles-label-text-1{[data-state="open"] &{color:blue;}}
-      .z-3oDDjY-styles-label-text-2{.z-style-3oDDjY-styles-card:hover &{color:black;}}"
+      ".z_0{color:gray;}
+      .z_1{[data-state="open"] &{color:blue;}}
+      .z_2{.z-style-3oDDjY-styles-card:hover &{color:black;}}"
     `)
   })
 
@@ -171,9 +171,9 @@ describe('style API page', () => {
     const [button] = await examples('style', 'styles.vars')
 
     expect(css(button!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-button-bg-0{background-color:var(--z-variables-accent);}
-      .z-3oDDjY-button---z-variables-accent-1{--z-variables-accent:royalblue;}
-      .z-3oDDjY-button---z-variables-accent-2{&:hover{--z-variables-accent:navy;}}"
+      ".z_0{background-color:var(--z-variables-accent);}
+      .z_1{--z-variables-accent:royalblue;}
+      .z_2{&:hover{--z-variables-accent:navy;}}"
     `)
   })
 
@@ -181,8 +181,8 @@ describe('style API page', () => {
     const [balance] = await examples('style', 'styles.targets')
 
     expect(css(balance!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-balance-font-size-0{font-size:16px;}
-      .z-3oDDjY-balance-font-variant-numeric-1{font-variant-numeric:tabular-nums;}"
+      ".z_0{font-size:16px;}
+      .z_1{font-variant-numeric:tabular-nums;}"
     `)
   })
 
@@ -244,9 +244,9 @@ describe('variants API page', () => {
     const [button] = await examples('variants')
 
     expect(css(button!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-styles-button-border-radius-0{border-radius:6px;}
-      .z-3oDDjY-styles-button-p-1{&:where([data-size="compact"]){padding:4px 8px;}}
-      .z-3oDDjY-styles-button-p-2{&:where([data-size="regular"]){padding:8px 16px;}}"
+      ".z_0{border-radius:6px;}
+      .z_1{&:where([data-size="compact"]){padding:4px 8px;}}
+      .z_2{&:where([data-size="regular"]){padding:8px 16px;}}"
     `)
   })
 
@@ -255,18 +255,18 @@ describe('variants API page', () => {
     const [boolean, dynamic] = await examples('variants', 'definition.variants')
 
     expect(css(base!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-button-border-radius-0{border-radius:6px;}
-      .z-3oDDjY-button-opacity-1{&:hover{opacity:0.9;}}
-      .z-3oDDjY-button-p-2{&:where([data-size="compact"]){padding:4px;}}"
+      ".z_0{border-radius:6px;}
+      .z_1{&:hover{opacity:0.9;}}
+      .z_2{&:where([data-size="compact"]){padding:4px;}}"
     `)
     expect(css(boolean!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-button-opacity-0{&:where([data-loading="true"]){opacity:0.5;}}
-      .z-3oDDjY-button-p-1{&:where([data-size="compact"]){padding:4px;}}
-      .z-3oDDjY-button-p-2{&:where([data-size="regular"]){padding:8px;}}"
+      ".z_0{&:where([data-loading="true"]){opacity:0.5;}}
+      .z_1{&:where([data-size="compact"]){padding:4px;}}
+      .z_2{&:where([data-size="regular"]){padding:8px;}}"
     `)
     expect(css(dynamic!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-button-p-0{&:where([data-size="compact"]){padding:4px;}}
-      .z-3oDDjY-button-p-1{&:where([data-size="custom"]){padding:var(--z-3oDDjY-button-1-1-0-padding);}}"
+      ".z_0{&:where([data-size="compact"]){padding:4px;}}
+      .z_1{&:where([data-size="custom"]){padding:var(--z-3oDDjY-button-1-1-0-padding);}}"
     `)
   })
 
@@ -274,10 +274,10 @@ describe('variants API page', () => {
     const [compound] = await examples('variants', 'definition.compoundVariants')
 
     expect(css(compound!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-button-opacity-0{&:where([data-loading="true"]){opacity:0.5;}}
-      .z-3oDDjY-button-p-1{&:where([data-size="compact"]){padding:4px;}}
-      .z-3oDDjY-button-p-2{&:where([data-size="regular"]){padding:8px;}}
-      .z-3oDDjY-button-font-weight-3{&:where([data-loading="true"]):where([data-size="regular"]):where(*, .__zyzz-compound-0){font-weight:600;}}"
+      ".z_0{&:where([data-loading="true"]){opacity:0.5;}}
+      .z_1{&:where([data-size="compact"]){padding:4px;}}
+      .z_2{&:where([data-size="regular"]){padding:8px;}}
+      .z_3{&:where([data-loading="true"]):where([data-size="regular"]):where(*, .__zyzz-compound-0){font-weight:600;}}"
     `)
   })
 
@@ -285,10 +285,10 @@ describe('variants API page', () => {
     const [conditions] = await examples('variants', 'definition.conditions')
 
     expect(css(conditions!.source)).toMatchInlineSnapshot(`
-      "@media not ((width>=48rem)){.z-3oDDjY-button-p-0{&:where([data-size="compact"]){padding:4px;}}}
-      @media not ((width>=48rem)){.z-3oDDjY-button-p-1{&:where([data-size="regular"]){padding:8px;}}}
-      @media (width >= 48rem){.z-3oDDjY-button-p-2{&:where([data-size="compact"]:not([data-zyzz-condition-0-size]),[data-zyzz-condition-0-size="scompact"]){padding:4px;}}}
-      @media (width >= 48rem){.z-3oDDjY-button-p-3{&:where([data-size="regular"]:not([data-zyzz-condition-0-size]),[data-zyzz-condition-0-size="sregular"]){padding:8px;}}}"
+      "@media not ((width>=48rem)){.z_0{&:where([data-size="compact"]){padding:4px;}}}
+      @media not ((width>=48rem)){.z_1{&:where([data-size="regular"]){padding:8px;}}}
+      @media (width >= 48rem){.z_2{&:where([data-size="compact"]:not([data-zyzz-condition-0-size]),[data-zyzz-condition-0-size="scompact"]){padding:4px;}}}
+      @media (width >= 48rem){.z_3{&:where([data-size="regular"]:not([data-zyzz-condition-0-size]),[data-zyzz-condition-0-size="sregular"]){padding:8px;}}}"
     `)
   })
 
@@ -353,8 +353,8 @@ describe('variants API page', () => {
     const [button] = await examples('variants', 'Types')
 
     expect(css(button!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-styles-button-p-0{&:where([data-size="compact"]){padding:4px;}}
-      .z-3oDDjY-styles-button-p-1{&:where([data-size="regular"]){padding:8px;}}"
+      ".z_0{&:where([data-size="compact"]){padding:4px;}}
+      .z_1{&:where([data-size="regular"]){padding:8px;}}"
     `)
   })
 
@@ -437,12 +437,12 @@ describe('cx API page', () => {
     const [tab] = await examples('cx')
 
     expect(css(tab!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-styles-tab-text-0{color:gray;}
-      .z-3oDDjY-styles-tab-p-1{padding:8px 12px;}
-      .z-3oDDjY-styles-active-text-0{color:black;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-0-text-0{color:gray;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-0{color:gray;}
-      .z-Tab-0-3oDDjY-styles-tab-3oDDjY-styles-active-text-1{color:black;}"
+      ".z_0{color:gray;}
+      .z_1{padding:8px 12px;}
+      .z_2{color:black;}
+      .z_3{color:gray;}
+      .z_4{color:gray;}
+      .z_5{color:black;}"
     `)
   })
 
@@ -450,14 +450,14 @@ describe('cx API page', () => {
     const [applied] = await examples('cx', 'applied')
 
     expect(css(applied!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-base-text-0{color:red;}
-      .z-3oDDjY-base-p-1{padding:8px;}
-      .z-3oDDjY-inset-text-0{color:blue;}
-      .z-3oDDjY-inset-pl-1{padding-left:12px;}
-      .z-props-0-3oDDjY-base-3oDDjY-inset-text-0{color:red;}
-      .z-props-0-3oDDjY-base-3oDDjY-inset-p-1{padding:8px;}
-      .z-props-0-3oDDjY-base-3oDDjY-inset-text-2{color:blue;}
-      .z-props-0-3oDDjY-base-3oDDjY-inset-pl-3{padding-left:12px;}"
+      ".z_0{color:red;}
+      .z_1{padding:8px;}
+      .z_2{color:blue;}
+      .z_3{padding-left:12px;}
+      .z_4{color:red;}
+      .z_5{padding:8px;}
+      .z_6{color:blue;}
+      .z_7{padding-left:12px;}"
     `)
   })
 
@@ -482,7 +482,7 @@ describe('cx API page', () => {
         color-scheme: light dark;
       }
 
-      .z_SlmzrP0, .z-Root-0-SlmzrP-styles-page-text-0 {
+      .z_SlmzrP0, .z_SlmzrP1 {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
       "
@@ -538,8 +538,8 @@ describe('variable API page', () => {
     expect(css(plan!.source)).toMatchInlineSnapshot(`
       ".z-text-\\5b var\\28 --z-variables-accent\\29 \\5d {color:var(--z-variables-accent);}
       .z-m-0{margin:0;}
-      .z-3oDDjY-styles-plan-border-left-0{border-left:4px solid;}
-      .z-3oDDjY-styles-plan-border-left-color-1{border-left-color:var(--z-variables-accent);}
+      .z_0{border-left:4px solid;}
+      .z_1{border-left-color:var(--z-variables-accent);}
       .z-\\5b --z-variables-accent\\3a \\23 0070f3\\5d {--z-variables-accent:#0070f3;}"
     `)
   })
@@ -702,18 +702,18 @@ describe('defineConfig API page', () => {
         --z-spacing-md: 8px;
       }
 
-      .z-Jpn02f-chip-pl-0 {
+      .z_Jpn02f0 {
         padding-left: var(--z-spacing-md, 8px);
       }
 
-      .z-Jpn02f-chip-pr-1 {
+      .z_Jpn02f1 {
         padding-right: var(--z-spacing-md, 8px);
       }
       "
     `)
     expect(await layered('zyzz.css')).toMatchInlineSnapshot(`
       "@layer components, overrides;
-      .z-n9FPFt-label-text-0 {
+      .z_n9FPFt0 {
         @layer overrides {
           color: #00f;
         }
@@ -840,12 +840,12 @@ describe('defineVars API page', () => {
         --z-typography-heading-_40_media_20__3e__3d_tablet-fontSize: 40px;
       }
 
-      .z-w4OP4a-title-font-size-0 {
+      .z_w4OP4a0 {
         font-size: var(--z-typography-heading-fontSize, 24px);
       }
 
       @media (width >= 48rem) {
-        .z-w4OP4a-title-font-size-1 {
+        .z_w4OP4a1 {
           font-size: var(--z-typography-heading-_40_media_20__3e__3d_tablet-fontSize, 40px);
         }
       }
@@ -1053,10 +1053,10 @@ describe('Style API page', () => {
     expect(Css.compile({ styles })).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z-card-p-0 z-card-pl-1",
+          "card": "z_0 z_1",
         },
-        "css": ".z-card-p-0{padding:1rem;}
-      .z-card-pl-1{padding-left:0;}",
+        "css": ".z_0{padding:1rem;}
+      .z_1{padding-left:0;}",
         "vars": {},
       }
     `)
@@ -1161,8 +1161,8 @@ describe('Values API page', () => {
     const [importance] = await examples('values', 'Importance')
 
     expect(css(properties!.source)).toMatchInlineSnapshot(`
-      ".z-3oDDjY-label--webkit-user-select-0{-webkit-user-select:none;}
-      .z-3oDDjY-label-user-select-1{user-select:none;}"
+      ".z_0{-webkit-user-select:none;}
+      .z_1{user-select:none;}"
     `)
     expect(css(clamp!.source)).toMatchInlineSnapshot(`
       ".z-display--webkit-box{display:-webkit-box;}

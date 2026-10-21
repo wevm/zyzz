@@ -563,7 +563,7 @@ describe('Transform.compile', () => {
         moduleId: 'app/Card.tsx',
         source: source!,
       }).css,
-    ).toMatchInlineSnapshot(`".z-FdvK6e-card{padding:1rem;}"`)
+    ).toMatchInlineSnapshot(`".z_FdvK6e0{padding:1rem;}"`)
     expect(
       Transform.compile({
         moduleId: 'app/Card.tsx',
@@ -720,10 +720,10 @@ export const element = React
     `)
     expect(Transform.compile({ moduleId: 'app/Text.tsx', source: source! }).css)
       .toMatchInlineSnapshot(`
-      ".z-JJZ3wD-a-text-0{color:red;}
-      .z-JJZ3wD-b-text-0{color:blue;}
-      .z-JJZ3wD-c-text-0{color:red;}"
-    `)
+        ".z_JJZ3wD0{color:red;}
+        .z_JJZ3wD1{color:blue;}
+        .z_JJZ3wD2{color:red;}"
+      `)
   })
 
   test('returns scope classes for local variable sets', async () => {

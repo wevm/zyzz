@@ -118,6 +118,8 @@ mod compile {
 }
 
 mod create {
+    use std::fmt::Write as _;
+
     use compiler::compiler::handles::Compiler;
 
     #[test]
@@ -268,6 +270,51 @@ mod create {
             edited["modules"]["page.ts"]["css"].to_string().contains("12px").to_string(),
             @"true"
         );
+    }
+
+    fn composed(declarations: &str) -> String {
+        let base = json(&format!(
+            "import {{style}} from 'zyzz';export const base=style({{{declarations}}});"
+        ));
+        let card = json(
+            "import {base} from './base.js';import {cx,style} from 'zyzz';const extra=style({margin:2});export const card=(enabled)=>cx(enabled&&base(),extra());",
+        );
+        let mut imports = String::from(
+            r#""base.ts":{"zyzz":null},"card.ts":{"./base.js":"base.ts","zyzz":null}"#,
+        );
+        let mut modules = format!(r#""base.ts":{base},"card.ts":{card}"#);
+
+        // More modules than the transform cache holds, so the card's transform is evicted.
+        for index in 0..300 {
+            let filler = json(&format!(
+                "import {{style}} from 'zyzz';export const filler=style({{zIndex:{index}}});"
+            ));
+
+            let _ = write!(imports, r#","filler{index}.ts":{{"zyzz":null}}"#);
+            let _ = write!(modules, r#","filler{index}.ts":{filler}"#);
+        }
+
+        format!(r#"{{"imports":{{{imports}}},"modules":{{{modules}}}}}"#)
+    }
+
+    #[test]
+    fn composed_evicted_edits() {
+        let mut compiler = Compiler::default();
+        let parse =
+            |text: String| -> serde_json::Value { serde_json::from_str(&text).unwrap_or_default() };
+        let before = parse(compiler.compile(&composed("color:'red'")));
+        let edited = parse(compiler.compile(&composed("color:'red',padding:4")));
+        let fresh = parse(Compiler::default().compile(&composed("color:'red',padding:4")));
+
+        insta::assert_snapshot!(edited["error"], @"null");
+
+        // The card's evicted transform recompiles with the classes its input now publishes.
+        let output = match &edited["modules"]["card.ts"] {
+            serde_json::Value::Number(_) => &before["modules"]["card.ts"],
+            output => output,
+        };
+
+        insta::assert_snapshot!((output == &fresh["modules"]["card.ts"]).to_string(), @"true");
     }
 
     #[test]

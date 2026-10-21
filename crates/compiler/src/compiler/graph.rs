@@ -342,6 +342,8 @@ struct Scoped {
     reason = "Each flag records one independent option of the cached compilation."
 )]
 struct Cache {
+    /// The class each style identity published, for validating reuse of evicted transforms.
+    classes: FxHashMap<Arc<str>, Arc<str>>,
     composition: Option<Composition>,
     contracts: String,
     css_output: Option<CssOutput>,
@@ -351,6 +353,7 @@ struct Cache {
     lean: bool,
     libraries: Map<Arc<Library>>,
     native: Option<NativeOptions>,
+    owners: Arc<[(Arc<str>, usize)]>,
     referenced: Option<Arc<FxHashSet<Arc<str>>>>,
     references: bool,
     renders: Vec<Arc<(Vec<Section>, Rendered)>>,
@@ -3181,6 +3184,7 @@ impl Build<'_, '_> {
         }
 
         Ok(Cache {
+            classes: FxHashMap::default(),
             composition: options.composition,
             contracts,
             css_output: options.css_output,
@@ -3190,6 +3194,7 @@ impl Build<'_, '_> {
             lean: options.lean,
             libraries: self.libraries,
             native: Some(native.clone()),
+            owners: Arc::from([]),
             referenced: None,
             references: options.references,
             renders: Vec::new(),
@@ -3585,6 +3590,16 @@ impl Build<'_, '_> {
                     && cached.owners == owner_signature
                     && cached.markers == markers
             });
+            // A module that re-extracts equal after a dependency edit keeps its identity, so an
+            // evicted transform is checked against the classes and owners it read.
+            let same_inputs = |previous: &Cache| {
+                previous.owners == owner_signature
+                    && module
+                        .calls
+                        .iter()
+                        .flat_map(|call| call.inputs.iter())
+                        .all(|name| style_classes.get(name) == previous.classes.get(name))
+            };
             let reused = match reusable {
                 Some(cached) if registry.restore(module_id, &cached.output.units, &visible) => {
                     Some(Arc::clone(&cached.output))
@@ -3598,6 +3613,7 @@ impl Build<'_, '_> {
                                 .extracted
                                 .get(module_id)
                                 .is_some_and(|extracted| Arc::ptr_eq(extracted, &module))
+                            && same_inputs(previous)
                     })
                     .and_then(|previous| previous.result.modules.get(module_id))
                     .and_then(Compiled::web)
@@ -3928,6 +3944,7 @@ impl Build<'_, '_> {
         };
 
         Ok(Cache {
+            classes: style_classes,
             composition: options.composition,
             contracts,
             css_output: options.css_output,
@@ -3937,6 +3954,7 @@ impl Build<'_, '_> {
             lean: options.lean,
             libraries: self.libraries,
             native: None,
+            owners: owner_signature,
             referenced,
             references: options.references,
             renders: self.renders,

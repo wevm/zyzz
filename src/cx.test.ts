@@ -304,6 +304,57 @@ namespace styles {
     }
   })
 
+  test('composes namespace definitions that read non-exported members', async () => {
+    const compiled = Transform.compile({
+      moduleId: 'private.ts',
+      source: `import { cx, style } from 'zyzz'
+export const tile = (d: number) => cx(styles.wish(), d >= 30 && styles.wishOn())
+namespace styles {
+  const ring = style({ ':focus-visible': { outline: '2px solid rgb(255, 0, 0)' } })
+  export const wish = style([{ color: 'rgb(255, 255, 255)' }, ring])
+  export const wishOn = style({ background: 'rgb(220, 38, 38)' })
+}`,
+    })
+    const code = await Packed.bundle({
+      entry: 'private.ts',
+      modules: { 'private.ts': compiled.code },
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${compiled.css}</style><button id="off" class="${fixture.tile(0).className}"></button><button id="on" class="${fixture.tile(30).className}"></button>`,
+      )
+      await page.keyboard.press('Tab')
+
+      expect(
+        await page
+          .locator('#off')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(255, 255, 255)"`)
+      expect(
+        await page
+          .locator('#off')
+          .evaluate((node) => getComputedStyle(node).outline),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0) solid 2px"`)
+      expect(
+        await page
+          .locator('#off')
+          .evaluate((node) => getComputedStyle(node).backgroundColor),
+      ).toMatchInlineSnapshot(`"rgb(239, 239, 239)"`)
+      expect(
+        await page
+          .locator('#on')
+          .evaluate((node) => getComputedStyle(node).backgroundColor),
+      ).toMatchInlineSnapshot(`"rgb(220, 38, 38)"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('emits only reachable nested composition groups', () => {
     const output = Source.extract({
       moduleId: 'nested.ts',

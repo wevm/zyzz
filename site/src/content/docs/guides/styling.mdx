@@ -268,7 +268,7 @@ namespace styles {
 }
 ```
 
-`primary` compiles to its own rules, so its white text wins over the color from `button`. Entries can be local or imported static definitions, other compositions, and local immutable records. Variants and dynamic definitions are applied with `cx` instead. On React Native, entries share the composing style's variable catalog.
+`primary` compiles to its own rules, so its white text wins over the color from `button`. Entries can be local or imported static definitions, including non-exported namespace members, other compositions, and local immutable records. Variants and dynamic definitions are applied with `cx` instead. On React Native, entries share the composing style's variable catalog.
 
 A composition copies declarations rather than class names. A selector that references `button`, such as `` `${button}:hover &` ``, does not match an element styled with `primary`. Apply both with `cx` when an element needs the identity of each definition.
 

@@ -110,7 +110,7 @@ describe('zyzz', () => {
               () => 'built',
               (error: unknown) =>
                 String(error).includes(
-                  'Zyzz theme colours require native light-dark() support.',
+                  'Zyzz keeps light-dark() native, which these CSS targets would lower.',
                 ),
             )
             expect(result).toMatchInlineSnapshot('true')
@@ -136,7 +136,7 @@ describe('zyzz', () => {
     30000,
   )
   test.each(['chrome120', 'es2015', 'es2020', 'esnext'])(
-    'rejects unverifiable application CSS targets from a later plugin: %s',
+    'checks application CSS targets from a later plugin: %s',
     async (target) => {
       const root = await Fs.mkdtemp(Path.resolve('.fixture-application-theme-'))
 
@@ -167,21 +167,32 @@ describe('zyzz', () => {
           root,
         }
 
+        // ECMAScript targets name no browser, so CSS falls back to the native light-dark() targets.
+        const result = await Vite.build(config).then(
+          (output) => {
+            const outputs = (
+              Array.isArray(output) ? output : [output]
+            ) as Vite.Rollup.RollupOutput[]
+            const css = outputs
+              .flatMap((entry) => entry.output)
+              .find((entry) => entry.fileName.endsWith('.css'))
+
+            return css?.type === 'asset' ? String(css.source).trim() : undefined
+          },
+          (error: unknown) =>
+            String(error)
+              .split('\n')
+              .find((line) => line.includes('uses light-dark()'))
+              ?.replace(/assets\/[^ ]+\.css/, '<asset>'),
+        )
         if (target === 'chrome120')
-          await expect(
-            Vite.build(config),
-          ).rejects.toThrowErrorMatchingInlineSnapshot(
-            '[Error: Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.]',
-          )
-        else {
-          const result = await Vite.build(config).then(
-            () => 'built',
-            (error: unknown) => String(error).replace(target, '<target>'),
-          )
           expect(result).toMatchInlineSnapshot(
-            '"Error: Zyzz cannot verify light-dark() support for CSS target: <target>"',
+            `"RolldownError: <asset> uses light-dark(). Zyzz keeps light-dark() native, which these CSS targets would lower. Set build.cssTarget and css.lightningcss.targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+."`,
           )
-        }
+        else
+          expect(result).toMatchInlineSnapshot(
+            `"body{color:light-dark(#000,#fff)}.z_YiE3S90{padding:1px}"`,
+          )
 
         await Vite.build({ ...config, build: { cssTarget: 'chrome123' } })
       } finally {
@@ -190,4 +201,76 @@ describe('zyzz', () => {
     },
     30000,
   )
+
+  test.each([undefined, 'chrome120'])(
+    'builds server environments with a node target and CSS target %s',
+    async (cssTarget) => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-server-theme-'))
+
+      try {
+        await Fs.writeFile(
+          Path.join(root, 'server.ts'),
+          "import { Config, Vars } from 'zyzz'\nconst base = Vars.define({ color: { text: { light: '#20202a', dark: '#f4f4f8' } } })\nconst { style } = Config.create({ defaultVars: 'base', vars: { base } })\nconst card = style({ color: 'text' })\nexport const render = () => '<div class=\"' + card().className + '\"></div>'\n",
+        )
+
+        const output = (await Vite.build({
+          build: {
+            ...(cssTarget ? { cssTarget } : {}),
+            rolldownOptions: { input: Path.join(root, 'server.ts') },
+            ssr: true,
+            ssrEmitAssets: true,
+            target: 'node20',
+          },
+          configFile: false,
+          logLevel: 'silent',
+          plugins: [zyzz()],
+          root,
+        })) as Vite.Rollup.RollupOutput
+        const css = output.output.find((entry) =>
+          entry.fileName.endsWith('.css'),
+        )
+
+        // The server build collects theme colours without shipping a browser stylesheet.
+        expect(
+          css?.type === 'asset' && String(css.source).includes('light-dark('),
+        ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+    30000,
+  )
+
+  test('builds older browser targets without theme colours', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-legacy-target-'))
+
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        '<script type="module" src="/main.ts"></script>',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        "import { style } from 'zyzz'\ndocument.body.className = style({ color: 'rebeccapurple', padding: '1px' })().className\n",
+      )
+
+      const output = (await Vite.build({
+        build: { cssMinify: false, cssTarget: 'chrome120' },
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        root,
+      })) as Vite.Rollup.RollupOutput
+      const css = output.output.find((entry) => entry.fileName.endsWith('.css'))
+
+      // 1. Styles without light-dark() build for targets that would lower it.
+      expect(css?.type === 'asset' ? String(css.source).trim() : undefined)
+        .toMatchInlineSnapshot(`
+          ".z_YiE3S90{color:rebeccapurple;}
+          .z_YiE3S91{padding:1px;}"
+        `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
 })

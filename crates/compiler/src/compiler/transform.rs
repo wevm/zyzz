@@ -25,7 +25,7 @@ use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
-use crate::compiler::source::{Call, Extracted};
+use crate::compiler::source::{Call, Extracted, KnownInput, RuntimeInput};
 use crate::data::Data;
 use crate::error::{Error, Result};
 use crate::internal::token::{Composition, CssOutput, Reference};
@@ -70,6 +70,9 @@ pub struct Options<'s, 'a> {
     /// Content written as `0` in both source maps. A host that supplied the source separately
     /// restores it, so the text crosses the boundary once.
     pub placeholder: Option<&'a str>,
+    /// Identity classes that selectors of a complete graph reference. Class lists then omit
+    /// every other generated identity, while explicit ids remain. `None` keeps every identity.
+    pub referenced: Option<&'s FxHashSet<Arc<str>>>,
     /// Emits the color-scheme selection classes. Defaults to the module's own scheme helpers.
     pub schemes: Option<bool>,
     /// Separates generated token rules for independently loaded modules.
@@ -999,7 +1002,13 @@ pub fn compile<'a>(
 
         css::compile(&css_options, Some(&mut units))?
     };
-    let classes = classes(extracted, &mut emitted, portable, &portable_names);
+    let classes = classes(
+        extracted,
+        &mut emitted,
+        portable,
+        &portable_names,
+        options.referenced,
+    );
     let generator = Generator {
         classes,
         shadowed: parsed
@@ -1421,6 +1430,7 @@ fn classes(
     emitted: &mut css::Output,
     portable: bool,
     portable_names: &FxHashMap<Arc<str>, Arc<str>>,
+    referenced: Option<&FxHashSet<Arc<str>>>,
 ) -> IndexMap<Arc<str>, String, FxBuildHasher> {
     let identities: FxHashMap<&str, &str> = extracted
         .calls
@@ -1457,6 +1467,17 @@ fn classes(
                             .collect::<Vec<_>>()
                             .join(" "),
                     )
+                } else if let Some(referenced) = referenced {
+                    // Only selectors match identity classes, and a complete graph holds them all.
+                    Cow::Owned(
+                        identity
+                            .split(' ')
+                            .filter(|name| {
+                                name.starts_with("z-style-id-") || referenced.contains(*name)
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    )
                 } else {
                     Cow::Borrowed(*identity)
                 }
@@ -1470,6 +1491,7 @@ fn classes(
             }
 
             if let Some(extra) = &extra
+                && !extra.is_empty()
                 && !list.contains(&&**extra)
             {
                 list.push(extra);
@@ -1556,6 +1578,238 @@ struct Generator<'g, 'a> {
 impl<'a> Generator<'_, 'a> {
     fn class(&self, name: &str) -> String {
         json_class(&self.classes, name)
+    }
+
+    /// The generated class list that applications of a composed definition carry.
+    fn input_class(&self, name: &str) -> Option<&str> {
+        self.classes.get(name).map(String::as_str).or_else(|| {
+            self.style_classes
+                .and_then(|classes| classes.get(name))
+                .map(|class| &**class)
+        })
+    }
+
+    /// Replaces a known application with its callee read, which still throws before
+    /// initialization, followed by `value`. Conditions keep their authored evaluation.
+    fn known_argument(
+        &self,
+        module: &mut Edits<'a>,
+        known: &KnownInput,
+        value: &str,
+        mask: bool,
+    ) -> String {
+        let callee = &known.callee;
+        let cast = if self.typed { " as unknown" } else { "" };
+        let read = format!("(({callee}{cast})||{callee}(),{value})");
+        let Some(condition) = known.condition else {
+            return read;
+        };
+        let left = module
+            .slice(condition.start, condition.end)
+            .unwrap_or_else(|_| {
+                self.parsed
+                    .source
+                    .get(condition.start as usize..condition.end as usize)
+                    .unwrap_or_default()
+                    .to_owned()
+            });
+
+        if mask {
+            format!("(({left})?{read}:0)")
+        } else {
+            format!("({left})&&{read}")
+        }
+    }
+
+    /// Selects one of the precompiled presence alternatives from a hoisted table of frozen props,
+    /// indexed by the presence mask of the conditional arguments.
+    fn constant(
+        &self,
+        module: &mut Edits<'a>,
+        state: &mut State,
+        call: &Call<'a>,
+        inputs: &[RuntimeInput],
+        known: &[Option<&KnownInput>],
+        factory: &str,
+    ) -> String {
+        let names: Vec<&str> = match &call.composition_cases {
+            Some(cases) => cases.iter().map(|name| &**name).collect(),
+            None => vec![&*call.name],
+        };
+        let mut table = String::from("[");
+
+        for (index, name) in names.iter().enumerate() {
+            if index > 0 {
+                table.push(',');
+            }
+
+            table.push_str("{className:");
+            js::write_string(
+                &mut table,
+                self.classes.get(*name).map_or("", String::as_str),
+            );
+            table.push('}');
+        }
+
+        table.push(']');
+        state.compositions.push(format!(
+            "const {factory}=/*#__PURE__*/{table}.map(Object.freeze);"
+        ));
+
+        let terms: Vec<String> = inputs
+            .iter()
+            .zip(known)
+            .filter_map(|(input, known)| {
+                let value = input.condition.map_or_else(
+                    || "0".to_owned(),
+                    |condition| (1_u32 << condition).to_string(),
+                );
+
+                Some(self.known_argument(module, (*known)?, &value, true))
+            })
+            .collect();
+
+        format!("{factory}[{}]", terms.join("|"))
+    }
+
+    /// Binds a runtime composition helper to the precompiled presence alternatives and the
+    /// ownership that inputs with overrides, recipes, or bindings replace.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "The composition rewrite shares the module's edit state."
+    )]
+    fn runtime_composition(
+        &self,
+        module: &mut Edits<'a>,
+        state: &mut State,
+        call: &Call<'a>,
+        inputs: &[RuntimeInput],
+        known: &[Option<&KnownInput>],
+        factory: &str,
+        html: bool,
+    ) -> String {
+        let helper = if html {
+            state.uses_composition_html = true;
+            state.composition_html.clone()
+        } else {
+            state.uses_composition = true;
+            state.composition.clone()
+        };
+        let mut config = String::from("{");
+
+        match &call.composition_cases {
+            Some(cases) => {
+                config.push_str("\"cases\":[");
+
+                for (index, name) in cases.iter().enumerate() {
+                    if index > 0 {
+                        config.push(',');
+                    }
+
+                    // An array prints a missing class list as `null`.
+                    match self.classes.get(name) {
+                        Some(class) => js::write_string(&mut config, class),
+                        None => config.push_str("null"),
+                    }
+                }
+
+                config.push_str("],");
+            }
+            // The last presence alternative is the complete class list, so only a call without
+            // conditions carries it separately. `JSON.stringify` omits a missing class list.
+            None => {
+                if let Some(class) = self.classes.get(&call.name) {
+                    config.push_str("\"className\":");
+                    js::write_string(&mut config, class);
+                    config.push(',');
+                }
+            }
+        }
+
+        config.push_str("\"inputs\":[");
+
+        for (index, (input, known)) in inputs.iter().zip(known).enumerate() {
+            if index > 0 {
+                config.push(',');
+            }
+
+            let mut fields: Vec<String> = Vec::new();
+
+            // Known inputs pass `true`, so the helper never reads their class list.
+            if known.is_none() {
+                let mut field = String::from("\"className\":");
+
+                js::write_string(
+                    &mut field,
+                    self.input_class(&input.name).unwrap_or_default(),
+                );
+                fields.push(field);
+            }
+
+            if let Some(condition) = input.condition {
+                fields.push(format!("\"condition\":{condition}"));
+            }
+
+            for (key, values) in [
+                (
+                    "attributes",
+                    input
+                        .owners
+                        .iter()
+                        .flat_map(|owner| owner.attributes.iter())
+                        .collect::<Vec<_>>(),
+                ),
+                (
+                    "slots",
+                    input
+                        .owners
+                        .iter()
+                        .flat_map(|owner| owner.slots.iter())
+                        .collect::<Vec<_>>(),
+                ),
+            ] {
+                if values.is_empty() {
+                    continue;
+                }
+
+                let mut field = format!("\"{key}\":[");
+
+                for (index, value) in values.iter().enumerate() {
+                    if index > 0 {
+                        field.push(',');
+                    }
+
+                    js::write_string(&mut field, value);
+                }
+
+                field.push(']');
+                fields.push(field);
+            }
+
+            config.push('{');
+            config.push_str(&fields.join(","));
+            config.push('}');
+        }
+
+        config.push_str("]}");
+        state.compositions.push(format!(
+            "const {factory}=/*#__PURE__*/{helper}.create({config});"
+        ));
+
+        let arguments: Vec<String> = inputs
+            .iter()
+            .zip(known)
+            .map(|(input, known)| match known {
+                Some(known) => self.known_argument(module, known, "!0", false),
+                None => state
+                    .composition_arguments
+                    .get(&(input.start, input.end))
+                    .cloned()
+                    .unwrap_or_default(),
+            })
+            .collect();
+
+        format!("{factory}({})", arguments.join(","))
     }
 
     fn rewrite(
@@ -1733,18 +1987,6 @@ impl<'a> Generator<'_, 'a> {
             }
 
             let replacement = if let Some(inputs) = &call.runtime_composition {
-                let helper = if html {
-                    state.composition_html.clone()
-                } else {
-                    state.composition.clone()
-                };
-
-                if html {
-                    state.uses_composition_html = true;
-                } else {
-                    state.uses_composition = true;
-                }
-
                 let base = format!("{}{}", state.composition, self.parsed.utf16(call.start));
                 let mut factory = base.clone();
 
@@ -1752,92 +1994,32 @@ impl<'a> Generator<'_, 'a> {
                     factory.push('_');
                 }
 
-                let mut config = String::from("{");
-
-                // `JSON.stringify` omits a missing class list.
-                if self.classes.contains_key(&call.name) {
-                    config.push_str("\"className\":");
-                    config.push_str(&class_name);
-                    config.push(',');
+                // Outer compositions that flatten this call read its authored arguments.
+                for input in inputs {
+                    state
+                        .composition_arguments
+                        .entry((input.start, input.end))
+                        .or_insert_with(|| {
+                            module.slice(input.start, input.end).unwrap_or_default()
+                        });
                 }
 
-                if let Some(cases) = &call.composition_cases {
-                    config.push_str("\"cases\":[");
-
-                    for (index, name) in cases.iter().enumerate() {
-                        if index > 0 {
-                            config.push(',');
-                        }
-
-                        // An array prints a missing class list as `null`.
-                        match self.classes.get(name) {
-                            Some(class) => js::write_string(&mut config, class),
-                            None => config.push_str("null"),
-                        }
-                    }
-
-                    config.push_str("],");
-                }
-
-                config.push_str("\"inputs\":[");
-
-                for (index, input) in inputs.iter().enumerate() {
-                    if index > 0 {
-                        config.push(',');
-                    }
-
-                    let class_name = self
-                        .classes
-                        .get(&input.name)
-                        .map(String::as_str)
-                        .or_else(|| {
-                            self.style_classes
-                                .and_then(|classes| classes.get(&input.name))
-                                .map(|class| &**class)
-                        })
-                        .unwrap_or_default();
-
-                    config.push_str("{\"className\":");
-                    js::write_string(&mut config, class_name);
-
-                    if let Some(condition) = input.condition {
-                        let _ = write!(config, ",\"condition\":{condition}");
-                    }
-
-                    config.push_str(",\"owners\":[");
-
-                    for (index, owner) in input.owners.iter().enumerate() {
-                        if index > 0 {
-                            config.push(',');
-                        }
-
-                        owner.write_json(&mut config);
-                    }
-
-                    config.push_str("]}");
-                }
-
-                config.push_str("]}");
-                state.compositions.push(format!(
-                    "const {factory}=/*#__PURE__*/{helper}.create({config});"
-                ));
-
-                let arguments: Vec<String> = inputs
+                let known: Vec<Option<&KnownInput>> = inputs
                     .iter()
                     .map(|input| {
-                        let key = (input.start, input.end);
-
-                        state
-                            .composition_arguments
-                            .entry(key)
-                            .or_insert_with(|| {
-                                module.slice(input.start, input.end).unwrap_or_default()
-                            })
-                            .clone()
+                        input.known.as_ref().filter(|known| {
+                            !known.imported || self.input_class(&input.name).is_some()
+                        })
                     })
                     .collect();
 
-                format!("{factory}({})", arguments.join(","))
+                if !html && known.iter().all(Option::is_some) {
+                    self.constant(module, &mut state, call, inputs, &known, &factory)
+                } else {
+                    self.runtime_composition(
+                        module, &mut state, call, inputs, &known, &factory, html,
+                    )
+                }
             } else if let Some(guards) = &call.composition {
                 let base = if compose_html {
                     format!(
@@ -2588,7 +2770,8 @@ impl<'a> Generator<'_, 'a> {
             || state.uses_html
             || state.uses_selection
             || state.uses_appearance
-            || variables)
+            || variables
+            || !state.compositions.is_empty())
         {
             return Ok(());
         }
@@ -2638,10 +2821,13 @@ impl<'a> Generator<'_, 'a> {
         .map(|(_, export, local)| format!("{export} as {local}"))
         .collect();
 
-        module.append_left(
-            offset,
-            format!("\nimport {{ {} }} from 'zyzz/runtime';\n", names.join(", ")),
-        )?;
+        // Constant compositions import nothing.
+        if !names.is_empty() {
+            module.append_left(
+                offset,
+                format!("\nimport {{ {} }} from 'zyzz/runtime';\n", names.join(", ")),
+            )?;
+        }
 
         Ok(())
     }

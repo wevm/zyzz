@@ -1,8 +1,8 @@
 //! Finds direct applications of local style definitions so the transform can fold or erase them.
 //!
 //! A candidate is a top-level `const` bound to a definition call, a top-level object of such
-//! calls, or a non-exported namespace of exported `const` calls. Applications are no-argument
-//! calls of a candidate or one of its members, or calls whose only argument overrides
+//! calls, or a non-exported namespace of `const` calls. Applications are no-argument calls of a
+//! candidate or one of its exported members, or calls whose only argument overrides
 //! `className`. Reads that escape keep the runtime callable.
 
 use std::cell::OnceCell;
@@ -103,10 +103,12 @@ struct Candidate<'c, 'a> {
     /// Span of the binding identifier.
     binding: Span,
     direct: Option<&'c Call<'a>>,
-    /// Object or namespace members in authored order, by member name.
+    /// Object or exported namespace members in authored order, by member name.
     members: Members<'c, 'a>,
     name: Arc<str>,
     namespace: Option<Namespace>,
+    /// Non-exported namespace members, which only sibling definitions can read.
+    private: Members<'c, 'a>,
     ready: u32,
 }
 
@@ -193,6 +195,7 @@ pub fn create<'c, 'a>(
             && let TSNamespaceDeclarationBody::TSModuleBlock(block) = &namespace.body
         {
             let mut members = Members::with_capacity_and_hasher(block.body.len(), FxBuildHasher);
+            let mut private = Members::default();
             let mut ends = crate::js::Record::new();
             let mut bindings = Vec::with_capacity(block.body.len());
             let mut valid = true;
@@ -200,11 +203,11 @@ pub fn create<'c, 'a>(
             names.reserve(block.body.len());
 
             'members: for member in &block.body {
-                let Statement::ExportDeclaration(export) = member else {
-                    valid = false;
-                    break;
+                let (declaration, exported) = match member {
+                    Statement::ExportDeclaration(export) => (Some(&export.declaration), true),
+                    other => (other.as_declaration(), false),
                 };
-                let Declaration::VariableDeclaration(variable) = &export.declaration else {
+                let Some(Declaration::VariableDeclaration(variable)) = declaration else {
                     valid = false;
                     break;
                 };
@@ -225,9 +228,10 @@ pub fn create<'c, 'a>(
                         .init
                         .as_ref()
                         .and_then(|init| is_call_of(&definitions, init));
-                    let Some(call) =
-                        call.filter(|_| !members.contains_key(identifier.name.as_str()))
-                    else {
+                    let Some(call) = call.filter(|_| {
+                        !members.contains_key(identifier.name.as_str())
+                            && !private.contains_key(identifier.name.as_str())
+                    }) else {
                         valid = false;
                         break 'members;
                     };
@@ -237,7 +241,12 @@ pub fn create<'c, 'a>(
                         .as_ref()
                         .map_or(identifier.span.end, |annotation| annotation.span.end);
 
-                    members.insert(Arc::from(identifier.name.as_str()), call);
+                    if exported {
+                        members.insert(Arc::from(identifier.name.as_str()), call);
+                    } else {
+                        private.insert(Arc::from(identifier.name.as_str()), call);
+                    }
+
                     ends.insert(Arc::clone(&call.name), end);
                     bindings.push((identifier.span.start, Arc::clone(&call.name)));
                     names.insert(identifier.name.as_str());
@@ -261,6 +270,7 @@ pub fn create<'c, 'a>(
                         start: namespace.span.start,
                         typed: false,
                     }),
+                    private,
                     ready: namespace.span.end,
                 });
             }
@@ -333,6 +343,7 @@ pub fn create<'c, 'a>(
                 members,
                 name: Arc::from(identifier.name.as_str()),
                 namespace: None,
+                private: Members::default(),
                 ready: declarator.span.end,
             });
         }
@@ -795,6 +806,12 @@ impl<'c, 'a> Applications<'c, 'a> {
                     }
                 }
             }
+
+            for call in candidate.private.values() {
+                if !self.referenced_definitions.contains(&call.name) {
+                    result.insert(Arc::clone(&call.name));
+                }
+            }
         }
 
         result
@@ -833,7 +850,12 @@ impl<'c, 'a> Applications<'c, 'a> {
                 .collect();
             let calls: Vec<&Call<'a>> = match candidate.direct {
                 Some(direct) => vec![direct],
-                None => candidate.members.iter().map(|(_, call)| *call).collect(),
+                None => candidate
+                    .members
+                    .values()
+                    .chain(candidate.private.values())
+                    .copied()
+                    .collect(),
             };
 
             for call in calls {

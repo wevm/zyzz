@@ -959,6 +959,103 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
       await Esbuild.transform(output.code, { loader: 'ts' })
     })
 
+    test('selects frozen presence alternatives for known applications without runtime helpers', async () => {
+      const graph = Graph.compile({
+        cssOutput: 'grouped',
+        imports: {
+          'app.tsx': { './text.js': 'text.ts', zyzz: null },
+          'text.ts': { zyzz: null },
+        },
+        modules: {
+          'text.ts': `import {style} from 'zyzz'; export const badge=style({color:'red',padding:'1px'}); export const high=style({color:'blue'});`,
+          'app.tsx': `import {cx,style} from 'zyzz'; import * as text from './text.js';
+          let reads=0; export const count=()=>reads;
+          function read(value:boolean){reads++;return value}
+          namespace styles {
+            export const base=style({color:'green',margin:'1px'});
+            export const wide=style({margin:'4px'});
+            export const step=style({paddingTop:'1px'});
+          }
+          export const imported=(high:boolean)=>cx(text.badge(),read(high) && text.high());
+          export const local=(wide:boolean,high:boolean)=>cx(styles.base(),wide && styles.wide(),read(high) && text.high(),styles.step());
+          export const many=(mask:number)=>cx(${Array.from(
+            { length: 8 },
+            (_, bit) =>
+              `(mask & ${1 << bit}) !== 0 && styles.${bit % 2 ? 'wide' : 'base'}()`,
+          ).join(',')});
+          export const early=(()=>{try{return cx(late(),reads===0 && late())}catch(error){return String(error)}})();
+          const late=style({color:'black'});`,
+        },
+      })
+      const app = graph.modules['app.tsx']!.code
+
+      expect(app.includes('Composition')).toMatchInlineSnapshot(`false`)
+
+      const fixture = Vm.runInNewContext(
+        `${await Packed.bundle({
+          entry: 'app.tsx',
+          modules: Object.fromEntries(
+            Object.entries(graph.modules).map(([name, module]) => [
+              name,
+              module.code,
+            ]),
+          ),
+        })};Fixture;`,
+      )
+
+      expect(fixture.early).toMatchInlineSnapshot(
+        `"TypeError: late is not a function"`,
+      )
+      expect(fixture.imported(true)).toBe(fixture.imported(true))
+      expect(Object.isFrozen(fixture.imported(false))).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(fixture.count()).toMatchInlineSnapshot(`3`)
+
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        const css =
+          (graph.sharedCss ?? '') +
+          Object.values(graph.modules)
+            .map((module) => module.css)
+            .join('')
+        const read = async (props: { readonly className: string }) => {
+          await page.setContent(
+            `<style>${css}</style><div class="${props.className}"></div>`,
+          )
+          return page.locator('div').evaluate((node) => {
+            const style = getComputedStyle(node)
+            return `${style.color} ${style.margin} ${style.padding}`
+          })
+        }
+
+        expect(await read(fixture.imported(false))).toMatchInlineSnapshot(
+          `"rgb(255, 0, 0) 0px 1px"`,
+        )
+        expect(await read(fixture.imported(true))).toMatchInlineSnapshot(
+          `"rgb(0, 0, 255) 0px 1px"`,
+        )
+        expect(await read(fixture.local(false, false))).toMatchInlineSnapshot(
+          `"rgb(0, 128, 0) 1px 1px 0px 0px"`,
+        )
+        expect(await read(fixture.local(true, true))).toMatchInlineSnapshot(
+          `"rgb(0, 0, 255) 4px 1px 0px 0px"`,
+        )
+        expect(await read(fixture.many(0b0000_0001))).toMatchInlineSnapshot(
+          `"rgb(0, 128, 0) 1px 0px"`,
+        )
+        expect(await read(fixture.many(0b0101_0110))).toMatchInlineSnapshot(
+          `"rgb(0, 128, 0) 1px 0px"`,
+        )
+        expect(await read(fixture.many(0b0010_1001))).toMatchInlineSnapshot(
+          `"rgb(0, 128, 0) 4px 0px"`,
+        )
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('diagnoses conditional omissions without dropping evaluation', () => {
       expect(() =>
         Transform.compile({

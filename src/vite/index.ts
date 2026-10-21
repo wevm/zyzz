@@ -2286,15 +2286,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         // package files, recompile a closure that reads them.
         const project = projects.get(this.environment)
         const first = (() => {
-          // A module Vite transforms supersedes the anchor an earlier edit created.
-          const own = state.get(file)
-          if (own) {
-            anchored(this.environment).delete(file)
-            return own
-          }
-
-          const existing = anchored(this.environment).get(file)
-          if (existing) return existing
+          const own = state.get(file) ?? anchored(this.environment).get(file)
+          if (own) return own
 
           if (
             !eligible(file) ||
@@ -2489,6 +2482,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             files: new Set([anchor]),
           }
           entries(this.environment).set(anchor, entry)
+          anchors.get(this.environment)?.delete(anchor)
         }
       }
 
@@ -2564,6 +2558,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           files: new Set([id]),
         }
         state.set(id, entry)
+        // The entry supersedes the anchor an earlier edit created, whose closure read the source
+        // from disk rather than from the load hooks.
+        anchors.get(this.environment)?.delete(id)
         removed.get(this.environment)?.delete(id)
       }
 

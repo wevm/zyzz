@@ -817,12 +817,26 @@ impl<'c, 'a> Applications<'c, 'a> {
         }
 
         for candidate in &self.candidates {
-            for reference in self
+            let reads = self
                 .references
                 .get(&candidate.name)
                 .map(Vec::as_slice)
-                .unwrap_or_default()
+                .unwrap_or_default();
+
+            // Any member read other than a call could replace the member, as `styles.dot = other` does.
+            if candidate.direct.is_none()
+                && !reads.iter().all(|reference| {
+                    reference.span == candidate.binding
+                        || reference.resolved
+                        || member_name(reference.parent, reference.span).is_some_and(
+                            |(_, member)| call_of(reference.grandparent, member).is_some(),
+                        )
+                })
             {
+                continue;
+            }
+
+            for reference in reads {
                 let Some(values) = reference.bound else {
                     continue;
                 };

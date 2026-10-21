@@ -6,6 +6,7 @@
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
+import * as Url from 'node:url'
 
 const commit =
   process.env.CSS_BENCH_COMMIT ?? 'bcaa3d316b1b6f897eed19da8545a9291197a66a'
@@ -15,7 +16,7 @@ const lanes = (
 const measures = process.env.CSS_BENCH_MEASURES ?? 'microbench,payload'
 const repository = 'https://github.com/jantimon/css-in-js-bench.git'
 
-const here = Path.dirname(new URL(import.meta.url).pathname)
+const here = Path.dirname(Url.fileURLToPath(import.meta.url))
 const root = Path.resolve(here, '../..')
 const directory = Path.join(root, 'bench/results/css-in-js-bench')
 

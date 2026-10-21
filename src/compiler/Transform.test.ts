@@ -7166,6 +7166,20 @@ namespace styles {
       }
     })
 
+    test('keeps the callable when a member read could replace the definition', () => {
+      const source = `import { style } from 'zyzz'
+const styles = {
+  dot: style((values: { width: string }) => ({ width: values.width })),
+}
+styles.dot = ((values: { width: string }) => ({ className: 'other', style: { height: values.width } })) as typeof styles.dot
+export const App = () => <div {...styles.dot({ width: '10px' })} />`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      expect(
+        output.code.slice(output.code.indexOf('<div')),
+      ).toMatchInlineSnapshot(`"<div {...styles.dot({ width: '10px' })} />"`)
+    })
+
     test('mixes bound theme references with static and dynamic declarations', () => {
       expect(
         Transform.compile({

@@ -1065,6 +1065,15 @@ pub fn compile<'a>(
         .map(applications::Applications::bound)
         .unwrap_or_default();
 
+    let named: FxHashMap<&str, &NamedStyle> = if bound.is_empty() {
+        FxHashMap::default()
+    } else {
+        styles
+            .iter()
+            .map(|style| (&*style.name, &**style))
+            .collect()
+    };
+
     for call in &extracted.calls {
         let (Some(slots), Some(applied)) = (&call.slots, bound.get(&call.name)) else {
             continue;
@@ -1074,7 +1083,7 @@ pub fn compile<'a>(
             continue;
         }
 
-        let Some(style) = styles.iter().find(|style| style.name == call.name) else {
+        let Some(style) = named.get(&*call.name) else {
             continue;
         };
         let properties = dynamic::inline(style, slots);

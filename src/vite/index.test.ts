@@ -3376,6 +3376,135 @@ export namespace styles {
     }
   }, 30000)
 
+  test('development discovers contributions by each source grammar', async () => {
+    // TypeScript reads the assertion, which TSX parses as an unclosed element.
+    const source = `import { global } from 'zyzz/web'; export const label = <string>'Continue'; global({ body: { color: 'rgb(1, 2, 3)' } });`
+    const { config, root } = await create({
+      ...Fixture.files,
+      'a.tsx': source,
+      'b.ts': source,
+    })
+    const server = await Vite.createServer(config)
+
+    try {
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      const origin = `http://127.0.0.1:${address.port}`
+      const code = await (await fetch(`${origin}/card.ts`)).text()
+      const sharedPath = code.match(
+        /import\s*["']([^"']*zyzz:shared\.css)["']/,
+      )?.[1]
+      if (!sharedPath) throw new Error('Missing shared CSS import')
+
+      // The TSX file shares the text but not the grammar, so the TypeScript source still contributes.
+      expect(
+        (await (await fetch(origin + sharedPath)).text()).includes(
+          'rgb(1, 2, 3)',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
+
+  test('development updates a theme from a package it begins to import', async () => {
+    const { config, root } = await create()
+    // A linked workspace package resolves outside the root, where Vite watches it.
+    const tokens = `${root}.tokens`
+    const brand = (color: string) =>
+      Fs.writeFile(
+        Path.join(tokens, 'index.js'),
+        `import { Vars } from 'zyzz';\nexport const palette = Vars.define({ color: { brand: '${color}' } }, { id: 'acme/palette' });\n`,
+      )
+    const server = await Vite.createServer(config)
+    let socket: WebSocket | undefined
+
+    try {
+      await Fs.mkdir(tokens, { recursive: true })
+      await Fs.writeFile(
+        Path.join(tokens, 'package.json'),
+        JSON.stringify({
+          exports: { '.': './index.js' },
+          name: '@acme/brand',
+          peerDependencies: { zyzz: '*' },
+          type: 'module',
+        }),
+      )
+      await brand('#123456')
+      await Fs.mkdir(Path.join(tokens, 'node_modules'), { recursive: true })
+      await Fs.symlink(
+        process.cwd(),
+        Path.join(tokens, 'node_modules/zyzz'),
+        'dir',
+      )
+      await Fs.mkdir(Path.join(root, 'node_modules/@acme'), { recursive: true })
+      await Fs.symlink(
+        tokens,
+        Path.join(root, 'node_modules/@acme/brand'),
+        'dir',
+      )
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      const origin = `http://127.0.0.1:${address.port}`
+      const code = await (await fetch(`${origin}/card.ts`)).text()
+      const sharedPath = code.match(
+        /import\s*["']([^"']*zyzz:shared\.css)["']/,
+      )?.[1]
+      if (!sharedPath) throw new Error('Missing shared CSS import')
+
+      const stylesheet = async () => (await fetch(origin + sharedPath)).text()
+
+      await stylesheet()
+
+      socket = new WebSocket(
+        `ws://127.0.0.1:${address.port}/?token=${server.config.webSocketToken}`,
+        'vite-hmr',
+      )
+      await new Promise<void>((resolve, reject) => {
+        socket!.onopen = () => resolve()
+        socket!.onerror = () => reject(new Error('WebSocket failed'))
+      })
+
+      // 1. Edit the theme, which its importer compiles away, to select the package's variable set.
+      // Nothing requests the stylesheets again before the next edit.
+      await message(
+        socket,
+        () =>
+          Watch.write({
+            path: Path.join(root, 'alternate.ts'),
+            source: `import { palette } from '@acme/brand'; export const mint = palette;`,
+          }),
+        (text) => text.includes('shared.css'),
+      )
+
+      // 2. Edit the package, which only the theme's compile reads.
+      const update = await message(
+        socket,
+        () => brand('#654321'),
+        (text) => text.includes('shared.css'),
+      )
+
+      expect(update.includes('shared.css')).toMatchInlineSnapshot(`true`)
+      expect((await stylesheet()).includes('#654321')).toMatchInlineSnapshot(
+        `true`,
+      )
+    } finally {
+      socket?.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+      await Fs.rm(tokens, { recursive: true, force: true })
+    }
+  }, 30000)
+
   test('development announces a module update once until the environment loads it', async () => {
     const accepted = (name: string, padding: string) =>
       `import { style } from './config'; export const ${name} = style({ color: 'brand', padding: '${padding}' })(); if (import.meta.hot) import.meta.hot.accept();`

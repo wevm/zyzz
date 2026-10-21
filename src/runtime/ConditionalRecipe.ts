@@ -34,7 +34,9 @@ export function create(options: create.Options) {
             choices: new Map(
               options.axes[axis]!.map((name, position) => [
                 name,
-                ` ${Recipe.choice({ axis: index, choice: position, condition, prefix })}`,
+                options.silent?.[axis]?.includes(name)
+                  ? ''
+                  : ` ${Recipe.choice({ axis: index, choice: position, condition, prefix })}`,
               ]),
             ),
             overridden: ` ${Recipe.overridden({ axis: index, condition, prefix })}`,

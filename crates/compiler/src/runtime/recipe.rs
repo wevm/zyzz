@@ -39,4 +39,6 @@ pub struct Definition {
     pub payloads: Option<Vec<Payload>>,
     /// Class prefix of a recipe that selects choices with classes instead of `data-*` attributes.
     pub prefix: Option<Arc<str>>,
+    /// Choices of a class-selection recipe that no rule matches, whose classes applications omit.
+    pub silent: Option<Record<Vec<Arc<str>>>>,
 }

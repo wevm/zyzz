@@ -197,11 +197,27 @@ export function variants(
   const defaults = (input.defaultVariants ?? {}) as Record<string, unknown>
   const prefix = input.selection === 'class' ? Identity.recipe(id) : undefined
   const props = Props.create({ className })
-  // Class selection names a choice by its axis and choice positions.
+  const compounds = (input.compoundVariants ?? []) as readonly {
+    when: Record<string, unknown>
+  }[]
+  // Class selection names a choice by its axis and choice positions. An empty choice that no
+  // compound names matches no rule, so its class is omitted, as compiled selection omits it.
   function marker(axis: string, value: unknown, condition?: number) {
     const index = axes.findIndex(([name]) => name === axis)
-    const position = Object.keys(axes[index]![1]).indexOf(String(value))
-    return position < 0
+    const choices = axes[index]![1]
+    const name = String(value)
+    const position = Object.keys(choices).indexOf(name)
+    const body = choices[name]
+    const silent =
+      typeof body === 'object' &&
+      body !== null &&
+      Object.keys(body).length === 0 &&
+      !compounds.some((compound) =>
+        ([] as unknown[])
+          .concat(compound.when[axis])
+          .some((choice) => String(choice) === name),
+      )
+    return position < 0 || silent
       ? ''
       : ` ${Recipe.choice({ axis: index, choice: position, condition, prefix: prefix! })}`
   }

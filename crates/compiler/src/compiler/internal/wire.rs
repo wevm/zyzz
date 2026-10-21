@@ -540,6 +540,17 @@ impl<'o> Encoder<'o> {
             "prefix",
             recipe.prefix.as_deref().map(|prefix| json!(prefix)),
         );
+        optional(
+            &mut object,
+            "silent",
+            recipe.silent.as_ref().map(|silent| {
+                pairs(
+                    silent
+                        .iter()
+                        .map(|(axis, choices)| (axis.to_string(), strings(choices.iter()))),
+                )
+            }),
+        );
 
         Value::Object(object)
     }

@@ -455,7 +455,17 @@ fn write_class_selector(
         // `String` matches the attribute value an attribute recipe would write.
         output.push_str("if(value!==null&&value!==void 0){value=String(value);className+=");
 
+        let silent = recipe
+            .silent
+            .as_ref()
+            .and_then(|silent| silent.get(axis))
+            .map_or(&[][..], Vec::as_slice);
+
         for (choice, name) in choices.iter().enumerate() {
+            if silent.contains(name) {
+                continue;
+            }
+
             output.push_str("value===");
             js::write_string(output, name);
             output.push('?');
@@ -2312,6 +2322,15 @@ impl<'a> Generator<'_, 'a> {
                     if let Some(prefix) = &recipe.prefix {
                         selection.push_str(",\"prefix\":");
                         js::write_string(&mut selection, prefix);
+                    }
+
+                    if let Some(silent) = &recipe.silent {
+                        selection.push_str(",\"silent\":");
+                        js::write_object(
+                            &mut selection,
+                            silent.iter().map(|(axis, choices)| (&**axis, choices)),
+                            |output, choices| write_strings(output, choices),
+                        );
                     }
 
                     if let Some(conditions) = &recipe.conditions {

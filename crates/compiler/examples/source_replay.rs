@@ -36,6 +36,7 @@ fn calls<'a>(case: &Value) -> Vec<Call<'a>> {
                             defaults: compiler::js::Record::new(),
                             payloads: None,
                             prefix: None,
+                            silent: None,
                         }
                     }),
                     start: call["start"]

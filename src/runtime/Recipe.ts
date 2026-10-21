@@ -19,6 +19,8 @@ export type Definition = {
   readonly payloads?: readonly Payload[] | undefined
   /** Class prefix of a recipe that selects choices with classes instead of `data-*` attributes. */
   readonly prefix?: string | undefined
+  /** Choices of a class-selection recipe that no rule matches, whose classes applications omit. */
+  readonly silent?: Readonly<Record<string, readonly string[]>> | undefined
 }
 
 /** Fixed input bindings for one dynamic choice. */
@@ -72,7 +74,9 @@ export function create(options: create.Options) {
       ? new Map(
           options.axes[axis]!.map((name, position) => [
             name,
-            ` ${choice({ axis: index, choice: position, prefix: options.prefix! })}`,
+            options.silent?.[axis]?.includes(name)
+              ? ''
+              : ` ${choice({ axis: index, choice: position, prefix: options.prefix! })}`,
           ]),
         )
       : undefined,
@@ -117,7 +121,7 @@ export function create(options: create.Options) {
 /** Generated recipe initialization inputs. */
 export declare namespace create {
   /** Fixed metadata retained by the compiled callable. */
-  type Options = Pick<Definition, 'axes' | 'defaults' | 'prefix'> & {
+  type Options = Pick<Definition, 'axes' | 'defaults' | 'prefix' | 'silent'> & {
     /** Complete compiled class list. */
     readonly className: string
     /** Whether to return native HTML attributes. */

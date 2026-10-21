@@ -1499,6 +1499,7 @@ impl Compiler<'_, '_> {
                 payloads: dynamic.payloads.clone(),
                 // Native selection reads tables, never classes.
                 prefix: None,
+                silent: None,
             }),
             slots: dynamic.map(|dynamic| dynamic.slots.clone()),
             ..Call::default()

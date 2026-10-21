@@ -353,7 +353,9 @@ describe('variants API page', () => {
       variants(
         {
           selection: 'class',
-          variants: { size: { compact: {}, regular: {} } },
+          variants: {
+            size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+          },
         },
         { id: 'button' },
       )({ size: 'regular' }),

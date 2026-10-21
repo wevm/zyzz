@@ -548,6 +548,17 @@ fn runtime_recipe<'j>(decoder: &mut Decoder<'j>, node: &'j Json) -> Outcome<runt
         prefix: present(decoder, node, "prefix")
             .map(|prefix| string(decoder.node(prefix)).map(Arc::from))
             .transpose()?,
+        silent: present(decoder, node, "silent")
+            .map(|node| -> Outcome<Record<Vec<Arc<str>>>> {
+                let mut silent = Record::new();
+
+                for (axis, choices) in properties(decoder.node(node)) {
+                    silent.insert(axis, decoder.strings(choices)?);
+                }
+
+                Ok(silent)
+            })
+            .transpose()?,
     })
 }
 

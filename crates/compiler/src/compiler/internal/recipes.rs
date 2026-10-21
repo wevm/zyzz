@@ -790,6 +790,42 @@ pub fn expand<'s, 'a>(
         }
     }
 
+    // A choice class that no selector reads changes nothing, so applications omit it.
+    let silent = matches!(selection, Selection::Class(_))
+        .then(|| {
+            let mut silent: Record<Vec<Arc<str>>> = Record::new();
+
+            for rule in &rules {
+                let ([(axis, choices)], true, None) =
+                    (rule.matches.as_slice(), rule.suffix.is_empty(), &rule.bodies)
+                else {
+                    continue;
+                };
+                let Some(choice) = choices.first() else {
+                    continue;
+                };
+                let empty = matches!(&rule.property.value, Expression::ObjectExpression(body) if body.properties.is_empty());
+                let compounded = rules.iter().any(|other| {
+                    !other.suffix.is_empty()
+                        && other
+                            .matches
+                            .iter()
+                            .any(|(name, names)| name == axis && names.contains(choice))
+                });
+
+                if !empty || compounded {
+                    continue;
+                }
+
+                match silent.get_mut(axis) {
+                    Some(names) => names.push(Arc::clone(choice)),
+                    None => silent.insert(Arc::clone(axis), vec![Arc::clone(choice)]),
+                }
+            }
+
+            silent
+        })
+        .filter(|silent| !silent.is_empty());
     let mut tree = Tree::default();
 
     for region in &regions {
@@ -933,6 +969,7 @@ pub fn expand<'s, 'a>(
             Selection::Attribute => None,
             Selection::Class(prefix) => Some(Arc::from(prefix)),
         },
+        silent,
     };
     let (dynamic_recipe, static_recipe) = if dynamic {
         (alternatives, None)

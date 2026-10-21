@@ -1488,6 +1488,7 @@ describe('selection', () => {
     variants: {
       size: { sm: { padding: '4px' }, lg: { padding: '12px' } },
       loading: { true: { opacity: 0.5 }, false: { opacity: 1 } },
+      outlined: { false: {}, true: { outlineStyle: 'dotted' } },
     },
     defaultVariants: { size: 'sm', loading: false },
     compoundVariants: [
@@ -1601,6 +1602,8 @@ namespace classes {${recipes("\n    selection: 'class',")}
           ['plain', { size: 'sm', loading: true }],
           ['plain', { size: null, loading: null, style: { color: 'green' } }],
           ['plain', { size: undefined, loading: false, className: 'extra' }],
+          ['plain', { outlined: true }],
+          ['plain', { outlined: false }],
           ['payload'],
           ['payload', { size: { custom: { padding: '16px' } } }],
           ['payload', { size: 'sm' }],
@@ -1638,6 +1641,8 @@ namespace classes {${recipes("\n    selection: 'class',")}
               "4px rgb(255, 0, 0) 0.5 400 none",
               "2px rgb(0, 128, 0) 1 400 none",
               "4px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 dotted",
+              "4px rgb(0, 0, 0) 1 400 none",
               "12px rgb(255, 0, 0) 1 400 none",
               "16px rgb(255, 0, 0) 1 400 none",
               "4px rgb(0, 0, 0) 1 400 none",
@@ -1657,6 +1662,8 @@ namespace classes {${recipes("\n    selection: 'class',")}
               "12px rgb(0, 0, 255) 0.5 700 none",
               "4px rgb(255, 0, 0) 0.5 400 none",
               "2px rgb(0, 128, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 dotted",
               "4px rgb(0, 0, 0) 1 400 none",
               "12px rgb(255, 0, 0) 1 400 none",
               "16px rgb(255, 0, 0) 1 400 none",
@@ -1678,6 +1685,8 @@ namespace classes {${recipes("\n    selection: 'class',")}
               "4px rgb(255, 0, 0) 0.5 400 none",
               "2px rgb(0, 128, 0) 1 400 none",
               "4px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 dotted",
+              "4px rgb(0, 0, 0) 1 400 none",
               "12px rgb(255, 0, 0) 1 400 none",
               "16px rgb(255, 0, 0) 1 400 none",
               "4px rgb(0, 0, 0) 1 400 none",
@@ -1698,6 +1707,8 @@ namespace classes {${recipes("\n    selection: 'class',")}
               "4px rgb(255, 0, 0) 0.5 400 none",
               "2px rgb(0, 128, 0) 1 400 none",
               "4px rgb(0, 0, 0) 1 400 none",
+              "4px rgb(0, 0, 0) 1 400 dotted",
+              "4px rgb(0, 0, 0) 1 400 none",
               "12px rgb(255, 0, 0) 1 400 none",
               "16px rgb(255, 0, 0) 1 400 none",
               "4px rgb(0, 0, 0) 1 400 none",
@@ -1716,11 +1727,11 @@ namespace classes {${recipes("\n    selection: 'class',")}
         `)
         expect(
           await page.evaluate(
-            `App.selected.plain({ size: 'lg', loading: true, className: 'extra' })`,
+            `App.selected.plain({ size: 'lg', loading: true, outlined: false, className: 'extra' })`,
           ),
         ).toMatchInlineSnapshot(`
           {
-            "className": "z_Zf5JrJ1e z_Zf5JrJ1f z_Zf5JrJ1g z_Zf5JrJ1h z_Zf5JrJ1i z_Zf5JrJ1j z_Zf5JrJ1k z_Zf5JrJ1l z_Zf5JrJ1m z_Zf5JrJ1n z_Zf5JrJ1o z-v-1xOvZXeSIPY-0-1 z-v-1xOvZXeSIPY-1-0 extra",
+            "className": "z_Zf5JrJ1f z_Zf5JrJ1g z_Zf5JrJ1h z_Zf5JrJ1i z_Zf5JrJ1j z_Zf5JrJ1k z_Zf5JrJ1l z_Zf5JrJ1m z_Zf5JrJ1n z_Zf5JrJ1o z_Zf5JrJ1p z_Zf5JrJ1q z-v-1xOvZXeSIPY-0-1 z-v-1xOvZXeSIPY-1-0 extra",
           }
         `)
         expect(
@@ -1734,10 +1745,10 @@ namespace classes {${recipes("\n    selection: 'class',")}
         `)
         expect(await page.evaluate(`App.selected.html({ size: 'lg' })`))
           .toMatchInlineSnapshot(`
-          {
-            "class": "z_Zf5JrJ2o z_Zf5JrJ2p z_Zf5JrJ2q z-v-6hr07stxA3r-0-1",
-          }
-        `)
+            {
+              "class": "z_Zf5JrJ2q z_Zf5JrJ2r z_Zf5JrJ2s z-v-6hr07stxA3r-0-1",
+            }
+          `)
       } finally {
         await browser.close()
       }

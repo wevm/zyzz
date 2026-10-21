@@ -608,6 +608,13 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
         ? { conditions: [...(input.conditions as string[])] }
         : {}),
       ...(input.prefix !== undefined ? { prefix: input.prefix as string } : {}),
+      ...(input.silent !== undefined
+        ? {
+            silent: lookup(input.silent, (choices) => [
+              ...(choices as string[]),
+            ]),
+          }
+        : {}),
     }
   }
 

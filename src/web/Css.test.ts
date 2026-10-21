@@ -1810,7 +1810,7 @@ describe('names', () => {
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex z-text-[var(--z-color-brand,red)] z-style-zugwnm-card"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=/*#__PURE__*/__zyzzProps.create({className:"z-display-flex z-text-[var(--z-color-brand,red)] z-style-zugwnm-card"});"
       `)
     })
 

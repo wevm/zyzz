@@ -957,7 +957,7 @@ describe('Babel API page', () => {
 
     expect(babel(path, 'code')).toMatchInlineSnapshot(`
       "import { Props as __zyzzProps } from 'zyzz/runtime';
-      export const card = __zyzzProps.create({
+      export const card = /*#__PURE__*/__zyzzProps.create({
         className: "z-text-red z-style--mSYb5-card"
       });"
     `)

@@ -1858,11 +1858,11 @@ export namespace styles {
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         export namespace styles {
-          export const base = __zyzzProps.create({className:"z-Zf5JrJ-styles-base-text-0 z-Zf5JrJ-styles-base-p-1 z-style-Zf5JrJ-styles-base"})
+          export const base = /*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-styles-base-text-0 z-Zf5JrJ-styles-base-p-1 z-style-Zf5JrJ-styles-base"})
 
-          export const focusRing = __zyzzProps.create({className:"z-Zf5JrJ-styles-focusRing-outline-0 z-style-Zf5JrJ-styles-focusRing"})
+          export const focusRing = /*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-styles-focusRing-outline-0 z-style-Zf5JrJ-styles-focusRing"})
 
-          export const button = __zyzzProps.create({className:"z-Zf5JrJ-styles-button-text-0 z-Zf5JrJ-styles-button-p-1 z-Zf5JrJ-styles-focusRing-outline-0 z-Zf5JrJ-styles-button-text-2 z-Zf5JrJ-styles-button-p-3 z-style-Zf5JrJ-styles-button"})
+          export const button = /*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-styles-button-text-0 z-Zf5JrJ-styles-button-p-1 z-Zf5JrJ-styles-focusRing-outline-0 z-Zf5JrJ-styles-button-text-2 z-Zf5JrJ-styles-button-p-3 z-style-Zf5JrJ-styles-button"})
         }"
       `)
     })
@@ -2226,7 +2226,7 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
 
         const theme = ({} as import('zyzz').Vars.Definition<{}>); const themeConfig=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{}}>);
         const config = ({} as import('zyzz').Config.VariableConfig<{readonly "output":"html";readonly "vars":{}}>);
-        export const themed = __zyzzProps.create({className:"z-style-S71aUp-themed"});
+        export const themed = /*#__PURE__*/__zyzzProps.create({className:"z-style-S71aUp-themed"});
         export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-S71aUp-configured"})) as import('zyzz').style.ReturnType<'html'>);
         export const bare = ({className:""});
         export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-S71aUp-child-text-0 z-style-S71aUp-child"})) as import('zyzz').style.ReturnType<'html'>);"
@@ -2251,11 +2251,11 @@ export const outside = style({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         export namespace styles {
-          export const card = __zyzzProps.create({className:"z-Zf5JrJ-styles-card-p-0 z-style-Zf5JrJ-styles-card"})
-          export const empty = __zyzzProps.create({className:"z-style-Zf5JrJ-styles-empty"})
-          export const label = __zyzzProps.create({className:"z-Zf5JrJ-styles-label-text-0 z-Zf5JrJ-styles-label-text-1 z-Zf5JrJ-styles-label-opacity-2 z-Zf5JrJ-styles-label-font-weight-3 z-style-Zf5JrJ-styles-label"})
+          export const card = /*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-styles-card-p-0 z-style-Zf5JrJ-styles-card"})
+          export const empty = /*#__PURE__*/__zyzzProps.create({className:"z-style-Zf5JrJ-styles-empty"})
+          export const label = /*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-styles-label-text-0 z-Zf5JrJ-styles-label-text-1 z-Zf5JrJ-styles-label-opacity-2 z-Zf5JrJ-styles-label-font-weight-3 z-style-Zf5JrJ-styles-label"})
         }
-        export const outside = __zyzzProps.create({className:"z-Zf5JrJ-outside-m-0 z-style-Zf5JrJ-outside"})"
+        export const outside = /*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-outside-m-0 z-style-Zf5JrJ-outside"})"
       `)
     })
 
@@ -2340,9 +2340,9 @@ export {card,other,nested};`,
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
-        const card=__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-card"}); const alias=card;
-        const other=__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-other"});
-        function nested(){ const card=other; return __zyzzProps.create({className:"z-NRugqy-nested-text-0"}) }
+        const card=/*#__PURE__*/__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-card"}); const alias=card;
+        const other=/*#__PURE__*/__zyzzProps.create({className:"z-NRugqy-card-text-0 z-style-NRugqy-other"});
+        function nested(){ const card=other; return /*#__PURE__*/__zyzzProps.create({className:"z-NRugqy-nested-text-0"}) }
         export {card,other,nested};"
       `)
       expect(result.modules['scoped.ts']!.css).toMatchInlineSnapshot(`

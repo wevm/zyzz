@@ -253,7 +253,7 @@ export namespace styles {
       expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-Zf5JrJ-label---z-variables-accent-0 z-Zf5JrJ-label-text-1 z-Zf5JrJ-label---z-variables-accent-2 z-style-Zf5JrJ-label"}); export const inline=accent.set('red')"
+         import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=/*#__PURE__*/__zyzzProps.create({className:"z-Zf5JrJ-label---z-variables-accent-0 z-Zf5JrJ-label-text-1 z-Zf5JrJ-label---z-variables-accent-2 z-style-Zf5JrJ-label"}); export const inline=accent.set('red')"
       `)
     })
 

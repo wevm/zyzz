@@ -1638,9 +1638,9 @@ ${web.modules['app.ts']!.code}`,
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-LMAxOH-styles-card"})
+        export const card = /*#__PURE__*/__zyzzProps.create({className:"z-p-[var(--z-spacing-md,8px)] z-style-LMAxOH-styles-card"})
 
-        export const label = __zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-LMAxOH-styles-label"})
+        export const label = /*#__PURE__*/__zyzzProps.create({className:"z-text-[var(--z-color-brand,#06c)] z-style-LMAxOH-styles-label"})
       } export const props = styles.card(); export const scope = theme().className;"
     `)
 

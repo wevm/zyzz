@@ -273,24 +273,36 @@ pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots) -> Record<&'s str> {
     }
 
     let declarations = &style.declarations;
+    // Each binding's read count and first declaration, from one pass over the declarations.
+    let mut reads: FxHashMap<&str, (usize, usize)> = FxHashMap::default();
+
+    for (index, declaration) in declarations.iter().enumerate() {
+        let mut read = |name: &'s str| {
+            reads.entry(name).or_insert((0, index)).0 += 1;
+        };
+
+        match &declaration.value {
+            Value::Binding(binding) => read(&binding.name),
+            Value::Expression(expression) => {
+                for part in &expression.parts {
+                    if let Part::Binding(binding) = part {
+                        read(&binding.name);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
 
     for (field, slot) in slots.iter() {
         if slot.domain != Domain::Length || slot.zero {
             continue;
         }
 
-        let mut reads =
-            declarations
-                .iter()
-                .enumerate()
-                .filter(|(_, declaration)| match &declaration.value {
-                    Value::Binding(binding) => binding.name == slot.name,
-                    Value::Expression(expression) => expression.parts.iter().any(
-                        |part| matches!(part, Part::Binding(binding) if binding.name == slot.name),
-                    ),
-                    _ => false,
-                });
-        let (Some((index, declaration)), None) = (reads.next(), reads.next()) else {
+        let Some((1, index)) = reads.get(slot.name.as_str()).copied() else {
+            continue;
+        };
+        let Some(declaration) = declarations.get(index) else {
             continue;
         };
         let property = &*declaration.property;

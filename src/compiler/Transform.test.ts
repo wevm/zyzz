@@ -7038,6 +7038,7 @@ export const App = (props: { label: string; x: number }) => <main>
 <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
 <div id="later" {...styles.later({ width: props.label })} />
 <div id="hover" {...styles.hover({ width: props.label })} />
+<div id="mixed" {...styles.mixed({ opacity: 0.5, width: props.label })} />
 </main>
 namespace styles {
   export const dot = style((values: { transform: \`translateX(\${number}px)\`; width: string }) => ({
@@ -7049,6 +7050,8 @@ namespace styles {
   export const later = style((values: { width: string }) => ({ width: values.width, minInlineSize: '20px' }))
 
   export const hover = style((values: { width: string }) => ({ width: values.width, selectors: { '&:hover': { width: '1px' } } }))
+
+  export const mixed = style((values: { opacity: number; width: string }) => ({ opacity: values.opacity, width: values.width }))
 }`
       const output = Transform.compile({ moduleId: 'App.tsx', source })
 
@@ -7059,13 +7062,14 @@ namespace styles {
           output.code.indexOf('</main>'),
         ),
       ).toMatchInlineSnapshot(`
-          "<main>
-          <div id="dot" {...(styles.dot?{className:"z-l0kPgl-styles-dot-display-0 z-l0kPgl-styles-dot-w-1 z-l0kPgl-styles-dot-transform-2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label)||"unset"}}:styles.dot())} />
-          <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
-          <div id="later" {...styles.later({ width: props.label })} />
-          <div id="hover" {...styles.hover({ width: props.label })} />
-          "
-        `)
+        "<main>
+        <div id="dot" {...(styles.dot?{className:"z-l0kPgl-styles-dot-display-0 z-l0kPgl-styles-dot-w-1 z-l0kPgl-styles-dot-transform-2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label)||"unset"}}:styles.dot())} />
+        <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
+        <div id="later" {...styles.later({ width: props.label })} />
+        <div id="hover" {...styles.hover({ width: props.label })} />
+        <div id="mixed" {...(styles.mixed?{className:"z-l0kPgl-styles-mixed-opacity-0 z-l0kPgl-styles-mixed-w-1",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label)||"unset"}}:styles.mixed())} />
+        "
+      `)
 
       const bundle = await Esbuild.build({
         alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
@@ -7106,7 +7110,7 @@ namespace styles {
             elements.map((element) => {
               const style = getComputedStyle(element)
 
-              return [element.id, style.transform, style.width]
+              return [element.id, style.transform, style.width, style.opacity]
             }),
           )
         }
@@ -7117,21 +7121,31 @@ namespace styles {
               "dot",
               "matrix(1, 0, 0, 1, 4, 0)",
               "10px",
+              "1",
             ],
             [
               "shared",
               "matrix(1, 0, 0, 1, 0, 0)",
               "3px",
+              "1",
             ],
             [
               "later",
               "none",
               "20px",
+              "1",
             ],
             [
               "hover",
               "none",
               "10px",
+              "1",
+            ],
+            [
+              "mixed",
+              "none",
+              "10px",
+              "0.5",
             ],
           ]
         `)
@@ -7143,21 +7157,31 @@ namespace styles {
               "dot",
               "matrix(1, 0, 0, 1, 4, 0)",
               "1264px",
+              "1",
             ],
             [
               "shared",
               "matrix(1, 0, 0, 1, 0, 0)",
               "3px",
+              "1",
             ],
             [
               "later",
               "none",
               "1264px",
+              "1",
             ],
             [
               "hover",
               "none",
               "1264px",
+              "1",
+            ],
+            [
+              "mixed",
+              "none",
+              "1264px",
+              "0.5",
             ],
           ]
         `)

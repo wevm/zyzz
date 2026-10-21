@@ -431,19 +431,23 @@ fn json_class(classes: &IndexMap<Arc<str>, String, FxBuildHasher>, name: &str) -
         .map_or_else(|| "undefined".to_owned(), |value| quote(value))
 }
 
-/// Folds a dynamic application into its props, writing each field to the property it fills.
+/// Folds a dynamic application into its props, writing each field that fills one declaration to
+/// that property and each other field to its private variable.
 ///
 /// Values keep their authored text and order, so edits inside them still apply. An empty string
-/// writes `unset`, the value a declaration takes when its variable is invalid at computed-value
-/// time. The emitted rule still reads the variable, which no folded application assigns.
+/// writes `unset` to a property, the value a declaration takes when its variable is invalid at
+/// computed-value time, and a space to a variable, as the generated callable does. The emitted rule
+/// still reads the variable of an inlined field, which no folded application assigns.
 fn fold_bound(
     module: &mut Edits<'_>,
     source: &str,
     application: &Bound<'_>,
+    slots: &dynamic::Slots,
     properties: &js::Record<&str>,
     class_name: &str,
 ) -> Result<()> {
-    let mut fields: SmallVec<[(&str, Span); 4]> = SmallVec::new();
+    // Each field's key with its text before and after the authored value.
+    let mut fields: SmallVec<[(&str, String, &str, Span); 4]> = SmallVec::new();
 
     for property in &application.values.properties {
         let ObjectPropertyKind::ObjectProperty(property) = property else {
@@ -459,18 +463,33 @@ fn fold_bound(
             PropertyKey::StringLiteral(literal) => literal.value.as_str(),
             _ => return Ok(()),
         };
-        let Some(target) = properties.get(key) else {
+        let Some(slot) = slots.get(key) else {
             return Ok(());
         };
 
-        if fields.iter().any(|(existing, _)| *existing == *target) {
+        if fields.iter().any(|(existing, ..)| *existing == key) {
             return Ok(());
         }
 
-        fields.push((target, property.value.span()));
+        let field = match properties.get(key) {
+            Some(target) => (
+                key,
+                format!("{}:(", quote(target)),
+                ")||\"unset\"",
+                property.value.span(),
+            ),
+            None => (
+                key,
+                format!("{}:`${{(", quote(&slot.name)),
+                ")}`||\" \"",
+                property.value.span(),
+            ),
+        };
+
+        fields.push(field);
     }
 
-    if fields.is_empty() || fields.len() != properties.len() {
+    if fields.len() != slots.len() || properties.is_empty() {
         return Ok(());
     }
 
@@ -478,9 +497,10 @@ fn fold_bound(
         .get(application.start as usize..application.callee_end as usize)
         .unwrap_or_default();
     let mut previous = application.start;
+    let mut closing = "";
 
-    for (index, (target, value)) in fields.iter().enumerate() {
-        let mut text = String::with_capacity(callee.len() + class_name.len() + 32);
+    for (index, (_, opening, close, value)) in fields.iter().enumerate() {
+        let mut text = String::with_capacity(callee.len() + class_name.len() + opening.len() + 24);
 
         if index == 0 {
             if application.initialized {
@@ -492,19 +512,20 @@ fn fold_bound(
 
             let _ = write!(text, "{{className:{class_name},style:{{");
         } else {
-            text.push_str(")||\"unset\",");
+            text.push_str(closing);
+            text.push(',');
         }
 
-        let _ = write!(text, "{}:(", quote(target));
-
+        text.push_str(opening);
         module.overwrite(previous, value.start, text)?;
         previous = value.end;
+        closing = close;
     }
 
     let suffix = if application.initialized {
-        ")||\"unset\"}})".to_owned()
+        format!("{closing}}}}})")
     } else {
-        format!(")||\"unset\"}}}}:{callee}())")
+        format!("{closing}}}}}:{callee}())")
     };
 
     module.overwrite(previous, application.end, suffix)
@@ -1088,7 +1109,7 @@ pub fn compile<'a>(
         };
         let properties = dynamic::inline(style, slots);
 
-        if properties.len() != slots.len() {
+        if properties.is_empty() {
             continue;
         }
 
@@ -1101,7 +1122,14 @@ pub fn compile<'a>(
                 continue;
             }
 
-            fold_bound(&mut module, source, application, &properties, &class_name)?;
+            fold_bound(
+                &mut module,
+                source,
+                application,
+                slots,
+                &properties,
+                &class_name,
+            )?;
         }
     }
 

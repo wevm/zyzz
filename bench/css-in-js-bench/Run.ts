@@ -58,7 +58,12 @@ if (process.env.CSS_BENCH_VERIFY) {
   run('node', ['verify.local.ts'])
 }
 
+// The suite commits historical results, so only measures this run requested are read.
+const requested = new Set(measures.split(','))
+
 const read = (name: string): Record<string, unknown> | undefined => {
+  if (!requested.has(name)) return undefined
+
   const file = Path.join(directory, 'result', `measurement-${name}.json`)
   return Fs.existsSync(file)
     ? JSON.parse(Fs.readFileSync(file, 'utf8'))

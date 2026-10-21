@@ -1,0 +1,1881 @@
+diff --git a/README.md b/README.md
+index cb13702..b0c9c43 100644
+--- a/README.md
++++ b/README.md
+@@ -279,6 +279,7 @@ Each lane's `ssr-entry.tsx` collects CSS the way that family does in production:
+ | author | vanilla, vanilla-solid | the co-located `styles.css`, read `?raw` |
+ | runtime | styled-components, Emotion, Goober | the lib's SSR critical-CSS API at render time |
+ | build-extracted | next-yak (×4: styled + css-prop, folding on and off), @yak/solid | the yak sheet emitted via `ssrEmitAssets`, read back |
++| build-extracted | Zyzz (grouped output) | the zyzz sheet emitted via `ssrEmitAssets`, sliced to the classes used |
+ | build-atomic | StyleX | the stylex plugin's emitted sheet |
+ | atomic-prebuilt | Panda (css fn / style props) | a `panda cssgen` sheet, sliced to the classes used |
+ | utility | cn, tailwind-merge | real Tailwind JIT over the rendered HTML |
+diff --git a/report/components/TechLabel.tsx b/report/components/TechLabel.tsx
+index d2ba8db..619c91e 100644
+--- a/report/components/TechLabel.tsx
++++ b/report/components/TechLabel.tsx
+@@ -16,6 +16,7 @@ export function logoFor(tech: string): string | null {
+   if (tech === "vanilla" || tech === "vanilla-solid") return "assets/logos/vanilla.avif";
+   if (tech === "styled-components") return "assets/logos/styled-components.avif";
+   if (tech.startsWith("plumeria")) return "assets/logos/plumeria.avif";
++  if (tech.startsWith("zyzz")) return "assets/logos/zyzz.svg";
+   return null;
+ }
+ 
+@@ -47,6 +48,8 @@ export const TECH_ALIASES: Record<string, string> = {
+   "stylex-solid": "stylex-solid",
+   "cn-solid": "cn-solid",
+   "plumeria-solid": "plumeria-solid",
++  zyzz: "zyzz",
++  Zyzz: "zyzz",
+ };
+ 
+ // A technology's logo (when one is mapped) followed by its label text. The <img> is decorative
+diff --git a/report/families.ts b/report/families.ts
+index 882ac2d..ed58bf5 100644
+--- a/report/families.ts
++++ b/report/families.ts
+@@ -79,6 +79,10 @@ export const FAMILIES: Family[] = [
+       { tech: "plumeria-solid", short: "classStyle" },
+     ],
+   },
++  {
++    group: "Zyzz",
++    items: [{ tech: "zyzz", short: "grouped" }],
++  },
+   {
+     group: "Runtime CSS-in-JS",
+     items: [
+diff --git a/report/lint.ts b/report/lint.ts
+index 0ec6cce..eb5ac2a 100644
+--- a/report/lint.ts
++++ b/report/lint.ts
+@@ -11,7 +11,7 @@ const TECHS_DIR = join(ROOT, "techs");
+ const CASES_DIR = join(ROOT, "cases");
+ 
+ const HEX = /^#[0-9a-fA-F]{3,8}$/;
+-const BUILD_PLUGINS = new Set([null, "yak", "stylex", "plumeria"]);
++const BUILD_PLUGINS = new Set([null, "yak", "stylex", "plumeria", "zyzz"]);
+ const APP_STYLESHEETS = new Set([null, "tailwind", "panda", "stylex", "bamboo"]);
+ const CSS_KINDS = new Set(["extracted", "atomic", "utility", "runtime", "none"]);
+ const FRAMEWORKS = new Set([undefined, "solid"]); // absent = react, this suite's default
+diff --git a/report/logos/zyzz.svg b/report/logos/zyzz.svg
+new file mode 100644
+index 0000000..64831ae
+--- /dev/null
++++ b/report/logos/zyzz.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8.8 4.3 104 104"><rect x="-8.8" y="4.3" width="104" height="104" rx="24"/><path fill="#ededed" d="M12.7256 88L14.5713 79.0352L54.6494 36.1885V35.9248H24.5908L26.9639 24.5869H73.7217L71.876 33.5078L31.8418 76.3984V76.6621H63.4824L61.1533 88H12.7256Z"/></svg>
+diff --git a/report/types.ts b/report/types.ts
+index c49c99e..067ffa2 100644
+--- a/report/types.ts
++++ b/report/types.ts
+@@ -25,7 +25,7 @@ export interface TechBench {
+   /** Chart colour (hex). */
+   color: string;
+   /** Build plugin the lane needs — informational; real wiring is in vite configs. */
+-  buildPlugin: "yak" | "stylex" | "plumeria" | null;
++  buildPlugin: "yak" | "stylex" | "plumeria" | "zyzz" | null;
+   /** Prebuilt stylesheet the app ships (presentation/legend hint). */
+   appStylesheet: "tailwind" | "panda" | "stylex" | "bamboo" | null;
+   /** How this lane's CSS exists — drives the report legend. */
+diff --git a/techs/zyzz/case/btn-variant/index.tsx b/techs/zyzz/case/btn-variant/index.tsx
+new file mode 100644
+index 0000000..be8fd42
+--- /dev/null
++++ b/techs/zyzz/case/btn-variant/index.tsx
+@@ -0,0 +1,57 @@
++import React, { type FunctionComponent } from "react";
++import { variants } from "../../zyzz.config";
++
++interface P {
++  $active?: boolean;
++  $fullWidth?: boolean;
++  $variant?: "primary" | "secondary" | "ghost";
++  children?: React.ReactNode;
++}
++
++// One `variants` recipe: each prop selects a precompiled choice. Axes keep their authored
++// order, so `variant` overrides `active` as later classes do in the vanilla lane. Axis names
++// become data attributes, so they are lowercase.
++const Button: FunctionComponent<P> = ({ $active, $fullWidth, $variant, children }) => (
++  <button {...styles.button({ active: !!$active, full: !!$fullWidth, variant: $variant })}>{children}</button>
++);
++
++export default (i: number) => {
++  const variant = (["primary", "secondary", "ghost"] as const)[i % 3];
++  return (
++    <Button $active={i % 4 !== 0} $fullWidth={i % 3 === 0} $variant={variant}>
++      {i}
++    </Button>
++  );
++};
++
++namespace styles {
++  export const button = variants({
++    base: {
++      display: "inline-flex",
++      alignItems: "center",
++      justifyContent: "center",
++      borderRadius: "6px",
++      padding: "8px 16px",
++      fontSize: "14px",
++      lineHeight: "20px",
++      fontWeight: 500,
++      backgroundColor: "#2563eb",
++      color: "#ffffff",
++    },
++    variants: {
++      active: {
++        false: { backgroundColor: "#d1d5db", color: "#6b7280" },
++        true: {},
++      },
++      variant: {
++        ghost: { backgroundColor: "transparent", color: "#2563eb" },
++        primary: {},
++        secondary: { backgroundColor: "#f3f4f6", color: "#111827" },
++      },
++      full: {
++        false: {},
++        true: { width: "100%" },
++      },
++    },
++  });
++}
+diff --git a/techs/zyzz/case/button-variants-nested/button.tsx b/techs/zyzz/case/button-variants-nested/button.tsx
+new file mode 100644
+index 0000000..4e098b8
+--- /dev/null
++++ b/techs/zyzz/case/button-variants-nested/button.tsx
+@@ -0,0 +1,28 @@
++import React from "react";
++import { style } from "../../zyzz.config";
++
++// Levels above pass their classes down as a `className` override. Ordered output lets
++// an override from a consuming module win over this module's declarations.
++export const Button = (props: { className?: string | undefined; children?: React.ReactNode }) => (
++  <button {...styles.base({ className: props.className })}>{props.children}</button>
++);
++
++namespace styles {
++  export const base = style({
++    display: "inline-flex",
++    alignItems: "center",
++    justifyContent: "center",
++    gap: "6px",
++    borderWidth: "1px",
++    borderStyle: "solid",
++    borderColor: "transparent",
++    borderRadius: "6px",
++    padding: "8px 16px",
++    fontSize: "14px",
++    fontWeight: 600,
++    lineHeight: "20px",
++    cursor: "pointer",
++    background: "#2563eb",
++    color: "#fff",
++  });
++}
+diff --git a/techs/zyzz/case/button-variants-nested/ghost-button.tsx b/techs/zyzz/case/button-variants-nested/ghost-button.tsx
+new file mode 100644
+index 0000000..33c9f1c
+--- /dev/null
++++ b/techs/zyzz/case/button-variants-nested/ghost-button.tsx
+@@ -0,0 +1,15 @@
++import React from "react";
++import { style } from "../../zyzz.config";
++import { Button } from "./button";
++
++export const GhostButton = (props: { className?: string | undefined; children?: React.ReactNode }) => (
++  <Button {...styles.ghost({ className: props.className })}>{props.children}</Button>
++);
++
++namespace styles {
++  export const ghost = style({
++    background: "transparent",
++    borderColor: "#d1d5db",
++    color: "#374151",
++  });
++}
+diff --git a/techs/zyzz/case/button-variants-nested/ghost-primary-button.tsx b/techs/zyzz/case/button-variants-nested/ghost-primary-button.tsx
+new file mode 100644
+index 0000000..38f2bf9
+--- /dev/null
++++ b/techs/zyzz/case/button-variants-nested/ghost-primary-button.tsx
+@@ -0,0 +1,14 @@
++import React from "react";
++import { style } from "../../zyzz.config";
++import { GhostButton } from "./ghost-button";
++
++export const GhostPrimaryButton = (props: { children?: React.ReactNode }) => (
++  <GhostButton {...styles.ghostPrimary()}>{props.children}</GhostButton>
++);
++
++namespace styles {
++  export const ghostPrimary = style({
++    borderColor: "#2563eb",
++    color: "#2563eb",
++  });
++}
+diff --git a/techs/zyzz/case/button-variants-nested/index.tsx b/techs/zyzz/case/button-variants-nested/index.tsx
+new file mode 100644
+index 0000000..c4e85ba
+--- /dev/null
++++ b/techs/zyzz/case/button-variants-nested/index.tsx
+@@ -0,0 +1,9 @@
++// bench-strategy: variant-ladder-jsx-components
++// Zyzz — button-variants-nested. Three modules, each exporting a JSX COMPONENT:
++// Button, GhostButton extending it, GhostPrimaryButton extending that. The module
++// API is the component, so every lane wraps — the page only renders the leaf.
++// Paired with button-variants (same ladder as style values merged at one element).
++import React from "react";
++import { GhostPrimaryButton } from "./ghost-primary-button";
++
++export default (i: number) => <GhostPrimaryButton>{i}</GhostPrimaryButton>;
+diff --git a/techs/zyzz/case/button-variants/button.ts b/techs/zyzz/case/button-variants/button.ts
+new file mode 100644
+index 0000000..a00847e
+--- /dev/null
++++ b/techs/zyzz/case/button-variants/button.ts
+@@ -0,0 +1,20 @@
++import { style } from "../../zyzz.config";
++
++/** The base button, exported as a style value. */
++export const button = style({
++  display: "inline-flex",
++  alignItems: "center",
++  justifyContent: "center",
++  gap: "6px",
++  borderWidth: "1px",
++  borderStyle: "solid",
++  borderColor: "transparent",
++  borderRadius: "6px",
++  padding: "8px 16px",
++  fontSize: "14px",
++  fontWeight: 600,
++  lineHeight: "20px",
++  cursor: "pointer",
++  background: "#2563eb",
++  color: "#fff",
++});
+diff --git a/techs/zyzz/case/button-variants/ghost-button.ts b/techs/zyzz/case/button-variants/ghost-button.ts
+new file mode 100644
+index 0000000..e4b17c5
+--- /dev/null
++++ b/techs/zyzz/case/button-variants/ghost-button.ts
+@@ -0,0 +1,8 @@
++import { style } from "../../zyzz.config";
++
++/** The ghost override, exported as a style value. */
++export const ghostButton = style({
++  background: "transparent",
++  borderColor: "#d1d5db",
++  color: "#374151",
++});
+diff --git a/techs/zyzz/case/button-variants/ghost-primary-button.ts b/techs/zyzz/case/button-variants/ghost-primary-button.ts
+new file mode 100644
+index 0000000..b40e696
+--- /dev/null
++++ b/techs/zyzz/case/button-variants/ghost-primary-button.ts
+@@ -0,0 +1,7 @@
++import { style } from "../../zyzz.config";
++
++/** The ghost-primary override, exported as a style value. */
++export const ghostPrimaryButton = style({
++  borderColor: "#2563eb",
++  color: "#2563eb",
++});
+diff --git a/techs/zyzz/case/button-variants/index.tsx b/techs/zyzz/case/button-variants/index.tsx
+new file mode 100644
+index 0000000..2128116
+--- /dev/null
++++ b/techs/zyzz/case/button-variants/index.tsx
+@@ -0,0 +1,19 @@
++// bench-strategy: variant-ladder-style-values
++// Zyzz — button-variants. Three modules, each exporting a STYLE VALUE (not a
++// component): base button, ghost override, ghost-primary override. index.tsx
++// merges all three onto ONE element, which is how this library composes styles.
++// Paired with button-variants-nested, which ships the same ladder as a JSX
++// component API — the pair prices the API shape, not the file layout (both split).
++import React from "react";
++import { cx } from "zyzz";
++import { button } from "./button";
++import { ghostButton } from "./ghost-button";
++import { ghostPrimaryButton } from "./ghost-primary-button";
++
++// cx resolves the ladder at build time: later arguments win, and the call selects one
++// precompiled class list.
++const GhostPrimaryButton = ({ children }: { children?: React.ReactNode }) => (
++  <button {...cx(button(), ghostButton(), ghostPrimaryButton())}>{children}</button>
++);
++
++export default (i: number) => <GhostPrimaryButton>{i}</GhostPrimaryButton>;
+diff --git a/techs/zyzz/case/compose-1/index.tsx b/techs/zyzz/case/compose-1/index.tsx
+new file mode 100644
+index 0000000..97ae971
+--- /dev/null
++++ b/techs/zyzz/case/compose-1/index.tsx
+@@ -0,0 +1,21 @@
++// bench-strategy: compose-depth
++// Zyzz — compose-1, the depth-sweep control: one component applying a single style that
++// carries only the compose-3 base-level declarations. Default-exports a single-instance
++// render(i) (§6); the harness loops it.
++import React from "react";
++import { style } from "../../zyzz.config";
++
++const ComposedButton = ({ children }: { children?: React.ReactNode }) => <button {...styles.l0()}>{children}</button>;
++
++export default (i: number) => <ComposedButton>{i}</ComposedButton>;
++
++namespace styles {
++  export const l0 = style({
++    display: "inline-flex",
++    alignItems: "center",
++    borderRadius: "6px",
++    padding: "8px 16px",
++    background: "#2563eb",
++    color: "#fff",
++  });
++}
+diff --git a/techs/zyzz/case/compose-3/index.tsx b/techs/zyzz/case/compose-3/index.tsx
+new file mode 100644
+index 0000000..c986306
+--- /dev/null
++++ b/techs/zyzz/case/compose-3/index.tsx
+@@ -0,0 +1,32 @@
++// bench-strategy: compose-depth
++// Zyzz — a real 3-level wrapper chain. Each level applies its own style with the incoming
++// `className` as an override and forwards the result down, the documented way a component
++// accepts overrides. Ordered output resolves conflicts in definition order, so the outer
++// level's border-left and padding-left win, as in the styled() chains.
++import React, { type FunctionComponent } from "react";
++import { style } from "../../zyzz.config";
++
++interface P {
++  className?: string | undefined;
++  children?: React.ReactNode;
++}
++
++const L0: FunctionComponent<P> = (props) => <button {...styles.l0({ className: props.className })}>{props.children}</button>;
++const L1: FunctionComponent<P> = (props) => <L0 {...styles.l1({ className: props.className })}>{props.children}</L0>;
++const L2: FunctionComponent<P> = (props) => <L1 {...styles.l2({ className: props.className })}>{props.children}</L1>;
++export default (i: number) => <L2>{i}</L2>;
++
++namespace styles {
++  export const l0 = style({
++    display: "inline-flex",
++    alignItems: "center",
++    borderRadius: "6px",
++    padding: "8px 16px",
++    background: "#2563eb",
++    color: "#fff",
++  });
++
++  export const l1 = style({ borderLeft: "1px solid hsl(53 70% 50%)", paddingLeft: "2px" });
++
++  export const l2 = style({ borderLeft: "2px solid hsl(106 70% 50%)", paddingLeft: "4px" });
++}
+diff --git a/techs/zyzz/case/compose-6/index.tsx b/techs/zyzz/case/compose-6/index.tsx
+new file mode 100644
+index 0000000..b5d7c37
+--- /dev/null
++++ b/techs/zyzz/case/compose-6/index.tsx
+@@ -0,0 +1,41 @@
++// bench-strategy: compose-depth
++// Zyzz — compose-6, the depth-sweep upper bracket: the compose-3 wrapper chain extended
++// three more levels (L3–L5). Each level applies its own style with the incoming `className`
++// as an override and forwards it down; later definitions win, matching the styled()
++// chains. Default-exports a single-instance render(i) (§6); the harness loops it.
++import React, { type FunctionComponent } from "react";
++import { style } from "../../zyzz.config";
++
++interface P {
++  className?: string | undefined;
++  children?: React.ReactNode;
++}
++
++const L0: FunctionComponent<P> = (props) => <button {...styles.l0({ className: props.className })}>{props.children}</button>;
++const L1: FunctionComponent<P> = (props) => <L0 {...styles.l1({ className: props.className })}>{props.children}</L0>;
++const L2: FunctionComponent<P> = (props) => <L1 {...styles.l2({ className: props.className })}>{props.children}</L1>;
++const L3: FunctionComponent<P> = (props) => <L2 {...styles.l3({ className: props.className })}>{props.children}</L2>;
++const L4: FunctionComponent<P> = (props) => <L3 {...styles.l4({ className: props.className })}>{props.children}</L3>;
++const L5: FunctionComponent<P> = (props) => <L4 {...styles.l5({ className: props.className })}>{props.children}</L4>;
++export default (i: number) => <L5>{i}</L5>;
++
++namespace styles {
++  export const l0 = style({
++    display: "inline-flex",
++    alignItems: "center",
++    borderRadius: "6px",
++    padding: "8px 16px",
++    background: "#2563eb",
++    color: "#fff",
++  });
++
++  export const l1 = style({ borderLeft: "1px solid hsl(53 70% 50%)", paddingLeft: "2px" });
++
++  export const l2 = style({ borderLeft: "2px solid hsl(106 70% 50%)", paddingLeft: "4px" });
++
++  export const l3 = style({ borderLeft: "3px solid hsl(159 70% 50%)", paddingLeft: "6px" });
++
++  export const l4 = style({ borderLeft: "4px solid hsl(212 70% 50%)", paddingLeft: "8px" });
++
++  export const l5 = style({ borderLeft: "5px solid hsl(265 70% 50%)", paddingLeft: "10px" });
++}
+diff --git a/techs/zyzz/case/dyn-fair/index.tsx b/techs/zyzz/case/dyn-fair/index.tsx
+new file mode 100644
+index 0000000..f286c74
+--- /dev/null
++++ b/techs/zyzz/case/dyn-fair/index.tsx
+@@ -0,0 +1,27 @@
++// bench-strategy: dynamic-style-fn
++// Zyzz — its typed style callback IS the documented path for runtime values (a static
++// rule over a CSS variable bound inline), so this matches the dyn-translate lane.
++import React, { type FunctionComponent } from "react";
++import { style } from "../../zyzz.config";
++
++interface P {
++  translateX: number;
++  children?: React.ReactNode;
++}
++
++const TranslatedDot: FunctionComponent<P> = ({ translateX, children }) => (
++  <div {...styles.dot({ transform: `translateX(${translateX}px)` })}>{children}</div>
++);
++
++export default (i: number) => {
++  return <TranslatedDot translateX={i}>{i}</TranslatedDot>;
++};
++
++namespace styles {
++  export const dot = style((values: { transform: `translateX(${number}px)` }) => ({
++    display: "inline-block",
++    width: "8px",
++    height: "8px",
++    transform: values.transform,
++  }));
++}
+diff --git a/techs/zyzz/case/dyn-translate/index.tsx b/techs/zyzz/case/dyn-translate/index.tsx
+new file mode 100644
+index 0000000..21dac4d
+--- /dev/null
++++ b/techs/zyzz/case/dyn-translate/index.tsx
+@@ -0,0 +1,26 @@
++import React, { type FunctionComponent } from "react";
++import { style } from "../../zyzz.config";
++
++interface P {
++  translateX: number;
++  children?: React.ReactNode;
++}
++
++// A typed callback compiles to a static rule over a private CSS variable; each call binds
++// the per-instance value to that variable through an inline style, creating no CSS.
++const TranslatedDot: FunctionComponent<P> = ({ translateX, children }) => (
++  <div {...styles.dot({ transform: `translateX(${translateX}px)` })}>{children}</div>
++);
++
++export default (i: number) => {
++  return <TranslatedDot translateX={i}>{i}</TranslatedDot>;
++};
++
++namespace styles {
++  export const dot = style((values: { transform: `translateX(${number}px)` }) => ({
++    display: "inline-block",
++    width: "8px",
++    height: "8px",
++    transform: values.transform,
++  }));
++}
+diff --git a/techs/zyzz/case/multifile-composition/index.tsx b/techs/zyzz/case/multifile-composition/index.tsx
+new file mode 100644
+index 0000000..f69aabf
+--- /dev/null
++++ b/techs/zyzz/case/multifile-composition/index.tsx
+@@ -0,0 +1,40 @@
++// bench-strategy: same-as-tabs-multifile
++import React from "react";
++import { Tab, Tabs, FullWidthTabs } from "./parts";
++
++const LABELS = ["Overview", "Specs", "Reviews", "Q&A", "Similar", "Deals", "Support", "More"];
++interface Group { id: number; count: number; activeIdx: number; fullWidth: boolean; disabledIdx: number; }
++
++const TabGroup = ({ group }: { group: Group }) => (
++  <Tabs>
++    {Array.from({ length: group.count }, (_, t) => (
++      <Tab
++        key={t}
++        isActive={t === group.activeIdx}
++        disabled={t === group.disabledIdx && t !== group.activeIdx}
++      >
++        {LABELS[t % LABELS.length]}
++      </Tab>
++    ))}
++  </Tabs>
++);
++
++const FullWidthTabGroup = ({ group }: { group: Group }) => (
++  <FullWidthTabs>
++    {Array.from({ length: group.count }, (_, t) => (
++      <Tab
++        key={t}
++        isActive={t === group.activeIdx}
++        disabled={t === group.disabledIdx && t !== group.activeIdx}
++      >
++        {LABELS[t % LABELS.length]}
++      </Tab>
++    ))}
++  </FullWidthTabs>
++);
++
++export default (i: number) => {
++  const count = 3 + (i % 6);
++  const g: Group = { id: i, count, activeIdx: i % count, fullWidth: i % 3 === 0, disabledIdx: i % 4 === 0 ? count - 1 : -1 };
++  return g.fullWidth ? <FullWidthTabGroup group={g} /> : <TabGroup group={g} />;
++};
+diff --git a/techs/zyzz/case/multifile-composition/parts.tsx b/techs/zyzz/case/multifile-composition/parts.tsx
+new file mode 100644
+index 0000000..bcb1915
+--- /dev/null
++++ b/techs/zyzz/case/multifile-composition/parts.tsx
+@@ -0,0 +1,164 @@
++import React, { type FunctionComponent, type KeyboardEvent, type ReactNode } from "react";
++import { style } from "../../zyzz.config";
++
++// The Tabs primitives of the tabs case, moved to their own module: the same real-project
++// Tabs in Zyzz, including the CSS anchor-positioning underline under @supports. The active and disabled states read the attributes the button already
++// exposes (aria-selected, :disabled), so a tab applies one style. FullWidthTabs marks its
++// list with an empty style, and the item and tab rules select on that ancestor.
++interface ITabProps {
++  isActive?: boolean;
++  disabled?: boolean;
++  children?: ReactNode;
++}
++
++const Tab: FunctionComponent<ITabProps> = ({ isActive, disabled, children }) => (
++  <li role="presentation" {...styles.item()}>
++    <button
++      type="button"
++      role="tab"
++      disabled={disabled}
++      aria-selected={isActive}
++      tabIndex={isActive ? 0 : -1}
++      {...styles.tab()}
++    >
++      {children}
++    </button>
++  </li>
++);
++
++interface ITabsProps {
++  className?: string | undefined;
++  children: ReactNode;
++}
++
++const Tabs: FunctionComponent<ITabsProps> = ({ children, className }) => (
++  <ul role="tablist" onKeyDown={handleKeyDown} {...styles.list({ className })}>
++    {children}
++  </ul>
++);
++
++const FullWidthTabs: FunctionComponent<ITabsProps> = ({ children, className }) => (
++  <Tabs {...styles.listFull({ className })}>{children}</Tabs>
++);
++
++// roving-tabindex keyboard navigation (identical behaviour to the styled lane)
++const queryTab = (el: Element | null | undefined) => el?.querySelector("button") ?? null;
++const firstTab = (list: HTMLUListElement) => queryTab(list.firstElementChild)?.focus();
++const lastTab = (list: HTMLUListElement) => queryTab(list.lastElementChild)?.focus();
++const nextTab = (list: HTMLUListElement) => {
++  const n = queryTab(document.activeElement?.parentElement?.nextElementSibling);
++  n ? n.focus() : firstTab(list);
++};
++const prevTab = (list: HTMLUListElement) => {
++  const p = queryTab(document.activeElement?.parentElement?.previousElementSibling);
++  p ? p.focus() : lastTab(list);
++};
++function handleKeyDown(event: KeyboardEvent<HTMLUListElement>) {
++  const node = event.currentTarget;
++  switch (event.key) {
++    case "ArrowRight": nextTab(node); break;
++    case "ArrowLeft": prevTab(node); break;
++    case "Home": event.preventDefault(); firstTab(node); break;
++    case "End": event.preventDefault(); lastTab(node); break;
++  }
++}
++
++export { Tab, Tabs, FullWidthTabs };
++
++namespace styles {
++  export const list = style({
++    position: "relative",
++    whiteSpace: "nowrap",
++    display: "flex",
++    flexWrap: "nowrap",
++    overflowX: "auto",
++    gap: "24px",
++    boxShadow: "inset 0 -1px 0 0 #ddd",
++    margin: 0,
++    padding: 0,
++    listStyle: "none",
++    scrollbarWidth: "none",
++    "::-webkit-scrollbar": { display: "none" },
++    "@supports (anchor-name: --test)": {
++      "::before": {
++        content: '""',
++        position: "absolute",
++        bottom: 0,
++        positionAnchor: "--active-tab",
++        left: "anchor(left)",
++        right: "anchor(right)",
++        height: "3px",
++        backgroundColor: "#eeb524",
++        transition: "left 150ms ease-out, right 150ms ease-out",
++      },
++    },
++  });
++
++  // Marks a full-width list; the item and tab rules below select on it.
++  export const listFull = style();
++
++  export const item = style({
++    display: "block",
++    margin: 0,
++    padding: 0,
++    width: "min-content",
++    flexShrink: 0,
++    minWidth: "40px",
++    selectors: {
++      [`${listFull} > &`]: { flex: 1, display: "flex", justifyContent: "center" },
++    },
++  });
++
++  // Active rules come before :focus-visible, which wins at equal specificity.
++  export const tab = style({
++    borderStyle: "none",
++    position: "relative",
++    display: "inline-flex",
++    alignItems: "center",
++    fontSize: "16px",
++    lineHeight: "24px",
++    letterSpacing: "0.01em",
++    fontWeight: 400,
++    cursor: "pointer",
++    color: "rgba(0, 0, 0, 0.6)",
++    backgroundColor: "transparent",
++    height: "40px",
++    "@media (min-width: 992px)": { fontSize: "14px", lineHeight: "20px" },
++    "::after": {
++      content: '""',
++      position: "absolute",
++      bottom: 0,
++      left: 0,
++      right: 0,
++      borderBottom: "3px solid transparent",
++      transition: "opacity 150ms linear",
++    },
++    "::before": {
++      position: "absolute",
++      content: '""',
++      width: "100%",
++      minWidth: "40px",
++      top: 0,
++      bottom: 0,
++      height: "100%",
++    },
++    selectors: {
++      '&[aria-selected="true"]': { color: "#000" },
++      '&[aria-selected="true"]::after': { borderBottomColor: "#eeb524" },
++      '&:not([aria-selected="true"]):hover:not(:disabled)': { color: "#000" },
++      '&:not([aria-selected="true"]):hover:not(:disabled)::after': { borderBottomColor: "#ddd" },
++      '&:not([aria-selected="true"]):disabled': { color: "rgba(0, 0, 0, 0.26)", cursor: "default" },
++      [`${listFull} &`]: { flex: 1 },
++    },
++    "@supports (anchor-name: --test)": {
++      selectors: {
++        '&[aria-selected="true"]': { anchorName: "--active-tab" },
++        '&[aria-selected="true"]::after': { borderBottomColor: "#ddd", opacity: 0 },
++      },
++    },
++    ":focus-visible": {
++      outline: "none",
++      "::after": { borderBottom: "3px solid #007bc7" },
++    },
++  });
++}
+diff --git a/techs/zyzz/case/multifile-shop/controls.ts b/techs/zyzz/case/multifile-shop/controls.ts
+new file mode 100644
+index 0000000..1536366
+--- /dev/null
++++ b/techs/zyzz/case/multifile-shop/controls.ts
+@@ -0,0 +1,54 @@
++// The two tap targets, composed from the shared fragments in tokens.ts at build time.
++// No JSX use site lives in this module.
++import { style } from "../../zyzz.config";
++import { focusRing, minTarget } from "./tokens";
++
++export const wish = style([
++  {
++    position: "absolute",
++    top: "6px",
++    right: "6px",
++    border: "none",
++    borderRadius: "9999px",
++    background: "rgba(255, 255, 255, 0.8)",
++    cursor: "pointer",
++    fontSize: "18px",
++    lineHeight: 1,
++    padding: "4px",
++    color: "#9ca3af",
++    transition: "color 0.15s ease",
++    "@media (hover: hover)": { ":hover": { color: "#ef4444" } },
++    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
++  },
++  focusRing,
++  minTarget,
++]);
++
++export const wishOn = style({ color: "#ef4444" });
++
++export const cart = style([
++  {
++    marginTop: "auto",
++    border: "none",
++    borderRadius: "6px",
++    padding: "8px 12px",
++    fontSize: "14px",
++    fontWeight: 600,
++    color: "#fff",
++    background: "#2563eb",
++    cursor: "pointer",
++    transition: "background-color 0.15s ease",
++    position: "relative",
++    "@media (hover: hover)": { selectors: { "&:hover:not(:disabled)": { background: "#1d4ed8" } } },
++    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
++    "@media (min-width: 992px)": { padding: "9px 12px" },
++  },
++  focusRing,
++  minTarget,
++]);
++
++export const cartDisabled = style({
++  background: "#d1d5db",
++  color: "#6b7280",
++  cursor: "not-allowed",
++});
+diff --git a/techs/zyzz/case/multifile-shop/index.tsx b/techs/zyzz/case/multifile-shop/index.tsx
+new file mode 100644
+index 0000000..68331bc
+--- /dev/null
++++ b/techs/zyzz/case/multifile-shop/index.tsx
+@@ -0,0 +1,76 @@
++// bench-strategy: same-as-product-grid-multifile
++// Zyzz — multifile-shop. The SAME tile as product-grid (same DOM, same CSS), with the
++// styles split across modules the way a design system ships them: shared fragments in
++// tokens.ts, the definitions by role across layout.ts / controls.ts / text.ts, and every
++// use site here. Each definition compiles in its own module, and this module applies them.
++import React, { type FunctionComponent } from "react";
++import { cx } from "zyzz";
++import * as controls from "./controls";
++import * as layout from "./layout";
++import * as text from "./text";
++import * as tokens from "./tokens";
++
++interface Product {
++  i: number;
++  title: string;
++  price: number;
++  discount: number;
++  rating: number;
++  inStock: boolean;
++  wishlisted: boolean;
++}
++
++const Tile: FunctionComponent<{ p: Product }> = ({ p }) => (
++  <li {...layout.card()}>
++    <div {...layout.image()}>
++      <div aria-hidden="true" {...layout.placeholder()} />
++      {p.discount > 0 && (
++        <span {...cx(text.badge(), p.discount >= 30 && text.badgeHigh())}>
++          <span {...tokens.srOnly()}>Reduced by </span>-{p.discount}%
++        </span>
++      )}
++      <button
++        type="button"
++        aria-pressed={p.wishlisted}
++        aria-label={p.wishlisted ? "Remove from wishlist" : "Add to wishlist"}
++        {...cx(controls.wish(), p.wishlisted && controls.wishOn())}
++      >
++        <span aria-hidden="true">♥</span>
++      </button>
++    </div>
++    <h3 {...text.title()}>{p.title}</h3>
++    <div role="img" aria-label={`Rated ${p.rating} out of 5`} {...text.rating()}>
++      <div aria-hidden="true" {...text.ratingFill({ width: `${(p.rating / 5) * 100}%` })} />
++    </div>
++    <div {...text.price()}>
++      {p.discount > 0 && (
++        <span {...text.priceOld()}>
++          <span {...tokens.srOnly()}>Was </span>${(p.price * (1 + p.discount / 100)).toFixed(2)}
++        </span>
++      )}
++      <span {...text.priceNow()}>
++        {p.discount > 0 && <span {...tokens.srOnly()}>Now </span>}${p.price.toFixed(2)}
++      </span>
++    </div>
++    <button
++      disabled={!p.inStock}
++      aria-label={p.inStock ? `Add ${p.title} to cart` : `${p.title} is sold out`}
++      {...cx(controls.cart(), !p.inStock && controls.cartDisabled())}
++    >
++      {p.inStock ? "Add to cart" : "Sold out"}
++    </button>
++  </li>
++);
++
++export default (i: number) => {
++  const p: Product = {
++    i,
++    title: "Product " + i,
++    price: (i % 50) + 9.99,
++    discount: i % 4 === 0 ? (i % 3 === 0 ? 40 : 20) : 0,
++    rating: (i % 5) + 1,
++    inStock: i % 7 !== 0,
++    wishlisted: i % 6 === 0,
++  };
++  return <Tile p={p} />;
++};
+diff --git a/techs/zyzz/case/multifile-shop/layout.ts b/techs/zyzz/case/multifile-shop/layout.ts
+new file mode 100644
+index 0000000..f127bb6
+--- /dev/null
++++ b/techs/zyzz/case/multifile-shop/layout.ts
+@@ -0,0 +1,32 @@
++// Structure styles. No JSX use site lives in this module.
++import { style } from "../../zyzz.config";
++
++  // Each tile is its own query container, so its children adapt to the column width
++// they land in, not the viewport.
++export const card = style({
++  display: "flex",
++  flexDirection: "column",
++  containerType: "inline-size",
++  containerName: "tile",
++  border: "1px solid #e5e7eb",
++  borderRadius: "8px",
++  padding: "12px",
++  background: "#fff",
++  transition: "box-shadow 0.15s ease",
++  "@media (hover: hover)": { ":hover": { boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)" } },
++  "@media (prefers-reduced-motion: reduce)": { transition: "none" },
++});
++
++export const image = style({
++  position: "relative",
++  aspectRatio: 1,
++  background: "#f3f4f6",
++  borderRadius: "6px",
++  overflow: "hidden",
++});
++
++export const placeholder = style({
++  position: "absolute",
++  inset: 0,
++  background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
++});
+diff --git a/techs/zyzz/case/multifile-shop/text.ts b/techs/zyzz/case/multifile-shop/text.ts
+new file mode 100644
+index 0000000..b797613
+--- /dev/null
++++ b/techs/zyzz/case/multifile-shop/text.ts
+@@ -0,0 +1,62 @@
++// Copy, rating and price styles. No JSX use site lives in this module.
++import { style } from "../../zyzz.config";
++
++export const badge = style({
++  position: "absolute",
++  top: "6px",
++  left: "6px",
++  borderRadius: "4px",
++  padding: "2px 6px",
++  fontSize: "12px",
++  fontWeight: 700,
++  color: "#fff",
++  background: "#f59e0b",
++});
++
++export const badgeHigh = style({ background: "#dc2626" });
++
++export const title = style({
++  margin: "8px 0 4px",
++  fontSize: "14px",
++  fontWeight: 500,
++  whiteSpace: "nowrap",
++  overflow: "hidden",
++  textOverflow: "ellipsis",
++  "@media (min-width: 992px)": { fontSize: "15px" },
++  // Wider columns get a slightly larger title.
++  "@container tile (min-width: 240px)": { fontSize: "16px" },
++});
++
++export const rating = style({
++  height: "8px",
++  borderRadius: "4px",
++  background: "#e5e7eb",
++  overflow: "hidden",
++});
++
++export const ratingFill = style((values: { width: `${number}%` }) => ({
++  height: "100%",
++  background: "#fbbf24",
++  width: values.width,
++}));
++
++export const price = style({
++  display: "flex",
++  alignItems: "baseline",
++  gap: "6px",
++  margin: "6px 0 10px",
++  // Roomier price row in wide columns.
++  "@container tile (min-width: 240px)": { gap: "10px" },
++});
++
++export const priceOld = style({
++  fontSize: "12px",
++  color: "#9ca3af",
++  textDecoration: "line-through",
++});
++
++export const priceNow = style({
++  fontSize: "16px",
++  fontWeight: 700,
++  color: "#111827",
++});
+diff --git a/techs/zyzz/case/multifile-shop/tokens.ts b/techs/zyzz/case/multifile-shop/tokens.ts
+new file mode 100644
+index 0000000..fac5095
+--- /dev/null
++++ b/techs/zyzz/case/multifile-shop/tokens.ts
+@@ -0,0 +1,32 @@
++// The design system's shared fragments: the visually-hidden helper the page uses in three
++// places, the focus ring and the WCAG tap target. No JSX use site lives in this module.
++import { style } from "../../zyzz.config";
++
++export const srOnly = style({
++  position: "absolute",
++  width: "1px",
++  height: "1px",
++  padding: 0,
++  margin: "-1px",
++  overflow: "hidden",
++  clip: "rect(0, 0, 0, 0)",
++  whiteSpace: "nowrap",
++  border: 0,
++});
++
++export const focusRing = style({
++  ":focus-visible": { outline: "2px solid #2563eb", outlineOffset: "2px" },
++});
++
++export const minTarget = style({
++  "::before": {
++    content: '""',
++    position: "absolute",
++    inset: "50%",
++    translate: "-50% -50%",
++    width: "100%",
++    height: "100%",
++    "@media (hover: none) and (pointer: coarse)": { minWidth: "44px", minHeight: "44px" },
++    "@media (hover: hover) and (pointer: fine)": { minWidth: "24px", minHeight: "24px" },
++  },
++});
+diff --git a/techs/zyzz/case/product-grid/index.tsx b/techs/zyzz/case/product-grid/index.tsx
+new file mode 100644
+index 0000000..766a681
+--- /dev/null
++++ b/techs/zyzz/case/product-grid/index.tsx
+@@ -0,0 +1,244 @@
++import React, { type FunctionComponent } from "react";
++import { cx } from "zyzz";
++import { style } from "../../zyzz.config";
++
++// The same shop page in Zyzz: 400 tiles × ~11 elements, container queries, focus rings,
++// WCAG min-target ::before, (hover: hover)-guarded hover and reduced motion. Shared layers
++// (srOnly / minTarget / focusRing) are composed into each definition at build time, state
++// overrides are applied with cx, and the rating width is a typed callback bound to a CSS
++// variable.
++interface Product {
++  i: number;
++  title: string;
++  price: number;
++  discount: number;
++  rating: number;
++  inStock: boolean;
++  wishlisted: boolean;
++}
++
++const Tile: FunctionComponent<{ p: Product }> = ({ p }) => (
++  <li {...styles.card()}>
++    <div {...styles.image()}>
++      <div aria-hidden="true" {...styles.placeholder()} />
++      {p.discount > 0 && (
++        <span {...cx(styles.badge(), p.discount >= 30 && styles.badgeHigh())}>
++          <span {...styles.srOnly()}>Reduced by </span>-{p.discount}%
++        </span>
++      )}
++      <button
++        type="button"
++        aria-pressed={p.wishlisted}
++        aria-label={p.wishlisted ? "Remove from wishlist" : "Add to wishlist"}
++        {...cx(styles.wish(), p.wishlisted && styles.wishOn())}
++      >
++        <span aria-hidden="true">♥</span>
++      </button>
++    </div>
++    <h3 {...styles.title()}>{p.title}</h3>
++    <div role="img" aria-label={`Rated ${p.rating} out of 5`} {...styles.rating()}>
++      <div aria-hidden="true" {...styles.ratingFill({ width: `${(p.rating / 5) * 100}%` })} />
++    </div>
++    <div {...styles.price()}>
++      {p.discount > 0 && (
++        <span {...styles.priceOld()}>
++          <span {...styles.srOnly()}>Was </span>${(p.price * (1 + p.discount / 100)).toFixed(2)}
++        </span>
++      )}
++      <span {...styles.priceNow()}>
++        {p.discount > 0 && <span {...styles.srOnly()}>Now </span>}${p.price.toFixed(2)}
++      </span>
++    </div>
++    <button
++      disabled={!p.inStock}
++      aria-label={p.inStock ? `Add ${p.title} to cart` : `${p.title} is sold out`}
++      {...cx(styles.cart(), !p.inStock && styles.cartDisabled())}
++    >
++      {p.inStock ? "Add to cart" : "Sold out"}
++    </button>
++  </li>
++);
++
++export default (i: number) => {
++  const p: Product = {
++    i,
++    title: "Product " + i,
++    price: (i % 50) + 9.99,
++    discount: i % 4 === 0 ? (i % 3 === 0 ? 40 : 20) : 0,
++    rating: (i % 5) + 1,
++    inStock: i % 7 !== 0,
++    wishlisted: i % 6 === 0,
++  };
++  return <Tile p={p} />;
++};
++
++namespace styles {
++  export const srOnly = style({
++    position: "absolute",
++    width: "1px",
++    height: "1px",
++    padding: 0,
++    margin: "-1px",
++    overflow: "hidden",
++    clip: "rect(0, 0, 0, 0)",
++    whiteSpace: "nowrap",
++    border: 0,
++  });
++
++  export const focusRing = style({
++    ":focus-visible": { outline: "2px solid #2563eb", outlineOffset: "2px" },
++  });
++
++  export const minTarget = style({
++    "::before": {
++      content: '""',
++      position: "absolute",
++      inset: "50%",
++      translate: "-50% -50%",
++      width: "100%",
++      height: "100%",
++      "@media (hover: none) and (pointer: coarse)": { minWidth: "44px", minHeight: "44px" },
++      "@media (hover: hover) and (pointer: fine)": { minWidth: "24px", minHeight: "24px" },
++    },
++  });
++
++  // Each tile is its own query container, so its children adapt to the column width
++  // they land in, not the viewport.
++  export const card = style({
++    display: "flex",
++    flexDirection: "column",
++    containerType: "inline-size",
++    containerName: "tile",
++    border: "1px solid #e5e7eb",
++    borderRadius: "8px",
++    padding: "12px",
++    background: "#fff",
++    transition: "box-shadow 0.15s ease",
++    "@media (hover: hover)": { ":hover": { boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)" } },
++    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
++  });
++
++  export const image = style({
++    position: "relative",
++    aspectRatio: 1,
++    background: "#f3f4f6",
++    borderRadius: "6px",
++    overflow: "hidden",
++  });
++
++  export const placeholder = style({
++    position: "absolute",
++    inset: 0,
++    background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
++  });
++
++  export const badge = style({
++    position: "absolute",
++    top: "6px",
++    left: "6px",
++    borderRadius: "4px",
++    padding: "2px 6px",
++    fontSize: "12px",
++    fontWeight: 700,
++    color: "#fff",
++    background: "#f59e0b",
++  });
++
++  export const badgeHigh = style({ background: "#dc2626" });
++
++  export const wish = style([
++    {
++      position: "absolute",
++      top: "6px",
++      right: "6px",
++      border: "none",
++      borderRadius: "9999px",
++      background: "rgba(255, 255, 255, 0.8)",
++      cursor: "pointer",
++      fontSize: "18px",
++      lineHeight: 1,
++      padding: "4px",
++      color: "#9ca3af",
++      transition: "color 0.15s ease",
++      "@media (hover: hover)": { ":hover": { color: "#ef4444" } },
++      "@media (prefers-reduced-motion: reduce)": { transition: "none" },
++    },
++    focusRing,
++    minTarget,
++  ]);
++
++  export const wishOn = style({ color: "#ef4444" });
++
++  export const title = style({
++    margin: "8px 0 4px",
++    fontSize: "14px",
++    fontWeight: 500,
++    whiteSpace: "nowrap",
++    overflow: "hidden",
++    textOverflow: "ellipsis",
++    "@media (min-width: 992px)": { fontSize: "15px" },
++    // Wider columns get a slightly larger title.
++    "@container tile (min-width: 240px)": { fontSize: "16px" },
++  });
++
++  export const rating = style({
++    height: "8px",
++    borderRadius: "4px",
++    background: "#e5e7eb",
++    overflow: "hidden",
++  });
++
++  export const ratingFill = style((values: { width: `${number}%` }) => ({
++    height: "100%",
++    background: "#fbbf24",
++    width: values.width,
++  }));
++
++  export const price = style({
++    display: "flex",
++    alignItems: "baseline",
++    gap: "6px",
++    margin: "6px 0 10px",
++    // Roomier price row in wide columns.
++    "@container tile (min-width: 240px)": { gap: "10px" },
++  });
++
++  export const priceOld = style({
++    fontSize: "12px",
++    color: "#9ca3af",
++    textDecoration: "line-through",
++  });
++
++  export const priceNow = style({
++    fontSize: "16px",
++    fontWeight: 700,
++    color: "#111827",
++  });
++
++  export const cart = style([
++    {
++      marginTop: "auto",
++      border: "none",
++      borderRadius: "6px",
++      padding: "8px 12px",
++      fontSize: "14px",
++      fontWeight: 600,
++      color: "#fff",
++      background: "#2563eb",
++      cursor: "pointer",
++      transition: "background-color 0.15s ease",
++      position: "relative",
++      "@media (hover: hover)": { selectors: { "&:hover:not(:disabled)": { background: "#1d4ed8" } } },
++      "@media (prefers-reduced-motion: reduce)": { transition: "none" },
++      "@media (min-width: 992px)": { padding: "9px 12px" },
++    },
++    focusRing,
++    minTarget,
++  ]);
++
++  export const cartDisabled = style({
++    background: "#d1d5db",
++    color: "#6b7280",
++    cursor: "not-allowed",
++  });
++}
+diff --git a/techs/zyzz/case/realistic-button/index.tsx b/techs/zyzz/case/realistic-button/index.tsx
+new file mode 100644
+index 0000000..f1eb15c
+--- /dev/null
++++ b/techs/zyzz/case/realistic-button/index.tsx
+@@ -0,0 +1,104 @@
++import React from "react";
++import { style, variants } from "../../zyzz.config";
++
++// The same DenseButton in Zyzz: build-time CSS with nested conditions (media / :active /
++// :disabled / ::before) and a `variant` recipe. The compiler rewrites each call to
++// precompiled props, so the runtime cost is selecting the variant's classes per element.
++const Icon = () => (
++  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
++    <path d="M8 0l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z" fill="currentColor" />
++  </svg>
++);
++
++export default (i: number) => {
++  const variant = i % 2 ? "primary" : "standard";
++  const disabled = i % 5 === 0;
++  const hasIcon = i % 2 === 0;
++  return (
++    <button disabled={disabled} {...styles.button({ variant })}>
++      {hasIcon && (
++        <span aria-hidden {...styles.icon()}>
++          <Icon />
++        </span>
++      )}
++      Buy {i}
++    </button>
++  );
++};
++
++namespace styles {
++  export const button = variants({
++    base: {
++      fontSize: "16px",
++      lineHeight: "24px",
++      letterSpacing: "0.01em",
++      fontWeight: 400,
++      display: "flex",
++      width: "100%",
++      border: "1px solid rgba(0, 0, 0, 0.2)",
++      borderRadius: "3px",
++      alignItems: "center",
++      justifyContent: "center",
++      textAlign: "center",
++      whiteSpace: "nowrap",
++      cursor: "pointer",
++      userSelect: "none",
++      padding: "7px 15px",
++      position: "relative",
++      "@media (min-width: 992px)": {
++        fontSize: "14px",
++        lineHeight: "20px",
++        padding: "1px 11px",
++        display: "inline-flex",
++        width: "auto",
++      },
++      selectors: {
++        "&:active:not(:disabled)": {
++          boxShadow: "0px 0px 2px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.08)",
++        },
++      },
++      "::before": {
++        content: '""',
++        position: "absolute",
++        inset: "50%",
++        translate: "-50% -50%",
++        width: "100%",
++        height: "100%",
++        minWidth: "24px",
++        minHeight: "24px",
++      },
++      ":disabled": {
++        color: "rgba(0, 0, 0, 0.4)",
++        backgroundColor: "transparent",
++        borderColor: "rgba(0, 0, 0, 0.1)",
++        cursor: "default",
++      },
++    },
++    variants: {
++      variant: {
++        primary: {
++          color: "#fff",
++          backgroundColor: "#444",
++          selectors: {
++            "&:hover:not(:active, :disabled), &:focus-visible:not(:active, :disabled)": { backgroundColor: "#000" },
++          },
++        },
++        standard: {
++          color: "#000",
++          backgroundColor: "#eee",
++          selectors: {
++            "&:hover:not(:active, :disabled), &:focus-visible:not(:active, :disabled)": { backgroundColor: "#ddd" },
++          },
++        },
++      },
++    },
++  });
++
++  export const icon = style({
++    display: "flex",
++    alignItems: "center",
++    minHeight: "24px",
++    marginRight: "12px",
++    "@media (min-width: 992px)": { minHeight: "20px" },
++  });
++}
+diff --git a/techs/zyzz/case/tabs/index.tsx b/techs/zyzz/case/tabs/index.tsx
+new file mode 100644
+index 0000000..8c62831
+--- /dev/null
++++ b/techs/zyzz/case/tabs/index.tsx
+@@ -0,0 +1,199 @@
++import React, { type FunctionComponent, type KeyboardEvent, type ReactNode } from "react";
++import { style } from "../../zyzz.config";
++
++// The same real-project Tabs in Zyzz, including the CSS anchor-positioning underline under
++// @supports. The active and disabled states read the attributes the button already
++// exposes (aria-selected, :disabled), so a tab applies one style. FullWidthTabs marks its
++// list with an empty style, and the item and tab rules select on that ancestor.
++interface ITabProps {
++  isActive?: boolean;
++  disabled?: boolean;
++  children?: ReactNode;
++}
++
++const Tab: FunctionComponent<ITabProps> = ({ isActive, disabled, children }) => (
++  <li role="presentation" {...styles.item()}>
++    <button
++      type="button"
++      role="tab"
++      disabled={disabled}
++      aria-selected={isActive}
++      tabIndex={isActive ? 0 : -1}
++      {...styles.tab()}
++    >
++      {children}
++    </button>
++  </li>
++);
++
++interface ITabsProps {
++  className?: string | undefined;
++  children: ReactNode;
++}
++
++const Tabs: FunctionComponent<ITabsProps> = ({ children, className }) => (
++  <ul role="tablist" onKeyDown={handleKeyDown} {...styles.list({ className })}>
++    {children}
++  </ul>
++);
++
++const FullWidthTabs: FunctionComponent<ITabsProps> = ({ children, className }) => (
++  <Tabs {...styles.listFull({ className })}>{children}</Tabs>
++);
++
++// roving-tabindex keyboard navigation (identical behaviour to the styled lane)
++const queryTab = (el: Element | null | undefined) => el?.querySelector("button") ?? null;
++const firstTab = (list: HTMLUListElement) => queryTab(list.firstElementChild)?.focus();
++const lastTab = (list: HTMLUListElement) => queryTab(list.lastElementChild)?.focus();
++const nextTab = (list: HTMLUListElement) => {
++  const n = queryTab(document.activeElement?.parentElement?.nextElementSibling);
++  n ? n.focus() : firstTab(list);
++};
++const prevTab = (list: HTMLUListElement) => {
++  const p = queryTab(document.activeElement?.parentElement?.previousElementSibling);
++  p ? p.focus() : lastTab(list);
++};
++function handleKeyDown(event: KeyboardEvent<HTMLUListElement>) {
++  const node = event.currentTarget;
++  switch (event.key) {
++    case "ArrowRight": nextTab(node); break;
++    case "ArrowLeft": prevTab(node); break;
++    case "Home": event.preventDefault(); firstTab(node); break;
++    case "End": event.preventDefault(); lastTab(node); break;
++  }
++}
++
++const LABELS = ["Overview", "Specs", "Reviews", "Q&A", "Similar", "Deals", "Support", "More"];
++interface Group { id: number; count: number; activeIdx: number; fullWidth: boolean; disabledIdx: number; }
++
++const TabGroup = ({ group }: { group: Group }) => (
++  <Tabs>
++    {Array.from({ length: group.count }, (_, t) => (
++      <Tab
++        key={t}
++        isActive={t === group.activeIdx}
++        disabled={t === group.disabledIdx && t !== group.activeIdx}
++      >
++        {LABELS[t % LABELS.length]}
++      </Tab>
++    ))}
++  </Tabs>
++);
++
++const FullWidthTabGroup = ({ group }: { group: Group }) => (
++  <FullWidthTabs>
++    {Array.from({ length: group.count }, (_, t) => (
++      <Tab
++        key={t}
++        isActive={t === group.activeIdx}
++        disabled={t === group.disabledIdx && t !== group.activeIdx}
++      >
++        {LABELS[t % LABELS.length]}
++      </Tab>
++    ))}
++  </FullWidthTabs>
++);
++
++export default (i: number) => {
++  const count = 3 + (i % 6);
++  const g: Group = { id: i, count, activeIdx: i % count, fullWidth: i % 3 === 0, disabledIdx: i % 4 === 0 ? count - 1 : -1 };
++  return g.fullWidth ? <FullWidthTabGroup group={g} /> : <TabGroup group={g} />;
++};
++
++namespace styles {
++  export const list = style({
++    position: "relative",
++    whiteSpace: "nowrap",
++    display: "flex",
++    flexWrap: "nowrap",
++    overflowX: "auto",
++    gap: "24px",
++    boxShadow: "inset 0 -1px 0 0 #ddd",
++    margin: 0,
++    padding: 0,
++    listStyle: "none",
++    scrollbarWidth: "none",
++    "::-webkit-scrollbar": { display: "none" },
++    "@supports (anchor-name: --test)": {
++      "::before": {
++        content: '""',
++        position: "absolute",
++        bottom: 0,
++        positionAnchor: "--active-tab",
++        left: "anchor(left)",
++        right: "anchor(right)",
++        height: "3px",
++        backgroundColor: "#eeb524",
++        transition: "left 150ms ease-out, right 150ms ease-out",
++      },
++    },
++  });
++
++  // Marks a full-width list; the item and tab rules below select on it.
++  export const listFull = style();
++
++  export const item = style({
++    display: "block",
++    margin: 0,
++    padding: 0,
++    width: "min-content",
++    flexShrink: 0,
++    minWidth: "40px",
++    selectors: {
++      [`${listFull} > &`]: { flex: 1, display: "flex", justifyContent: "center" },
++    },
++  });
++
++  // Active rules come before :focus-visible, which wins at equal specificity.
++  export const tab = style({
++    borderStyle: "none",
++    position: "relative",
++    display: "inline-flex",
++    alignItems: "center",
++    fontSize: "16px",
++    lineHeight: "24px",
++    letterSpacing: "0.01em",
++    fontWeight: 400,
++    cursor: "pointer",
++    color: "rgba(0, 0, 0, 0.6)",
++    backgroundColor: "transparent",
++    height: "40px",
++    "@media (min-width: 992px)": { fontSize: "14px", lineHeight: "20px" },
++    "::after": {
++      content: '""',
++      position: "absolute",
++      bottom: 0,
++      left: 0,
++      right: 0,
++      borderBottom: "3px solid transparent",
++      transition: "opacity 150ms linear",
++    },
++    "::before": {
++      position: "absolute",
++      content: '""',
++      width: "100%",
++      minWidth: "40px",
++      top: 0,
++      bottom: 0,
++      height: "100%",
++    },
++    selectors: {
++      '&[aria-selected="true"]': { color: "#000" },
++      '&[aria-selected="true"]::after': { borderBottomColor: "#eeb524" },
++      '&:not([aria-selected="true"]):hover:not(:disabled)': { color: "#000" },
++      '&:not([aria-selected="true"]):hover:not(:disabled)::after': { borderBottomColor: "#ddd" },
++      '&:not([aria-selected="true"]):disabled': { color: "rgba(0, 0, 0, 0.26)", cursor: "default" },
++      [`${listFull} &`]: { flex: 1 },
++    },
++    "@supports (anchor-name: --test)": {
++      selectors: {
++        '&[aria-selected="true"]': { anchorName: "--active-tab" },
++        '&[aria-selected="true"]::after': { borderBottomColor: "#ddd", opacity: 0 },
++      },
++    },
++    ":focus-visible": {
++      outline: "none",
++      "::after": { borderBottom: "3px solid #007bc7" },
++    },
++  });
++}
+diff --git a/techs/zyzz/client-entry.tsx b/techs/zyzz/client-entry.tsx
+new file mode 100644
+index 0000000..f537f67
+--- /dev/null
++++ b/techs/zyzz/client-entry.tsx
+@@ -0,0 +1,69 @@
++// Hydrate or mount the case, then measure a warm input change from i to i + 1.
++// Instance keys stay fixed. __prepareInp resets the input outside the timed sample.
++import React, { useLayoutEffect, useState } from "react";
++import { createRoot, hydrateRoot } from "react-dom/client";
++import { flushSync } from "react-dom";
++import type { RenderCase } from "../../report/types";
++import { installInteraction } from "../../scripts/interaction";
++
++const renders = import.meta.glob<{ default: RenderCase }>("./case/*/index.tsx", { eager: true });
++
++const params = new URLSearchParams(location.search);
++const caseId = params.get("case") ?? "";
++const n = Number(params.get("n") ?? "1");
++const render = renders[`./case/${caseId}/index.tsx`]?.default;
++// mount mode: the server serves an EMPTY root and we render into it on demand instead of
++// hydrating SSR markup. The cold-mount measurement uses this.
++const isMount = params.get("mount") === "1";
++
++declare global {
++  interface Window {
++    __hydrateMs?: number;
++    __mountMs?: number;
++    __inp?: () => Promise<number>;
++    __hydrate?: () => void;
++    __mount?: () => void;
++  }
++}
++
++let updateOffset: ((offset: number) => void) | null = null;
++
++function App() {
++  const [offset, setOffset] = useState(0);
++  useLayoutEffect(() => {
++    const ms = performance.now() - start;
++    // Stop at DOM commit, before paint, as the Solid entries do after flush.
++    const phase = isMount ? "mount" : "hydrate";
++    if (isMount) window.__mountMs = ms;
++    else window.__hydrateMs = ms;
++    performance.mark(`${phase}:end`);
++    performance.measure(phase, `${phase}:start`, `${phase}:end`);
++    updateOffset = setOffset;
++  }, []);
++  const children = Array.from({ length: n }, (_, i) => React.createElement(React.Fragment, { key: i }, render(i + offset)));
++  return React.createElement(React.Fragment, null, children);
++}
++
++let start = 0;
++function hydrate() {
++  start = performance.now();
++  performance.mark("hydrate:start");
++  if (render) hydrateRoot(document.getElementById("root")!, React.createElement(App));
++}
++// Cold mount: createRoot into the empty root — the first render the user would see after
++// a "click", including each runtime lib's first style injection into the document.
++function mount() {
++  start = performance.now();
++  performance.mark("mount:start");
++  if (render) createRoot(document.getElementById("root")!).render(React.createElement(App));
++}
++// WPD mount serves an empty root and triggers window.__mount(); WPD hydrate loads with
++// ?manual=1 and calls window.__hydrate(). The repeated hydrate/INP paths hydrate on load.
++if (isMount) window.__mount = mount;
++else if (params.get("manual") === "1") window.__hydrate = hydrate;
++else hydrate();
++
++installInteraction((value) => {
++  if (!updateOffset) throw new Error("Interaction requires a mounted workload");
++  flushSync(() => updateOffset!(value));
++});
+diff --git a/techs/zyzz/package.json b/techs/zyzz/package.json
+new file mode 100644
+index 0000000..733ec21
+--- /dev/null
++++ b/techs/zyzz/package.json
+@@ -0,0 +1,17 @@
++{
++  "name": "zyzz",
++  "description": "Zyzz (grouped output)",
++  "private": true,
++  "type": "module",
++  "bench": {
++    "color": "#0ea5e9",
++    "buildPlugin": "zyzz",
++    "appStylesheet": null,
++    "cssKind": "extracted"
++  },
++  "dependencies": {
++    "react": "catalog:dev",
++    "react-dom": "catalog:dev",
++    "zyzz": "0.0.36"
++  }
++}
+diff --git a/techs/zyzz/ssr-entry.tsx b/techs/zyzz/ssr-entry.tsx
+new file mode 100644
+index 0000000..00058a0
+--- /dev/null
++++ b/techs/zyzz/ssr-entry.tsx
+@@ -0,0 +1,127 @@
++// Zyzz SSR entry — build-extracted family. style() and variants() are compiled by the zyzz
++// Vite plugin to build-time CSS (grouped output, see zyzz.config.ts), emitted as a sibling sheet. That sheet holds EVERY
++// case's rules (one build per tech), so renderCase slices it to the classes THIS render
++// used — giving per-case { html, css }. renderHtml is the microbench hot path (no slice).
++import { readFileSync, existsSync, readdirSync } from "node:fs";
++import { dirname, join } from "node:path";
++import { fileURLToPath } from "node:url";
++import { renderToString } from "react-dom/server";
++import React, { createElement } from "react";
++import type { RenderCase } from "../../report/types";
++
++const renders = import.meta.glob<{ default: RenderCase }>("./case/*/index.tsx", { eager: true });
++
++// The zyzz-emitted stylesheet lives next to this bundle (assetFileNames: styles.css), or
++// under a sibling assets/ dir. Search both.
++let sheet: string | null = null;
++function extractedSheet(): string {
++  if (sheet !== null) return sheet;
++  const dir = dirname(fileURLToPath(import.meta.url));
++  for (const base of [dir, join(dir, "assets")]) {
++    if (!existsSync(base)) continue;
++    const cssFile = readdirSync(base).find((f) => f.endsWith(".css"));
++    if (cssFile && existsSync(join(base, cssFile))) {
++      sheet = readFileSync(join(base, cssFile), "utf8").trim();
++      return sheet;
++    }
++  }
++  sheet = "";
++  return sheet;
++}
++
++// Grouped output emits one class per style (and per cx combination). Conditions either wrap the rule
++// (@media/@container/@supports) or nest inside it (`.c{&:hover{…}}`), and the cascade between
++// conflicting declarations follows sheet order. A slice therefore keeps each rule's wrappers
++// and emits in sheet order. Arbitrary-value classes escape their brackets and parentheses
++// (`.z-text-\[\#fff\]`), so selectors are read as CSS identifiers, escapes included.
++interface LeafRule {
++  classes: string[];
++  text: string; // the rule with its @media/@container wrappers re-applied
++}
++
++// Brace-aware walk over the sheet, in source order. A prelude runs to the next `{` or `;` (parens
++// counted, so complex conditions don't split). Conditional groups recurse with their prelude pushed
++// onto the wrapper stack; other at-rules (@property) carry no class and are skipped.
++function walk(css: string, wrappers: string[], out: LeafRule[]): void {
++  const n = css.length;
++  let i = 0;
++  while (i < n) {
++    while (i < n && /\s/.test(css[i])) i++;
++    if (i >= n) break;
++    let j = i;
++    let paren = 0;
++    while (j < n) {
++      const c = css[j];
++      if (c === "\\") j++; // an escaped character never opens or closes anything
++      else if (c === "(") paren++;
++      else if (c === ")") paren--;
++      else if (paren === 0 && (c === "{" || c === ";")) break;
++      j++;
++    }
++    const prelude = css.slice(i, j).trim();
++    if (j >= n) break;
++    if (css[j] === ";") {
++      i = j + 1; // statement with no block — nothing to slice
++      continue;
++    }
++    let depth = 0;
++    let k = j;
++    for (; k < n; k++) {
++      if (css[k] === "{") depth++;
++      else if (css[k] === "}" && --depth === 0) break;
++    }
++    const body = css.slice(j + 1, k);
++    if (prelude.startsWith("@media") || prelude.startsWith("@supports") || prelude.startsWith("@container")) {
++      walk(body, [...wrappers, prelude], out);
++    } else if (!prelude.startsWith("@")) {
++      const classes = [...new Set([...prelude.matchAll(/\.((?:[A-Za-z0-9_-]|\\[0-9a-fA-F]{1,6} ?|\\.)+)/g)].map((m) => unescape(m[1])))];
++      const open = wrappers.map((w) => `${w}{`).join("");
++      out.push({ classes, text: `${open}${prelude}{${body.trim()}}${"}".repeat(wrappers.length)}` });
++    }
++    i = k + 1;
++  }
++}
++
++// CSS identifier escapes back to the raw class name the markup carries.
++function unescape(ident: string): string {
++  return ident.replace(/\\([0-9a-fA-F]{1,6}) ?|\\(.)/g, (_, hex, ch) => (hex ? String.fromCodePoint(parseInt(hex, 16)) : ch));
++}
++
++let leaves: LeafRule[] | null = null;
++function rules(): LeafRule[] {
++  if (!leaves) {
++    const parsed: LeafRule[] = [];
++    walk(extractedSheet(), [], parsed);
++    leaves = parsed;
++  }
++  return leaves;
++}
++
++// Slice: every leaf rule naming a class this render used, in sheet order. Walking the leaves rather
++// than the render's classes keeps the cascade and emits each rule once, comma-shared ones included.
++function cssFor(html: string): string {
++  const used = new Set<string>();
++  for (const m of html.matchAll(/class="([^"]*)"/g)) for (const t of m[1].split(/\s+/)) if (t) used.add(t);
++  return rules()
++    .filter((leaf) => leaf.classes.some((c) => used.has(c)))
++    .map((leaf) => leaf.text)
++    .join("\n")
++    .trim();
++}
++
++function renderInstances(caseId: string, n: number): string {
++  const mod = renders[`./case/${caseId}/index.tsx`];
++  if (!mod) throw new Error(`zyzz: no case/${caseId}/index.tsx`);
++  const render = mod.default;
++  const children = Array.from({ length: n }, (_, i) => createElement(React.Fragment, { key: i }, render(i)));
++  return renderToString(createElement(React.Fragment, null, children));
++}
++
++export function renderHtml(caseId: string, n: number): string {
++  return renderInstances(caseId, n);
++}
++
++export function renderCase(caseId: string, n: number): { html: string; css: string } {
++  const html = renderInstances(caseId, n);
++  return { html, css: cssFor(html) };
++}
+diff --git a/techs/zyzz/vite.hydrate.config.ts b/techs/zyzz/vite.hydrate.config.ts
+new file mode 100644
+index 0000000..f2a1fa9
+--- /dev/null
++++ b/techs/zyzz/vite.hydrate.config.ts
+@@ -0,0 +1,33 @@
++// Hydrate (browser) build for the Zyzz lane: the same zyzz plugin as the microbench build
++// (so the client's classes match the SSR markup), browser target over client-entry.tsx.
++// The zyzz CSS is a module-graph import, so the manifest links it to the browser page.
++import { browserStyles } from "../../scripts/browser-styles.ts";
++import { defineConfig } from "vite";
++import react from "@vitejs/plugin-react";
++import { zyzz } from "zyzz/vite";
++import { fileURLToPath } from "node:url";
++import { dirname } from "node:path";
++
++const here = dirname(fileURLToPath(import.meta.url));
++
++export default defineConfig({
++  root: here,
++  plugins: [browserStyles(here, "native"), zyzz(), react()],
++  define: { "process.env.NODE_ENV": '"production"' },
++  build: {
++    outDir: "dist/hydrate",
++    manifest: true,
++    emptyOutDir: true,
++    sourcemap: false,
++    minify: "esbuild",
++    target: "chrome120",
++    // zyzz requires a CSS target with native light-dark() (Chrome 123+); JS keeps the
++    // suite's chrome120 target.
++    cssTarget: "chrome123",
++    rollupOptions: {
++      input: "./client-entry.tsx",
++      external: [],
++      output: { format: "es", entryFileNames: "entry.js" },
++    },
++  },
++});
+diff --git a/techs/zyzz/vite.microbench.config.ts b/techs/zyzz/vite.microbench.config.ts
+new file mode 100644
+index 0000000..6851521
+--- /dev/null
++++ b/techs/zyzz/vite.microbench.config.ts
+@@ -0,0 +1,38 @@
++// Standalone microbench build for Zyzz (§4.2). The zyzz Vite plugin compiles every
++// style()/variants() call ahead of time, rewrites each call site to precompiled props, and
++// delivers the CSS through Vite's module graph. The emitted stylesheet is consolidated
++// (cssCodeSplit:false) so ssr-entry.tsx can read it back as the `css` half of the
++// { html, css } contract.
++import { defineConfig } from "vite";
++import react from "@vitejs/plugin-react";
++import { zyzz } from "zyzz/vite";
++import { fileURLToPath } from "node:url";
++import { dirname } from "node:path";
++
++const here = dirname(fileURLToPath(import.meta.url));
++
++export default defineConfig(async () => ({
++  root: here,
++  plugins: [zyzz(), react()],
++  define: { "process.env.NODE_ENV": '"production"' },
++  build: {
++    outDir: "dist/microbench",
++    emptyOutDir: true,
++    sourcemap: true,
++    minify: false,
++    cssCodeSplit: false,
++    ssr: true,
++    ssrEmitAssets: true, // SSR builds skip CSS assets by default — keep the zyzz sheet
++    target: "node20",
++    // zyzz requires a browser CSS target with native light-dark(), and the SSR bundle's
++    // `target` is node, so name the same CSS target the hydrate build uses.
++    cssTarget: "chrome123",
++    rollupOptions: {
++      input: "./ssr-entry.tsx",
++      external: [],
++      preserveEntrySignatures: "strict",
++      output: { format: "es", entryFileNames: "entry.mjs", assetFileNames: "styles[extname]" },
++    },
++  },
++  ssr: { noExternal: true },
++}));
+diff --git a/techs/zyzz/zyzz.config.ts b/techs/zyzz/zyzz.config.ts
+new file mode 100644
+index 0000000..ea1efa4
+--- /dev/null
++++ b/techs/zyzz/zyzz.config.ts
+@@ -0,0 +1,5 @@
++// Lane config: one class per style instead of one per declaration, the output mode
++// zyzz's own benchmarks use. Cases import style and variants from here.
++import { defineConfig } from "zyzz";
++
++export const { style, variants } = defineConfig({ cssOutput: "grouped" });

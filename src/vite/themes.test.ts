@@ -191,7 +191,7 @@ describe('zyzz', () => {
           )
         else
           expect(result).toMatchInlineSnapshot(
-            `"body{color:light-dark(#000,#fff)}.z-p-1px{padding:1px}"`,
+            `"body{color:light-dark(#000,#fff)}.z-YiE3S9-p-1px{padding:1px}"`,
           )
 
         await Vite.build({ ...config, build: { cssTarget: 'chrome123' } })
@@ -266,9 +266,9 @@ describe('zyzz', () => {
       // 1. Styles without light-dark() build for targets that would lower it.
       expect(css?.type === 'asset' ? String(css.source).trim() : undefined)
         .toMatchInlineSnapshot(`
-        ".z-text-rebeccapurple{color:rebeccapurple;}
-        .z-p-1px{padding:1px;}"
-      `)
+          ".z-YiE3S9-text-rebeccapurple{color:rebeccapurple;}
+          .z-YiE3S9-p-1px{padding:1px;}"
+        `)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

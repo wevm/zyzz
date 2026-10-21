@@ -487,8 +487,8 @@ describe('create', () => {
       .z_scheme-light-dark{color-scheme:light dark;}
       .z-Zf5JrJ-styles-card-pl-0{padding-left:var(--z-spacing-sm,8px);}
       .z-Zf5JrJ-styles-card-pr-1{padding-right:var(--z-spacing-sm,8px);}
-      .z-scale-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-n\\29 \\5d {scale:var(--z-Zf5JrJ-styles-dynamic-n);}
-      .z-order-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-n\\29 \\5d {order:var(--z-Zf5JrJ-styles-dynamic-n);}"
+      .z-Zf5JrJ-scale-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-n\\29 \\5d {scale:var(--z-Zf5JrJ-styles-dynamic-n);}
+      .z-Zf5JrJ-order-\\5b var\\28 --z-Zf5JrJ-styles-dynamic-n\\29 \\5d {order:var(--z-Zf5JrJ-styles-dynamic-n);}"
     `)
   })
   test('preserves ordered targets and spacing precedence across packed imports', () => {

@@ -28,7 +28,7 @@ use crate::compiler::internal::recipes;
 use crate::compiler::internal::scope::{self, Kind, Mode};
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::themes::{Link, Output, ScopeApplication};
-use crate::compiler::source::{Call, RuntimeInput};
+use crate::compiler::source::{Call, KnownInput, RuntimeInput};
 use crate::error::{Error, Result};
 use crate::internal::identity;
 use crate::internal::token::{Composition, CssOutput};
@@ -746,6 +746,7 @@ fn compose<'o, 'a>(
             application_start,
             condition,
             end: span.end,
+            known: None,
             name: Arc::clone(&call.name),
             owners: owned,
             start: span.start,
@@ -757,6 +758,7 @@ fn compose<'o, 'a>(
         application_start: None,
         condition: None,
         end: span.end,
+        known: None,
         name: Arc::from(""),
         owners: Vec::new(),
         start: span.start,
@@ -946,12 +948,39 @@ fn compose<'o, 'a>(
             || !value.arguments.is_empty();
 
         if let Some(application) = application {
-            let guard = options
-                .source
-                .get(application.start as usize..application.callee_end as usize)
-                .unwrap_or_default();
+            let guard: Arc<str> = Arc::from(
+                options
+                    .source
+                    .get(application.start as usize..application.callee_end as usize)
+                    .unwrap_or_default(),
+            );
+            // Imported styles own nothing beyond their class when they bind no attributes or slots.
+            let props = call
+                .ownership
+                .as_ref()
+                .is_none_or(|owner| owner.attributes.is_empty() && owner.slots.is_empty());
 
-            guards.push(Arc::from(guard));
+            if props
+                && !aliased
+                && call.output.is_none()
+                && call.recipe.is_none()
+                && call.slots.is_none()
+                && value.arguments.is_empty()
+                && let Some(input) = inputs.last_mut()
+            {
+                input.known = Some(KnownInput {
+                    callee: Arc::clone(&guard),
+                    condition: match resolved {
+                        Expression::LogicalExpression(logical) if conditional => {
+                            Some(logical.left.span())
+                        }
+                        _ => None,
+                    },
+                    imported: call.ownership.is_some(),
+                });
+            }
+
+            guards.push(guard);
         }
 
         selected.push(if call.ownership.is_some() {

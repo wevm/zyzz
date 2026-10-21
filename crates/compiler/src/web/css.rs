@@ -384,6 +384,8 @@ struct Compiler<'a> {
     nested_composition: bool,
     ordered: FxHashMap<u32, Shareable>,
     owned: FxHashMap<usize, FxHashMap<u32, Vec<String>>>,
+    /// Module qualifier of shared atomic names.
+    qualifier: Box<str>,
     /// Serialized tokens in first-serialization order.
     references: Vec<Arc<Reference>>,
     resets: bool,
@@ -962,6 +964,7 @@ impl<'a> Compiler<'a> {
                 context: (!shared).then_some(css_name),
                 namespace,
                 property: label,
+                qualifier: shared.then_some(&*self.qualifier),
                 slot: (!shared).then_some(slot),
             })
         };
@@ -1324,6 +1327,7 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
             .any(|style| style.rules.is_some() && !isolated(style, options)),
         ordered: FxHashMap::default(),
         owned: FxHashMap::default(),
+        qualifier: units.qualifier().into(),
         references: Vec::new(),
         resets: false,
         rules: IndexMap::default(),

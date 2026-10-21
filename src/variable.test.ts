@@ -52,14 +52,14 @@ export namespace styles {
 
       expect(publisher.modules['group.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
-        .z-opacity-\\5b var\\28 --z-_5f_drwpj-box-opacity\\29 \\5d {opacity:var(--z-_drwpj-box-opacity);}"
+        ".z-_drwpj-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
+        .z-_drwpj-opacity-\\5b var\\28 --z-_5f_drwpj-box-opacity\\29 \\5d {opacity:var(--z-_drwpj-box-opacity);}"
       `,
       )
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
-        ".z-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
-        .z-opacity-\\5b var\\28 --z-Zf5JrJ-box-opacity\\29 \\5d {opacity:var(--z-Zf5JrJ-box-opacity);}"
+        ".z-Zf5JrJ-p-\\5b var\\28 --z-variables-gap\\29 \\5d {padding:var(--z-variables-gap);}
+        .z-Zf5JrJ-opacity-\\5b var\\28 --z-Zf5JrJ-box-opacity\\29 \\5d {opacity:var(--z-Zf5JrJ-box-opacity);}"
       `,
       )
     })

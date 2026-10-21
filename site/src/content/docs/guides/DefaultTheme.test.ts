@@ -131,114 +131,114 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: card!, name: 'overview' }))
       .toMatchInlineSnapshot(`
-      ".z-default-border-radius-\\[var\\(--z-default-radius-lg\\,0\\.5rem\\)\\] {
-        border-radius: var(--z-default-radius-lg, .5rem);
-      }
+        ".z-default-hZwzVo-border-radius-\\[var\\(--z-default-radius-lg\\,0\\.5rem\\)\\] {
+          border-radius: var(--z-default-radius-lg, .5rem);
+        }
 
-      .z-default-text-\\[var\\(--z-default-color-blue-700\\,\\#0072f5\\)\\] {
-        color: var(--z-default-color-blue-700, #0072f5);
-      }
+        .z-default-hZwzVo-text-\\[var\\(--z-default-color-blue-700\\,\\#0072f5\\)\\] {
+          color: var(--z-default-color-blue-700, #0072f5);
+        }
 
-      .z-default-p-\\[var\\(--z-default-spacing-4\\,1rem\\)\\] {
-        padding: var(--z-default-spacing-4, 1rem);
-      }
+        .z-default-hZwzVo-p-\\[var\\(--z-default-spacing-4\\,1rem\\)\\] {
+          padding: var(--z-default-spacing-4, 1rem);
+        }
 
-      .z-default-font-family-\\[var\\(--z-default-typography-heading-20-fontFamily\\,Geist\\,_20_-apple-system\\,_20_BlinkMacSystemFont\\,_20__22_Segoe_20_UI_22_\\,_20_Roboto\\,_20__22_Helvetica_20_Neue_22_\\,_20__22_Noto_20_Sans_22_\\,_20_Arial\\,_20_sans-serif\\,_20__22_Apple_20_Color_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Symbol_22_\\,_20__22_Noto_20_Color_20_Emoji_22_\\)\\] {
-        font-family: var(--z-default-typography-heading-20-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
-      }
+        .z-default-hZwzVo-font-family-\\[var\\(--z-default-typography-heading-20-fontFamily\\,Geist\\,_20_-apple-system\\,_20_BlinkMacSystemFont\\,_20__22_Segoe_20_UI_22_\\,_20_Roboto\\,_20__22_Helvetica_20_Neue_22_\\,_20__22_Noto_20_Sans_22_\\,_20_Arial\\,_20_sans-serif\\,_20__22_Apple_20_Color_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Symbol_22_\\,_20__22_Noto_20_Color_20_Emoji_22_\\)\\] {
+          font-family: var(--z-default-typography-heading-20-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+        }
 
-      .z-default-font-size-\\[var\\(--z-default-typography-heading-20-fontSize\\,20px\\)\\] {
-        font-size: var(--z-default-typography-heading-20-fontSize, 20px);
-      }
+        .z-default-hZwzVo-font-size-\\[var\\(--z-default-typography-heading-20-fontSize\\,20px\\)\\] {
+          font-size: var(--z-default-typography-heading-20-fontSize, 20px);
+        }
 
-      .z-default-font-weight-\\[var\\(--z-default-typography-heading-20-fontWeight\\,600\\)\\] {
-        font-weight: var(--z-default-typography-heading-20-fontWeight, 600);
-      }
+        .z-default-hZwzVo-font-weight-\\[var\\(--z-default-typography-heading-20-fontWeight\\,600\\)\\] {
+          font-weight: var(--z-default-typography-heading-20-fontWeight, 600);
+        }
 
-      .z-default-letter-spacing-\\[var\\(--z-default-typography-heading-20-letterSpacing\\,-\\.4px\\)\\] {
-        letter-spacing: var(--z-default-typography-heading-20-letterSpacing, -.4px);
-      }
+        .z-default-hZwzVo-letter-spacing-\\[var\\(--z-default-typography-heading-20-letterSpacing\\,-\\.4px\\)\\] {
+          letter-spacing: var(--z-default-typography-heading-20-letterSpacing, -.4px);
+        }
 
-      .z-default-line-height-\\[var\\(--z-default-typography-heading-20-lineHeight\\,26px\\)\\] {
-        line-height: var(--z-default-typography-heading-20-lineHeight, 26px);
-      }
-      "
-    `)
+        .z-default-hZwzVo-line-height-\\[var\\(--z-default-typography-heading-20-lineHeight\\,26px\\)\\] {
+          line-height: var(--z-default-typography-heading-20-lineHeight, 26px);
+        }
+        "
+      `)
     expect(await build({ example: account!, name: 'walkthrough' }))
       .toMatchInlineSnapshot(`
-      ".z-default-Spuo_V-styles-body-text-0 {
-        color: var(--z-default-color-gray-900, light-dark(#4d4d4d, #a1a1a1));
-      }
+        ".z-default-Spuo_V-styles-body-text-0 {
+          color: var(--z-default-color-gray-900, light-dark(#4d4d4d, #a1a1a1));
+        }
 
-      .z-default-Spuo_V-styles-body-font-family-1 {
-        font-family: var(--z-default-typography-copy-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
-      }
+        .z-default-Spuo_V-styles-body-font-family-1 {
+          font-family: var(--z-default-typography-copy-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+        }
 
-      .z-default-Spuo_V-styles-body-font-size-2 {
-        font-size: var(--z-default-typography-copy-14-fontSize, 14px);
-      }
+        .z-default-Spuo_V-styles-body-font-size-2 {
+          font-size: var(--z-default-typography-copy-14-fontSize, 14px);
+        }
 
-      .z-default-Spuo_V-styles-body-font-weight-3 {
-        font-weight: var(--z-default-typography-copy-14-fontWeight, 400);
-      }
+        .z-default-Spuo_V-styles-body-font-weight-3 {
+          font-weight: var(--z-default-typography-copy-14-fontWeight, 400);
+        }
 
-      .z-default-Spuo_V-styles-body-letter-spacing-4 {
-        letter-spacing: var(--z-default-typography-copy-14-letterSpacing, 0px);
-      }
+        .z-default-Spuo_V-styles-body-letter-spacing-4 {
+          letter-spacing: var(--z-default-typography-copy-14-letterSpacing, 0px);
+        }
 
-      .z-default-Spuo_V-styles-body-line-height-5 {
-        line-height: var(--z-default-typography-copy-14-lineHeight, 20px);
-      }
+        .z-default-Spuo_V-styles-body-line-height-5 {
+          line-height: var(--z-default-typography-copy-14-lineHeight, 20px);
+        }
 
-      .z-default-bg-\\[var\\(--z-default-color-background-surface\\,light-dark\\(\\#fff\\,\\#0a0a0a\\)\\)\\] {
-        background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
-      }
+        .z-default-Spuo_V-bg-\\[var\\(--z-default-color-background-surface\\,light-dark\\(\\#fff\\,\\#0a0a0a\\)\\)\\] {
+          background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
+        }
 
-      .z-default-border-radius-\\[var\\(--z-default-radius-md\\,0\\.375rem\\)\\] {
-        border-radius: var(--z-default-radius-md, .375rem);
-      }
+        .z-default-Spuo_V-border-radius-\\[var\\(--z-default-radius-md\\,0\\.375rem\\)\\] {
+          border-radius: var(--z-default-radius-md, .375rem);
+        }
 
-      .z-default-box-shadow-\\[var\\(--z-default-shadow-sm\\,0_20_1px_20_3px_20_0_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\,_20_0_20_1px_20_2px_20_-1px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\)\\] {
-        box-shadow: var(--z-default-shadow-sm, 0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a);
-      }
+        .z-default-Spuo_V-box-shadow-\\[var\\(--z-default-shadow-sm\\,0_20_1px_20_3px_20_0_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\,_20_0_20_1px_20_2px_20_-1px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\)\\] {
+          box-shadow: var(--z-default-shadow-sm, 0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a);
+        }
 
-      .z-default-Spuo_V-styles-card-text-3 {
-        color: var(--z-default-color-foreground, light-dark(#171717, #ededed));
-      }
+        .z-default-Spuo_V-styles-card-text-3 {
+          color: var(--z-default-color-foreground, light-dark(#171717, #ededed));
+        }
 
-      .z-default-display-grid {
-        display: grid;
-      }
+        .z-default-Spuo_V-display-grid {
+          display: grid;
+        }
 
-      .z-default-gap-\\[var\\(--z-default-spacing-2\\,0\\.5rem\\)\\] {
-        gap: var(--z-default-spacing-2, .5rem);
-      }
+        .z-default-Spuo_V-gap-\\[var\\(--z-default-spacing-2\\,0\\.5rem\\)\\] {
+          gap: var(--z-default-spacing-2, .5rem);
+        }
 
-      .z-default-p-\\[var\\(--z-default-spacing-6\\,1\\.5rem\\)\\] {
-        padding: var(--z-default-spacing-6, 1.5rem);
-      }
+        .z-default-Spuo_V-p-\\[var\\(--z-default-spacing-6\\,1\\.5rem\\)\\] {
+          padding: var(--z-default-spacing-6, 1.5rem);
+        }
 
-      .z-default-Spuo_V-styles-title-font-family-0 {
-        font-family: var(--z-default-typography-heading-20-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
-      }
+        .z-default-Spuo_V-styles-title-font-family-0 {
+          font-family: var(--z-default-typography-heading-20-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+        }
 
-      .z-default-Spuo_V-styles-title-font-size-1 {
-        font-size: var(--z-default-typography-heading-20-fontSize, 20px);
-      }
+        .z-default-Spuo_V-styles-title-font-size-1 {
+          font-size: var(--z-default-typography-heading-20-fontSize, 20px);
+        }
 
-      .z-default-Spuo_V-styles-title-font-weight-2 {
-        font-weight: var(--z-default-typography-heading-20-fontWeight, 600);
-      }
+        .z-default-Spuo_V-styles-title-font-weight-2 {
+          font-weight: var(--z-default-typography-heading-20-fontWeight, 600);
+        }
 
-      .z-default-Spuo_V-styles-title-letter-spacing-3 {
-        letter-spacing: var(--z-default-typography-heading-20-letterSpacing, -.4px);
-      }
+        .z-default-Spuo_V-styles-title-letter-spacing-3 {
+          letter-spacing: var(--z-default-typography-heading-20-letterSpacing, -.4px);
+        }
 
-      .z-default-Spuo_V-styles-title-line-height-4 {
-        line-height: var(--z-default-typography-heading-20-lineHeight, 26px);
-      }
-      "
-    `)
+        .z-default-Spuo_V-styles-title-line-height-4 {
+          line-height: var(--z-default-typography-heading-20-lineHeight, 26px);
+        }
+        "
+      `)
   })
 
   test('builds the Use Colors recipe', async () => {
@@ -246,15 +246,15 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'colors' }))
       .toMatchInlineSnapshot(`
-      ".z-default-bg-\\[var\\(--z-default-color-background-surface\\,light-dark\\(\\#fff\\,\\#0a0a0a\\)\\)\\] {
-        background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
-      }
+        ".z-default-aTfGk4-bg-\\[var\\(--z-default-color-background-surface\\,light-dark\\(\\#fff\\,\\#0a0a0a\\)\\)\\] {
+          background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
+        }
 
-      .z-default-text-\\[var\\(--z-default-color-foreground\\,light-dark\\(\\#171717\\,\\#ededed\\)\\)\\] {
-        color: var(--z-default-color-foreground, light-dark(#171717, #ededed));
-      }
-      "
-    `)
+        .z-default-aTfGk4-text-\\[var\\(--z-default-color-foreground\\,light-dark\\(\\#171717\\,\\#ededed\\)\\)\\] {
+          color: var(--z-default-color-foreground, light-dark(#171717, #ededed));
+        }
+        "
+      `)
   })
 
   test('builds the Use Spacing recipe', async () => {
@@ -262,19 +262,19 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'spacing' }))
       .toMatchInlineSnapshot(`
-        ".z-default-gap-\\[var\\(--z-default-spacing-px\\,1px\\)\\] {
+        ".z-default-aTfGk4-gap-\\[var\\(--z-default-spacing-px\\,1px\\)\\] {
           gap: var(--z-default-spacing-px, 1px);
         }
 
-        .z-default-p-\\[var\\(--z-default-spacing-4\\,1rem\\)\\] {
+        .z-default-aTfGk4-p-\\[var\\(--z-default-spacing-4\\,1rem\\)\\] {
           padding: var(--z-default-spacing-4, 1rem);
         }
 
-        .z-default-h-\\[var\\(--z-default-spacing-3-5\\,0\\.875rem\\)\\] {
+        .z-default-aTfGk4-h-\\[var\\(--z-default-spacing-3-5\\,0\\.875rem\\)\\] {
           height: var(--z-default-spacing-3-5, .875rem);
         }
 
-        .z-default-mt-13px {
+        .z-default-aTfGk4-mt-13px {
           margin-top: 13px;
         }
         "
@@ -286,23 +286,23 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'fonts' }))
       .toMatchInlineSnapshot(`
-      ".z-default-font-family-\\[var\\(--z-default-fontFamily-mono\\,_22_Geist_20_Mono_22_\\,_20_ui-monospace\\,_20_SFMono-Regular\\,_20_Menlo\\,_20_Monaco\\,_20_Consolas\\,_20__22_Liberation_20_Mono_22_\\,_20__22_Courier_20_New_22_\\,_20_monospace\\)\\] {
-        font-family: var(--z-default-fontFamily-mono, "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
-      }
+        ".z-default-aTfGk4-font-family-\\[var\\(--z-default-fontFamily-mono\\,_22_Geist_20_Mono_22_\\,_20_ui-monospace\\,_20_SFMono-Regular\\,_20_Menlo\\,_20_Monaco\\,_20_Consolas\\,_20__22_Liberation_20_Mono_22_\\,_20__22_Courier_20_New_22_\\,_20_monospace\\)\\] {
+          font-family: var(--z-default-fontFamily-mono, "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+        }
 
-      .z-default-font-size-\\[var\\(--z-default-fontSize-sm\\,0\\.875rem\\)\\] {
-        font-size: var(--z-default-fontSize-sm, .875rem);
-      }
+        .z-default-aTfGk4-font-size-\\[var\\(--z-default-fontSize-sm\\,0\\.875rem\\)\\] {
+          font-size: var(--z-default-fontSize-sm, .875rem);
+        }
 
-      .z-default-font-weight-\\[var\\(--z-default-fontWeight-medium\\,500\\)\\] {
-        font-weight: var(--z-default-fontWeight-medium, 500);
-      }
+        .z-default-aTfGk4-font-weight-\\[var\\(--z-default-fontWeight-medium\\,500\\)\\] {
+          font-weight: var(--z-default-fontWeight-medium, 500);
+        }
 
-      .z-default-line-height-\\[var\\(--z-default-lineHeight-relaxed\\,1\\.625\\)\\] {
-        line-height: var(--z-default-lineHeight-relaxed, 1.625);
-      }
-      "
-    `)
+        .z-default-aTfGk4-line-height-\\[var\\(--z-default-lineHeight-relaxed\\,1\\.625\\)\\] {
+          line-height: var(--z-default-lineHeight-relaxed, 1.625);
+        }
+        "
+      `)
   })
 
   test('builds the Size Elements recipe', async () => {
@@ -310,19 +310,19 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'sizes' }))
       .toMatchInlineSnapshot(`
-      ".z-default-aspect-ratio-\\[var\\(--z-default-aspect-video\\,16_20_\\/_20_9\\)\\] {
-        aspect-ratio: var(--z-default-aspect-video, 16 / 9);
-      }
+        ".z-default-aTfGk4-aspect-ratio-\\[var\\(--z-default-aspect-video\\,16_20_\\/_20_9\\)\\] {
+          aspect-ratio: var(--z-default-aspect-video, 16 / 9);
+        }
 
-      .z-default-border-radius-\\[var\\(--z-default-radius-xl\\,0\\.75rem\\)\\] {
-        border-radius: var(--z-default-radius-xl, .75rem);
-      }
+        .z-default-aTfGk4-border-radius-\\[var\\(--z-default-radius-xl\\,0\\.75rem\\)\\] {
+          border-radius: var(--z-default-radius-xl, .75rem);
+        }
 
-      .z-default-max-width-\\[var\\(--z-default-container-2xl\\,42rem\\)\\] {
-        max-width: var(--z-default-container-2xl, 42rem);
-      }
-      "
-    `)
+        .z-default-aTfGk4-max-width-\\[var\\(--z-default-container-2xl\\,42rem\\)\\] {
+          max-width: var(--z-default-container-2xl, 42rem);
+        }
+        "
+      `)
   })
 
   test('builds the Apply Effects recipe', async () => {
@@ -330,15 +330,15 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'effects' }))
       .toMatchInlineSnapshot(`
-      ".z-default-animation-\\[var\\(--z-default-animate-spin\\,z-kid-zyzz_5f_2d_5f_spin_20_1s_20_linear_20_infinite\\)\\] {
-        animation: var(--z-default-animate-spin, z-kid-zyzz_2d_spin 1s linear infinite);
-      }
+        ".z-default-aTfGk4-animation-\\[var\\(--z-default-animate-spin\\,z-kid-zyzz_5f_2d_5f_spin_20_1s_20_linear_20_infinite\\)\\] {
+          animation: var(--z-default-animate-spin, z-kid-zyzz_2d_spin 1s linear infinite);
+        }
 
-      .z-default-box-shadow-\\[var\\(--z-default-shadow-md\\,0_20_4px_20_6px_20_-1px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\,_20_0_20_2px_20_4px_20_-2px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\)\\] {
-        box-shadow: var(--z-default-shadow-md, 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a);
-      }
-      "
-    `)
+        .z-default-aTfGk4-box-shadow-\\[var\\(--z-default-shadow-md\\,0_20_4px_20_6px_20_-1px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\,_20_0_20_2px_20_4px_20_-2px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.1\\)\\)\\] {
+          box-shadow: var(--z-default-shadow-md, 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a);
+        }
+        "
+      `)
   })
 
   test('builds the Reference Effects recipe', async () => {
@@ -346,15 +346,15 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'references' }))
       .toMatchInlineSnapshot(`
-      ".z-default-backdrop-filter-\\[blur\\(var\\(--z-default-blur-md\\,12px\\)\\)\\] {
-        backdrop-filter: blur(var(--z-default-blur-md, 12px));
-      }
+        ".z-default-aTfGk4-backdrop-filter-\\[blur\\(var\\(--z-default-blur-md\\,12px\\)\\)\\] {
+          backdrop-filter: blur(var(--z-default-blur-md, 12px));
+        }
 
-      .z-default-box-shadow-\\[var\\(--z-default-insetShadow-sm\\,inset_20_0_20_2px_20_4px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.05\\)\\)\\] {
-        box-shadow: var(--z-default-insetShadow-sm, inset 0 2px 4px #0000000d);
-      }
-      "
-    `)
+        .z-default-aTfGk4-box-shadow-\\[var\\(--z-default-insetShadow-sm\\,inset_20_0_20_2px_20_4px_20_rgb\\(0_20_0_20_0_20_\\/_20_0\\.05\\)\\)\\] {
+          box-shadow: var(--z-default-insetShadow-sm, inset 0 2px 4px #0000000d);
+        }
+        "
+      `)
   })
 
   test('builds the Use Query Aliases recipe', async () => {
@@ -386,27 +386,27 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'typography' }))
       .toMatchInlineSnapshot(`
-      ".z-default-font-family-\\[var\\(--z-default-typography-button-14-fontFamily\\,Geist\\,_20_-apple-system\\,_20_BlinkMacSystemFont\\,_20__22_Segoe_20_UI_22_\\,_20_Roboto\\,_20__22_Helvetica_20_Neue_22_\\,_20__22_Noto_20_Sans_22_\\,_20_Arial\\,_20_sans-serif\\,_20__22_Apple_20_Color_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Symbol_22_\\,_20__22_Noto_20_Color_20_Emoji_22_\\)\\] {
-        font-family: var(--z-default-typography-button-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
-      }
+        ".z-default-aTfGk4-font-family-\\[var\\(--z-default-typography-button-14-fontFamily\\,Geist\\,_20_-apple-system\\,_20_BlinkMacSystemFont\\,_20__22_Segoe_20_UI_22_\\,_20_Roboto\\,_20__22_Helvetica_20_Neue_22_\\,_20__22_Noto_20_Sans_22_\\,_20_Arial\\,_20_sans-serif\\,_20__22_Apple_20_Color_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Emoji_22_\\,_20__22_Segoe_20_UI_20_Symbol_22_\\,_20__22_Noto_20_Color_20_Emoji_22_\\)\\] {
+          font-family: var(--z-default-typography-button-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+        }
 
-      .z-default-font-size-\\[var\\(--z-default-typography-button-14-fontSize\\,14px\\)\\] {
-        font-size: var(--z-default-typography-button-14-fontSize, 14px);
-      }
+        .z-default-aTfGk4-font-size-\\[var\\(--z-default-typography-button-14-fontSize\\,14px\\)\\] {
+          font-size: var(--z-default-typography-button-14-fontSize, 14px);
+        }
 
-      .z-default-font-weight-\\[var\\(--z-default-typography-button-14-fontWeight\\,500\\)\\] {
-        font-weight: var(--z-default-typography-button-14-fontWeight, 500);
-      }
+        .z-default-aTfGk4-font-weight-\\[var\\(--z-default-typography-button-14-fontWeight\\,500\\)\\] {
+          font-weight: var(--z-default-typography-button-14-fontWeight, 500);
+        }
 
-      .z-default-letter-spacing-\\[var\\(--z-default-typography-button-14-letterSpacing\\,0px\\)\\] {
-        letter-spacing: var(--z-default-typography-button-14-letterSpacing, 0px);
-      }
+        .z-default-aTfGk4-letter-spacing-\\[var\\(--z-default-typography-button-14-letterSpacing\\,0px\\)\\] {
+          letter-spacing: var(--z-default-typography-button-14-letterSpacing, 0px);
+        }
 
-      .z-default-line-height-\\[var\\(--z-default-typography-button-14-lineHeight\\,20px\\)\\] {
-        line-height: var(--z-default-typography-button-14-lineHeight, 20px);
-      }
-      "
-    `)
+        .z-default-aTfGk4-line-height-\\[var\\(--z-default-typography-button-14-lineHeight\\,20px\\)\\] {
+          line-height: var(--z-default-typography-button-14-lineHeight, 20px);
+        }
+        "
+      `)
   })
 
   test('builds the Use Set Variants recipe', async () => {
@@ -628,11 +628,11 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'fields' }))
       .toMatchInlineSnapshot(`
-      ".z-default-font-size-\\[var\\(--z-default-typography-heading-32-fontSize\\,32px\\)\\] {
-        font-size: var(--z-default-typography-heading-32-fontSize, 32px);
-      }
-      "
-    `)
+        ".z-default-aTfGk4-font-size-\\[var\\(--z-default-typography-heading-32-fontSize\\,32px\\)\\] {
+          font-size: var(--z-default-typography-heading-32-fontSize, 32px);
+        }
+        "
+      `)
   })
 
   test('builds the Load Geist Fonts recipe', async () => {

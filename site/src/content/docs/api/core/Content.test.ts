@@ -643,11 +643,11 @@ describe('defineConfig API page', () => {
         --z-spacing-page: 1rem;
       }
 
-      .z-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
+      .z-4G1uCV-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+      .z-4G1uCV-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
         padding: var(--z-spacing-page, 1rem);
       }
       "
@@ -673,11 +673,11 @@ describe('defineConfig API page', () => {
         --z-spacing-md: 8px;
       }
 
-      .z-p-\\[var\\(--z-spacing-md\\,8px\\)\\] {
+      .z-ml1WQ5-p-\\[var\\(--z-spacing-md\\,8px\\)\\] {
         padding: var(--z-spacing-md, 8px);
       }
 
-      .z-mt-7px {
+      .z-ml1WQ5-mt-7px {
         margin-top: 7px;
       }
       "
@@ -688,11 +688,11 @@ describe('defineConfig API page', () => {
         --z-textColor-brand: #004a99;
       }
 
-      .z-bg-\\[var\\(--z-color-brand\\,\\#06c\\)\\] {
+      .z-UFW1mi-bg-\\[var\\(--z-color-brand\\,\\#06c\\)\\] {
         background-color: var(--z-color-brand, #06c);
       }
 
-      .z-text-\\[var\\(--z-textColor-brand\\,\\#004a99\\)\\] {
+      .z-UFW1mi-text-\\[var\\(--z-textColor-brand\\,\\#004a99\\)\\] {
         color: var(--z-textColor-brand, #004a99);
       }
       "
@@ -809,11 +809,11 @@ describe('defineVars API page', () => {
         }
       }
 
-      .z-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
+      .z-4G1uCV-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
+      .z-4G1uCV-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
         padding: var(--z-spacing-page, var(--z-spacing-page-fallback-135haxo1frqfdi));
       }
       "
@@ -829,7 +829,7 @@ describe('defineVars API page', () => {
         }
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
+      .z-u6u0RP-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
         padding: var(--z-spacing-page, var(--z-spacing-page-fallback-135haxo1frqfdi));
       }
       "
@@ -907,11 +907,11 @@ describe('extendVars API page', () => {
         --z-spacing-page: 1rem;
       }
 
-      .z-text-\\[var\\(--z-color-accent\\,\\#2563eb\\)\\] {
+      .z-4G1uCV-text-\\[var\\(--z-color-accent\\,\\#2563eb\\)\\] {
         color: var(--z-color-accent, #2563eb);
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+      .z-4G1uCV-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
         padding: var(--z-spacing-page, 1rem);
       }
       "
@@ -1131,7 +1131,7 @@ describe('Vars API page', () => {
         --z-number-opacity: 25;
       }
 
-      .z-text-\\[var\\(--z-color-faded\\,color-mix\\(in_20_srgb\\,_20_var\\(--z-color-ink\\,\\#171717\\)_20_calc\\(var\\(--z-number-opacity\\,25\\)_20_\\*_20_1\\%\\)\\,_20_transparent\\)\\)\\] {
+      .z-Bc99af-text-\\[var\\(--z-color-faded\\,color-mix\\(in_20_srgb\\,_20_var\\(--z-color-ink\\,\\#171717\\)_20_calc\\(var\\(--z-number-opacity\\,25\\)_20_\\*_20_1\\%\\)\\,_20_transparent\\)\\)\\] {
         color: var(--z-color-faded, color-mix(in srgb, var(--z-color-ink, #171717) calc(var(--z-number-opacity, 25) * 1%), transparent));
       }
       "

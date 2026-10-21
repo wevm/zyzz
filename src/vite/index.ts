@@ -1932,6 +1932,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       }
     }
 
+    if (
+      served.shared !== undefined &&
+      servedShared.get(environment) === served.shared
+    )
+      servedShared.set(environment, after.sharedCss ?? '')
+
     const stylesheets = new Set<string>()
 
     if (deleted !== undefined) stylesheets.add(cssId(deleted))
@@ -2280,8 +2286,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         // package files, recompile a closure that reads them.
         const project = projects.get(this.environment)
         const first = (() => {
-          const own = state.get(file) ?? anchored(this.environment).get(file)
-          if (own) return own
+          // A module Vite transforms supersedes the anchor an earlier edit created.
+          const own = state.get(file)
+          if (own) {
+            anchored(this.environment).delete(file)
+            return own
+          }
+
+          const existing = anchored(this.environment).get(file)
+          if (existing) return existing
 
           if (
             !eligible(file) ||
@@ -2323,6 +2336,10 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
                 () => false,
               )
             : false
+
+        // No request reads an anchor's output, so its memo would only retain the merged result.
+        if (first && state.get(first.file) !== first) outputs.delete(first)
+
         const after = projects.get(this.environment)?.outcome
 
         if (compiled && after && 'result' in after)

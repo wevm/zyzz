@@ -3597,6 +3597,95 @@ export namespace styles {
     }
   }, 30000)
 
+  test('development announces a shared stylesheet update once until the environment loads it', async () => {
+    const { config, root } = await create({
+      ...Fixture.files,
+      'banner.ts': `import { style } from './config'; export const banner = style({ padding: '4px' })(); if (import.meta.hot) import.meta.hot.accept();`,
+      'card.ts': `${Fixture.files['card.ts']} if (import.meta.hot) import.meta.hot.accept();`,
+    })
+    const server = await Vite.createServer(config)
+    let socket: WebSocket | undefined
+
+    try {
+      await server.listen()
+
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+
+      const origin = `http://127.0.0.1:${address.port}`
+
+      // 1. Serve both modules and every stylesheet they import, including the shared one.
+      for (const path of ['/card.ts', '/banner.ts']) {
+        const code = await (await fetch(origin + path)).text()
+
+        for (const [, stylesheet] of code.matchAll(
+          /import\s*["']([^"']*zyzz:[^"']+\.css)["']/g,
+        ))
+          await fetch(origin + stylesheet!)
+      }
+
+      socket = new WebSocket(
+        `ws://127.0.0.1:${address.port}/?token=${server.config.webSocketToken}`,
+        'vite-hmr',
+      )
+      await new Promise<void>((resolve, reject) => {
+        socket!.onopen = () => resolve()
+        socket!.onerror = () => reject(new Error('WebSocket failed'))
+      })
+
+      const names = (text: string) =>
+        (
+          JSON.parse(text) as { updates: { path: string; type: string }[] }
+        ).updates
+          .map(
+            (update) =>
+              `${update.type} ${decodeURIComponent(update.path).split('/').pop()!.replace('\0', '')}`,
+          )
+          .sort()
+
+      // 2. Edit the alternate theme, which only the shared stylesheet declares. Nothing requests
+      // the shared stylesheet again.
+      const theme = await message(
+        socket,
+        () =>
+          Watch.write({
+            path: Path.join(root, 'alternate.ts'),
+            source: Fixture.files['alternate.ts'].replace("'#175'", "'#286'"),
+          }),
+        (text) => text.includes('shared.css'),
+      )
+
+      expect(names(theme)).toMatchInlineSnapshot(`
+        [
+          "js-update zyzz:shared.css",
+        ]
+      `)
+
+      // 3. Edit the banner. Its update leaves out the shared stylesheet, whose update is pending.
+      const banner = await message(
+        socket,
+        () =>
+          Watch.write({
+            path: Path.join(root, 'banner.ts'),
+            source: `import { style } from './config'; export const banner = style({ padding: '6px' })(); if (import.meta.hot) import.meta.hot.accept();`,
+          }),
+        (text) => text.includes('banner.ts'),
+      )
+
+      expect(names(banner)).toMatchInlineSnapshot(`
+        [
+          "js-update banner.ts",
+          "js-update banner.ts.css",
+        ]
+      `)
+    } finally {
+      socket?.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
+
   test('development leaves server stylesheets that no request transformed', async () => {
     // Grouped output keeps class names across value edits, so only the stylesheet changes.
     const { config, root } = await create({

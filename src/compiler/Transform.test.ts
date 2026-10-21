@@ -7035,12 +7035,12 @@ describe('dynamic', () => {
       const source = `import { style } from 'zyzz'
 export const App = (props: { label: string; x: number }) => <main>
 <div id="dot" {...styles.dot({ transform: \`translateX(\${props.x}px)\`, width: props.label })} />
-<div id="shared" className="shared" {...styles.dot({ transform: 'none', width: '3px' })} />
+<div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
 <div id="later" {...styles.later({ width: props.label })} />
 <div id="hover" {...styles.hover({ width: props.label })} />
 </main>
 namespace styles {
-  export const dot = style((values: { transform: \`translateX(\${number}px)\` | 'none'; width: string }) => ({
+  export const dot = style((values: { transform: \`translateX(\${number}px)\`; width: string }) => ({
     display: 'block',
     width: values.width,
     transform: values.transform,
@@ -7053,8 +7053,19 @@ namespace styles {
       const output = Transform.compile({ moduleId: 'App.tsx', source })
 
       // Applications spread alone fold to their props, and other applications keep variables.
-      expect(output.code.slice(output.code.indexOf('<main>'), output.code.indexOf('</main>')))
-        .toMatchInlineSnapshot()
+      expect(
+        output.code.slice(
+          output.code.indexOf('<main>'),
+          output.code.indexOf('</main>'),
+        ),
+      ).toMatchInlineSnapshot(`
+          "<main>
+          <div id="dot" {...(styles.dot?{className:"z-l0kPgl-styles-dot-display-0 z-l0kPgl-styles-dot-w-1 z-l0kPgl-styles-dot-transform-2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label)||"unset"}}:styles.dot())} />
+          <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
+          <div id="later" {...styles.later({ width: props.label })} />
+          <div id="hover" {...styles.hover({ width: props.label })} />
+          "
+        `)
 
       const bundle = await Esbuild.build({
         alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
@@ -7100,10 +7111,56 @@ namespace styles {
           )
         }
 
-        expect(await render({ label: '10px', x: 4 })).toMatchInlineSnapshot()
+        expect(await render({ label: '10px', x: 4 })).toMatchInlineSnapshot(`
+          [
+            [
+              "dot",
+              "matrix(1, 0, 0, 1, 4, 0)",
+              "10px",
+            ],
+            [
+              "shared",
+              "matrix(1, 0, 0, 1, 0, 0)",
+              "3px",
+            ],
+            [
+              "later",
+              "none",
+              "20px",
+            ],
+            [
+              "hover",
+              "none",
+              "10px",
+            ],
+          ]
+        `)
 
         // An empty value leaves each property unset, as an invalid variable does.
-        expect(await render({ label: '', x: 4 })).toMatchInlineSnapshot()
+        expect(await render({ label: '', x: 4 })).toMatchInlineSnapshot(`
+          [
+            [
+              "dot",
+              "matrix(1, 0, 0, 1, 4, 0)",
+              "1264px",
+            ],
+            [
+              "shared",
+              "matrix(1, 0, 0, 1, 0, 0)",
+              "3px",
+            ],
+            [
+              "later",
+              "none",
+              "1264px",
+            ],
+            [
+              "hover",
+              "none",
+              "1264px",
+            ],
+          ]
+        `)
       } finally {
         await browser.close()
       }

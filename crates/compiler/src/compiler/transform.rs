@@ -70,6 +70,9 @@ pub struct Options<'s, 'a> {
     /// Content written as `0` in both source maps. A host that supplied the source separately
     /// restores it, so the text crosses the boundary once.
     pub placeholder: Option<&'a str>,
+    /// Identity classes that selectors of a complete graph reference. Class lists then omit
+    /// every other generated identity, while explicit ids remain. `None` keeps every identity.
+    pub referenced: Option<&'s FxHashSet<Arc<str>>>,
     /// Emits the color-scheme selection classes. Defaults to the module's own scheme helpers.
     pub schemes: Option<bool>,
     /// Separates generated token rules for independently loaded modules.
@@ -916,7 +919,13 @@ pub fn compile<'a>(
 
         css::compile(&css_options, Some(&mut units))?
     };
-    let classes = classes(extracted, &mut emitted, portable, &portable_names);
+    let classes = classes(
+        extracted,
+        &mut emitted,
+        portable,
+        &portable_names,
+        options.referenced,
+    );
     let generator = Generator {
         classes,
         owners: options.owners,
@@ -1284,6 +1293,7 @@ fn classes(
     emitted: &mut css::Output,
     portable: bool,
     portable_names: &FxHashMap<Arc<str>, Arc<str>>,
+    referenced: Option<&FxHashSet<Arc<str>>>,
 ) -> IndexMap<Arc<str>, String, FxBuildHasher> {
     let identities: FxHashMap<&str, &str> = extracted
         .calls
@@ -1320,6 +1330,17 @@ fn classes(
                             .collect::<Vec<_>>()
                             .join(" "),
                     )
+                } else if let Some(referenced) = referenced {
+                    // Only selectors match identity classes, and a complete graph holds them all.
+                    Cow::Owned(
+                        identity
+                            .split(' ')
+                            .filter(|name| {
+                                name.starts_with("z-style-id-") || referenced.contains(*name)
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    )
                 } else {
                     Cow::Borrowed(*identity)
                 }
@@ -1333,6 +1354,7 @@ fn classes(
             }
 
             if let Some(extra) = &extra
+                && !extra.is_empty()
                 && !list.contains(&&**extra)
             {
                 list.push(extra);

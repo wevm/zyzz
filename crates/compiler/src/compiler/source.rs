@@ -81,12 +81,25 @@ pub struct RuntimeInput {
     pub condition: Option<u32>,
     /// Exclusive offset of the application argument.
     pub end: u32,
+    /// Reads of a no-argument application whose props the compiler knows.
+    pub known: Option<KnownInput>,
     /// Replaced generated class owner.
     pub name: Arc<str>,
     /// Attribute and private variable ownership.
     pub owners: Vec<Owner>,
     /// Inclusive offset of the application argument.
     pub start: u32,
+}
+
+/// The reads a statically known composition argument keeps once its application is skipped.
+#[derive(Clone, Debug)]
+pub struct KnownInput {
+    /// Authored callee, read for truthiness so initialization failures still throw.
+    pub callee: Arc<str>,
+    /// Left operand of a conditional `&&` argument.
+    pub condition: Option<Span>,
+    /// Whether the definition is imported, so its class list may be unknown to this module.
+    pub imported: bool,
 }
 
 /// A definition call available for a later source rewriter.

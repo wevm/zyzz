@@ -156,6 +156,15 @@ document.body.className = card().className
 `,
 }
 
+/** A module that applies a theme colour, which compiles to light-dark(). */
+const viteTheme = `import { Config, Vars } from 'zyzz'
+
+const base = Vars.define({ color: { text: { dark: '#fff', light: '#000' } } })
+const { style } = Config.create({ defaultVars: 'base', vars: { base } })
+const card = style({ color: 'text' })
+export const className = card().className
+`
+
 /** Builds a Vite project from a page's configuration example. */
 async function vite(name: string, config: string, extra = {}) {
   const path = await directory(name, {
@@ -372,7 +381,7 @@ process.exit()`,
     `)
   })
 
-  test('accepts a separate browser CSS target', async () => {
+  test('accepts a lower CSS target without light-dark()', async () => {
     const config = await example('vite', 'Browser Targets')
     const { path, result } = await vite('vite-targets', config.source)
 
@@ -380,6 +389,20 @@ process.exit()`,
     expect(await viteCss(path)).toMatchInlineSnapshot(`
       ".z-EQz5kA-text-red{color:red}.z-EQz5kA-p-8px{padding:8px}
       "
+    `)
+  })
+
+  test('builds a server entry with a node target', async () => {
+    const config = await example('vite', 'Server Builds')
+    const { path, result } = await vite('vite-server', config.source, {
+      'src/server.ts': viteTheme,
+    })
+
+    expect(result.status).toMatchInlineSnapshot(`0`)
+    expect(await files(Path.join(path, 'dist'))).toMatchInlineSnapshot(`
+      [
+        "server.js",
+      ]
     `)
   })
 
@@ -432,13 +455,15 @@ process.exit()`,
 
   test('rejects a target that lowers light-dark()', async () => {
     const config = await example('vite', 'Errors')
-    const { result } = await vite('vite-errors', config.source)
+    const { result } = await vite('vite-errors', config.source, {
+      'src/main.ts': viteTheme,
+    })
 
     expect(result.status).toMatchInlineSnapshot(`1`)
     expect(
-      result.stderr.match(/Zyzz theme colours[^\n']*/)?.[0],
+      result.stderr.match(/Zyzz keeps light-dark\(\)[^\n']*/)?.[0],
     ).toMatchInlineSnapshot(
-      `"Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+."`,
+      `"Zyzz keeps light-dark() native, which these CSS targets would lower. Set build.cssTarget and css.lightningcss.targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+."`,
     )
   })
 })
@@ -1554,7 +1579,7 @@ describe('integration API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 60_000 },
     )
 
-    expect(checked.length).toMatchInlineSnapshot(`36`)
+    expect(checked.length).toMatchInlineSnapshot(`37`)
     expect(result.stdout + result.stderr).toMatchInlineSnapshot(`""`)
     expect(result.status).toMatchInlineSnapshot(`0`)
   }, 120_000)

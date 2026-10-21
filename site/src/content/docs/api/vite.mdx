@@ -212,7 +212,9 @@ export default defineConfig({
 
 ## Browser Targets
 
-Theme colors rely on native `light-dark()`, so the plugin stops Lightning CSS from lowering it, including in application stylesheets. Without a build target, CSS targets default to Chrome and Edge 123, Firefox 120, and Safari 17.5.
+Theme colors rely on native `light-dark()`, so the plugin stops Lightning CSS from lowering it, including in application stylesheets. A client build fails only when its emitted CSS contains `light-dark()` and a CSS target would lower it or names no browser.
+
+When `build.cssTarget` is unset and `build.target` names no browser, such as `node20` or `es2022`, CSS targets default to Chrome and Edge 123, Firefox 120, and Safari 17.5. A browser `build.target` stays the CSS target, as in Vite.
 
 ```ts title="vite.config.ts"
 import { defineConfig } from 'vite'
@@ -220,8 +222,28 @@ import { zyzz } from 'zyzz/vite'
 
 export default defineConfig({
   // [!code hl:2]
-  // An ECMAScript build target needs a separate browser CSS target
-  build: { cssTarget: ['chrome123', 'safari18'], target: 'es2022' },
+  // Lowers modern CSS for Chrome 120, which passes while no stylesheet uses light-dark()
+  build: { cssTarget: 'chrome120', target: 'es2022' },
+  plugins: [zyzz()],
+})
+```
+
+### Server Builds
+
+Server environments, including `build.ssr` builds, collect CSS for rendering without shipping it, so they skip the CSS target check. A Node `build.target` needs no separate CSS target.
+
+```ts title="vite.config.ts"
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  // [!code hl:2]
+  // Builds the server entry with theme colors and no browser CSS target
+  build: {
+    rolldownOptions: { input: 'src/server.ts' },
+    ssr: true,
+    target: 'node20',
+  },
   plugins: [zyzz()],
 })
 ```
@@ -251,7 +273,7 @@ export default defineConfig({
 
 ## Errors
 
-Configuration fails when a CSS target cannot preserve `light-dark()` or cannot be verified, when an `include` pattern does not start in an existing directory, and when `native` is combined with `reset` or `compiler: false`. Source errors keep their locations.
+A client build fails when emitted CSS uses `light-dark()` and a CSS target cannot preserve it or cannot be verified. Configuration fails when an `include` pattern does not start in an existing directory, and when `native` is combined with `reset` or `compiler: false`. Source errors keep their locations.
 
 ```ts title="vite.config.ts"
 import { defineConfig } from 'vite'
@@ -259,7 +281,7 @@ import { zyzz } from 'zyzz/vite'
 
 export default defineConfig({
   // [!code hl:2]
-  // Rejected because Safari 15 would lower light-dark()
+  // Rejected once a stylesheet uses light-dark(), which Safari 15 would lower
   build: { cssTarget: 'safari15' },
   plugins: [zyzz()],
 })

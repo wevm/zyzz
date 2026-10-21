@@ -2833,7 +2833,7 @@ describe('packageContracts', () => {
         expect(await Fs.readFile(Path.join(root, 'dist/view.ts'), 'utf8'))
           .toMatchInlineSnapshot(`
             "
-            const __zyzzComposition103=/*#__PURE__*/[{className:"z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0"},{className:"z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-0-p-0 z-view-0-acme-u3iffL-styles-one-acme-u3iffL-styles-two-text-0"}].map(Object.freeze);
+            const __zyzzComposition103=/*#__PURE__*/[{className:"z_u3iffL2"},{className:"z_u3iffL2 z_u3iffL3"}].map(Object.freeze);
 
             import { Props as __zyzzProps } from 'zyzz/runtime';
             import {style} from '@acme/tokens';export function view(active:boolean){return __zyzzComposition103[((styles.one as unknown)||styles.one(),0)|((active)?((styles.two as unknown)||styles.two(),1):0)]}namespace styles{export const one=__zyzzProps.create({className:"z_acme-u3iffL0"});export const two=__zyzzProps.create({className:"z_acme-u3iffL1"})}"

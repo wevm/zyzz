@@ -7059,11 +7059,11 @@ namespace styles {
         ),
       ).toMatchInlineSnapshot(`
         "<main>
-        <div id="dot" {...(styles.dot?{className:"z-l0kPgl-styles-dot-display-0 z-l0kPgl-styles-dot-w-1 z-l0kPgl-styles-dot-transform-2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label)||"unset"}}:styles.dot())} />
+        <div id="dot" {...(styles.dot?{className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label)||"unset"}}:styles.dot())} />
         <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
         <div id="later" {...styles.later({ width: props.label })} />
         <div id="hover" {...styles.hover({ width: props.label })} />
-        <div id="mixed" {...(styles.mixed?{className:"z-l0kPgl-styles-mixed-opacity-0 z-l0kPgl-styles-mixed-w-1",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label)||"unset"}}:styles.mixed())} />
+        <div id="mixed" {...(styles.mixed?{className:"z_l0kPgl7 z_l0kPgl8",style:{"--z-l0kPgl-styles-mixed-opacity":\`\${(0.5)}\`||" ","width":(props.label)||"unset"}}:styles.mixed())} />
         "
       `)
 

@@ -1474,7 +1474,7 @@ describe('CLI API page', () => {
     expect(status).toMatchInlineSnapshot(`1`)
     expect(output).toMatchInlineSnapshot(`
       "code: UNKNOWN
-      message: "--platform and --color-scheme require --target native.""
+      message: "--platform, --color-scheme, --font, --px, and --rem require --target native.""
     `)
   })
 

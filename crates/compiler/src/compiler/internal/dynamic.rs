@@ -6,7 +6,7 @@ use oxc_ast::ast::{
     Expression, ObjectExpression, PropertyKey, TSLiteral, TSSignature, TSType, UnaryOperator,
 };
 use oxc_span::GetSpan;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::compiler::internal::expression::unwrap;
 use crate::error::{Error, Result};
@@ -284,6 +284,7 @@ pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots, keywords: &[Arc<str>]) -
     }
 
     let declarations = &style.declarations;
+    let keywords: FxHashSet<&str> = keywords.iter().map(|field| &**field).collect();
     // Each binding's read count and first declaration, from one pass over the declarations.
     let mut reads: FxHashMap<&str, (usize, usize)> = FxHashMap::default();
 
@@ -306,7 +307,7 @@ pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots, keywords: &[Arc<str>]) -
     }
 
     for (field, slot) in slots.iter() {
-        if slot.domain != Domain::Length || slot.zero || keywords.contains(field) {
+        if slot.domain != Domain::Length || slot.zero || keywords.contains(&**field) {
             continue;
         }
 
@@ -393,17 +394,16 @@ fn sizing(property: &str) -> bool {
     )
 }
 
-/// Whether a string type admits a CSS-wide keyword. String literals are already checked, and
-/// unresolved references count as unconstrained.
+/// Whether a string type admits a CSS-wide keyword, which CSS matches after trimming whitespace.
+/// String literals are already checked, and unresolved references count as unconstrained.
 fn keyword(node: &TSType<'_>) -> bool {
     match node {
         TSType::TSLiteralType(_) | TSType::TSNumberKeyword(_) => false,
         TSType::TSTemplateLiteralType(template) => {
             template.quasis.iter().all(|part| {
-                part.value
-                    .raw
-                    .bytes()
-                    .all(|byte| byte.is_ascii_alphabetic() || byte == b'-')
+                part.value.raw.bytes().all(|byte| {
+                    byte.is_ascii_alphabetic() || byte.is_ascii_whitespace() || byte == b'-'
+                })
             }) && (template.types.is_empty() || template.types.iter().any(hole))
         }
         TSType::TSIntersectionType(intersection) => intersection.types.iter().all(keyword),

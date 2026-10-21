@@ -7333,7 +7333,10 @@ namespace styles {
 export const A = () => <div {...styles.keyword({ width: 'inherit' })} />
 namespace styles {
   export const keyword = style((values: { width: \`\${'in'}herit\` }) => ({ width: values.width }))
+
+  export const spaced = style((values: { width: \` \${'in'}herit \` }) => ({ width: values.width }))
 }
+export const C = () => <div {...styles.spaced({ width: ' inherit ' })} />
 export const B = () => <div {...merged.dot({ width: '10px' })} />
 namespace merged {
   export const dot = style((values: { width: \`\${number}px\` }) => ({ width: values.width }))
@@ -7349,6 +7352,7 @@ namespace merged {
       expect(lines).toMatchInlineSnapshot(`
         [
           "export const A = () => <div {...styles.keyword({ width: 'inherit' })} />",
+          "export const C = () => <div {...styles.spaced({ width: ' inherit ' })} />",
           "export const B = () => <div {...merged.dot({ width: '10px' })} />",
         ]
       `)

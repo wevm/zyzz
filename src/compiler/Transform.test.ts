@@ -7031,6 +7031,84 @@ describe('dynamic', () => {
       }
     })
 
+    test('writes fields that fill one declaration inline on elements styled alone', async () => {
+      const source = `import { style } from 'zyzz'
+export const App = (props: { label: string; x: number }) => <main>
+<div id="dot" {...styles.dot({ transform: \`translateX(\${props.x}px)\`, width: props.label })} />
+<div id="shared" className="shared" {...styles.dot({ transform: 'none', width: '3px' })} />
+<div id="later" {...styles.later({ width: props.label })} />
+<div id="hover" {...styles.hover({ width: props.label })} />
+</main>
+namespace styles {
+  export const dot = style((values: { transform: \`translateX(\${number}px)\` | 'none'; width: string }) => ({
+    display: 'block',
+    width: values.width,
+    transform: values.transform,
+  }))
+
+  export const later = style((values: { width: string }) => ({ width: values.width, minInlineSize: '20px' }))
+
+  export const hover = style((values: { width: string }) => ({ width: values.width, selectors: { '&:hover': { width: '1px' } } }))
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      // Applications spread alone fold to their props, and other applications keep variables.
+      expect(output.code.slice(output.code.indexOf('<main>'), output.code.indexOf('</main>')))
+        .toMatchInlineSnapshot()
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        external: ['react'],
+        format: 'cjs',
+        jsx: 'automatic',
+        platform: 'node',
+        stdin: {
+          contents: output.code,
+          loader: 'tsx',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const module = {
+        exports: {} as {
+          App: (props: { label: string; x: number }) => React.ReactNode
+        },
+      }
+
+      new Function('module', 'exports', 'require', bundle.outputFiles[0]!.text)(
+        module,
+        module.exports,
+        Module.createRequire(import.meta.url),
+      )
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+        const render = async (props: { label: string; x: number }) => {
+          await page.setContent(
+            `<style>${output.css}</style>${Server.renderToStaticMarkup(React.createElement(module.exports.App, props))}`,
+          )
+
+          return page.locator('div').evaluateAll((elements) =>
+            elements.map((element) => {
+              const style = getComputedStyle(element)
+
+              return [element.id, style.transform, style.width]
+            }),
+          )
+        }
+
+        expect(await render({ label: '10px', x: 4 })).toMatchInlineSnapshot()
+
+        // An empty value leaves each property unset, as an invalid variable does.
+        expect(await render({ label: '', x: 4 })).toMatchInlineSnapshot()
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('mixes bound theme references with static and dynamic declarations', () => {
       expect(
         Transform.compile({

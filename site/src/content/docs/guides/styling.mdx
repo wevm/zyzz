@@ -385,6 +385,8 @@ namespace styles {
 </Tab>
 </Tabs>
 
+When a call is spread alone onto an element, a field that fills one unconditional declaration is written to that property inline, such as `style="width:40%"`. The element skips variable substitution during style recalculation. The rule keeps its variable for every other call, and an empty value writes `unset`.
+
 A changing value has a narrower tool in most cases:
 
 - **Fixed choices**, such as size or tone: [Variants](/docs/guides/variants).

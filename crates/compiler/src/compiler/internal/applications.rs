@@ -11,8 +11,8 @@ use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
     Argument, Declaration, Expression, JSXAttributeItem, JSXAttributeName, JSXElementName,
-    ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement, TSNamespaceDeclarationBody,
-    UnaryOperator, VariableDeclarationKind,
+    ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind, Statement,
+    TSNamespaceDeclarationBody, UnaryOperator, VariableDeclarationKind,
 };
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
@@ -39,6 +39,22 @@ pub struct Application {
     pub start: u32,
     /// Whether the application is the only class source of a DOM element.
     pub terminal: bool,
+}
+
+/// One application of a dynamic definition with an object literal, spread alone onto a DOM
+/// element.
+#[derive(Clone, Copy, Debug)]
+pub struct Bound<'a> {
+    /// End of the callee expression.
+    pub callee_end: u32,
+    /// End of the call.
+    pub end: u32,
+    /// Whether every evaluation follows the definition's initialization.
+    pub initialized: bool,
+    /// Start of the call.
+    pub start: u32,
+    /// The authored values.
+    pub values: &'a ObjectExpression<'a>,
 }
 
 /// A `.className` or `.class` read of an application's result, used only as a value.
@@ -96,6 +112,8 @@ struct Candidate<'c, 'a> {
 /// What a lexical read is nested in.
 #[derive(Clone, Copy)]
 struct Read<'a> {
+    /// The values object of a one-argument call spread alone onto a DOM element.
+    bound: Option<&'a ObjectExpression<'a>>,
     deferred: bool,
     /// Parent of the identifier.
     parent: Option<AstKind<'a>>,
@@ -484,6 +502,7 @@ impl Walker<'_, '_> {
 
             let count = self.ancestors.len();
             let read = Read {
+                bound: bound(&self.ancestors),
                 deferred: self.ancestors.iter().any(defers),
                 grandparent: count
                     .checked_sub(3)
@@ -788,6 +807,74 @@ impl<'c, 'a> Applications<'c, 'a> {
         output
     }
 
+    /// Applications of each dynamic definition that bind an object literal on a DOM element alone,
+    /// by definition name, in candidate order.
+    pub fn bound(&self) -> FxHashMap<Arc<str>, Vec<Bound<'a>>> {
+        let mut output: FxHashMap<Arc<str>, Vec<Bound<'a>>> = FxHashMap::default();
+
+        if self.evaluation {
+            return output;
+        }
+
+        for candidate in &self.candidates {
+            for reference in self
+                .references
+                .get(&candidate.name)
+                .map(Vec::as_slice)
+                .unwrap_or_default()
+            {
+                let Some(values) = reference.bound else {
+                    continue;
+                };
+
+                if reference.span == candidate.binding || reference.resolved {
+                    continue;
+                }
+
+                let (call, callee, application) = if let Some(direct) = candidate.direct {
+                    (Some(direct), reference.span, reference.parent)
+                } else {
+                    let Some((name, member)) = member_name(reference.parent, reference.span) else {
+                        continue;
+                    };
+
+                    (
+                        candidate.members.get(name).copied(),
+                        member,
+                        reference.grandparent,
+                    )
+                };
+                let Some(call) = call.filter(|call| {
+                    call.slots.is_some()
+                        && call.recipe.is_none()
+                        && call.composition.is_none()
+                        && call.runtime_composition.is_none()
+                }) else {
+                    continue;
+                };
+                let Some((span, 1)) = call_of(application, callee) else {
+                    continue;
+                };
+
+                output
+                    .entry(Arc::clone(&call.name))
+                    .or_default()
+                    .push(Bound {
+                        callee_end: callee.end,
+                        end: span.end,
+                        initialized: !reference.deferred
+                            && reference.span.start >= candidate.ready
+                            && (candidate.namespace.is_none()
+                                || self.namespace_counts.get(&candidate.name) == Some(&1)),
+                        start: span.start,
+                        values,
+                    });
+            }
+        }
+
+        output
+    }
+
     /// Every foldable application, in candidate order.
     pub fn find(&self) -> impl Iterator<Item = &Application> {
         let collected = if self.evaluation {
@@ -932,6 +1019,44 @@ fn terminal(path: &[AstKind<'_>]) -> bool {
         }
         _ => false,
     }
+}
+
+/// The object literal of a one-argument application spread alone onto a DOM element.
+fn bound<'a>(path: &[AstKind<'a>]) -> Option<&'a ObjectExpression<'a>> {
+    let mut index = path.len().checked_sub(1)?;
+    let mut node = path.get(index)?.span();
+
+    if let Some(AstKind::StaticMemberExpression(member)) =
+        index.checked_sub(1).and_then(|at| path.get(at))
+        && member.object.span() == node
+    {
+        index -= 1;
+        node = member.span;
+    }
+
+    let call_index = index.checked_sub(1)?;
+    let AstKind::CallExpression(call) = *path.get(call_index)? else {
+        return None;
+    };
+    let [Argument::ObjectExpression(values)] = call.arguments.as_slice() else {
+        return None;
+    };
+
+    if call.optional || call.callee.span() != node {
+        return None;
+    }
+
+    let spread_index = call_index.checked_sub(1)?;
+    let AstKind::JSXSpreadAttribute(spread) = *path.get(spread_index)? else {
+        return None;
+    };
+
+    (spread.argument.span() == call.span
+        && alone(
+            spread_index.checked_sub(1).and_then(|at| path.get(at)),
+            spread.span,
+        ))
+    .then_some(&**values)
 }
 
 /// Matches `^class(?:Name)?$`.

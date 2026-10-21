@@ -10,10 +10,13 @@ use rustc_hash::FxHashMap;
 
 use crate::compiler::internal::expression::unwrap;
 use crate::error::{Error, Result};
+use crate::generated::cascade;
 use crate::generated::literal::Kind;
 use crate::internal::binding::{self, Domain};
+use crate::internal::token::Part;
 use crate::internal::{identity, literal};
 use crate::js::Record;
+use crate::style::{NamedStyle, Value};
 
 /// Typed runtime slots by field name.
 pub type Slots = Record<Arc<binding::Reference>>;
@@ -249,6 +252,119 @@ impl<'a> Read<'a> {
             )),
         }
     }
+}
+
+/// The properties that string fields fill directly, by field name.
+///
+/// A field qualifies when its only read is the whole value of one top-level declaration of a
+/// style without conditions or web branches, and no later declaration of the style can affect
+/// the same property. Writing such a value as an inline declaration then wins exactly where the
+/// variable-backed declaration did. Other fields keep their variables.
+pub fn inline<'s>(style: &'s NamedStyle, slots: &Slots) -> Record<&'s str> {
+    let mut output = Record::new();
+
+    if style.rules.is_some()
+        || style
+            .targets
+            .as_ref()
+            .is_some_and(|targets| targets.web.is_some())
+    {
+        return output;
+    }
+
+    let declarations = &style.declarations;
+
+    for (field, slot) in slots.iter() {
+        if slot.domain != Domain::Length || slot.zero {
+            continue;
+        }
+
+        let mut reads =
+            declarations
+                .iter()
+                .enumerate()
+                .filter(|(_, declaration)| match &declaration.value {
+                    Value::Binding(binding) => binding.name == slot.name,
+                    Value::Expression(expression) => expression.parts.iter().any(
+                        |part| matches!(part, Part::Binding(binding) if binding.name == slot.name),
+                    ),
+                    _ => false,
+                });
+        let (Some((index, declaration)), None) = (reads.next(), reads.next()) else {
+            continue;
+        };
+        let property = &*declaration.property;
+
+        if declaration.important
+            || !matches!(declaration.value, Value::Binding(_))
+            || !property.starts_with(|character: char| character.is_ascii_lowercase())
+            || declarations
+                .get(index + 1..)
+                .unwrap_or_default()
+                .iter()
+                .any(|later| related(property, &later.property))
+        {
+            continue;
+        }
+
+        output.insert(Arc::clone(field), property);
+    }
+
+    output
+}
+
+/// Whether two declarations can set one computed property, conservatively by property family.
+fn related(left: &str, right: &str) -> bool {
+    let left = literal::alias(left).unwrap_or(left);
+    let right = literal::alias(right).unwrap_or(right);
+    left == right
+        || family(left) == family(right)
+        || expands(left, right)
+        || expands(right, left)
+        || (sizing(left) && sizing(right))
+        || (inset(left) && inset(right))
+}
+
+/// The first camelCase word of a property, which longhands of one shorthand usually share.
+fn family(property: &str) -> &str {
+    property
+        .split(|character: char| character.is_ascii_uppercase())
+        .next()
+        .unwrap_or(property)
+}
+
+/// Whether a shorthand resets a property, directly or through nested shorthands.
+fn expands(shorthand: &str, property: &str) -> bool {
+    cascade::shorthand(shorthand).is_some_and(|children| {
+        children
+            .iter()
+            .any(|child| *child == property || expands(child, property))
+    })
+}
+
+/// Physical and logical inset properties share computed values.
+fn inset(property: &str) -> bool {
+    property.starts_with("inset") || matches!(property, "bottom" | "left" | "right" | "top")
+}
+
+/// Physical and logical sizes share computed values.
+fn sizing(property: &str) -> bool {
+    let property = property
+        .strip_prefix("min")
+        .or_else(|| property.strip_prefix("max"))
+        .unwrap_or(property);
+
+    matches!(
+        property,
+        "blockSize"
+            | "BlockSize"
+            | "height"
+            | "Height"
+            | "inlineSize"
+            | "InlineSize"
+            | "width"
+            | "Width"
+    )
 }
 
 fn is_safe_integer(value: f64) -> bool {

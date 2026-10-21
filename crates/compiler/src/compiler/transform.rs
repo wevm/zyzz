@@ -12,14 +12,16 @@ use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
     Argument, ArrayExpressionElement, BindingPattern, Expression, ImportDeclarationSpecifier,
-    ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, Statement,
+    ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind,
+    Statement,
 };
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smallvec::SmallVec;
 
-use crate::compiler::internal::applications::{self, Application};
+use crate::compiler::internal::applications::{self, Application, Bound};
 use crate::compiler::internal::contributions::Factory;
+use crate::compiler::internal::dynamic;
 use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::statics::key_literal;
@@ -429,6 +431,85 @@ fn json_class(classes: &IndexMap<Arc<str>, String, FxBuildHasher>, name: &str) -
         .map_or_else(|| "undefined".to_owned(), |value| quote(value))
 }
 
+/// Folds a dynamic application into its props, writing each field to the property it fills.
+///
+/// Values keep their authored text and order, so edits inside them still apply. An empty string
+/// writes `unset`, the value a declaration takes when its variable is invalid at computed-value
+/// time. The emitted rule still reads the variable, which no folded application assigns.
+fn fold_bound(
+    module: &mut Edits<'_>,
+    source: &str,
+    application: &Bound<'_>,
+    properties: &js::Record<&str>,
+    class_name: &str,
+) -> Result<()> {
+    let mut fields: SmallVec<[(&str, Span); 4]> = SmallVec::new();
+
+    for property in &application.values.properties {
+        let ObjectPropertyKind::ObjectProperty(property) = property else {
+            return Ok(());
+        };
+
+        if property.computed || property.method || property.kind != PropertyKind::Init {
+            return Ok(());
+        }
+
+        let key = match &property.key {
+            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
+            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
+            _ => return Ok(()),
+        };
+        let Some(target) = properties.get(key) else {
+            return Ok(());
+        };
+
+        if fields.iter().any(|(existing, _)| *existing == *target) {
+            return Ok(());
+        }
+
+        fields.push((target, property.value.span()));
+    }
+
+    if fields.is_empty() || fields.len() != properties.len() {
+        return Ok(());
+    }
+
+    let callee = source
+        .get(application.start as usize..application.callee_end as usize)
+        .unwrap_or_default();
+    let mut previous = application.start;
+
+    for (index, (target, value)) in fields.iter().enumerate() {
+        let mut text = String::with_capacity(callee.len() + class_name.len() + 32);
+
+        if index == 0 {
+            if application.initialized {
+                text.push('(');
+            } else {
+                // Keep a callable guard so bundlers also keep failures before initialization.
+                let _ = write!(text, "({callee}?");
+            }
+
+            let _ = write!(text, "{{className:{class_name},style:{{");
+        } else {
+            text.push_str(")||\"unset\",");
+        }
+
+        let _ = write!(text, "{}:(", quote(target));
+
+        module.overwrite(previous, value.start, text)?;
+        previous = value.end;
+    }
+
+    let suffix = if application.initialized {
+        ")||\"unset\"}})".to_owned()
+    } else {
+        format!(")||\"unset\"}}}}:{callee}())")
+    };
+
+    module.overwrite(previous, application.end, suffix)
+}
+
 /// Locates emitted declarations, skipping selectors, conditions, and quoted CSS data. Offsets are
 /// UTF-8 byte offsets into `body`.
 fn declaration_starts(
@@ -783,9 +864,8 @@ pub fn compile<'a>(
             .map(|call| (call.start, call.end))
             .collect(),
     );
-    let composing = |application: &Application| {
-        compositions_intervals.contains(application.start, application.end)
-    };
+    let composing_span = |start: u32, end: u32| compositions_intervals.contains(start, end);
+    let composing = |application: &Application| composing_span(application.start, application.end);
     let html_starts: FxHashSet<u32> = extracted
         .calls
         .iter()
@@ -978,6 +1058,42 @@ pub fn compile<'a>(
         };
 
         module.overwrite(application.start, application.end, &replacement)?;
+    }
+
+    let bound = local_applications
+        .as_ref()
+        .map(applications::Applications::bound)
+        .unwrap_or_default();
+
+    for call in &extracted.calls {
+        let (Some(slots), Some(applied)) = (&call.slots, bound.get(&call.name)) else {
+            continue;
+        };
+
+        if outputs.get(&*call.name).copied().unwrap_or_default() {
+            continue;
+        }
+
+        let Some(style) = styles.iter().find(|style| style.name == call.name) else {
+            continue;
+        };
+        let properties = dynamic::inline(style, slots);
+
+        if properties.len() != slots.len() {
+            continue;
+        }
+
+        let class_name = json_class(&generator.classes, &call.name);
+
+        for application in applied {
+            if composing_span(application.start, application.end)
+                || html_starts.contains(&application.start)
+            {
+                continue;
+            }
+
+            fold_bound(&mut module, source, application, &properties, &class_name)?;
+        }
     }
 
     generator.themes(&mut module, &walker, &mut state)?;

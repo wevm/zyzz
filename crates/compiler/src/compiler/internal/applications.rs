@@ -46,8 +46,8 @@ pub struct Application {
     pub terminal: bool,
 }
 
-/// One application of a dynamic definition with an object literal, spread alone onto a DOM
-/// element.
+/// One application of a dynamic definition or class-selection recipe with an object literal,
+/// spread alone onto a DOM element.
 #[derive(Clone, Copy, Debug)]
 pub struct Bound<'a> {
     /// End of the callee expression.
@@ -56,6 +56,8 @@ pub struct Bound<'a> {
     pub end: u32,
     /// Whether every evaluation follows the definition's initialization.
     pub initialized: bool,
+    /// The JSX spread attribute whose argument is the call.
+    pub spread: Span,
     /// Start of the call.
     pub start: u32,
     /// The authored values.
@@ -132,7 +134,7 @@ struct Candidate<'c, 'a> {
 #[derive(Clone, Copy)]
 struct Read<'a> {
     /// The values object of a one-argument call spread alone onto a DOM element.
-    bound: Option<&'a ObjectExpression<'a>>,
+    bound: Option<(&'a ObjectExpression<'a>, Span)>,
     deferred: bool,
     /// Parent of the identifier.
     parent: Option<AstKind<'a>>,
@@ -902,8 +904,9 @@ impl<'c, 'a> Applications<'c, 'a> {
         output
     }
 
-    /// Applications of each dynamic definition that bind an object literal on a DOM element alone,
-    /// by definition name, in candidate order.
+    /// Applications of each dynamic definition or unconditional class-selection recipe without
+    /// payloads that bind an object literal on a DOM element alone, by definition name, in
+    /// candidate order.
     pub fn bound(&self) -> FxHashMap<Arc<str>, Vec<Bound<'a>>> {
         let mut output: FxHashMap<Arc<str>, Vec<Bound<'a>>> = FxHashMap::default();
 
@@ -963,7 +966,7 @@ impl<'c, 'a> Applications<'c, 'a> {
             }
 
             for reference in reads {
-                let Some(values) = reference.bound else {
+                let Some((values, spread)) = reference.bound else {
                     continue;
                 };
 
@@ -985,8 +988,14 @@ impl<'c, 'a> Applications<'c, 'a> {
                     (candidate, call, span, reference.grandparent)
                 };
 
-                if call.slots.is_none()
-                    || call.recipe.is_some()
+                // Unconditional class-selection recipes without payloads fold to one class list.
+                let selects = call.recipe.as_ref().is_some_and(|recipe| {
+                    recipe.prefix.is_some()
+                        && recipe.conditions.is_none()
+                        && recipe.payloads.is_none()
+                });
+
+                if (!selects && (call.slots.is_none() || call.recipe.is_some()))
                     || call.composition.is_some()
                     || call.runtime_composition.is_some()
                 {
@@ -1013,6 +1022,7 @@ impl<'c, 'a> Applications<'c, 'a> {
                         callee_end: callee.end,
                         end: span.end,
                         initialized: !reference.deferred && reference.span.start >= candidate.ready,
+                        spread,
                         start: span.start,
                         values,
                     });
@@ -1168,8 +1178,9 @@ fn terminal(path: &[AstKind<'_>]) -> bool {
     }
 }
 
-/// The object literal of a one-argument application spread alone onto a DOM element.
-fn bound<'a>(path: &[AstKind<'a>]) -> Option<&'a ObjectExpression<'a>> {
+/// The object literal of a one-argument application spread alone onto a DOM element, with the
+/// spread attribute.
+fn bound<'a>(path: &[AstKind<'a>]) -> Option<(&'a ObjectExpression<'a>, Span)> {
     let mut index = path.len().checked_sub(1)?;
     let mut node = path.get(index)?.span();
 
@@ -1203,7 +1214,7 @@ fn bound<'a>(path: &[AstKind<'a>]) -> Option<&'a ObjectExpression<'a>> {
             spread_index.checked_sub(1).and_then(|at| path.get(at)),
             spread.span,
         ))
-    .then_some(&**values)
+    .then_some((&**values, spread.span))
 }
 
 /// Matches `^class(?:Name)?$`.

@@ -665,6 +665,167 @@ fn fold_bound(
     module.overwrite(previous, application.end, suffix)
 }
 
+/// Whether a selection equals a choice name. Boolean choices also match booleans, as the
+/// attribute a recipe writes for `true` reads `"true"`.
+fn write_choice_test(output: &mut String, value: &str, name: &str) {
+    if name == "true" || name == "false" {
+        let _ = write!(output, "{value}==={name}||");
+    }
+
+    let _ = write!(output, "{value}===");
+    js::write_string(output, name);
+}
+
+/// Folds a class-selection recipe application spread alone onto a DOM element into one
+/// `className` expression. Each authored value stays in place, in authored order, so rewrites
+/// inside it still apply, and omitted axes contribute their default class to the constant prefix.
+/// Other inputs, or choice names a non-string selection could stringify to, keep the call.
+fn fold_recipe(
+    module: &mut Edits<'_>,
+    source: &str,
+    application: &Bound<'_>,
+    recipe: &runtime::Definition,
+    class_name: &str,
+    value: &str,
+) -> Result<bool> {
+    let Some(prefix) = &recipe.prefix else {
+        return Ok(false);
+    };
+    let silent = |axis: &str, choice: &str| {
+        recipe
+            .silent
+            .as_ref()
+            .and_then(|silent| silent.get(axis))
+            .is_some_and(|names| names.iter().any(|name| **name == *choice))
+    };
+    let class = |axis: &str, choice: &str| {
+        let (index, choices) = recipe
+            .axes
+            .iter()
+            .enumerate()
+            .find(|(_, (name, _))| ***name == *axis)?;
+        let position = choices.1.iter().position(|name| **name == *choice)?;
+
+        (!silent(axis, choice)).then(|| recipes::class(prefix, index, position, None))
+    };
+    let mut fields: SmallVec<[(&str, Span); 4]> = SmallVec::new();
+
+    for property in &application.values.properties {
+        let ObjectPropertyKind::ObjectProperty(property) = property else {
+            return Ok(false);
+        };
+
+        if property.computed || property.method || property.kind != PropertyKind::Init {
+            return Ok(false);
+        }
+
+        let key = match &property.key {
+            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
+            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
+            _ => return Ok(false),
+        };
+
+        if !recipe.axes.contains_key(key) || fields.iter().any(|(seen, _)| *seen == key) {
+            return Ok(false);
+        }
+
+        fields.push((key, property.value.span()));
+    }
+
+    // A number or other value would stringify to a numeric choice name.
+    if recipe
+        .axes
+        .values()
+        .flatten()
+        .any(|name| name.parse::<f64>().is_ok() || name.trim() != &**name)
+    {
+        return Ok(false);
+    }
+
+    let mut constant = String::from(class_name);
+
+    for (axis, _) in recipe.axes.iter() {
+        if fields.iter().any(|(key, _)| *key == &**axis) {
+            continue;
+        }
+
+        if let Some(Some(fallback)) = recipe.defaults.get(axis)
+            && let Some(name) = class(axis, fallback)
+        {
+            constant.push(' ');
+            constant.push_str(&name);
+        }
+    }
+
+    let callee = source
+        .get(application.start as usize..application.callee_end as usize)
+        .unwrap_or_default();
+    let mut previous = application.spread.start;
+    let mut closing = String::new();
+
+    for (index, (axis, span)) in fields.iter().enumerate() {
+        let mut text = String::with_capacity(closing.len() + constant.len() + 32);
+
+        if index == 0 {
+            text.push_str("className={");
+
+            if !application.initialized {
+                // Keep a callable guard so bundlers also keep failures before initialization.
+                let _ = write!(text, "{callee}?");
+            }
+
+            js::write_string(&mut text, constant.trim_start());
+        } else {
+            text.push_str(&closing);
+        }
+
+        let _ = write!(text, "+(({value}=(");
+        module.overwrite(previous, span.start, text)?;
+        previous = span.end;
+        closing.clear();
+        closing.push_str("))===void 0?");
+
+        let fallback = recipe
+            .defaults
+            .get(axis)
+            .and_then(Option::as_deref)
+            .and_then(|fallback| class(axis, fallback));
+
+        js::write_string(
+            &mut closing,
+            &fallback.map_or_else(String::new, |name| format!(" {name}")),
+        );
+        closing.push(':');
+
+        for choice in recipe.axes.get(axis).into_iter().flatten() {
+            let Some(name) = class(axis, choice) else {
+                continue;
+            };
+
+            write_choice_test(&mut closing, value, choice);
+            closing.push('?');
+            js::write_string(&mut closing, &format!(" {name}"));
+            closing.push(':');
+        }
+
+        closing.push_str("\"\")");
+    }
+
+    if fields.is_empty() {
+        return Ok(false);
+    }
+
+    let suffix = if application.initialized {
+        format!("{closing}}}")
+    } else {
+        format!("{closing}:{callee}().className}}")
+    };
+
+    module.overwrite(previous, application.spread.end, suffix)?;
+
+    Ok(true)
+}
+
 /// Locates emitted declarations, skipping selectors, conditions, and quoted CSS data. Offsets are
 /// UTF-8 byte offsets into `body`.
 fn declaration_starts(
@@ -1322,6 +1483,38 @@ pub fn compile<'a>(
             .map(|style| (&*style.name, &**style))
             .collect()
     };
+
+    let value = unique(&walker.identifiers, "__zyzzValue");
+    let mut folded = false;
+
+    for call in &extracted.calls {
+        let (Some(recipe), Some(applied)) = (&call.recipe, bound.get(&call.name)) else {
+            continue;
+        };
+        let (Some(class_name), false) = (
+            generator.classes.get(&call.name),
+            outputs.get(&*call.name).copied().unwrap_or_default(),
+        ) else {
+            continue;
+        };
+
+        for application in applied {
+            if composing_span(application.start, application.end) {
+                continue;
+            }
+
+            folded |= fold_recipe(&mut module, source, application, recipe, class_name, &value)?;
+        }
+    }
+
+    // Folded selections assign one module-scope value, read before the next assignment.
+    if folded {
+        state.compositions.push(if typed {
+            format!("let {value}:unknown;")
+        } else {
+            format!("let {value};")
+        });
+    }
 
     for call in &extracted.calls {
         let (Some(slots), Some(applied)) = (&call.slots, bound.get(&call.name)) else {

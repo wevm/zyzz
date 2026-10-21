@@ -1877,6 +1877,119 @@ export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' 
       }
     })
 
+    test('folds spread applications into one className without changing styles', async () => {
+      const recipe = (selection: string) => `variants({
+    base: { color: 'black', padding: '2px' },${selection}
+    variants: {
+      active: { false: { color: 'gray' }, true: {} },
+      variant: { ghost: { color: 'blue' }, primary: {}, quiet: { padding: '6px' } },
+      full: { false: {}, true: { width: '100%' } },
+    },
+    defaultVariants: { full: true, variant: 'ghost' },
+    compoundVariants: [{ when: { active: false, variant: 'quiet' }, style: { color: 'red' } }],
+  })`
+      const source = `import { renderToStaticMarkup } from 'react-dom/server'
+import { variants } from 'zyzz'
+
+type Input = { active?: boolean | null; full?: boolean | null; variant?: 'ghost' | 'primary' | 'quiet' | null }
+
+function Attribute(props: Input) {
+  return <button {...attributes.button({ active: props.active, full: props.full, variant: props.variant })}>Attribute</button>
+}
+
+function Selected(props: Input) {
+  return <button {...classes.button({ active: props.active, full: props.full, variant: props.variant })}>Class</button>
+}
+
+export const render = (input: Input) => [
+  renderToStaticMarkup(<Attribute {...input} />),
+  renderToStaticMarkup(<Selected {...input} />),
+]
+
+namespace attributes {
+  export const button = ${recipe('')}
+}
+
+namespace classes {
+  export const button = ${recipe("\n    selection: 'class',")}
+}
+
+export const initialized = renderToStaticMarkup(<button {...classes.button({ variant: 'quiet', active: false })}>Initialized</button>)`
+      const output = Graph.compile({ modules: { 'app.tsx': source } }).modules[
+        'app.tsx'
+      ]!
+
+      expect(output.code.includes('classes.button?')).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(output.code.includes('{...classes.button(')).toMatchInlineSnapshot(
+        `false`,
+      )
+      expect(
+        output.code.includes('{...attributes.button('),
+      ).toMatchInlineSnapshot(`true`)
+
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          loader: 'tsx',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        define: { 'process.env.NODE_ENV': '"production"' },
+        format: 'iife',
+        globalName: 'App',
+        jsx: 'automatic',
+        platform: 'browser',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+
+      try {
+        const page = await browser.newPage()
+        await page.setContent(`<style>${output.css}</style><main></main>`)
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.evaluate(`window.compare = (input) => {
+          const [attribute, selected] = App.render(input);
+          document.querySelector('main').innerHTML = attribute + selected;
+          const [first, second] = [...document.querySelectorAll('button')].map((element) => {
+            const style = getComputedStyle(element);
+            return [style.color, style.paddingTop, style.width === document.querySelector('main').clientWidth + 'px' ? 'full' : 'auto'].join(' ');
+          });
+          return (first === second ? second : first + ' != ' + second) + (selected.includes('data-') ? ' data' : '');
+        }`)
+
+        expect(
+          await page.evaluate(`[
+            {},
+            { active: true, full: false, variant: 'primary' },
+            { active: false, variant: 'quiet' },
+            { active: false, variant: undefined },
+            { active: null, full: null, variant: null },
+            { active: true, variant: 'quiet' },
+          ].map(compare)`),
+        ).toMatchInlineSnapshot(`
+          [
+            "rgb(0, 0, 255) 2px full",
+            "rgb(0, 0, 0) 2px auto",
+            "rgb(255, 0, 0) 6px full",
+            "rgb(0, 0, 255) 2px full",
+            "rgb(0, 0, 0) 2px auto",
+            "rgb(0, 0, 0) 6px full",
+          ]
+        `)
+        expect(await page.evaluate(`App.initialized`)).toMatchInlineSnapshot(
+          `"<button class="z_kNYrjR7 z_kNYrjR8 z_kNYrjR9 z_kNYrjRa z_kNYrjRb z_kNYrjRc z_kNYrjRd z-v-dmeg0QWeINt-2-1 z-v-dmeg0QWeINt-1-2 z-v-dmeg0QWeINt-0-0">Initialized</button>"`,
+        )
+      } finally {
+        await browser.close()
+      }
+    })
+
     test('rejects unknown selection modes at their value', () => {
       expect(() =>
         Source.extract({

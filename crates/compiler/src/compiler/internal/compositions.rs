@@ -600,7 +600,10 @@ pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
         options.program,
         options.semantic,
         options.calls,
-        applications::Options { dynamic: true },
+        applications::Options {
+            dynamic: true,
+            exported: true,
+        },
     );
     let bindings: Bindings<'_, 'a> = composition_bindings::create(options.semantic);
     let mut walker = Walker {

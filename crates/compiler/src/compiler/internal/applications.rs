@@ -3,7 +3,8 @@
 //! A candidate is a top-level `const` bound to a definition call, a top-level object of such
 //! calls, or a non-exported namespace of `const` calls. Applications are no-argument calls of a
 //! candidate or one of its exported members, or calls whose only argument overrides
-//! `className`. Reads that escape keep the runtime callable.
+//! `className`. Reads that escape keep the runtime callable. Exported top-level definitions are
+//! candidates only on request, and other modules can read them, so they never fold or erase.
 
 use std::cell::OnceCell;
 use std::sync::Arc;
@@ -110,6 +111,8 @@ pub struct Definitions {
 pub struct Options {
     /// Whether recipes, dynamic styles, and applications with arguments count as applications.
     pub dynamic: bool,
+    /// Whether applications of exported top-level definitions count as applications.
+    pub exported: bool,
 }
 
 /// Definition calls by member name, in authored order.
@@ -119,6 +122,9 @@ struct Candidate<'c, 'a> {
     /// Span of the binding identifier.
     binding: Span,
     direct: Option<&'c Call<'a>>,
+    /// Whether the declaration or an `export` specifier exports it, so other modules can read
+    /// the definition.
+    exported: bool,
     /// Object or exported namespace members in authored order, by member name.
     members: Members<'c, 'a>,
     name: Arc<str>,
@@ -280,6 +286,7 @@ pub fn create<'c, 'a>(
                 candidates.push(Candidate {
                     binding: namespace.id.span,
                     direct: None,
+                    exported: false,
                     members,
                     name: Arc::from(namespace.id.name.as_str()),
                     namespace: Some(Namespace {
@@ -296,9 +303,18 @@ pub fn create<'c, 'a>(
             continue;
         }
 
-        // Exported values can escape and object members can subsequently be replaced.
-        let Statement::VariableDeclaration(variable) = statement else {
-            continue;
+        // Exported values escape, and exported object members can subsequently be replaced, so
+        // only direct exported definitions remain candidates.
+        let (variable, exported) = match statement {
+            Statement::VariableDeclaration(variable) => (variable, false),
+            Statement::ExportDeclaration(export) if options.exported => {
+                let Declaration::VariableDeclaration(variable) = &export.declaration else {
+                    continue;
+                };
+
+                (variable, true)
+            }
+            _ => continue,
         };
 
         if variable.kind != VariableDeclarationKind::Const {
@@ -313,6 +329,10 @@ pub fn create<'c, 'a>(
             };
             let direct = is_call_of(&definitions, init);
             let mut members = Members::default();
+
+            if exported && direct.is_none() {
+                continue;
+            }
 
             if direct.is_none() {
                 let Expression::ObjectExpression(object) = init else {
@@ -358,6 +378,7 @@ pub fn create<'c, 'a>(
             candidates.push(Candidate {
                 binding: identifier.span,
                 direct,
+                exported,
                 members,
                 name: Arc::from(identifier.name.as_str()),
                 namespace: None,
@@ -401,6 +422,14 @@ pub fn create<'c, 'a>(
     for candidate in &mut candidates {
         if let Some(namespace) = &mut candidate.namespace {
             namespace.typed = walker.typed.contains(&*candidate.name);
+        }
+
+        // `export { name }` exports a direct definition as its declaration would.
+        if options.exported && candidate.direct.is_some() {
+            candidate.exported |= walker
+                .references
+                .get(&candidate.name)
+                .is_some_and(|reads| reads.iter().any(|reference| exports(reference.parent)));
         }
     }
 
@@ -555,6 +584,11 @@ impl Walker<'_, '_> {
     }
 }
 
+/// Whether a read's parent is an `export { name }` specifier.
+fn exports(parent: Option<AstKind<'_>>) -> bool {
+    matches!(parent, Some(AstKind::ExportSpecifier(_)))
+}
+
 /// The `.className` or `.class` member of a call, when its parent only reads its value.
 fn class_read(call: Span, [member, parent]: [Option<AstKind<'_>>; 2]) -> Option<ClassRead> {
     let Some(AstKind::StaticMemberExpression(member)) = member else {
@@ -697,7 +731,10 @@ impl<'c, 'a> Applications<'c, 'a> {
             .map(Vec::as_slice)
             .unwrap_or_default()
         {
-            if reference.span == candidate.binding || reference.resolved {
+            if reference.span == candidate.binding
+                || reference.resolved
+                || (candidate.exported && exports(reference.parent))
+            {
                 continue;
             }
 
@@ -781,7 +818,8 @@ impl<'c, 'a> Applications<'c, 'a> {
         let counts = self.unique();
 
         for candidate in &self.candidates {
-            if counts.get(&candidate.name).copied().unwrap_or_default() > 1
+            if candidate.exported
+                || counts.get(&candidate.name).copied().unwrap_or_default() > 1
                 || self
                     .namespace_counts
                     .get(&candidate.name)
@@ -847,7 +885,8 @@ impl<'c, 'a> Applications<'c, 'a> {
         let counts = self.unique();
 
         for (candidate, collected) in self.candidates.iter().zip(self.collected()) {
-            if counts.get(&candidate.name).copied().unwrap_or_default() > 1
+            if candidate.exported
+                || counts.get(&candidate.name).copied().unwrap_or_default() > 1
                 || self
                     .namespace_counts
                     .get(&candidate.name)
@@ -915,7 +954,11 @@ impl<'c, 'a> Applications<'c, 'a> {
         let mut groups: IndexMap<&Arc<str>, Vec<&Candidate<'c, 'a>>, FxBuildHasher> =
             IndexMap::default();
 
-        for candidate in &self.candidates {
+        for candidate in self
+            .candidates
+            .iter()
+            .filter(|candidate| !candidate.exported)
+        {
             groups.entry(&candidate.name).or_default().push(candidate);
         }
 

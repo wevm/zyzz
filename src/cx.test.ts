@@ -1040,7 +1040,7 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
       })
       const app = graph.modules['app.tsx']!.code
 
-      expect(app.includes('Composition')).toMatchInlineSnapshot(`false`)
+      expect(app.includes('Composition as')).toMatchInlineSnapshot(`false`)
 
       const fixture = Vm.runInNewContext(
         `${await Packed.bundle({

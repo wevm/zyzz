@@ -3184,19 +3184,19 @@ style({ color: 'md' });
         "import other from 'zyzz'; export const props = ({className:""}); export { other };",
         ""use client";
       import { Props as __zyzzProps } from 'zyzz/runtime';
-        export const button = __zyzzProps.create({className:"z-style-illRZq-button"});",
+        export const button = /*#__PURE__*/__zyzzProps.create({className:"z-style-illRZq-button"});",
         "#!/usr/bin/env node
 
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-illRZq-button"}); export { Style };",
+      import { Style } from 'zyzz'; export const button = /*#__PURE__*/__zyzzProps.create({className:"z-style-illRZq-button"}); export { Style };",
         "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
         "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { style } from 'zyzz'; export type Signature = typeof style; export const button = __zyzzProps.create({className:"z-style-illRZq-button"});",
+      import { style } from 'zyzz'; export type Signature = typeof style; export const button = /*#__PURE__*/__zyzzProps.create({className:"z-style-illRZq-button"});",
         "
       import { Props as __zyzzProps_ } from 'zyzz/runtime';
-       const __zyzzProps = 1; export const el = <button {...({className:"z_illRZq0"})} />; export const button = __zyzzProps_.create({className:"z-style-illRZq-button"});",
+       const __zyzzProps = 1; export const el = <button {...({className:"z_illRZq0"})} />; export const button = /*#__PURE__*/__zyzzProps_.create({className:"z-style-illRZq-button"});",
         "import { style } from 'zyzz'; export function f(value = ({className:""})) { var style; return value; }",
         "export const untouched = '🎉';",
       ]
@@ -3436,6 +3436,103 @@ export function f() { var defineConfig = 1; return defineConfig }
       { column: prefix.at(-1)!.length, line: prefix.length },
     )
     expect(original.name).toMatchInlineSnapshot(`"'&[data-state="{"]'"`)
+  })
+})
+
+describe('applications', () => {
+  describe('compile', () => {
+    test('folded applications and specialized recipes render the props of runtime callables', async () => {
+      const source = `import { style, variants } from 'zyzz'
+const Capture = (props: object) => JSON.stringify(props)
+const Base = (props: { className?: string | undefined }) => <Capture {...styles.base({ className: props.className })} />
+const Outer = (props: { className?: string | undefined }) => <Base {...styles.outer({ className: props.className })} />
+export const early = () => <Capture {...styles.base()} />
+export const App = () => <main>
+<Capture {...styles.base()} />
+<Outer />
+<Outer className="external" />
+<Capture className="before" {...styles.inline({ className: 'literal' })} />
+<Capture {...styles.inline({ style: { color: 'red' } })} />
+<span>{styles.base().className}</span>
+<Capture {...styles.button()} />
+<Capture {...styles.button({ active: true, tone: null })} />
+<Capture {...styles.button({ active: false, className: 'x', tone: 'loud', vars: { '--a': '1' }, style: { color: 'red' } })} />
+</main>
+early()
+namespace styles {
+export const base=style({color:'red'})
+export const outer=style({padding:'8px'})
+export const inline=style({margin:'4px'})
+export const button=variants({base:{display:'flex'},variants:{active:{false:{opacity:0.5},true:{}},tone:{loud:{color:'red'},quiet:{color:'gray'}}},defaultVariants:{tone:'quiet'}})
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+        import { style } from 'zyzz'
+        const Capture = (props: object) => JSON.stringify(props)
+        const Base = (props: { className?: string | undefined }) => <Capture className={styles.base?__zyzzProps.merge("z_l0kPgl0",props.className):styles.base({className:props.className}).className} />
+        const Outer = (props: { className?: string | undefined }) => <Base className={styles.outer?__zyzzProps.merge("z_l0kPgl1",props.className):styles.outer({className:props.className}).className} />
+        export const early = () => <Capture className={(styles.base?"z_l0kPgl0":styles.base().className)} />
+        export const App = () => <main>
+        <Capture className={(styles.base?"z_l0kPgl0":styles.base().className)} />
+        <Outer />
+        <Outer className="external" />
+        <Capture className="before" {...styles.inline({ className: 'literal' })} />
+        <Capture {...styles.inline({ style: { color: 'red' } })} />
+        <span>{(styles.base?"z_l0kPgl0":styles.base().className)}</span>
+        <Capture {...styles.button()} />
+        <Capture {...styles.button({ active: true, tone: null })} />
+        <Capture {...styles.button({ active: false, className: 'x', tone: 'loud', vars: { '--a': '1' }, style: { color: 'red' } })} />
+        </main>
+        early()
+        namespace styles {
+        export const base=(1 as unknown as import('zyzz').style.ReturnType)
+        export const outer=(1 as unknown as import('zyzz').style.ReturnType)
+        export const inline=/*#__PURE__*/__zyzzProps.create({className:"z_l0kPgl2"})
+        export const button=(((input:Record<string,unknown>&import('zyzz').style.Options={})=>{const external=input.className,style=input.style,vars=input.vars,inline=vars?{...vars,...style}:style,className=external?"z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6"+" "+external:"z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6",result:Record<string,unknown>=inline?{className,style:inline}:{className};let value;value=Object.hasOwn(input,"active")?input["active"]:void 0;if(value!==null&&value!==void 0)result["data-active"]=String(value);value=Object.hasOwn(input,"tone")?input["tone"]:void 0;if(value===void 0)value="quiet";if(value!==null&&value!==void 0)result["data-tone"]=String(value);return result}) as unknown as import('zyzz').variants.ReturnType<{variants:{"active":{"false":{};"true":{}};"tone":{"loud":{};"quiet":{}}}}>)
+        }"
+      `)
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        external: ['react'],
+        format: 'cjs',
+        jsx: 'automatic',
+        platform: 'node',
+        stdin: {
+          contents: output.code.replace(
+            '\nearly()',
+            '\nexport const failure = (() => { try { early() } catch (error) { return String(error) } })()',
+          ),
+          loader: 'tsx',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const module = {
+        exports: {} as { App: () => React.ReactNode; failure: string },
+      }
+
+      new Function('module', 'exports', 'require', bundle.outputFiles[0]!.text)(
+        module,
+        module.exports,
+        Module.createRequire(import.meta.url),
+      )
+
+      // Applications before the namespace initializes still fail.
+      expect(module.exports.failure).toMatchInlineSnapshot(
+        `"TypeError: Cannot read properties of undefined (reading 'base')"`,
+      )
+
+      expect(
+        Server.renderToStaticMarkup(React.createElement(module.exports.App)),
+      ).toMatchInlineSnapshot(
+        `"<main>{&quot;className&quot;:&quot;z_l0kPgl0&quot;}{&quot;className&quot;:&quot;z_l0kPgl0 z_l0kPgl1&quot;}{&quot;className&quot;:&quot;z_l0kPgl0 z_l0kPgl1 external&quot;}{&quot;className&quot;:&quot;z_l0kPgl2 literal&quot;}{&quot;className&quot;:&quot;z_l0kPgl2&quot;,&quot;style&quot;:{&quot;color&quot;:&quot;red&quot;}}<span>z_l0kPgl0</span>{&quot;className&quot;:&quot;z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6&quot;,&quot;data-tone&quot;:&quot;quiet&quot;}{&quot;className&quot;:&quot;z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6&quot;,&quot;data-active&quot;:&quot;true&quot;}{&quot;className&quot;:&quot;z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6 x&quot;,&quot;style&quot;:{&quot;--a&quot;:&quot;1&quot;,&quot;color&quot;:&quot;red&quot;},&quot;data-active&quot;:&quot;false&quot;,&quot;data-tone&quot;:&quot;loud&quot;}</main>"`,
+      )
+    })
   })
 })
 
@@ -7206,9 +7303,9 @@ describe('finalAcceptance', () => {
           ),
         ).toMatchInlineSnapshot(`
           [
-            "none",
-            "clamp",
-            "add",
+            "",
+            "",
+            "",
           ]
         `)
       } finally {
@@ -9801,7 +9898,7 @@ export namespace styles {
         export const below="--z-positiontry-below" as import('zyzz/web').positionTry.Reference;
         export const profile="--z-colorprofile-profile" as import('zyzz/web').colorProfile.Reference;
         export namespace styles {
-          export const list = __zyzzProps.create({className:"z_aRWX0o0 z_aRWX0o1 z_aRWX0o2 z-style-aRWX0o-styles-list"})
+          export const list = /*#__PURE__*/__zyzzProps.create({className:"z_aRWX0o0 z_aRWX0o1 z_aRWX0o2 z-style-aRWX0o-styles-list"})
         }"
       `)
     })
@@ -10310,7 +10407,7 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             import { styled, variants, theme } from './pkg/index.js';
             export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z_Zf5JrJ0 z_Zf5JrJ1 z-style-Zf5JrJ-card"})) as import('zyzz').style.ReturnType<'html'>);
             export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z_Zf5JrJ0 z_Zf5JrJ1 z-style-Zf5JrJ-other"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z_Zf5JrJ0 z_Zf5JrJ2 z_Zf5JrJ3 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const button=(__zyzzCompositionHtml.bind(/*#__PURE__*/__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z_Zf5JrJ0 z_Zf5JrJ2 z_Zf5JrJ3 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`
@@ -10331,7 +10428,7 @@ import { Css } from 'zyzz/web';export const { style, variants, vars:theme } = Co
             import { styled, variants, theme } from './pkg/index.js';
             export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z_Zf5JrJ0 z-style-Zf5JrJ-card"})) as import('zyzz').style.ReturnType<'html'>);
             export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z_Zf5JrJ1 z-style-Zf5JrJ-other"})) as import('zyzz').style.ReturnType<'html'>);
-            export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z_Zf5JrJ2 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+            export const button=(__zyzzCompositionHtml.bind(/*#__PURE__*/__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z_Zf5JrJ2 z-style-Zf5JrJ-button"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
             export const props=card();"
           `)
           expect(app.css).toMatchInlineSnapshot(`

@@ -359,6 +359,55 @@ fn write_defaults(output: &mut String, recipe: &runtime::Definition) {
     );
 }
 
+/// Writes a selector equivalent to `Recipe.create` for one unconditional recipe without payloads.
+/// Its fixed axes read constant keys, so each call stays monomorphic.
+fn write_selector(
+    output: &mut String,
+    recipe: &runtime::Definition,
+    class_name: &str,
+    typed: bool,
+) {
+    let parameter = if typed {
+        ":Record<string,unknown>&import('zyzz').style.Options"
+    } else {
+        ""
+    };
+    let result = if typed { ":Record<string,unknown>" } else { "" };
+    // A nonempty class list is always truthy, so only an override decides the join.
+    let joined = if class_name.len() > 2 && class_name.starts_with('"') {
+        format!("external?{class_name}+\" \"+external:{class_name}")
+    } else {
+        format!("external||{class_name}")
+    };
+
+    let _ = write!(
+        output,
+        "((input{parameter}={{}})=>{{const external=input.className,style=input.style,vars=input.vars,inline=vars?{{...vars,...style}}:style,className={joined},result{result}=inline?{{className,style:inline}}:{{className}};let value;"
+    );
+
+    for axis in recipe.axes.keys() {
+        let mut key = String::new();
+
+        js::write_string(&mut key, axis);
+        let _ = write!(
+            output,
+            "value=Object.hasOwn(input,{key})?input[{key}]:void 0;"
+        );
+
+        if let Some(Some(fallback)) = recipe.defaults.get(axis) {
+            output.push_str("if(value===void 0)value=");
+            js::write_string(output, fallback);
+            output.push(';');
+        }
+
+        output.push_str("if(value!==null&&value!==void 0)result[");
+        js::write_string(output, &format!("data-{axis}"));
+        output.push_str("]=String(value);");
+    }
+
+    output.push_str("return result})");
+}
+
 /// `JSON.stringify({ ...recipe, html })`, in the key order `Recipes.expand` builds.
 fn write_recipe(output: &mut String, recipe: &runtime::Definition, html: bool) {
     output.push_str("{\"axes\":");
@@ -800,10 +849,44 @@ pub fn compile<'a>(
                 .filter_map(|input| input.application_start)
         })
         .collect();
+    // The first call of each definition decides its output, as a search in source order would.
+    // Without HTML output every application reads `className`.
+    let mut outputs: FxHashMap<&str, bool> = FxHashMap::default();
+
+    if extracted
+        .calls
+        .iter()
+        .any(|call| call.output == Some(ThemeOutput::Html))
+    {
+        for call in &extracted.calls {
+            if !outputs.contains_key(&*call.name) {
+                outputs.insert(&call.name, call.output == Some(ThemeOutput::Html));
+            }
+        }
+    }
+
+    // An override folds when its value can follow an initialization guard, and when no
+    // rewritten name inside it would need a second copy.
+    let foldable_override = |application: &Application| {
+        application.class_override.is_none_or(|value| {
+            !outputs.get(&*application.name).copied().unwrap_or_default()
+                && (application.initialized
+                    || (value.simple
+                        && source
+                            .get(value.start as usize..value.end as usize)
+                            .unwrap_or_default()
+                            .split('.')
+                            .all(|name| !walker.identifiers.contains_key(name.trim()))))
+        })
+    };
     let folded: Vec<&Application> = found
         .iter()
         .copied()
-        .filter(|application| !composing(application) && !html_starts.contains(&application.start))
+        .filter(|application| {
+            !composing(application)
+                && !html_starts.contains(&application.start)
+                && foldable_override(application)
+        })
         .collect();
     let folded_starts: FxHashSet<u32> =
         folded.iter().map(|application| application.start).collect();
@@ -928,6 +1011,11 @@ pub fn compile<'a>(
     );
     let generator = Generator {
         classes,
+        shadowed: parsed
+            .semantic
+            .scoping()
+            .symbol_names()
+            .any(|name| name == "Object" || name == "String"),
         owners: options.owners,
         style_classes: options.style_classes,
         emitted: &emitted,
@@ -939,22 +1027,6 @@ pub fn compile<'a>(
     let mut state =
         generator.rewrite(&mut module, &walker, local.as_ref(), &found, &folded_starts)?;
 
-    // The first call of each definition decides its output, as a search in source order would.
-    // Without HTML output every application reads `className`.
-    let mut outputs: FxHashMap<&str, bool> = FxHashMap::default();
-
-    if extracted
-        .calls
-        .iter()
-        .any(|call| call.output == Some(ThemeOutput::Html))
-    {
-        for call in &extracted.calls {
-            if !outputs.contains_key(&*call.name) {
-                outputs.insert(&call.name, call.output == Some(ThemeOutput::Html));
-            }
-        }
-    }
-
     for application in &folded {
         let class_name = json_class(&generator.classes, &application.name);
         let html = outputs.get(&*application.name).copied().unwrap_or_default();
@@ -962,31 +1034,96 @@ pub fn compile<'a>(
         let callee = source
             .get(application.start as usize..application.callee_end as usize)
             .unwrap_or_default();
+        // A read of the folded object's own key, or a JSX spread of the object, needs only the
+        // class list.
+        let read = application
+            .class_read
+            .filter(|read| read.html == html)
+            .map(|read| read.end);
+        let spread = application.spread;
 
-        // A read of the folded object's own key is its class list.
-        if application.initialized
-            && let Some(read) = application.class_read
-            && read.html == html
-        {
-            module.overwrite(application.start, read.end, class_name)?;
-            continue;
-        }
-
-        let replacement = if application.initialized {
-            let mut replacement = String::with_capacity(key.len() + class_name.len() + 5);
-
-            replacement.push_str("({");
-            replacement.push_str(key);
-            replacement.push(':');
-            replacement.push_str(&class_name);
-            replacement.push_str("})");
-            replacement
-        } else {
+        match (application.class_override, application.initialized) {
+            (None, true) => {
+                if let Some(end) = read {
+                    module.overwrite(application.start, end, class_name)?;
+                } else if let Some(spread) = spread {
+                    module.overwrite(
+                        spread.start,
+                        spread.end,
+                        format!("{key}={{{class_name}}}"),
+                    )?;
+                } else {
+                    module.overwrite(
+                        application.start,
+                        application.end,
+                        format!("({{{key}:{class_name}}})"),
+                    )?;
+                }
+            }
             // Keep a callable guard so bundlers also keep failures before initialization.
-            format!("({callee}?{{{key}:{class_name}}}:{callee}())")
-        };
+            (None, false) => {
+                let guarded = format!("({callee}?{class_name}:{callee}().{key})");
 
-        module.overwrite(application.start, application.end, &replacement)?;
+                if let Some(end) = read {
+                    module.overwrite(application.start, end, guarded)?;
+                } else if let Some(spread) = spread {
+                    module.overwrite(spread.start, spread.end, format!("{key}={{{guarded}}}"))?;
+                } else {
+                    module.overwrite(
+                        application.start,
+                        application.end,
+                        format!("({callee}?{{{key}:{class_name}}}:{callee}())"),
+                    )?;
+                }
+            }
+            // The value stays in place, so rewrites inside it still apply.
+            (Some(value), true) => {
+                let open = format!("{}.merge({class_name},", state.runtime);
+
+                state.callable = true;
+
+                if let Some(end) = read {
+                    module.overwrite(application.start, value.start, open)?;
+                    module.overwrite(value.end, end, ")")?;
+                } else if let Some(spread) = spread {
+                    module.overwrite(spread.start, value.start, format!("{key}={{{open}"))?;
+                    module.overwrite(value.end, spread.end, ")}")?;
+                } else {
+                    module.overwrite(application.start, value.start, format!("({{{key}:{open}"))?;
+                    module.overwrite(value.end, application.end, ")})")?;
+                }
+            }
+            // A simple value reads the same in both branches of the guard.
+            (Some(value), false) => {
+                let text = source
+                    .get(value.start as usize..value.end as usize)
+                    .unwrap_or_default();
+                let merged = format!("{}.merge({class_name},{text})", state.runtime);
+                let fallback = format!("{callee}({{className:{text}}})");
+
+                state.callable = true;
+
+                if let Some(end) = read {
+                    module.overwrite(
+                        application.start,
+                        end,
+                        format!("({callee}?{merged}:{fallback}.{key})"),
+                    )?;
+                } else if let Some(spread) = spread {
+                    module.overwrite(
+                        spread.start,
+                        spread.end,
+                        format!("{key}={{{callee}?{merged}:{fallback}.{key}}}"),
+                    )?;
+                } else {
+                    module.overwrite(
+                        application.start,
+                        application.end,
+                        format!("({callee}?{{{key}:{merged}}}:{fallback})"),
+                    )?;
+                }
+            }
+        }
     }
 
     generator.themes(&mut module, &walker, &mut state)?;
@@ -1427,6 +1564,8 @@ struct State {
 
 struct Generator<'g, 'a> {
     classes: IndexMap<Arc<str>, String, FxBuildHasher>,
+    /// Whether a module binding renames `Object` or `String`, which specialized selectors read.
+    shadowed: bool,
     owners: Option<&'g Owners>,
     style_classes: Option<&'g FxHashMap<Arc<str>, Arc<str>>>,
     emitted: &'g css::Output,
@@ -1908,8 +2047,6 @@ impl<'a> Generator<'_, 'a> {
 
                 if conditional {
                     state.uses_conditional_recipe = true;
-                } else {
-                    state.uses_recipe = true;
                 }
 
                 let payload = recipe
@@ -1921,27 +2058,38 @@ impl<'a> Generator<'_, 'a> {
                     state.uses_payload_recipe = true;
                 }
 
-                let mut selection = format!("{helper}.create({{\"axes\":");
+                let specialized = !conditional && !payload && !html && !self.shadowed;
+                let mut selection = String::new();
 
-                write_axes(&mut selection, recipe);
-                selection.push_str(",\"defaults\":");
-                write_defaults(&mut selection, recipe);
+                if specialized {
+                    write_selector(&mut selection, recipe, &class_name, typed);
+                } else {
+                    if !conditional {
+                        state.uses_recipe = true;
+                    }
 
-                if let Some(conditions) = &recipe.conditions {
-                    selection.push_str(",\"conditions\":");
-                    write_strings(&mut selection, conditions);
+                    let _ = write!(selection, "/*#__PURE__*/{helper}.create({{\"axes\":");
+
+                    write_axes(&mut selection, recipe);
+                    selection.push_str(",\"defaults\":");
+                    write_defaults(&mut selection, recipe);
+
+                    if let Some(conditions) = &recipe.conditions {
+                        selection.push_str(",\"conditions\":");
+                        write_strings(&mut selection, conditions);
+                    }
+
+                    if self.classes.contains_key(&call.name) {
+                        selection.push_str(",\"className\":");
+                        selection.push_str(&class_name);
+                    }
+
+                    if !payload && html && !compose_html {
+                        selection.push_str(",\"html\":true");
+                    }
+
+                    selection.push_str("})");
                 }
-
-                if self.classes.contains_key(&call.name) {
-                    selection.push_str(",\"className\":");
-                    selection.push_str(&class_name);
-                }
-
-                if !payload && html && !compose_html {
-                    selection.push_str(",\"html\":true");
-                }
-
-                selection.push_str("})");
 
                 let value = if payload {
                     let mut value = format!("{}.create({{...", state.payload_recipe);
@@ -2001,8 +2149,11 @@ impl<'a> Generator<'_, 'a> {
                     axes.join(";")
                 );
 
+                // A specialized selector returns plain records, which assert through unknown.
+                let cast = if specialized { " as unknown" } else { "" };
+
                 if typed {
-                    format!("({bound} as {kind})")
+                    format!("({bound}{cast} as {kind})")
                 } else {
                     bound
                 }
@@ -2095,10 +2246,14 @@ impl<'a> Generator<'_, 'a> {
                     )
                 } else {
                     state.uses_html = true;
-                    format!("{}.create({{className:{class_name}}})", state.html)
+                    format!(
+                        "/*#__PURE__*/{}.create({{className:{class_name}}})",
+                        state.html
+                    )
                 }
             } else {
-                format!("{}.create({props})", state.runtime)
+                // Unused definitions then tree-shake, such as those read only in compositions.
+                format!("/*#__PURE__*/{}.create({props})", state.runtime)
             };
 
             if !removed.contains(&*call.name) {

@@ -523,7 +523,7 @@ describe('Transform.compile', () => {
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
 
-      export const card = __zyzzProps.create({className:"z_FdvK6e0 z-style-FdvK6e-card"})
+      export const card = /*#__PURE__*/__zyzzProps.create({className:"z_FdvK6e0 z-style-FdvK6e-card"})
       "
     `)
     expect(module.output.css).toMatchInlineSnapshot(
@@ -847,7 +847,7 @@ export const vars = defineVars({ spacing: { gap: '4px' } })
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { style } from './zyzz.config.js'
 
-      export const card = __zyzzProps.create({className:"z_FdvK6e0 z-style-FdvK6e-card"})
+      export const card = /*#__PURE__*/__zyzzProps.create({className:"z_FdvK6e0 z-style-FdvK6e-card"})
       "
     `)
     expect(module.output.modules['app/Card.tsx']?.css).toMatchInlineSnapshot(`

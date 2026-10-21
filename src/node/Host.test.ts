@@ -1862,7 +1862,7 @@ export const card = style({ display: 'flex', color: '#ff0000' });`
         .toMatchInlineSnapshot(`
           "
           import { Props as __zyzzProps } from 'zyzz/runtime';
-           export const button = __zyzzProps.create({className:"z_CVE4-Z0 z-style-CVE4-Z-button"});"
+           export const button = /*#__PURE__*/__zyzzProps.create({className:"z_CVE4-Z0 z-style-CVE4-Z-button"});"
         `)
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
@@ -2836,7 +2836,7 @@ describe('packageContracts', () => {
             const __zyzzComposition103=/*#__PURE__*/[{className:"z_u3iffL2"},{className:"z_u3iffL2 z_u3iffL3"}].map(Object.freeze);
 
             import { Props as __zyzzProps } from 'zyzz/runtime';
-            import {style} from '@acme/tokens';export function view(active:boolean){return __zyzzComposition103[((styles.one as unknown)||styles.one(),0)|((active)?((styles.two as unknown)||styles.two(),1):0)]}namespace styles{export const one=__zyzzProps.create({className:"z_acme-u3iffL0"});export const two=__zyzzProps.create({className:"z_acme-u3iffL1"})}"
+            import {style} from '@acme/tokens';export function view(active:boolean){return __zyzzComposition103[((styles.one as unknown)||styles.one(),0)|((active)?((styles.two as unknown)||styles.two(),1):0)]}namespace styles{export const one=/*#__PURE__*/__zyzzProps.create({className:"z_acme-u3iffL0"});export const two=/*#__PURE__*/__zyzzProps.create({className:"z_acme-u3iffL1"})}"
           `)
         expect(await Fs.readFile(Path.join(root, 'dist/view.ts.css'), 'utf8'))
           .toMatchInlineSnapshot(`

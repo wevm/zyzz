@@ -1,0 +1,24 @@
+{
+  "name": "@zyzz/video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:types": "tsc --noEmit",
+    "render": "pnpm soundtrack && remotion render src/index.ts Launch out/zyzz-launch.mp4",
+    "soundtrack": "node scripts/sfx.ts && node scripts/soundtrack.ts",
+    "studio": "remotion studio src/index.ts"
+  },
+  "devDependencies": {
+    "@fontsource-variable/geist": "catalog:",
+    "@fontsource-variable/geist-mono": "catalog:",
+    "@iconify-json/simple-icons": "catalog:",
+    "@remotion/cli": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "playwright": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "remotion": "catalog:",
+    "typescript": "catalog:"
+  }
+}

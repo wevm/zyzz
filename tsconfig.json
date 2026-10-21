@@ -51,6 +51,7 @@
     "examples/tanstack-start",
     "node_modules",
     "site",
-    "test-results"
+    "test-results",
+    "video"
   ]
 }

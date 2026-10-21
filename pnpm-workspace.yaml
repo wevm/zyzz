@@ -3,6 +3,7 @@ packages:
   - bench/native/app
   - examples/*
   - site
+  - video
 
 allowBuilds:
   '@parcel/watcher': false
@@ -38,6 +39,7 @@ catalog:
   '@pandacss/dev': '2.0.0'
   '@pandacss/preset-base': '2.0.0'
   '@pandacss/transformer': '2.0.0'
+  '@remotion/cli': '4.0.536'
   '@shikijs/monaco': '^4.4.3'
   '@shikijs/transformers': '^4.4.3'
   '@shikijs/twoslash': '^4.4.3'
@@ -92,6 +94,7 @@ catalog:
   'react-native-safe-area-context': '5.7.0'
   'react-native-unistyles': '3.3.0'
   'react-native-worklets': '0.10.3'
+  'remotion': '4.0.536'
   'rollup': '^4.63.3'
   'shiki': '^4.4.3'
   'solid-js': '1.9.15'

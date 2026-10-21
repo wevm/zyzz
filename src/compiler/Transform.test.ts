@@ -7328,6 +7328,32 @@ namespace styles {
       ).toMatchInlineSnapshot(`"<div {...styles.reset({ width: '10px' })} />"`)
     })
 
+    test('keeps keyword templates and merged namespace members callable', () => {
+      const source = `import { style } from 'zyzz'
+export const A = () => <div {...styles.keyword({ width: 'inherit' })} />
+namespace styles {
+  export const keyword = style((values: { width: \`\${'in'}herit\` }) => ({ width: values.width }))
+}
+export const B = () => <div {...merged.dot({ width: '10px' })} />
+namespace merged {
+  export const dot = style((values: { width: \`\${number}px\` }) => ({ width: values.width }))
+}
+namespace merged {
+  export const other = style({ color: 'red' })
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+      const lines = output.code
+        .split('\n')
+        .filter((line) => line.includes('<div'))
+
+      expect(lines).toMatchInlineSnapshot(`
+        [
+          "export const A = () => <div {...styles.keyword({ width: 'inherit' })} />",
+          "export const B = () => <div {...merged.dot({ width: '10px' })} />",
+        ]
+      `)
+    })
+
     test('mixes bound theme references with static and dynamic declarations', () => {
       expect(
         Transform.compile({

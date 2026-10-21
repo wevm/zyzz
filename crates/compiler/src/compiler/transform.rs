@@ -500,6 +500,7 @@ fn fold_bound(
 ) -> Result<()> {
     // Each field's key with its text before and after the authored value.
     let mut fields: SmallVec<[(&str, String, &str, Span); 4]> = SmallVec::new();
+    let mut seen: FxHashSet<&str> = FxHashSet::default();
 
     for property in &application.values.properties {
         let ObjectPropertyKind::ObjectProperty(property) = property else {
@@ -519,7 +520,7 @@ fn fold_bound(
             return Ok(());
         };
 
-        if fields.iter().any(|(existing, ..)| *existing == key) {
+        if !seen.insert(key) {
             return Ok(());
         }
 

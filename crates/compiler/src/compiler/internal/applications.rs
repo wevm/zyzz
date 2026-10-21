@@ -1000,16 +1000,19 @@ impl<'c, 'a> Applications<'c, 'a> {
                     continue;
                 };
 
+                // A merged namespace can exist before a member's declaration, so the guard's bare
+                // call would skip evaluating the authored values before it throws.
+                if candidate.namespace.is_some() && self.namespace_counts.get(name) != Some(&1) {
+                    continue;
+                }
+
                 output
                     .entry(Arc::clone(&call.name))
                     .or_default()
                     .push(Bound {
                         callee_end: callee.end,
                         end: span.end,
-                        initialized: !reference.deferred
-                            && reference.span.start >= candidate.ready
-                            && (candidate.namespace.is_none()
-                                || self.namespace_counts.get(name) == Some(&1)),
+                        initialized: !reference.deferred && reference.span.start >= candidate.ready,
                         start: span.start,
                         values,
                     });

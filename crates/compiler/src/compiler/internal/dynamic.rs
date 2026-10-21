@@ -404,10 +404,23 @@ fn keyword(node: &TSType<'_>) -> bool {
                     .raw
                     .bytes()
                     .all(|byte| byte.is_ascii_alphabetic() || byte == b'-')
-            }) && template.types.iter().any(keyword)
+            }) && (template.types.is_empty() || template.types.iter().any(hole))
         }
         TSType::TSIntersectionType(intersection) => intersection.types.iter().all(keyword),
         TSType::TSUnionType(union) => union.types.iter().any(keyword),
+        _ => true,
+    }
+}
+
+/// Whether a template hole can supply letters, as string literals and unconstrained types can.
+fn hole(node: &TSType<'_>) -> bool {
+    match node {
+        TSType::TSNumberKeyword(_) => false,
+        TSType::TSLiteralType(literal) => !matches!(
+            literal.literal,
+            TSLiteral::NumericLiteral(_) | TSLiteral::UnaryExpression(_)
+        ),
+        TSType::TSUnionType(union) => union.types.iter().any(hole),
         _ => true,
     }
 }

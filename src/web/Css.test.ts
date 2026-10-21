@@ -132,8 +132,8 @@ describe('compile', () => {
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z_0{-webkit-font-smoothing:antialiased;}
       .z_1{-moz-osx-font-smoothing:grayscale;}
-      .z--webkit-animation-delay-\\5b 0s\\2c _20_250ms\\5d {-webkit-animation-delay:0s, 250ms;}
-      .z-row-rule-color-\\5b repeat\\28 2\\2c _20_red\\2c _20_blue\\29 \\5d {row-rule-color:repeat(2, red, blue);}"
+      .z_2{-webkit-animation-delay:0s, 250ms;}
+      .z_3{row-rule-color:repeat(2, red, blue);}"
     `)
   })
 
@@ -885,30 +885,30 @@ describe('compile', () => {
         .z_3{max-inline-size:120px;}
         .z_4{min-block-size:10px;}
         .z_5{min-inline-size:20px;}
-        .z-position-relative{position:relative;}
-        .z_6{inset:1px;}
-        .z_7{inset-block:2px;}
-        .z_8{inset-block-start:-3px;}
-        .z_9{inset-block-end:4px;}
-        .z_a{inset-inline:5px;}
-        .z_b{inset-inline-start:-6px;}
-        .z_c{inset-inline-end:7px;}
-        .z_d{top:8px;}
-        .z_e{right:9px;}
-        .z_f{bottom:10px;}
-        .z_g{left:11px;}
-        .z_h{margin-block:-2px;}
-        .z_i{margin-block-start:3px;}
-        .z_j{margin-block-end:4px;}
-        .z_k{margin-inline:5px;}
-        .z_l{margin-inline-start:6px;}
-        .z_m{margin-inline-end:7px;}
-        .z_n{padding-block:8px;}
-        .z_o{padding-block-start:9px;}
-        .z_p{padding-block-end:10px;}
-        .z_q{padding-inline:11px;}
-        .z_r{padding-inline-start:12px;}
-        .z_s{padding-inline-end:13px;}"
+        .z_6{position:relative;}
+        .z_7{inset:1px;}
+        .z_8{inset-block:2px;}
+        .z_9{inset-block-start:-3px;}
+        .z_a{inset-block-end:4px;}
+        .z_b{inset-inline:5px;}
+        .z_c{inset-inline-start:-6px;}
+        .z_d{inset-inline-end:7px;}
+        .z_e{top:8px;}
+        .z_f{right:9px;}
+        .z_g{bottom:10px;}
+        .z_h{left:11px;}
+        .z_i{margin-block:-2px;}
+        .z_j{margin-block-start:3px;}
+        .z_k{margin-block-end:4px;}
+        .z_l{margin-inline:5px;}
+        .z_m{margin-inline-start:6px;}
+        .z_n{margin-inline-end:7px;}
+        .z_o{padding-block:8px;}
+        .z_p{padding-block-start:9px;}
+        .z_q{padding-block-end:10px;}
+        .z_r{padding-inline:11px;}
+        .z_s{padding-inline-start:12px;}
+        .z_t{padding-inline-end:13px;}"
       `)
   })
 
@@ -1003,7 +1003,7 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
-      `".z-w-\\5b 1px\\3b width\\3a 1px\\3b width\\3a 1cm\\3b width\\3a 1mm\\3b width\\3a 1q\\3b width\\3a 1Q\\3b width\\3a 1in\\3b width\\3a 1pc\\3b width\\3a 1pt\\3b width\\3a 1em\\3b width\\3a 1ex\\3b width\\3a 1cap\\3b width\\3a 1ch\\3b width\\3a 1ic\\3b width\\3a 1lh\\3b width\\3a 1rem\\3b width\\3a 1rex\\3b width\\3a 1rcap\\3b width\\3a 1rch\\3b width\\3a 1ric\\3b width\\3a 1rlh\\3b width\\3a 1vw\\3b width\\3a 1vh\\3b width\\3a 1vi\\3b width\\3a 1vb\\3b width\\3a 1vmin\\3b width\\3a 1vmax\\3b width\\3a 1svw\\3b width\\3a 1svh\\3b width\\3a 1svi\\3b width\\3a 1svb\\3b width\\3a 1svmin\\3b width\\3a 1svmax\\3b width\\3a 1lvw\\3b width\\3a 1lvh\\3b width\\3a 1lvi\\3b width\\3a 1lvb\\3b width\\3a 1lvmin\\3b width\\3a 1lvmax\\3b width\\3a 1dvw\\3b width\\3a 1dvh\\3b width\\3a 1dvi\\3b width\\3a 1dvb\\3b width\\3a 1dvmin\\3b width\\3a 1dvmax\\3b width\\3a 1cqw\\3b width\\3a 1cqh\\3b width\\3a 1cqi\\3b width\\3a 1cqb\\3b width\\3a 1cqmin\\3b width\\3a 1cqmax\\3b width\\3a 1\\25 \\5d {width:1px;width:1px;width:1cm;width:1mm;width:1q;width:1Q;width:1in;width:1pc;width:1pt;width:1em;width:1ex;width:1cap;width:1ch;width:1ic;width:1lh;width:1rem;width:1rex;width:1rcap;width:1rch;width:1ric;width:1rlh;width:1vw;width:1vh;width:1vi;width:1vb;width:1vmin;width:1vmax;width:1svw;width:1svh;width:1svi;width:1svb;width:1svmin;width:1svmax;width:1lvw;width:1lvh;width:1lvi;width:1lvb;width:1lvmin;width:1lvmax;width:1dvw;width:1dvh;width:1dvi;width:1dvb;width:1dvmin;width:1dvmax;width:1cqw;width:1cqh;width:1cqi;width:1cqb;width:1cqmin;width:1cqmax;width:1%;}"`,
+      `".z_0{width:1px;width:1px;width:1cm;width:1mm;width:1q;width:1Q;width:1in;width:1pc;width:1pt;width:1em;width:1ex;width:1cap;width:1ch;width:1ic;width:1lh;width:1rem;width:1rex;width:1rcap;width:1rch;width:1ric;width:1rlh;width:1vw;width:1vh;width:1vi;width:1vb;width:1vmin;width:1vmax;width:1svw;width:1svh;width:1svi;width:1svb;width:1svmin;width:1svmax;width:1lvw;width:1lvh;width:1lvi;width:1lvb;width:1lvmin;width:1lvmax;width:1dvw;width:1dvh;width:1dvi;width:1dvb;width:1dvmin;width:1dvmax;width:1cqw;width:1cqh;width:1cqi;width:1cqb;width:1cqmin;width:1cqmax;width:1%;}"`,
     )
   })
 
@@ -1062,8 +1062,8 @@ describe('compile', () => {
       ".z_0{color:#fff!important;color:#000!important;}
       .z_1{color:#fff;}
       .z_2{color:#fff!important;}
-      .z-opacity-\\5b 0\\2e 5\\21 important\\5d {opacity:0.5!important;}
-      .z-p-\\5b 0\\21 important\\5d {padding:0!important;}"
+      .z_3{opacity:0.5!important;}
+      .z_4{padding:0!important;}"
     `)
   })
 
@@ -1278,19 +1278,19 @@ describe('compile', () => {
     expect(result).toMatchInlineSnapshot(`
       {
         "classes": {
-          " ": "z-block",
-          "1 space:💪": "z-mt--2px z-text-[#fff]",
-          "_20_": "z-block",
-          "__proto__": "z-block",
-          "card": "z_0 z_1 z-opacity-[0.5]",
+          " ": "z_5",
+          "1 space:💪": "z_3 z_4",
+          "_20_": "z_5",
+          "__proto__": "z_5",
+          "card": "z_0 z_1 z_2",
           "empty": "",
         },
         "css": ".z_0{padding:1rem;}
       .z_1{padding-left:0;}
-      .z-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}
-      .z-mt--2px{margin-top:-2px;}
-      .z-text-\\5b \\23 fff\\5d {color:#fff;}
-      .z-block{display:block;}",
+      .z_2{opacity:0.5;}
+      .z_3{margin-top:-2px;}
+      .z_4{color:#fff;}
+      .z_5{display:block;}",
         "vars": {},
       }
     `)
@@ -1312,7 +1312,7 @@ describe('compile', () => {
     }).toMatchInlineSnapshot(`
       {
         "frozen": true,
-        "reordered": true,
+        "reordered": false,
         "repeated": true,
         "unique": 4,
       }
@@ -1733,16 +1733,16 @@ describe('names', () => {
       })
 
       expect(output.css).toMatchInlineSnapshot(`
-      ".z-display-flex{display:flex;}
-      .z-p-8px{padding:8px;}
-      .z-text-red{color:red;}"
-    `)
+        ".z_0{display:flex;}
+        .z_1{padding:8px;}
+        .z_2{color:red;}"
+      `)
       expect(output.classes).toMatchInlineSnapshot(`
-      {
-        "card": "z-display-flex z-p-8px z-text-red",
-        "label": "z-text-red",
-      }
-    `)
+        {
+          "card": "z_0 z_1 z_2",
+          "label": "z_2",
+        }
+      `)
     })
 
     test('names conditions, fallback sequences, and complex values distinctly', () => {
@@ -1797,18 +1797,18 @@ describe('names', () => {
 
       expect(first.css).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-color-brand:red;}
-        .z-display-flex{display:flex;}
-        .z-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}"
+        .z_zugwnm0{display:flex;}
+        .z_zugwnm1{color:var(--z-color-brand,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-color-brand:red;}
-        .z-display-flex{display:flex;}
-        .z-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}"
+        .z_PWlT8s0{display:flex;}
+        .z_PWlT8s1{color:var(--z-color-brand,red);}"
       `)
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex z-text-[var(--z-color-brand,red)] z-style-zugwnm-card"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z_zugwnm0 z_zugwnm1 z-style-zugwnm-card"});"
       `)
     })
 
@@ -1825,12 +1825,12 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(flex.css).toMatchInlineSnapshot(`
-        ".z-display-flex{display:flex;}
-        .z-flex-\\5b 1_20_1_20_auto\\5d {flex:1 1 auto;}"
+        ".z_BNRM2r0{display:flex;}
+        .z_BNRM2r1{flex:1 1 auto;}"
       `)
       expect(grid.css).toMatchInlineSnapshot(`
-        ".z-display-grid{display:grid;}
-        .z-grid-\\5b auto_20_\\2f _20_1fr\\5d {grid:auto / 1fr;}"
+        ".z_ySDaVk0{display:grid;}
+        .z_ySDaVk1{grid:auto / 1fr;}"
       `)
 
       const browser = await chromium.launch()
@@ -1965,26 +1965,26 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(production.modules['card.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}"
+        ".z_bgXhTU0{color:red;}
+        .z_bgXhTU1{padding:8px;}"
       `)
       expect(development.modules['card.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}"
+        ".z-bgXhTU-text-red{color:red;}
+        .z-bgXhTU-p-8px{padding:8px;}"
       `)
       expect(edited.modules['card.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-tan{color:tan;}
-        .z-p-8px{padding:8px;}"
+        ".z-bgXhTU-text-tan{color:tan;}
+        .z-bgXhTU-p-8px{padding:8px;}"
       `)
       expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
         {
-          "style-1slxe42dbli7u-45": "z-text-tan z-p-8px z-style-bgXhTU-card",
+          "style-1slxe42dbli7u-45": "z-bgXhTU-text-tan z-bgXhTU-p-8px z-style-bgXhTU-card",
         }
       `)
       expect(compiler.compile({ modules }).modules['card.ts']!.css)
         .toMatchInlineSnapshot(`
-          ".z-text-red{color:red;}
-          .z-p-8px{padding:8px;}"
+          ".z_bgXhTU0{color:red;}
+          .z_bgXhTU1{padding:8px;}"
         `)
     })
 
@@ -2187,7 +2187,7 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(output.modules['second.ts']!.css).toMatchInlineSnapshot(
-        '".z-text-red{color:red;}"',
+        `".z_PWlT8s0{color:red;}"`,
       )
     })
 
@@ -2350,22 +2350,22 @@ describe('output', () => {
       expect(output).toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-text-red z-p-8px",
-            "label": "z-text-red",
+            "card": "z_0 z_1",
+            "label": "z_0",
           },
-          "css": ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}",
+          "css": ".z_0{color:red;}
+        .z_1{padding:8px;}",
           "vars": {},
         }
       `)
       expect(atomic).toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-text-red z-p-8px",
-            "label": "z-text-red",
+            "card": "z_0 z_1",
+            "label": "z_0",
           },
-          "css": ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}",
+          "css": ".z_0{color:red;}
+        .z_1{padding:8px;}",
           "vars": {},
         }
       `)
@@ -2383,11 +2383,11 @@ describe('output', () => {
       expect(Css.compile({ styles })).toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-text-red z-p-8px",
-            "label": "z-text-red",
+            "card": "z_0 z_1",
+            "label": "z_0",
           },
-          "css": ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}",
+          "css": ".z_0{color:red;}
+        .z_1{padding:8px;}",
           "vars": {},
         }
       `)
@@ -2411,8 +2411,8 @@ describe('output', () => {
         if (cssOutput === 'atomic')
           expect(output.css).toMatchInlineSnapshot(`
             "body{margin:0;}
-            .z-display-\\5b block\\3b display\\3a grid\\21 important\\5d {display:block;display:grid!important;}
-            .z-text-red{color:red;}"
+            .z_0{display:block;display:grid!important;}
+            .z_1{color:red;}"
           `)
         else
           expect(output.css).toMatchInlineSnapshot(`

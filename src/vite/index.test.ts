@@ -1665,7 +1665,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       }
 
       expect((await module.load()).props.className).toMatchInlineSnapshot(
-        `"z-app-text-[var(--z-app-color-brand,#06c)] z-app-p-8px"`,
+        `"z-app-rnRBDm-text-[var(--z-app-color-brand,#06c)] z-app-rnRBDm-p-8px"`,
       )
     } finally {
       await server.close()
@@ -1753,7 +1753,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       }
 
       expect(module.className).toMatchInlineSnapshot(
-        `"z-text-red z-style-Skd157-card"`,
+        `"z-Skd157-text-red z-style-Skd157-card"`,
       )
       expect((await settle(ssr)) === initialSsr).toMatchInlineSnapshot(`true`)
     } finally {
@@ -2068,8 +2068,8 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
         .z-theme-app-base{--z-app-color-brand:#06c;}
-        .z-theme-app-mint{--z-app-color-brand:#175;}.z-app-text-\\5b var\\28 --z-app-color-brand\\2c \\23 06c\\29 \\5d {color:var(--z-app-color-brand,#06c);}
-        .z-app-p-8px{padding:8px;}"
+        .z-theme-app-mint{--z-app-color-brand:#175;}.z_app-rnRBDm0{color:var(--z-app-color-brand,#06c);}
+        .z_app-rnRBDm1{padding:8px;}"
       `)
 
       const javascript = result.output
@@ -2198,7 +2198,7 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
       expect(String(sheet.source)).toMatchInlineSnapshot(`
         ":root{--gap:var(--z-acme-spacing-16,16px);}
         .z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
-        .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}.z-acme-p-\\5b var\\28 --z-acme-spacing-16\\2c 16px\\29 \\5d {padding:var(--z-acme-spacing-16,16px);}"
+        .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}.z_acme-YiE3S90{padding:var(--z-acme-spacing-16,16px);}"
       `)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
@@ -2330,6 +2330,131 @@ Object.assign(globalThis, { fixture: { card: shared.card().className, label, pro
             "composed": "z_YiE3S91 z_rnRBDm1",
             "label": "z_ya-T9A0 z_ya-T9A1",
           }
+        `)
+      } finally {
+        await browser.close()
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('keeps consumer overrides after rules that unrelated modules share', async () => {
+    // The unrelated module repeats the button's declarations after the overriding modules.
+    const { config, root } = await create({
+      'button.ts': `import { style } from 'zyzz'
+namespace styles {
+  export const base = style({ background: '#2563eb', borderColor: '#000', color: '#fff' })
+}
+export function button(props: { className?: string | undefined } = {}) {
+  return styles.base({ className: props.className })
+}
+`,
+      'ghost.ts': `import { style } from 'zyzz'
+import { button } from './button.js'
+namespace styles {
+  export const ghost = style({ background: 'transparent', color: '#374151' })
+}
+export function ghost(props: { className?: string | undefined } = {}) {
+  return button(styles.ghost({ className: props.className }))
+}
+`,
+      'index.html': '<script type="module" src="./main.ts"></script>',
+      'main.ts': `import { ghost } from './ghost.js'
+import { primary } from './primary.js'
+import { unrelated } from './unrelated.js'
+Object.assign(globalThis, {
+  fixture: {
+    ghost: ghost().className,
+    primary: primary().className,
+    unrelated: unrelated().className,
+  },
+})
+`,
+      'primary.ts': `import { style } from 'zyzz'
+import { ghost } from './ghost.js'
+namespace styles {
+  export const primary = style({ borderColor: '#2563eb', color: '#2563eb' })
+}
+export function primary(props: { className?: string | undefined } = {}) {
+  return ghost(styles.primary({ className: props.className }))
+}
+`,
+      'unrelated.ts': `import { style } from 'zyzz'
+namespace styles {
+  export const card = style({ background: '#2563eb', color: '#fff' })
+}
+export function unrelated(props: { className?: string | undefined } = {}) {
+  return styles.card({ className: props.className })
+}
+`,
+    })
+
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false, write: false },
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const css = result.output
+        .flatMap((file) =>
+          file.type === 'asset' && file.fileName.endsWith('.css')
+            ? [String(file.source)]
+            : [],
+        )
+        .join('\n')
+      const javascript = result.output
+        .flatMap((file) => (file.type === 'chunk' ? [file.code] : []))
+        .join('\n')
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(`<style>${css}</style>`)
+        await page.addScriptTag({ content: javascript, type: 'module' })
+        await page.waitForFunction(() => 'fixture' in globalThis)
+
+        const styles = await page.evaluate(() => {
+          const fixture = (
+            globalThis as unknown as {
+              fixture: Record<'ghost' | 'primary' | 'unrelated', string>
+            }
+          ).fixture
+
+          return Object.fromEntries(
+            Object.entries(fixture).map(([name, className]) => {
+              const element = document.createElement('button')
+
+              element.className = className
+              document.body.append(element)
+
+              const style = getComputedStyle(element)
+
+              return [
+                name,
+                `${style.backgroundColor} ${style.borderTopColor} ${style.color}`,
+              ]
+            }),
+          )
+        })
+
+        expect(styles).toMatchInlineSnapshot(`
+          {
+            "ghost": "rgba(0, 0, 0, 0) rgb(0, 0, 0) rgb(55, 65, 81)",
+            "primary": "rgba(0, 0, 0, 0) rgb(37, 99, 235) rgb(37, 99, 235)",
+            "unrelated": "rgb(37, 99, 235) rgb(0, 0, 0) rgb(255, 255, 255)",
+          }
+        `)
+        expect(css).toMatchInlineSnapshot(`
+          ".z_PTgY5k0{background:#2563eb;}
+          .z_PTgY5k1{border-color:#000;}
+          .z_PTgY5k2{color:#fff;}.z_toAUkB0{background:transparent;}
+          .z_toAUkB1{color:#374151;}.z_NZ8pJe0{border-color:#2563eb;}
+          .z_NZ8pJe1{color:#2563eb;}.z_z2JeWm0{background:#2563eb;}
+          .z_z2JeWm1{color:#fff;}"
         `)
       } finally {
         await browser.close()
@@ -3120,7 +3245,7 @@ export namespace styles {
       }
 
       expect(rendered.props.className).toMatchInlineSnapshot(
-        `"z-app-text-[var(--z-app-color-brand,#06c)] z-app-p-8px"`,
+        `"z-app-rnRBDm-text-[var(--z-app-color-brand,#06c)] z-app-rnRBDm-p-8px"`,
       )
 
       expect((await stylesheet()).includes('#175')).toMatchInlineSnapshot(

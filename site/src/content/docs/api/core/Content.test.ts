@@ -122,10 +122,10 @@ describe('style API page', () => {
     const [card] = await examples('style')
 
     expect(css(card!.source)).toMatchInlineSnapshot(`
-      ".z-border-radius-8px{border-radius:8px;}
-      .z-p-16px{padding:16px;}
-      .z-font-size-\\5b 1\\2e 25rem\\5d {font-size:1.25rem;}
-      .z-m-0{margin:0;}"
+      ".z_0{border-radius:8px;}
+      .z_1{padding:16px;}
+      .z_2{font-size:1.25rem;}
+      .z_3{margin:0;}"
     `)
   })
 
@@ -136,9 +136,9 @@ describe('style API page', () => {
     )
 
     expect(css(declarations!.source)).toMatchInlineSnapshot(`
-      ".z-text-\\5b black\\21 important\\5d {color:black!important;}
-      .z-display-\\5b block\\3b display\\3a grid\\5d {display:block;display:grid;}
-      .z-p-16px{padding:16px;}"
+      ".z_0{color:black!important;}
+      .z_1{display:block;display:grid;}
+      .z_2{padding:16px;}"
     `)
     expect(css(conditions!.source)).toMatchInlineSnapshot(`
       ".z_0{color:blue;}
@@ -146,8 +146,8 @@ describe('style API page', () => {
       @media (width >= 48rem){.z_2{font-size:1.125rem;}}"
     `)
     expect(css(callback!.source)).toMatchInlineSnapshot(`
-      ".z-bg-green{background-color:green;}
-      .z-w-\\5b var\\28 --z-3oDDjY-meter-amount\\29 \\5d {width:var(--z-3oDDjY-meter-amount);}"
+      ".z_0{background-color:green;}
+      .z_1{width:var(--z-3oDDjY-meter-amount);}"
     `)
     expect(css(exported(composition!.source))).toMatchInlineSnapshot(`
       ".z_0{color:black;}
@@ -200,9 +200,7 @@ describe('style API page', () => {
   test('compiles the types example', async () => {
     const [panel] = await examples('style', 'Types')
 
-    expect(css(panel!.source)).toMatchInlineSnapshot(
-      `".z-p-16px{padding:16px;}"`,
-    )
+    expect(css(panel!.source)).toMatchInlineSnapshot(`".z_0{padding:16px;}"`)
   })
 
   test('builds the native example as a style table', async () => {
@@ -536,11 +534,11 @@ describe('variable API page', () => {
     const [plan] = await examples('variable')
 
     expect(css(plan!.source)).toMatchInlineSnapshot(`
-      ".z-text-\\5b var\\28 --z-variables-accent\\29 \\5d {color:var(--z-variables-accent);}
-      .z-m-0{margin:0;}
-      .z_0{border-left:4px solid;}
-      .z_1{border-left-color:var(--z-variables-accent);}
-      .z-\\5b --z-variables-accent\\3a \\23 0070f3\\5d {--z-variables-accent:#0070f3;}"
+      ".z_0{color:var(--z-variables-accent);}
+      .z_1{margin:0;}
+      .z_2{border-left:4px solid;}
+      .z_3{border-left-color:var(--z-variables-accent);}
+      .z_4{--z-variables-accent:#0070f3;}"
     `)
   })
 
@@ -548,8 +546,8 @@ describe('variable API page', () => {
     const [grid] = await examples('variable', 'kind')
 
     expect(css(grid!.source)).toMatchInlineSnapshot(`
-      ".z-display-grid{display:grid;}
-      .z-gap-\\5b var\\28 --z-variables-gap\\29 \\5d {gap:var(--z-variables-gap);}"
+      ".z_0{display:grid;}
+      .z_1{gap:var(--z-variables-gap);}"
     `)
   })
 
@@ -643,11 +641,11 @@ describe('defineConfig API page', () => {
         --z-spacing-page: 1rem;
       }
 
-      .z-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
+      .z_4G1uCV0 {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+      .z_4G1uCV1 {
         padding: var(--z-spacing-page, 1rem);
       }
       "
@@ -673,11 +671,11 @@ describe('defineConfig API page', () => {
         --z-spacing-md: 8px;
       }
 
-      .z-p-\\[var\\(--z-spacing-md\\,8px\\)\\] {
+      .z_ml1WQ50 {
         padding: var(--z-spacing-md, 8px);
       }
 
-      .z-mt-7px {
+      .z_ml1WQ51 {
         margin-top: 7px;
       }
       "
@@ -688,11 +686,11 @@ describe('defineConfig API page', () => {
         --z-textColor-brand: #004a99;
       }
 
-      .z-bg-\\[var\\(--z-color-brand\\,\\#06c\\)\\] {
+      .z_UFW1mi0 {
         background-color: var(--z-color-brand, #06c);
       }
 
-      .z-text-\\[var\\(--z-textColor-brand\\,\\#004a99\\)\\] {
+      .z_UFW1mi1 {
         color: var(--z-textColor-brand, #004a99);
       }
       "
@@ -809,11 +807,11 @@ describe('defineVars API page', () => {
         }
       }
 
-      .z-text-\\[var\\(--z-color-foreground\\,light-dark\\(\\#171717\\,\\#fafafa\\)\\)\\] {
+      .z_4G1uCV0 {
         color: var(--z-color-foreground, light-dark(#171717, #fafafa));
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
+      .z_4G1uCV1 {
         padding: var(--z-spacing-page, var(--z-spacing-page-fallback-135haxo1frqfdi));
       }
       "
@@ -829,7 +827,7 @@ describe('defineVars API page', () => {
         }
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,var\\(--z-spacing-page-fallback-135haxo1frqfdi\\)\\)\\] {
+      .z_u6u0RP0 {
         padding: var(--z-spacing-page, var(--z-spacing-page-fallback-135haxo1frqfdi));
       }
       "
@@ -907,11 +905,11 @@ describe('extendVars API page', () => {
         --z-spacing-page: 1rem;
       }
 
-      .z-text-\\[var\\(--z-color-accent\\,\\#2563eb\\)\\] {
+      .z_4G1uCV0 {
         color: var(--z-color-accent, #2563eb);
       }
 
-      .z-p-\\[var\\(--z-spacing-page\\,1rem\\)\\] {
+      .z_4G1uCV1 {
         padding: var(--z-spacing-page, 1rem);
       }
       "
@@ -1131,7 +1129,7 @@ describe('Vars API page', () => {
         --z-number-opacity: 25;
       }
 
-      .z-text-\\[var\\(--z-color-faded\\,color-mix\\(in_20_srgb\\,_20_var\\(--z-color-ink\\,\\#171717\\)_20_calc\\(var\\(--z-number-opacity\\,25\\)_20_\\*_20_1\\%\\)\\,_20_transparent\\)\\)\\] {
+      .z_Bc99af0 {
         color: var(--z-color-faded, color-mix(in srgb, var(--z-color-ink, #171717) calc(var(--z-number-opacity, 25) * 1%), transparent));
       }
       "
@@ -1165,49 +1163,49 @@ describe('Values API page', () => {
       .z_1{user-select:none;}"
     `)
     expect(css(clamp!.source)).toMatchInlineSnapshot(`
-      ".z-display--webkit-box{display:-webkit-box;}
-      .z--webkit-box-orient-vertical{-webkit-box-orient:vertical;}
-      .z--webkit-line-clamp-3{-webkit-line-clamp:3;}
-      .z-overflow-hidden{overflow:hidden;}"
+      ".z_0{display:-webkit-box;}
+      .z_1{-webkit-box-orient:vertical;}
+      .z_2{-webkit-line-clamp:3;}
+      .z_3{overflow:hidden;}"
     `)
     expect(css(lengths!.source)).toMatchInlineSnapshot(`
-      ".z-h-100dvh{height:100dvh;}
-      .z-m-0{margin:0;}
-      .z-padding-block-1lh{padding-block:1lh;}"
+      ".z_0{height:100dvh;}
+      .z_1{margin:0;}
+      .z_2{padding-block:1lh;}"
     `)
     expect(css(colors!.source)).toMatchInlineSnapshot(`
-      ".z-bg-\\5b rgb\\28 0_20_112_20_243_20_\\2f _20_50\\25 \\29 \\5d {background-color:rgb(0 112 243 / 50%);}
-      .z-border-color-currentColor{border-color:currentColor;}
-      .z-text-\\5b oklch\\28 0\\2e 7_20_0\\2e 15_20_250\\29 \\5d {color:oklch(0.7 0.15 250);}"
+      ".z_0{background-color:rgb(0 112 243 / 50%);}
+      .z_1{border-color:currentColor;}
+      .z_2{color:oklch(0.7 0.15 250);}"
     `)
     expect(css(numbers!.source)).toMatchInlineSnapshot(`
-      ".z-font-weight-650{font-weight:650;}
-      .z-line-height-\\5b 1\\2e 5\\5d {line-height:1.5;}
-      .z-opacity-\\5b 0\\2e 8\\5d {opacity:0.8;}"
+      ".z_0{font-weight:650;}
+      .z_1{line-height:1.5;}
+      .z_2{opacity:0.8;}"
     `)
     expect(css(keywords!.source)).toMatchInlineSnapshot(`
-      ".z-text-inherit{color:inherit;}
-      .z-display-revert-layer{display:revert-layer;}"
+      ".z_0{color:inherit;}
+      .z_1{display:revert-layer;}"
     `)
     expect(css(multipleValues!.source)).toMatchInlineSnapshot(`
-      ".z-border-\\5b 1px_20_solid_20_currentColor\\5d {border:1px solid currentColor;}
-      .z-m-\\5b 0_20_auto\\5d {margin:0 auto;}
-      .z-transition-\\5b opacity_20_200ms_20_ease\\2c _20_transform_20_300ms\\5d {transition:opacity 200ms ease, transform 300ms;}"
+      ".z_0{border:1px solid currentColor;}
+      .z_1{margin:0 auto;}
+      .z_2{transition:opacity 200ms ease, transform 300ms;}"
     `)
     expect(css(mathFunctions!.source)).toMatchInlineSnapshot(`
-      ".z-font-size-\\5b clamp\\28 1rem\\2c _20_2vw_20_\\2b _20_0\\2e 5rem\\2c _20_2rem\\29 \\5d {font-size:clamp(1rem, 2vw + 0.5rem, 2rem);}
-      .z-w-\\5b calc\\28 100\\25 _20_-_20_2rem\\29 \\5d {width:calc(100% - 2rem);}"
+      ".z_0{font-size:clamp(1rem, 2vw + 0.5rem, 2rem);}
+      .z_1{width:calc(100% - 2rem);}"
     `)
     expect(css(customProperties!.source)).toMatchInlineSnapshot(
-      `".z-text-\\5b var\\28 --brand\\2c _20_blue\\29 \\5d {color:var(--brand, blue);}"`,
+      `".z_0{color:var(--brand, blue);}"`,
     )
     expect(css(fallbacks!.source)).toMatchInlineSnapshot(`
-      ".z-display-\\5b block\\3b display\\3a grid\\5d {display:block;display:grid;}
-      .z-w-\\5b 80vw\\3b width\\3a 80cqi\\5d {width:80vw;width:80cqi;}"
+      ".z_0{display:block;display:grid;}
+      .z_1{width:80vw;width:80cqi;}"
     `)
     expect(css(importance!.source)).toMatchInlineSnapshot(`
-      ".z-display-\\5b none\\21 important\\5d {display:none!important;}
-      .z-opacity-\\5b 0\\21 important\\5d {opacity:0!important;}"
+      ".z_0{display:none!important;}
+      .z_1{opacity:0!important;}"
     `)
   })
 })

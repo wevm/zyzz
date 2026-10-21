@@ -1804,7 +1804,7 @@ pane()
     })
 
     expect(Css.compile({ styles: result.styles }).css).toMatchInlineSnapshot(
-      `".z-p-0{padding:0;}"`,
+      `".z_0{padding:0;}"`,
     )
     expect(style({ padding: 0 })()).toMatchInlineSnapshot(`
       {

@@ -156,6 +156,15 @@ document.body.className = card().className
 `,
 }
 
+/** A module that applies a theme colour, which compiles to light-dark(). */
+const viteTheme = `import { Config, Vars } from 'zyzz'
+
+const base = Vars.define({ color: { text: { dark: '#fff', light: '#000' } } })
+const { style } = Config.create({ defaultVars: 'base', vars: { base } })
+const card = style({ color: 'text' })
+export const className = card().className
+`
+
 /** Builds a Vite project from a page's configuration example. */
 async function vite(name: string, config: string, extra = {}) {
   const path = await directory(name, {
@@ -178,7 +187,7 @@ describe('Vite API page', () => {
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-text-red{color:red}.z-p-8px{padding:8px}
+      ".z_EQz5kA0{color:red}.z_EQz5kA1{padding:8px}
       "
     `)
   })
@@ -219,7 +228,7 @@ global({ body: { color: 'rebeccapurple' } })
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-text-red{color:red}.z-p-8px{padding:8px}
+      ".z_EQz5kA0{color:red}.z_EQz5kA1{padding:8px}
       "
     `)
   })
@@ -243,7 +252,7 @@ document.body.className = badge().className
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-m-4px{margin:4px}
+      ".z_Svh2KD0{margin:4px}
       "
     `)
   })
@@ -372,14 +381,28 @@ process.exit()`,
     `)
   })
 
-  test('accepts a separate browser CSS target', async () => {
+  test('accepts a lower CSS target without light-dark()', async () => {
     const config = await example('vite', 'Browser Targets')
     const { path, result } = await vite('vite-targets', config.source)
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-text-red{color:red}.z-p-8px{padding:8px}
+      ".z_EQz5kA0{color:red}.z_EQz5kA1{padding:8px}
       "
+    `)
+  })
+
+  test('builds a server entry with a node target', async () => {
+    const config = await example('vite', 'Server Builds')
+    const { path, result } = await vite('vite-server', config.source, {
+      'src/server.ts': viteTheme,
+    })
+
+    expect(result.status).toMatchInlineSnapshot(`0`)
+    expect(await files(Path.join(path, 'dist'))).toMatchInlineSnapshot(`
+      [
+        "server.js",
+      ]
     `)
   })
 
@@ -432,13 +455,15 @@ process.exit()`,
 
   test('rejects a target that lowers light-dark()', async () => {
     const config = await example('vite', 'Errors')
-    const { result } = await vite('vite-errors', config.source)
+    const { result } = await vite('vite-errors', config.source, {
+      'src/main.ts': viteTheme,
+    })
 
     expect(result.status).toMatchInlineSnapshot(`1`)
     expect(
-      result.stderr.match(/Zyzz theme colours[^\n']*/)?.[0],
+      result.stderr.match(/Zyzz keeps light-dark\(\)[^\n']*/)?.[0],
     ).toMatchInlineSnapshot(
-      `"Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+."`,
+      `"Zyzz keeps light-dark() native, which these CSS targets would lower. Set build.cssTarget and css.lightningcss.targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+."`,
     )
   })
 })
@@ -750,16 +775,16 @@ describe('Unplugin API page', () => {
     `)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      ".z-text-red {
-        color: red;
-      }
+        ".z_YiE3S90 {
+          color: red;
+        }
 
-      .z-p-8px {
-        padding: 8px;
-      }
+        .z_YiE3S91 {
+          padding: 8px;
+        }
 
-      "
-    `)
+        "
+      `)
   })
 
   test('keeps authored calls without the compiler', async () => {
@@ -812,16 +837,16 @@ describe('Unplugin API page', () => {
     expect(result.stderr).toMatchInlineSnapshot(`""`)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      ".z-text-red {
-        color: red;
-      }
+        ".z_kiE3Jn0 {
+          color: red;
+        }
 
-      .z-p-8px {
-        padding: 8px;
-      }
+        .z_kiE3Jn1 {
+          padding: 8px;
+        }
 
-      "
-    `)
+        "
+      `)
   })
 
   test('builds the esbuild section', async () => {
@@ -958,12 +983,10 @@ describe('Babel API page', () => {
     expect(babel(path, 'code')).toMatchInlineSnapshot(`
       "import { Props as __zyzzProps } from 'zyzz/runtime';
       export const card = __zyzzProps.create({
-        className: "z-text-red z-style--mSYb5-card"
+        className: "z_-mSYb50 z-style--mSYb5-card"
       });"
     `)
-    expect(babel(path, 'css')).toMatchInlineSnapshot(
-      `".z-text-red{color:red;}"`,
-    )
+    expect(babel(path, 'css')).toMatchInlineSnapshot(`".z_-mSYb50{color:red;}"`)
   })
 
   test('selects web compilation', async () => {
@@ -971,7 +994,7 @@ describe('Babel API page', () => {
 
     expect(output.metadata).toMatchInlineSnapshot(`
       {
-        "css": ".z-text-red{color:red;}",
+        "css": ".z_-mSYb50{color:red;}",
         "moduleId": "src/styles.ts",
       }
     `)
@@ -1059,9 +1082,7 @@ describe('Babel API page', () => {
       'example.ts': `${metadata.source}\nexport { css }\n`,
     })
 
-    expect(babel(path, 'css')).toMatchInlineSnapshot(
-      `".z-text-red{color:red;}"`,
-    )
+    expect(babel(path, 'css')).toMatchInlineSnapshot(`".z_-mSYb50{color:red;}"`)
   })
 
   test('rejects an exported configuration', async () => {
@@ -1234,40 +1255,40 @@ describe('CLI API page', () => {
     `)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      "body {
-        margin: 0;
-      }
-      .z-theme-app-theme {
-        --z-app-color-brand: light-dark(#06c, #8cf);
-      }
+        "body {
+          margin: 0;
+        }
+        .z-theme-app-theme {
+          --z-app-color-brand: light-dark(#06c, #8cf);
+        }
 
-      .z_scheme-dark {
-        color-scheme: dark;
-      }
+        .z_scheme-dark {
+          color-scheme: dark;
+        }
 
-      .z_scheme-light {
-        color-scheme: light;
-      }
+        .z_scheme-light {
+          color-scheme: light;
+        }
 
-      .z_scheme-light-dark {
-        color-scheme: light dark;
-      }
-      .z-theme-app-theme {
-        --z-app-color-brand: light-dark(#06c, #8cf);
-      }
+        .z_scheme-light-dark {
+          color-scheme: light dark;
+        }
+        .z-theme-app-theme {
+          --z-app-color-brand: light-dark(#06c, #8cf);
+        }
 
-      .z-app-text-\\[var\\(--z-app-color-brand\\,light-dark\\(\\#06c\\,\\#8cf\\)\\)\\] {
-        color: var(--z-app-color-brand, light-dark(#06c, #8cf));
-      }
+        .z_app-sJkhe-0 {
+          color: var(--z-app-color-brand, light-dark(#06c, #8cf));
+        }
 
-      .z-app-p-8px {
-        padding: 8px;
-      }
-      .z-theme-app-theme {
-        --z-app-color-brand: light-dark(#06c, #8cf);
-      }
-      "
-    `)
+        .z_app-sJkhe-1 {
+          padding: 8px;
+        }
+        .z-theme-app-theme {
+          --z-app-color-brand: light-dark(#06c, #8cf);
+        }
+        "
+      `)
   })
 
   test('builds a source argument into an output directory', async () => {
@@ -1306,11 +1327,11 @@ describe('CLI API page', () => {
     expect(status).toMatchInlineSnapshot(`0`)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      ".z-text-red {
-        color: red;
-      }
-      "
-    `)
+        ".z_sJkhe-0 {
+          color: red;
+        }
+        "
+      `)
   })
 
   test('compiles a native color scheme', async () => {
@@ -1379,12 +1400,12 @@ describe('CLI API page', () => {
     expect(status).toMatchInlineSnapshot(`0`)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      "body{margin:0}
-      .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_scheme-dark{color-scheme:dark}.z_scheme-light{color-scheme:light}.z_scheme-light-dark{color-scheme:light dark}
-      .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z-app-text-\\[var\\(--z-app-color-brand\\,light-dark\\(\\#06c\\,\\#8cf\\)\\)\\]{color:var(--z-app-color-brand,light-dark(#06c,#8cf))}.z-app-p-8px{padding:8px}
-      .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}
-      "
-    `)
+        "body{margin:0}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_scheme-dark{color-scheme:dark}.z_scheme-light{color-scheme:light}.z_scheme-light-dark{color-scheme:light dark}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_app-sJkhe-0{color:var(--z-app-color-brand,light-dark(#06c,#8cf))}.z_app-sJkhe-1{padding:8px}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}
+        "
+      `)
   })
 
   test('writes to another output directory', async () => {
@@ -1554,7 +1575,7 @@ describe('integration API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 60_000 },
     )
 
-    expect(checked.length).toMatchInlineSnapshot(`36`)
+    expect(checked.length).toMatchInlineSnapshot(`37`)
     expect(result.stdout + result.stderr).toMatchInlineSnapshot(`""`)
     expect(result.status).toMatchInlineSnapshot(`0`)
   }, 120_000)

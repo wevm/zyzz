@@ -675,12 +675,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       )
       expect(module.exports.a()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-[var(--z-color-brand,#06c)] z-style-Zf5JrJ-a",
+          "className": "z_Zf5JrJ0 z-style-Zf5JrJ-a",
         }
       `)
       expect(module.exports.b()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-[var(--z-color-brand,#06c)] z-style-Zf5JrJ-b",
+          "className": "z_Zf5JrJ0 z-style-Zf5JrJ-b",
         }
       `)
     })

@@ -86,7 +86,9 @@ namespace styles {
 }
 ```
 
-Production builds name these rules with a module hash and a counter, and development builds use readable names, such as `z-text-red`. Styles whose classes can combine, such as exported styles, share a class only when no style defined between them sets that property differently. Their remaining rules keep definition order and also use short names.
+Production builds name these rules with a module hash and a counter, and development builds use readable names that start with the module hash, such as `z-X8T0-w-text-red`. Styles whose classes can combine, such as exported styles, share a class only when no style defined between them sets that property differently.
+
+Each module delivers its own stylesheet, and a rule repeated in a later stylesheet takes that later position. The module hash therefore keeps two modules from sharing a rule, so an override from a consuming module still wins.
 
 The compiler proves from source that these classes never combine. Classes added to the same element through DOM APIs, such as `classList.add`, can therefore lose definition order, so combine styles with `cx` instead.
 
@@ -163,7 +165,7 @@ Ordered output resolves conflicts between combined class lists in definition ord
 
 ## Generated Names
 
-Production class names are short and deterministic, including grouped classes and `cx` combinations. Atomic rules that ordered styles share keep readable names, such as `z-text-red`, and development builds use readable names throughout. Variables follow authored paths, such as `--z-color-brand`. Apply returned props rather than copying class names.
+Production class names are short and deterministic, including shared atomic rules, grouped classes, and `cx` combinations. Development builds use readable names throughout. Variables follow authored paths, such as `--z-color-brand`. Apply returned props rather than copying class names.
 
 Production class lists add a style's identity class only when a selector interpolates that style. When combining independent configs, give each a distinct `id`.
 

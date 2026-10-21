@@ -390,6 +390,8 @@ struct Compiler<'a> {
     nested_composition: bool,
     ordered: FxHashMap<u32, Shareable>,
     owned: FxHashMap<usize, FxHashMap<u32, Vec<String>>>,
+    /// Module qualifier of shared atomic names.
+    qualifier: Box<str>,
     /// Serialized tokens in first-serialization order.
     references: Vec<Arc<Reference>>,
     resets: bool,
@@ -973,13 +975,15 @@ impl<'a> Compiler<'a> {
                 context: (!shared).then_some(css_name),
                 namespace,
                 property: label,
+                qualifier: shared.then_some(&*self.qualifier),
                 slot: (!shared).then_some(slot),
             })
         };
-        // Production names contextual rules like shared units. The readable identity keys the
+        // Production names generated rules like shared units. The readable identity keys the
         // short name, so equal identities keep one name and the collision checks below still
-        // compare readable identities.
-        let identity = if self.development || state.explicit.is_some() || shared {
+        // compare readable identities. A shared readable name carries the module qualifier, so
+        // its short name stays within the module and keeps consumer overrides after it.
+        let identity = if self.development || state.explicit.is_some() {
             identity
         } else {
             self.unit_key.clear();
@@ -1351,6 +1355,7 @@ fn compile_with(options: &Options<'_>, units: &mut Units<'_>) -> Result<Output> 
             .any(|style| style.rules.is_some() && !isolated(style, options)),
         ordered: FxHashMap::default(),
         owned: FxHashMap::default(),
+        qualifier: units.qualifier().into(),
         references: Vec::new(),
         resets: false,
         rules: IndexMap::default(),

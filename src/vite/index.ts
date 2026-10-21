@@ -1882,15 +1882,19 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
         if (native) return
         // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
+        // A build target without browsers, such as `node20` or `es2022`, implies no
+        // CSS target, so the browser CSS target falls back to native light-dark().
+        const target = config.build?.target
         return {
           build: {
-            cssTarget: config.build?.cssTarget ??
-              config.build?.target ?? [
-                'chrome123',
-                'edge123',
-                'firefox120',
-                'safari17.5',
-              ],
+            cssTarget:
+              config.build?.cssTarget ??
+              (target &&
+              (Array.isArray(target) ? target : [target]).some((value) =>
+                browserTarget.test(value),
+              )
+                ? target
+                : ['chrome123', 'edge123', 'firefox120', 'safari17.5']),
           },
           css: {
             lightningcss: {
@@ -1999,46 +2003,18 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         (lightning.include ?? 0) & ~Lightning.Features.LightDark
       lightning.exclude =
         (lightning.exclude ?? 0) | Lightning.Features.LightDark
-
-      // The exclusion also affects imported application CSS.
-      const target = config.build.cssTarget
-      const browsers = (Array.isArray(target) ? target : [target]).flatMap(
-        (value) => {
-          if (!value)
-            throw new Error('Zyzz requires an explicit browser CSS target.')
-          const match =
-            /^(chrome|edge|firefox|safari|ios|opera|ie)([0-9.]+)$/.exec(value)
-          if (!match)
-            throw new Error(
-              `Zyzz cannot verify light-dark() support for CSS target: ${value}`,
-            )
-
-          return [`${match[1] === 'ios' ? 'ios_saf' : match[1]} ${match[2]}`]
-        },
-      )
-
-      for (const targets of [
-        Lightning.browserslistToTargets(browsers),
-        lightning.targets ?? {},
-      ]) {
-        const result = Lightning.transform({
-          code: new TextEncoder().encode(
-            '.theme{color:light-dark(white,black)}',
-          ),
-          filename: 'zyzz-theme-target.css',
-          targets,
-        })
-        if (!new TextDecoder().decode(result.code).includes('light-dark('))
-          throw new Error(
-            'Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.',
-          )
-      }
     },
     enforce: 'pre',
     generateBundle: {
       order: 'post',
       handler(_, bundle) {
         if (native) return
+
+        // Server environments collect CSS without shipping it to browsers.
+        const config = this.environment.config
+        let unsupported: string | false | undefined =
+          config.consumer === 'client' ? undefined : false
+
         for (const output of Object.values(bundle)) {
           if (output.type !== 'asset' || !output.fileName.endsWith('.css'))
             continue
@@ -2046,6 +2022,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
             typeof output.source === 'string'
               ? output.source
               : new TextDecoder().decode(output.source)
+
+          // The light-dark() exclusion also affects imported application CSS.
+          if (unsupported !== false && css.includes('light-dark(')) {
+            unsupported ??= lightDark({
+              cssTarget: config.build.cssTarget,
+              targets: config.css.lightningcss?.targets,
+            })
+            if (unsupported)
+              this.error(`${output.fileName} uses light-dark(). ${unsupported}`)
+          }
+
           const external = bundle[`${output.fileName}.map`]
           const inline = css.match(
             /\/\*# sourceMappingURL=data:application\/json(?:;charset=[^;,]+)?;base64,([A-Za-z0-9+/=]+)\s*\*\//,
@@ -2522,6 +2509,47 @@ type Served = {
     }
   >
   shared: string | undefined
+}
+
+/** Matches build targets that name a browser version, as Vite's CSS target conversion does. */
+const browserTarget = /^(chrome|edge|firefox|safari|ios|opera|ie)([0-9.]+)$/
+
+/**
+ * Checks that CSS targets keep native `light-dark()`, which inline color-scheme changes require.
+ * @returns A reason when a target lowers `light-dark()` or cannot be verified, otherwise `false`.
+ */
+function lightDark(options: lightDark.Options): string | false {
+  const target = options.cssTarget
+  const browsers: string[] = []
+
+  for (const value of Array.isArray(target) ? target : [target]) {
+    const match = value ? browserTarget.exec(value) : null
+    if (!match)
+      return `Zyzz cannot verify light-dark() support for CSS target: ${value}. Set build.cssTarget to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.`
+    browsers.push(`${match[1] === 'ios' ? 'ios_saf' : match[1]} ${match[2]}`)
+  }
+
+  for (const targets of [
+    Lightning.browserslistToTargets(browsers),
+    options.targets ?? {},
+  ]) {
+    const result = Lightning.transform({
+      code: new TextEncoder().encode('.theme{color:light-dark(white,black)}'),
+      filename: 'zyzz-theme-target.css',
+      targets,
+    })
+    if (!new TextDecoder().decode(result.code).includes('light-dark('))
+      return 'Zyzz keeps light-dark() native, which these CSS targets would lower. Set build.cssTarget and css.lightningcss.targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.'
+  }
+
+  return false
+}
+
+declare namespace lightDark {
+  type Options = {
+    cssTarget: string | readonly string[] | false | undefined
+    targets: Lightning.Targets | undefined
+  }
 }
 
 /** Whether discovery skips a directory entry: hidden entries, dependencies, build output, and tests. */

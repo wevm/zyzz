@@ -198,8 +198,8 @@ describe('keyframes API page', () => {
       `"@keyframes z-k-enter{from{opacity:0;}to{opacity:1;}}"`,
     )
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-animation-name-z-k-enter{animation-name:z-k-enter;}
-      .z-animation-duration-200ms{animation-duration:200ms;}"
+      ".z_3PBZzK0{animation-name:z-k-enter;}
+      .z_3PBZzK1{animation-duration:200ms;}"
     `)
   })
 
@@ -580,7 +580,7 @@ describe('colorProfile API page', () => {
       }
     `)
     expect(output.modules[overview!.name!]?.css).toMatchInlineSnapshot(
-      `".z-text-\\5b color\\28 --z-colorprofile-swop_20_0_20_0\\2e 5_20_1_20_0\\29 \\5d {color:color(--z-colorprofile-swop 0 0.5 1 0);}"`,
+      `".z_gW2-fM0{color:color(--z-colorprofile-swop 0 0.5 1 0);}"`,
     )
   })
 
@@ -656,10 +656,10 @@ describe('Css API page', () => {
       .toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-text-black z-p-1rem",
+            "card": "z_0 z_1",
           },
-          "css": ".z-text-black{color:black;}
-        .z-p-1rem{padding:1rem;}",
+          "css": ".z_0{color:black;}
+        .z_1{padding:1rem;}",
           "vars": {},
         }
       `)
@@ -698,9 +698,9 @@ describe('Css API page', () => {
     expect((await run('scope', scope!.source)).output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z-card-p-1rem",
+          "card": "z_card-0",
         },
-        "css": ".z-card-p-1rem{padding:1rem;}",
+        "css": ".z_card-0{padding:1rem;}",
         "vars": {},
       }
     `)
@@ -716,12 +716,12 @@ describe('Css API page', () => {
       .toMatchInlineSnapshot(`
         {
           "classes": {
-            "card": "z-p-1rem",
+            "card": "z_0",
           },
           "contributionCss": "@layer reset,base;",
           "css": "@layer reset,base;
-        .z-p-1rem{padding:1rem;}",
-          "scopedCss": ".z-p-1rem{padding:1rem;}",
+        .z_0{padding:1rem;}",
+          "scopedCss": ".z_0{padding:1rem;}",
           "vars": {},
         }
       `)
@@ -733,10 +733,10 @@ describe('Css API page', () => {
     expect((await run('vars', vars!.source)).output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z-text-[var(--z0,#171717)]",
+          "card": "z_0",
         },
         "css": ".z0{--z0:#171717;}
-      .z-text-\\5b var\\28 --z0\\2c \\23 171717\\29 \\5d {color:var(--z0,#171717);}",
+      .z_0{color:var(--z0,#171717);}",
         "vars": {
           "base": "z0",
         },

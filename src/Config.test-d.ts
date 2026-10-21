@@ -445,4 +445,33 @@ describe('defineConfig', () => {
     // @ts-expect-error Unknown spacing tokens remain rejected.
     style({ gap: 1.5 })
   })
+
+  test('rejects font weight tokens outside the fontWeight domain', () => {
+    const config = defineConfig({
+      vars: { fontWeight: { bold: 'bold', medium: 500, regular: 400 } },
+    })
+
+    config.style({ fontWeight: 'medium' })
+    config.style({ fontWeight: 'bold' })
+    // @ts-expect-error Weights outside the configured scale remain rejected.
+    config.style({ fontWeight: 600 })
+    defineConfig({
+      mappings: { fontWeight: [] },
+      vars: { fontWeight: { medium: '500' } },
+    })
+    // @ts-expect-error Numeric strings are not fontWeight values.
+    defineConfig({ vars: { fontWeight: { medium: '500' } } })
+    defineConfig({
+      mappings: { weight: ['fontWeight'] },
+      // @ts-expect-error Mapped categories check their weights too.
+      vars: { weight: { medium: '500' } },
+    })
+    defineConfig({
+      defaultVars: 'base',
+      // @ts-expect-error Each catalog set checks its weights.
+      vars: { base: { fontWeight: { medium: '500' } } },
+    })
+    // @ts-expect-error Reusable sets check their weights when configured.
+    defineConfig({ vars: defineVars({ fontWeight: { medium: '500' } }) })
+  })
 })

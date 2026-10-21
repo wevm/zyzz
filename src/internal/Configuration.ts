@@ -64,9 +64,35 @@ export function create(
           ? (value as Vars.Definition)
           : Vars.define(value as Vars.Values)
       const theme = VariableSets.theme(definition, variableMappings)
+      const metadata = theme[Token.definition]
+
+      // An incompatible weight would drop its name and leave fontWeight unchecked.
+      for (const path of Object.keys(metadata.values)) {
+        const category = path.split('.')[0]!
+        const targets = variableMappings
+          ? variableMappings[category]
+          : undefined
+        if (
+          !(targets
+            ? targets.includes('fontWeight')
+            : category === 'fontWeight')
+        )
+          continue
+
+        let leaf: unknown = theme.tokens
+        for (const key of metadata.paths?.[path] ?? path.split('.'))
+          leaf =
+            leaf && typeof leaf === 'object'
+              ? Object.getOwnPropertyDescriptor(leaf, key)?.value
+              : undefined
+        if (Token.is(leaf) && !Token.acceptsReference(leaf, 'fontWeight'))
+          throw new InvalidError(
+            `Font weight token ${path} must be a number from 1 to 1000 or a fontWeight keyword, such as 500.`,
+          )
+      }
+
       // Tokens are ambiguous only through an explicit mapping, so skip the property scan without one.
       if (!variableMappings) return theme
-      const metadata = theme[Token.definition]
       const names = new Map<string, string>()
       for (const path of Object.keys(metadata.values)) {
         const [category, ...parts] = path.split('.')
@@ -960,10 +986,24 @@ type VariableValues<options extends VariableOptions> = options extends {
     : never
   : Vars.Extract<options['vars']>
 
+type VariableMappings<options> = options extends {
+  mappings: infer mappings
+}
+  ? mappings
+  : {}
+
 type VariableTokens<options extends VariableOptions> = Vars.Mapped<
   VariableValues<options>,
-  options extends { mappings: infer mappings } ? mappings : {}
+  VariableMappings<options>
 >
+
+// Mirrors the domain check that keeps a configured name in `Token.Names`.
+type Weights<tree> = tree extends Vars.Value
+  ? Vars.Scalar<tree> extends NonNullable<Literal.Properties['fontWeight']> &
+      Value.Checked<Record<'fontWeight', Vars.Scalar<tree>>>['fontWeight']
+    ? tree
+    : never
+  : { readonly [key in keyof tree]: Weights<tree[key]> }
 
 type VariableInput<input> = input extends {
   readonly [Token.definition]: Token.Metadata
@@ -972,6 +1012,31 @@ type VariableInput<input> = input extends {
   : input extends Vars.Values
     ? Parameters<typeof Vars.define<input>>[0]
     : never
+
+/** Checks categories mapped to `fontWeight` against its declaration domain. */
+type FontWeights<values, mappings> = {
+  readonly [category in keyof values as mappings extends false
+    ? category extends 'fontWeight'
+      ? category
+      : never
+    : category extends keyof mappings
+      ? mappings[category] extends readonly unknown[]
+        ? 'fontWeight' extends mappings[category][number]
+          ? category
+          : never
+        : never
+      : category extends 'fontWeight'
+        ? category
+        : never]: Weights<values[category]>
+}
+
+type VariableWeights<input, mappings> = input extends {
+  readonly [Token.definition]: Token.Metadata
+}
+  ? Vars.Extract<input> extends FontWeights<Vars.Extract<input>, mappings>
+    ? unknown
+    : never
+  : FontWeights<input, mappings>
 
 type VariableMatch<input, base> = base extends readonly string[]
   ? input extends readonly string[]
@@ -1009,6 +1074,10 @@ export type VariableValidation<options extends VariableOptions> =
                 readonly [key in keyof options['vars']]: VariableInput<
                   options['vars'][key]
                 > &
+                  VariableWeights<
+                    options['vars'][key],
+                    VariableMappings<options>
+                  > &
                   (selected extends keyof options['vars']
                     ? Vars.Extract<options['vars'][key]> extends VariableMatch<
                         Vars.Extract<options['vars'][key]>,
@@ -1019,7 +1088,10 @@ export type VariableValidation<options extends VariableOptions> =
                     : never)
               }
             }
-          : { readonly vars: VariableInput<options['vars']> })
+          : {
+              readonly vars: VariableInput<options['vars']> &
+                VariableWeights<options['vars'], VariableMappings<options>>
+            })
 
 /** Configured authoring, portable references, and scoped set selection. */
 export type VariableConfig<options extends VariableOptions> = {

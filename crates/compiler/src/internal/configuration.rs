@@ -173,6 +173,30 @@ fn normalize(value: &Data, mappings: Option<&Mappings>) -> Result<Arc<Definition
         _ => Arc::new(vars::define(value, None, None)?),
     };
     let theme = variable_sets::theme(&variables, mappings.cloned())?;
+
+    // An incompatible weight would drop its name and leave fontWeight unchecked.
+    for path in theme.metadata.values.keys() {
+        let category = path.split('.').next().unwrap_or_default();
+        let weight = match mappings {
+            Some(Mappings::Categories(categories)) => match categories.get(category) {
+                Some(properties) => properties
+                    .iter()
+                    .any(|property| &**property == "fontWeight"),
+                None => category == "fontWeight",
+            },
+            _ => category == "fontWeight",
+        };
+
+        if weight
+            && let Some(Data::Token(reference)) = token::leaf(&theme, path)
+            && !token::accepts_reference(reference, "fontWeight")
+        {
+            return Err(invalid(format!(
+                "Font weight token {path} must be a number from 1 to 1000 or a fontWeight keyword, such as 500."
+            )));
+        }
+    }
+
     let Some(Mappings::Categories(categories)) = mappings else {
         return Ok(Arc::new(theme));
     };

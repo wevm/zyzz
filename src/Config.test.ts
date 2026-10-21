@@ -285,6 +285,14 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
     ).toThrowErrorMatchingInlineSnapshot(
       `[Vars.InvalidError: ["spacing","0.5"]: Variable paths must join to distinct names.]`,
     )
+    expect(() =>
+      PublicConfig.create({
+        id: 'dotted-weight',
+        vars: { fontWeight: { 'medium.5': '500' } },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Font weight token fontWeight.medium.5 must be a number from 1 to 1000 or a fontWeight keyword, such as 500.]`,
+    )
   })
 
   test.each(['atomic', 'grouped'] as const)(
@@ -762,7 +770,7 @@ pane()
         [
           {
             "code": 2322,
-            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", "first baseline", ... 21 more ..., "unsafe start"]; }> | \`\${string} !custom\` | Reference<...>>, ...Atom<...>[]])'.",
+            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<\`\${string} !custom\` | Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", ... 22 more ..., "unsafe start"]; }> | Reference<...>>, ...Atom<...>[]])'.",
             "span": "alignItems",
           },
         ]
@@ -1061,4 +1069,63 @@ describe('defineConfig', () => {
       `)
     },
   )
+
+  test('rejects font weight tokens outside the fontWeight domain', () => {
+    function compile(config: string, weight = `'medium'`) {
+      return Graph.compile({
+        imports: {
+          'app.ts': { './config': 'config.ts' },
+          'config.ts': { zyzz: null },
+        },
+        modules: {
+          'config.ts': `import {defineConfig} from 'zyzz'; export const {style}=defineConfig(${config});`,
+          'app.ts': `import {style} from './config'; export const label=style({fontWeight:${weight}});`,
+        },
+      })
+    }
+
+    expect(() =>
+      compile(`{vars:{fontWeight:{regular:'400',medium:'500'}}}`),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:56: Font weight token fontWeight.regular must be a number from 1 to 1000 or a fontWeight keyword, such as 500.]`,
+    )
+    expect(() =>
+      compile(
+        `{mappings:{weight:['fontWeight']},vars:{weight:{medium:'500'}}}`,
+      ),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: config.ts:56: Font weight token weight.medium must be a number from 1 to 1000 or a fontWeight keyword, such as 500.]`,
+    )
+    expect(() =>
+      defineConfig({
+        id: 'weights',
+        vars: { fontWeight: { regular: '400', medium: '500' } },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Font weight token fontWeight.regular must be a number from 1 to 1000 or a fontWeight keyword, such as 500.]`,
+    )
+    expect(() =>
+      defineConfig({
+        id: 'weights',
+        mappings: { weight: ['fontWeight'] },
+        vars: { weight: { medium: '500' } },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: Font weight token weight.medium must be a number from 1 to 1000 or a fontWeight keyword, such as 500.]`,
+    )
+
+    const numeric = compile(
+      `{vars:{fontWeight:{bold:'bold',medium:500,regular:400}}}`,
+    )
+
+    expect(numeric.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-theme-theme{--z-fontWeight-medium:500;}
+      .z-font-weight-\\5b var\\28 --z-fontWeight-medium\\2c 500\\29 \\5d {font-weight:var(--z-fontWeight-medium,500);}"
+    `)
+    expect(() =>
+      compile(`{vars:{fontWeight:{medium:500}}}`, '600'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:69: Expected a configured token or a CSS value with the " !custom" suffix.]`,
+    )
+  })
 })

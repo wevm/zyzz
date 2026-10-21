@@ -447,7 +447,7 @@ fn check(reference: &Reference, value: &Value, property: &str) -> bool {
 }
 
 /// Reads a token tree leaf by dotted path, or by recorded segments for dotted keys.
-fn leaf<'a>(theme: &'a theme::Definition, path: &str) -> Option<&'a Data> {
+pub fn leaf<'a>(theme: &'a theme::Definition, path: &str) -> Option<&'a Data> {
     let mut node = &theme.tokens;
 
     if let Some(parts) = theme

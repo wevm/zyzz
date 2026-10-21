@@ -133,7 +133,7 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-Zf5JrJ-first-text-0{color:red;}
       .z-Zf5JrJ-second-text-0{color:blue;}
-      .z-w-\\5b calc\\28 1px_20_\\2f \\2a _20_\\5d _20_\\2a \\2f _20_\\2b _20_2px\\29 \\5d {width:calc(1px /* ] */ + 2px);}"
+      .z-Zf5JrJ-w-\\5b calc\\28 1px_20_\\2f \\2a _20_\\5d _20_\\2a \\2f _20_\\2b _20_2px\\29 \\5d {width:calc(1px /* ] */ + 2px);}"
     `)
     expect(() =>
       Graph.compile({
@@ -153,10 +153,10 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}
-      .z-content-\\5b _22_\\5b label\\5d _22_\\5d {content:"[label]";}
-      .z-grid-template-columns-\\5b \\5b start\\5d _20_1fr_20_\\5b end\\5d \\5d {grid-template-columns:[start] 1fr [end];}
-      .z-w-\\5b 7px\\21 important\\5d {width:7px!important;}"
+      ".z-Zf5JrJ-opacity-\\5b 0\\2e 5\\5d {opacity:0.5;}
+      .z-Zf5JrJ-content-\\5b _22_\\5b label\\5d _22_\\5d {content:"[label]";}
+      .z-Zf5JrJ-grid-template-columns-\\5b \\5b start\\5d _20_1fr_20_\\5b end\\5d \\5d {grid-template-columns:[start] 1fr [end];}
+      .z-Zf5JrJ-w-\\5b 7px\\21 important\\5d {width:7px!important;}"
     `)
   })
 
@@ -198,8 +198,8 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-content-\\5b _22_\\21 custom_22_\\5d {content:"!custom";}
-      .z-w-\\5b 7px\\21 important\\5d {width:7px!important;}"
+      ".z-Zf5JrJ-content-\\5b _22_\\21 custom_22_\\5d {content:"!custom";}
+      .z-Zf5JrJ-w-\\5b 7px\\21 important\\5d {width:7px!important;}"
     `)
   })
 
@@ -220,9 +220,9 @@ export const third=configured.style({width:'calc(1px /* ] */ + 2px) !custom'});`
       ),
     ).toMatchInlineSnapshot(`
       [
-        ".z-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
-        ".z-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
-        ".z-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
+        ".z-Zf5JrJ-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
+        ".z-Zf5JrJ-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
+        ".z-Zf5JrJ-text-\\5b red\\3b color\\3a blue\\5d {color:red;color:blue;}",
       ]
     `)
     const { style } = PublicConfig.create({
@@ -1065,7 +1065,7 @@ describe('defineConfig', () => {
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-text-\\5b var\\28 --z-color-brand\\2c \\23 123456\\29 \\5d {color:var(--z-color-brand,#123456);}"
+        .z-Zf5JrJ-text-\\5b var\\28 --z-color-brand\\2c \\23 123456\\29 \\5d {color:var(--z-color-brand,#123456);}"
       `)
     },
   )
@@ -1120,7 +1120,7 @@ describe('defineConfig', () => {
 
     expect(numeric.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-theme{--z-fontWeight-medium:500;}
-      .z-font-weight-\\5b var\\28 --z-fontWeight-medium\\2c 500\\29 \\5d {font-weight:var(--z-fontWeight-medium,500);}"
+      .z-Zf5JrJ-font-weight-\\5b var\\28 --z-fontWeight-medium\\2c 500\\29 \\5d {font-weight:var(--z-fontWeight-medium,500);}"
     `)
     expect(() =>
       compile(`{vars:{fontWeight:{medium:500}}}`, '600'),

@@ -1799,18 +1799,18 @@ describe('names', () => {
 
       expect(first.css).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-color-brand:red;}
-        .z-display-flex{display:flex;}
-        .z-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}"
+        .z-zugwnm-display-flex{display:flex;}
+        .z-zugwnm-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}"
       `)
       expect(second.css).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-color-brand:red;}
-        .z-display-flex{display:flex;}
-        .z-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}"
+        .z-PWlT8s-display-flex{display:flex;}
+        .z-PWlT8s-text-\\5b var\\28 --z-color-brand\\2c red\\29 \\5d {color:var(--z-color-brand,red);}"
       `)
       expect(first.code).toMatchInlineSnapshot(`
         "
         import { Props as __zyzzProps } from 'zyzz/runtime';
-        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex z-text-[var(--z-color-brand,red)] z-style-zugwnm-card"});"
+        const {style}=({} as import('zyzz').Config.VariableConfig<{readonly "vars":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-zugwnm-display-flex z-zugwnm-text-[var(--z-color-brand,red)] z-style-zugwnm-card"});"
       `)
     })
 
@@ -1827,12 +1827,12 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(flex.css).toMatchInlineSnapshot(`
-        ".z-display-flex{display:flex;}
-        .z-flex-\\5b 1_20_1_20_auto\\5d {flex:1 1 auto;}"
+        ".z-BNRM2r-display-flex{display:flex;}
+        .z-BNRM2r-flex-\\5b 1_20_1_20_auto\\5d {flex:1 1 auto;}"
       `)
       expect(grid.css).toMatchInlineSnapshot(`
-        ".z-display-grid{display:grid;}
-        .z-grid-\\5b auto_20_\\2f _20_1fr\\5d {grid:auto / 1fr;}"
+        ".z-ySDaVk-display-grid{display:grid;}
+        .z-ySDaVk-grid-\\5b auto_20_\\2f _20_1fr\\5d {grid:auto / 1fr;}"
       `)
 
       const browser = await chromium.launch()
@@ -1967,26 +1967,26 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(production.modules['card.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}"
+        ".z-bgXhTU-text-red{color:red;}
+        .z-bgXhTU-p-8px{padding:8px;}"
       `)
       expect(development.modules['card.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-red{color:red;}
-        .z-p-8px{padding:8px;}"
+        ".z-bgXhTU-text-red{color:red;}
+        .z-bgXhTU-p-8px{padding:8px;}"
       `)
       expect(edited.modules['card.ts']!.css).toMatchInlineSnapshot(`
-        ".z-text-tan{color:tan;}
-        .z-p-8px{padding:8px;}"
+        ".z-bgXhTU-text-tan{color:tan;}
+        .z-bgXhTU-p-8px{padding:8px;}"
       `)
       expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
         {
-          "style-1slxe42dbli7u-45": "z-text-tan z-p-8px z-style-bgXhTU-card",
+          "style-1slxe42dbli7u-45": "z-bgXhTU-text-tan z-bgXhTU-p-8px z-style-bgXhTU-card",
         }
       `)
       expect(compiler.compile({ modules }).modules['card.ts']!.css)
         .toMatchInlineSnapshot(`
-          ".z-text-red{color:red;}
-          .z-p-8px{padding:8px;}"
+          ".z-bgXhTU-text-red{color:red;}
+          .z-bgXhTU-p-8px{padding:8px;}"
         `)
     })
 
@@ -2189,7 +2189,7 @@ export const grid = style({ display: 'grid', grid: 'auto / 1fr' })();`,
       })
 
       expect(output.modules['second.ts']!.css).toMatchInlineSnapshot(
-        '".z-text-red{color:red;}"',
+        `".z-PWlT8s-text-red{color:red;}"`,
       )
     })
 

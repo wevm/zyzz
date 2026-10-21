@@ -452,27 +452,27 @@ describe('zyzz', () => {
 
       expect(await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-        ":root {
-          --gap: var(--z-acme-spacing-16, 16px);
-        }
+          ":root {
+            --gap: var(--z-acme-spacing-16, 16px);
+          }
 
-        .z-theme-acme_2f_variables-variables {
-          --z-acme_2f_variables-color-ink: #123456;
-          --z-acme_2f_variables-spacing-16: 16px;
-        }
+          .z-theme-acme_2f_variables-variables {
+            --z-acme_2f_variables-color-ink: #123456;
+            --z-acme_2f_variables-spacing-16: 16px;
+          }
 
-        .z-theme-acme-theme {
-          --z-acme-spacing-16: 16px;
-          --z-acme-color-ink: #123456;
-        }
+          .z-theme-acme-theme {
+            --z-acme-spacing-16: 16px;
+            --z-acme-color-ink: #123456;
+          }
 
-        .z-acme-p-\\[var\\(--z-acme-spacing-16\\,16px\\)\\] {
-          padding: var(--z-acme-spacing-16, 16px);
-        }
+          .z-acme-YiE3S9-p-\\[var\\(--z-acme-spacing-16\\,16px\\)\\] {
+            padding: var(--z-acme-spacing-16, 16px);
+          }
 
-        /*# sourceMappingURL=zyzz.css.map */
-        "
-      `)
+          /*# sourceMappingURL=zyzz.css.map */
+          "
+        `)
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }

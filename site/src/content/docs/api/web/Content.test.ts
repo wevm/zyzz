@@ -198,8 +198,8 @@ describe('keyframes API page', () => {
       `"@keyframes z-k-enter{from{opacity:0;}to{opacity:1;}}"`,
     )
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-animation-name-z-k-enter{animation-name:z-k-enter;}
-      .z-animation-duration-200ms{animation-duration:200ms;}"
+      ".z-3PBZzK-animation-name-z-k-enter{animation-name:z-k-enter;}
+      .z-3PBZzK-animation-duration-200ms{animation-duration:200ms;}"
     `)
   })
 
@@ -580,7 +580,7 @@ describe('colorProfile API page', () => {
       }
     `)
     expect(output.modules[overview!.name!]?.css).toMatchInlineSnapshot(
-      `".z-text-\\5b color\\28 --z-colorprofile-swop_20_0_20_0\\2e 5_20_1_20_0\\29 \\5d {color:color(--z-colorprofile-swop 0 0.5 1 0);}"`,
+      `".z-gW2-fM-text-\\5b color\\28 --z-colorprofile-swop_20_0_20_0\\2e 5_20_1_20_0\\29 \\5d {color:color(--z-colorprofile-swop 0 0.5 1 0);}"`,
     )
   })
 

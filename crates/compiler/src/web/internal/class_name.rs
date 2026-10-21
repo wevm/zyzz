@@ -24,6 +24,9 @@ pub struct CreateOptions<'a> {
     pub namespace: Option<&'a str>,
     /// Authoring property spelling.
     pub property: &'a str,
+    /// Module identity of a shared declaration. Each module delivers its own stylesheet, so a
+    /// rule named alike in two modules would take the cascade position of the later one.
+    pub qualifier: Option<&'a str>,
     /// Ordered declaration slot inside a contextual style.
     pub slot: Option<usize>,
 }
@@ -90,6 +93,11 @@ pub fn create(options: &CreateOptions<'_>) -> String {
         }
 
         return output;
+    }
+
+    if let Some(qualifier) = options.qualifier.filter(|qualifier| !qualifier.is_empty()) {
+        output.push_str(qualifier);
+        output.push('-');
     }
 
     let condition = state(options.body);
@@ -370,6 +378,11 @@ impl Units<'_> {
         );
 
         name
+    }
+
+    /// Module qualifier that keeps this compilation's new names distinct.
+    pub fn qualifier(&self) -> &str {
+        &self.qualifier
     }
 
     /// Names chosen so far, keyed by namespace and body, and whether each was reused.

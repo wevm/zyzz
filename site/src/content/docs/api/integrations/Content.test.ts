@@ -178,7 +178,7 @@ describe('Vite API page', () => {
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-text-red{color:red}.z-p-8px{padding:8px}
+      ".z-EQz5kA-text-red{color:red}.z-EQz5kA-p-8px{padding:8px}
       "
     `)
   })
@@ -219,7 +219,7 @@ global({ body: { color: 'rebeccapurple' } })
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-text-red{color:red}.z-p-8px{padding:8px}
+      ".z-EQz5kA-text-red{color:red}.z-EQz5kA-p-8px{padding:8px}
       "
     `)
   })
@@ -243,7 +243,7 @@ document.body.className = badge().className
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-m-4px{margin:4px}
+      ".z-Svh2KD-m-4px{margin:4px}
       "
     `)
   })
@@ -378,7 +378,7 @@ process.exit()`,
 
     expect(result.status).toMatchInlineSnapshot(`0`)
     expect(await viteCss(path)).toMatchInlineSnapshot(`
-      ".z-text-red{color:red}.z-p-8px{padding:8px}
+      ".z-EQz5kA-text-red{color:red}.z-EQz5kA-p-8px{padding:8px}
       "
     `)
   })
@@ -750,16 +750,16 @@ describe('Unplugin API page', () => {
     `)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      ".z-text-red {
-        color: red;
-      }
+        ".z-YiE3S9-text-red {
+          color: red;
+        }
 
-      .z-p-8px {
-        padding: 8px;
-      }
+        .z-YiE3S9-p-8px {
+          padding: 8px;
+        }
 
-      "
-    `)
+        "
+      `)
   })
 
   test('keeps authored calls without the compiler', async () => {
@@ -812,16 +812,16 @@ describe('Unplugin API page', () => {
     expect(result.stderr).toMatchInlineSnapshot(`""`)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      ".z-text-red {
-        color: red;
-      }
+        ".z-kiE3Jn-text-red {
+          color: red;
+        }
 
-      .z-p-8px {
-        padding: 8px;
-      }
+        .z-kiE3Jn-p-8px {
+          padding: 8px;
+        }
 
-      "
-    `)
+        "
+      `)
   })
 
   test('builds the esbuild section', async () => {
@@ -958,11 +958,11 @@ describe('Babel API page', () => {
     expect(babel(path, 'code')).toMatchInlineSnapshot(`
       "import { Props as __zyzzProps } from 'zyzz/runtime';
       export const card = __zyzzProps.create({
-        className: "z-text-red z-style--mSYb5-card"
+        className: "z--mSYb5-text-red z-style--mSYb5-card"
       });"
     `)
     expect(babel(path, 'css')).toMatchInlineSnapshot(
-      `".z-text-red{color:red;}"`,
+      `".z--mSYb5-text-red{color:red;}"`,
     )
   })
 
@@ -971,7 +971,7 @@ describe('Babel API page', () => {
 
     expect(output.metadata).toMatchInlineSnapshot(`
       {
-        "css": ".z-text-red{color:red;}",
+        "css": ".z--mSYb5-text-red{color:red;}",
         "moduleId": "src/styles.ts",
       }
     `)
@@ -1060,7 +1060,7 @@ describe('Babel API page', () => {
     })
 
     expect(babel(path, 'css')).toMatchInlineSnapshot(
-      `".z-text-red{color:red;}"`,
+      `".z--mSYb5-text-red{color:red;}"`,
     )
   })
 
@@ -1234,40 +1234,40 @@ describe('CLI API page', () => {
     `)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      "body {
-        margin: 0;
-      }
-      .z-theme-app-theme {
-        --z-app-color-brand: light-dark(#06c, #8cf);
-      }
+        "body {
+          margin: 0;
+        }
+        .z-theme-app-theme {
+          --z-app-color-brand: light-dark(#06c, #8cf);
+        }
 
-      .z_scheme-dark {
-        color-scheme: dark;
-      }
+        .z_scheme-dark {
+          color-scheme: dark;
+        }
 
-      .z_scheme-light {
-        color-scheme: light;
-      }
+        .z_scheme-light {
+          color-scheme: light;
+        }
 
-      .z_scheme-light-dark {
-        color-scheme: light dark;
-      }
-      .z-theme-app-theme {
-        --z-app-color-brand: light-dark(#06c, #8cf);
-      }
+        .z_scheme-light-dark {
+          color-scheme: light dark;
+        }
+        .z-theme-app-theme {
+          --z-app-color-brand: light-dark(#06c, #8cf);
+        }
 
-      .z-app-text-\\[var\\(--z-app-color-brand\\,light-dark\\(\\#06c\\,\\#8cf\\)\\)\\] {
-        color: var(--z-app-color-brand, light-dark(#06c, #8cf));
-      }
+        .z-app-sJkhe--text-\\[var\\(--z-app-color-brand\\,light-dark\\(\\#06c\\,\\#8cf\\)\\)\\] {
+          color: var(--z-app-color-brand, light-dark(#06c, #8cf));
+        }
 
-      .z-app-p-8px {
-        padding: 8px;
-      }
-      .z-theme-app-theme {
-        --z-app-color-brand: light-dark(#06c, #8cf);
-      }
-      "
-    `)
+        .z-app-sJkhe--p-8px {
+          padding: 8px;
+        }
+        .z-theme-app-theme {
+          --z-app-color-brand: light-dark(#06c, #8cf);
+        }
+        "
+      `)
   })
 
   test('builds a source argument into an output directory', async () => {
@@ -1306,11 +1306,11 @@ describe('CLI API page', () => {
     expect(status).toMatchInlineSnapshot(`0`)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      ".z-text-red {
-        color: red;
-      }
-      "
-    `)
+        ".z-sJkhe--text-red {
+          color: red;
+        }
+        "
+      `)
   })
 
   test('compiles a native color scheme', async () => {
@@ -1379,12 +1379,12 @@ describe('CLI API page', () => {
     expect(status).toMatchInlineSnapshot(`0`)
     expect(await stylesheet(Path.join(path, 'dist/zyzz.css')))
       .toMatchInlineSnapshot(`
-      "body{margin:0}
-      .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_scheme-dark{color-scheme:dark}.z_scheme-light{color-scheme:light}.z_scheme-light-dark{color-scheme:light dark}
-      .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z-app-text-\\[var\\(--z-app-color-brand\\,light-dark\\(\\#06c\\,\\#8cf\\)\\)\\]{color:var(--z-app-color-brand,light-dark(#06c,#8cf))}.z-app-p-8px{padding:8px}
-      .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}
-      "
-    `)
+        "body{margin:0}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_scheme-dark{color-scheme:dark}.z_scheme-light{color-scheme:light}.z_scheme-light-dark{color-scheme:light dark}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z-app-sJkhe--text-\\[var\\(--z-app-color-brand\\,light-dark\\(\\#06c\\,\\#8cf\\)\\)\\]{color:var(--z-app-color-brand,light-dark(#06c,#8cf))}.z-app-sJkhe--p-8px{padding:8px}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}
+        "
+      `)
   })
 
   test('writes to another output directory', async () => {

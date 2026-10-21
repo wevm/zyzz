@@ -1175,9 +1175,9 @@ describe('queries', () => {
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z-default-font-family-\\5b var\\28 --z-default-fontFamily-sans\\2c Geist\\2c _20_-apple-system\\2c _20_BlinkMacSystemFont\\2c _20__22_Segoe_20_UI_22_\\2c _20_Roboto\\2c _20__22_Helvetica_20_Neue_22_\\2c _20__22_Noto_20_Sans_22_\\2c _20_Arial\\2c _20_sans-serif\\2c _20__22_Apple_20_Color_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Symbol_22_\\2c _20__22_Noto_20_Color_20_Emoji_22_\\29 \\5d {font-family:var(--z-default-fontFamily-sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z-default-font-size-\\5b var\\28 --z-default-fontSize-base\\2c 1rem\\29 \\5d {font-size:var(--z-default-fontSize-base,1rem);}
-        .z-default-text-\\5b var\\28 --z-default-color-blue-500\\2c light-dark\\28 \\23 99ceff\\2c \\23 0a4380\\29 \\29 \\5d {color:var(--z-default-color-blue-500,light-dark(#99ceff,#0a4380));}"
+        .z-default-Zf5JrJ-font-family-\\5b var\\28 --z-default-fontFamily-sans\\2c Geist\\2c _20_-apple-system\\2c _20_BlinkMacSystemFont\\2c _20__22_Segoe_20_UI_22_\\2c _20_Roboto\\2c _20__22_Helvetica_20_Neue_22_\\2c _20__22_Noto_20_Sans_22_\\2c _20_Arial\\2c _20_sans-serif\\2c _20__22_Apple_20_Color_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Emoji_22_\\2c _20__22_Segoe_20_UI_20_Symbol_22_\\2c _20__22_Noto_20_Color_20_Emoji_22_\\29 \\5d {font-family:var(--z-default-fontFamily-sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z-default-Zf5JrJ-font-size-\\5b var\\28 --z-default-fontSize-base\\2c 1rem\\29 \\5d {font-size:var(--z-default-fontSize-base,1rem);}
+        .z-default-Zf5JrJ-text-\\5b var\\28 --z-default-color-blue-500\\2c light-dark\\28 \\23 99ceff\\2c \\23 0a4380\\29 \\29 \\5d {color:var(--z-default-color-blue-500,light-dark(#99ceff,#0a4380));}"
       `)
 
       const built = await Esbuild.build({
@@ -1282,7 +1282,7 @@ describe('queries', () => {
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-theme{--z-fontSize-body:1rem;}
-        .z-font-size-\\5b var\\28 --z-fontSize-body\\2c 1rem\\29 \\5d {font-size:var(--z-fontSize-body,1rem);}"
+        .z-Zf5JrJ-font-size-\\5b var\\28 --z-fontSize-body\\2c 1rem\\29 \\5d {font-size:var(--z-fontSize-body,1rem);}"
       `)
     })
     test('Chromium applies bundled typography and Geist colors across schemes', async () => {

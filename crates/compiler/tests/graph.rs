@@ -233,7 +233,7 @@ mod transform {
 
             insta::allow_duplicates! {
                 insta::assert_snapshot!(output["error"], @"null");
-                insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
+                insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-PAxzm4-text-red{color:red;}");
             }
         }
 
@@ -380,7 +380,7 @@ mod transform {
             r#"{"composition":"mixed","moduleId":"card.ts","source":"import {style} from 'zyzz';export const card=style({color:'red'});"}"#,
         );
 
-        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-bgXhTU-text-red{color:red;}");
     }
 
     #[test]
@@ -389,10 +389,10 @@ mod transform {
             "{\"moduleId\":\"card.ts\"}\0import {style} from 'zyzz';export const card=style({color:'red'});",
         );
 
-        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-text-red{color:red;}");
+        insta::assert_snapshot!(output["css"].as_str().unwrap_or_default(), @".z-bgXhTU-text-red{color:red;}");
         insta::assert_snapshot!(output["map"]["sourcesContent"], @"[0]");
         insta::assert_snapshot!(output["cssMap"]["sourcesContent"], @"[0]");
-        insta::assert_snapshot!(records, @r#"{"classes":{"style-1slxe42dbli7u-45":"z-text-red z-style-bgXhTU-card"},"rules":{"z-text-red":"color:red;"},"units":[]}"#);
+        insta::assert_snapshot!(records, @r#"{"classes":{"style-1slxe42dbli7u-45":"z-bgXhTU-text-red z-style-bgXhTU-card"},"rules":{"z-bgXhTU-text-red":"color:red;"},"units":[]}"#);
     }
 
     #[test]

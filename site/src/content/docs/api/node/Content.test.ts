@@ -730,7 +730,7 @@ describe('Host.create API page', () => {
         --z-lib-color-brand: #06c;
       }
 
-      .z-lib-text-\\[var\\(--z-lib-color-brand\\,\\#06c\\)\\] {
+      .z-lib-1T9aMu-text-\\[var\\(--z-lib-color-brand\\,\\#06c\\)\\] {
         color: var(--z-lib-color-brand, #06c);
       }
       "

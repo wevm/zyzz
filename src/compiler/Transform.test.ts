@@ -7507,9 +7507,9 @@ describe('finalAcceptance', () => {
           ),
         ).toMatchInlineSnapshot(`
           [
-            "",
-            "",
-            "",
+            "none",
+            "clamp",
+            "add",
           ]
         `)
       } finally {

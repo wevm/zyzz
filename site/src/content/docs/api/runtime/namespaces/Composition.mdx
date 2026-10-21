@@ -4,7 +4,7 @@ Merge applied props over one precompiled class list for a statically resolved co
 
 The compiler rewrites a [`cx`](/docs/api/core/cx) call with overrides, recipes, or bindings into one `Composition.create` callable, which applications normally do not import. Combined rules are emitted ahead of time, so the callable swaps the arguments' generated classes for one class list and keeps their bindings and attributes.
 
-A `cx` call of only no-argument applications needs no callable. It selects frozen props from a precompiled table.
+A `cx` call needs no callable when every argument is a no-argument application of a plain style, without recipe attributes, bindings, or HTML output. It selects frozen props from a precompiled table.
 
 ```ts title="compose.ts"
 import { Composition } from 'zyzz/runtime'
@@ -150,4 +150,4 @@ export const owner = {
 
 ## Errors
 
-`Composition.create` throws no errors. Its callable throws a `TypeError` when it receives a truthy entry beyond `options.inputs`, which generated calls never pass. The compiler reports a `cx` call it cannot resolve as `Source.ExtractError`.
+`Composition.create` throws no errors. Its callable throws a `TypeError` when it receives a props entry beyond `options.inputs`, which generated calls never pass. A `true` entry merges nothing, so it never throws. The compiler reports a `cx` call it cannot resolve as `Source.ExtractError`.

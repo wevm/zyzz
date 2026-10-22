@@ -3707,7 +3707,6 @@ impl<'a> Generator<'_, 'a> {
             };
 
             if node.import_kind == ImportOrExportKind::Type
-                || node.with_clause.is_some()
                 || node.source.value == "zyzz"
                 || node.source.value.starts_with("zyzz/")
             {
@@ -3747,7 +3746,16 @@ impl<'a> Generator<'_, 'a> {
                 continue;
             }
 
-            let specifier = node.source.span.source_text(self.parsed.source);
+            // The bare import repeats the source with its attributes.
+            let end = node
+                .with_clause
+                .as_ref()
+                .map_or(node.source.span.end, |clause| clause.span.end);
+            let specifier = self
+                .parsed
+                .source
+                .get(node.source.span.start as usize..end as usize)
+                .unwrap_or_default();
 
             if read {
                 module.append_left(node.span.end, format!("\nimport {specifier};"))?;

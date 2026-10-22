@@ -2879,6 +2879,28 @@ export const View = () => <App />`,
       ]
     `)
   })
+
+  test('keeps import attributes on folded imports', () => {
+    const output = Graph.compile({
+      modules: {
+        'base.ts': `import { style } from 'zyzz'
+export const base = style({ color: 'red' })
+export const other = style({ color: 'blue' })`,
+        'index.tsx': `import { base } from './base.ts' with { kind: 'style' }
+import { other } from './base.ts' with { kind: 'style' }
+export const App = () => <main><i {...base()} /><b {...other()} /></main>
+export const read = other`,
+      },
+    })
+
+    expect(output.modules['index.tsx']!.code).toMatchInlineSnapshot(`
+      "import './base.ts' with { kind: 'style' }
+      import { other } from './base.ts' with { kind: 'style' }
+      import './base.ts' with { kind: 'style' };
+      export const App = () => <main><i className={"z_edltVp0 z-style-edltVp-base"} /><b className={"z_edltVp1 z-style-edltVp-other"} /></main>
+      export const read = other"
+    `)
+  })
 })
 
 describe('create', () => {

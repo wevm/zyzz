@@ -14,6 +14,7 @@ use oxc_ast::ast::{
 };
 use oxc_ast::builder::AstBuilder;
 use oxc_span::{GetSpan, Span};
+use rustc_hash::FxHashMap;
 
 use crate::compiler::internal::expression::{self, Template};
 use crate::compiler::internal::recipe_conditions::{self, Region};
@@ -183,27 +184,46 @@ pub fn class(prefix: &str, index: usize, condition: Option<usize>) -> String {
     }
 }
 
-/// The class of a declared choice, as [`class`] names it.
-pub fn choice_class(
-    prefix: &str,
-    axes: &Record<Vec<Arc<str>>>,
-    axis: &str,
-    choice: &str,
-    condition: Option<usize>,
-) -> Option<String> {
-    let mut offset = 0;
+/// Axis positions and choice positions among every choice of a recipe, in axis order, read once
+/// so naming each choice class is a lookup.
+pub struct Positions<'r> {
+    axes: FxHashMap<&'r str, usize>,
+    choices: FxHashMap<(&'r str, &'r str), usize>,
+}
 
-    for (name, choices) in axes.iter() {
-        if **name == *axis {
-            let position = choices.iter().position(|name| **name == *choice)?;
+impl<'r> Positions<'r> {
+    /// Reads the positions of every declared axis and choice.
+    pub fn new(axes: &'r Record<Vec<Arc<str>>>) -> Self {
+        let mut positions = Self {
+            axes: FxHashMap::default(),
+            choices: FxHashMap::default(),
+        };
 
-            return Some(class(prefix, offset + position, condition));
+        for (axis, choices) in axes.iter() {
+            positions.axes.insert(axis, positions.axes.len());
+
+            for choice in choices {
+                positions
+                    .choices
+                    .insert((axis, choice), positions.choices.len());
+            }
         }
 
-        offset += choices.len();
+        positions
     }
 
-    None
+    /// The class of a declared choice, as [`class`] names it.
+    pub fn class(
+        &self,
+        prefix: &str,
+        axis: &str,
+        choice: &str,
+        condition: Option<usize>,
+    ) -> Option<String> {
+        self.choices
+            .get(&(axis, choice))
+            .map(|index| class(prefix, *index, condition))
+    }
 }
 
 /// The class marking that a condition overrides an axis, with a choice or `null`, as
@@ -244,7 +264,7 @@ impl Selection {
     /// The selector matching one choice in a context.
     fn choice(
         &self,
-        axes: &Record<Vec<Arc<str>>>,
+        positions: &Positions<'_>,
         axis: &str,
         choice: &str,
         condition: Option<usize>,
@@ -261,18 +281,15 @@ impl Selection {
             }
             Self::Class(prefix) => format!(
                 ".{}",
-                choice_class(prefix, axes, axis, choice, condition).unwrap_or_default()
+                positions
+                    .class(prefix, axis, choice, condition)
+                    .unwrap_or_default()
             ),
         }
     }
 
     /// Selectors that exclude every later condition of an axis.
-    fn excluded(
-        &self,
-        axes: &Record<Vec<Arc<str>>>,
-        axis: &str,
-        sources: &[Option<usize>],
-    ) -> String {
+    fn excluded(&self, positions: &Positions<'_>, axis: &str, sources: &[Option<usize>]) -> String {
         let mut output = String::new();
 
         for condition in sources.iter().flatten() {
@@ -281,10 +298,7 @@ impl Selection {
                     let _ = write!(output, ":not([{}])", attribute(axis, *condition));
                 }
                 Self::Class(prefix) => {
-                    let index = axes
-                        .keys()
-                        .position(|name| **name == *axis)
-                        .unwrap_or_default();
+                    let index = positions.axes.get(axis).copied().unwrap_or_default();
                     let _ = write!(output, ":not(.{})", overridden(prefix, index, *condition));
                 }
             }
@@ -548,6 +562,17 @@ pub fn expand<'s, 'a>(
                 {
                     return Err(invalid(
                         "Recipe choice names require CSS-safe strings.",
+                        property.span,
+                    ));
+                }
+
+                // Uncompiled authoring numbers choices in `Object.keys` order, which moves array
+                // indexes first and omits `__proto__`, so class names would not match.
+                if matches!(selection, Selection::Class(_))
+                    && (js::array_index(key).is_some() || key == "__proto__")
+                {
+                    return Err(invalid(
+                        "Class-selection choice names cannot be array indexes or __proto__.",
                         property.span,
                     ));
                 }
@@ -842,6 +867,7 @@ pub fn expand<'s, 'a>(
             silent
         })
         .filter(|silent| !silent.is_empty());
+    let positions = Positions::new(&axes);
     let mut tree = Tree::default();
 
     for region in &regions {
@@ -864,13 +890,13 @@ pub fn expand<'s, 'a>(
 
                 for (index, condition) in sources.iter().enumerate() {
                     let excluded = selection.excluded(
-                        &axes,
+                        &positions,
                         axis,
                         sources.get(index + 1..).unwrap_or_default(),
                     );
                     let selector = format!(
                         "&:where({}{excluded})",
-                        selection.choice(&axes, axis, first, *condition)
+                        selection.choice(&positions, axis, first, *condition)
                     );
                     let model = condition.map_or(0, |condition| condition + 1);
                     let Some(body) = bodies
@@ -904,7 +930,7 @@ pub fn expand<'s, 'a>(
                     .enumerate()
                     .flat_map(|(index, condition)| {
                         let excluded = selection.excluded(
-                            &axes,
+                            &positions,
                             axis,
                             sources.get(index + 1..).unwrap_or_default(),
                         );
@@ -912,7 +938,7 @@ pub fn expand<'s, 'a>(
                         choices
                             .iter()
                             .map(|choice| {
-                                selection.choice(&axes, axis, choice, *condition) + &excluded
+                                selection.choice(&positions, axis, choice, *condition) + &excluded
                             })
                             .collect::<Vec<_>>()
                     })

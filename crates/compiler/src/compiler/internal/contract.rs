@@ -534,7 +534,7 @@ fn supported(value: &Data) -> Option<u32> {
         return None;
     };
 
-    (1..=35).find(|candidate| *version == f64::from(*candidate))
+    (1..=36).find(|candidate| *version == f64::from(*candidate))
 }
 
 fn empty_theme() -> Result<Arc<theme::Definition>> {
@@ -835,7 +835,7 @@ impl Reader<'_> {
                     },
                     reference.to_lowercase()
                 );
-                let valid = (9..=35).contains(&version)
+                let valid = (9..=36).contains(&version)
                     && kind.is_some()
                     && (identity_like(&name, "z-") || identity_like(&name, "--z-"))
                     && name.starts_with(&prefix)
@@ -1480,7 +1480,11 @@ pub fn write(options: &Write<'_>) -> Result<String> {
 
     output.push_str("},\"version\":");
 
-    let version = if !options.literals.is_empty() {
+    // Readers before version 36 would drop class-selection ownership and keep both choice
+    // classes of repeated applications, so these contracts require it.
+    let version = if options.links.values().any(selects_classes) {
+        36
+    } else if !options.literals.is_empty() {
         35
     } else if options
         .themes
@@ -1508,6 +1512,17 @@ fn composed(link: &Link) -> bool {
         .as_ref()
         .is_some_and(|style| style.style.composition.is_some())
         || link.members.iter().flat_map(Record::values).any(composed)
+}
+
+fn selects_classes(link: &Link) -> bool {
+    link.style
+        .as_ref()
+        .is_some_and(|style| !style.prefixes.is_empty())
+        || link
+            .members
+            .iter()
+            .flat_map(Record::values)
+            .any(selects_classes)
 }
 
 fn native_provider(link: &Link) -> bool {

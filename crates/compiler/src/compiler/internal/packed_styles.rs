@@ -631,6 +631,11 @@ pub fn read(
         .collect::<Result<_>>()?;
     let prefixes: Vec<Arc<str>> = match get(item, "prefixes") {
         Data::Undefined => Vec::new(),
+        _ if version < 36 => {
+            return Err(invalid(
+                "Class-selection recipes require contract version 36 or later.",
+            ));
+        }
         value => array(value)?.iter().map(string).collect::<Result<_>>()?,
     };
     let slots: Vec<Arc<str>> = array(get(item, "slots"))?

@@ -1840,6 +1840,22 @@ export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' 
         consumer.modules['app.ts']!.code.includes('"prefixes":["zv'),
       ).toMatchInlineSnapshot(`true`)
 
+      const contract = JSON.parse(publisher.contracts['library.ts']!)
+      expect(contract.version).toMatchInlineSnapshot(`36`)
+
+      contract.version = 35
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import { button } from './library.js'\nexport const props = button()`,
+          },
+          contracts: { 'library.ts': JSON.stringify(contract) },
+          imports: { 'app.ts': { zyzz: null, './library.js': 'library.ts' } },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: library.ts:0: Invalid library contract: Class-selection recipes require contract version 36 or later.]`,
+      )
+
       const code = await Packed.bundle({
         entry: 'app.ts',
         modules: {
@@ -1990,7 +2006,7 @@ export const initialized = renderToStaticMarkup(<button {...classes.button({ var
       }
     })
 
-    test('rejects unknown selection modes at their value', () => {
+    test('rejects unknown selection modes and choice names that Object.keys reorders', () => {
       expect(() =>
         Source.extract({
           moduleId: 'recipe.ts',
@@ -1998,6 +2014,22 @@ export const initialized = renderToStaticMarkup(<button {...classes.button({ var
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Source.ExtractError: recipe.ts:51: Recipe selection must be 'attribute' or 'class'.]`,
+      )
+      expect(() =>
+        Source.extract({
+          moduleId: 'recipe.ts',
+          source: `import {variants} from 'zyzz'; variants({selection:'class',variants:{size:{'2':{color:'red'},'1':{color:'blue'}}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: recipe.ts:75: Class-selection choice names cannot be array indexes or __proto__.]`,
+      )
+      expect(() =>
+        Source.extract({
+          moduleId: 'recipe.ts',
+          source: `import {variants} from 'zyzz'; variants({selection:'class',variants:{size:{'__proto__':{color:'red'}}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: recipe.ts:75: Static object prototypes are unsupported.]`,
       )
     })
   })

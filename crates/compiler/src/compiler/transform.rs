@@ -437,6 +437,8 @@ fn write_class_selector(
         "((input{parameter}={{}})=>{{const external=input.className,style=input.style,vars=input.vars,inline=vars?{{...vars,...style}}:style;let value,className={initial};"
     );
 
+    let positions = recipes::Positions::new(&recipe.axes);
+
     for (axis, choices) in recipe.axes.iter() {
         let mut key = String::new();
 
@@ -466,7 +468,7 @@ fn write_class_selector(
                 continue;
             }
 
-            let Some(class) = recipes::choice_class(prefix, &recipe.axes, axis, name, None) else {
+            let Some(class) = positions.class(prefix, axis, name, None) else {
                 continue;
             };
 
@@ -699,9 +701,10 @@ fn fold_recipe(
             .and_then(|silent| silent.get(axis))
             .is_some_and(|names| names.iter().any(|name| **name == *choice))
     };
+    let positions = recipes::Positions::new(&recipe.axes);
     let class = |axis: &str, choice: &str| {
         (!silent(axis, choice))
-            .then(|| recipes::choice_class(prefix, &recipe.axes, axis, choice, None))
+            .then(|| positions.class(prefix, axis, choice, None))
             .flatten()
     };
     let mut fields: SmallVec<[(&str, Span); 4]> = SmallVec::new();

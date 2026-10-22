@@ -81,7 +81,7 @@ index c49c99e..067ffa2 100644
    /** How this lane's CSS exists — drives the report legend. */
 diff --git a/techs/zyzz/case/btn-variant/index.tsx b/techs/zyzz/case/btn-variant/index.tsx
 new file mode 100644
-index 0000000..be8fd42
+index 0000000..7bcbb5e
 --- /dev/null
 +++ b/techs/zyzz/case/btn-variant/index.tsx
 @@ -0,0 +1,58 @@
@@ -1242,7 +1242,7 @@ index 0000000..766a681
 +}
 diff --git a/techs/zyzz/case/realistic-button/index.tsx b/techs/zyzz/case/realistic-button/index.tsx
 new file mode 100644
-index 0000000..f1eb15c
+index 0000000..146a805
 --- /dev/null
 +++ b/techs/zyzz/case/realistic-button/index.tsx
 @@ -0,0 +1,105 @@
@@ -1633,7 +1633,7 @@ index 0000000..f537f67
 +});
 diff --git a/techs/zyzz/package.json b/techs/zyzz/package.json
 new file mode 100644
-index 0000000..733ec21
+index 0000000..273532e
 --- /dev/null
 +++ b/techs/zyzz/package.json
 @@ -0,0 +1,17 @@
@@ -1651,7 +1651,7 @@ index 0000000..733ec21
 +  "dependencies": {
 +    "react": "catalog:dev",
 +    "react-dom": "catalog:dev",
-+    "zyzz": "0.0.36"
++    "zyzz": "https://pkg.pr.new/zyzz@410740f"
 +  }
 +}
 diff --git a/techs/zyzz/ssr-entry.tsx b/techs/zyzz/ssr-entry.tsx
@@ -1789,10 +1789,10 @@ index 0000000..00058a0
 +}
 diff --git a/techs/zyzz/vite.hydrate.config.ts b/techs/zyzz/vite.hydrate.config.ts
 new file mode 100644
-index 0000000..f2a1fa9
+index 0000000..4d049d1
 --- /dev/null
 +++ b/techs/zyzz/vite.hydrate.config.ts
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,30 @@
 +// Hydrate (browser) build for the Zyzz lane: the same zyzz plugin as the microbench build
 +// (so the client's classes match the SSR markup), browser target over client-entry.tsx.
 +// The zyzz CSS is a module-graph import, so the manifest links it to the browser page.
@@ -1816,9 +1816,6 @@ index 0000000..f2a1fa9
 +    sourcemap: false,
 +    minify: "esbuild",
 +    target: "chrome120",
-+    // zyzz requires a CSS target with native light-dark() (Chrome 123+); JS keeps the
-+    // suite's chrome120 target.
-+    cssTarget: "chrome123",
 +    rollupOptions: {
 +      input: "./client-entry.tsx",
 +      external: [],
@@ -1828,10 +1825,10 @@ index 0000000..f2a1fa9
 +});
 diff --git a/techs/zyzz/vite.microbench.config.ts b/techs/zyzz/vite.microbench.config.ts
 new file mode 100644
-index 0000000..6851521
+index 0000000..25ca067
 --- /dev/null
 +++ b/techs/zyzz/vite.microbench.config.ts
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,35 @@
 +// Standalone microbench build for Zyzz (§4.2). The zyzz Vite plugin compiles every
 +// style()/variants() call ahead of time, rewrites each call site to precompiled props, and
 +// delivers the CSS through Vite's module graph. The emitted stylesheet is consolidated
@@ -1858,9 +1855,6 @@ index 0000000..6851521
 +    ssr: true,
 +    ssrEmitAssets: true, // SSR builds skip CSS assets by default — keep the zyzz sheet
 +    target: "node20",
-+    // zyzz requires a browser CSS target with native light-dark(), and the SSR bundle's
-+    // `target` is node, so name the same CSS target the hydrate build uses.
-+    cssTarget: "chrome123",
 +    rollupOptions: {
 +      input: "./ssr-entry.tsx",
 +      external: [],

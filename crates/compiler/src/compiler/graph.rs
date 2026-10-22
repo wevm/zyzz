@@ -58,6 +58,10 @@ type Components = Map<Vec<(Arc<str>, Arc<str>)>>;
 /// imported binding as a JSX element.
 type FoldOrder = (Vec<Arc<str>>, Components, FxHashSet<Arc<str>>);
 
+/// The local names of one value import declaration, with its target's index among the source
+/// modules. `None` marks a packed library or `zyzz` entrypoint, which never imports sources.
+type ImportTarget = (Vec<Arc<str>>, Option<usize>);
+
 /// Inputs of one graph compilation.
 #[derive(Clone, Debug, Default)]
 #[expect(
@@ -339,6 +343,8 @@ struct Transformed {
     output: Arc<transform::Output>,
     owners: Arc<[(Arc<str>, usize)]>,
     schemes: bool,
+    /// The settled import names the transform read.
+    settled: Option<FxHashSet<Arc<str>>>,
     themes: Record<Arc<Definition>>,
 }
 
@@ -3469,6 +3475,159 @@ impl Build<'_, '_> {
         (order, components, rendering)
     }
 
+    /// The local import names of each module whose target finishes evaluating before the module
+    /// body runs, so reads of its definitions can never meet an uninitialized binding.
+    ///
+    /// A source target settles when it shares no import cycle with its importer and every
+    /// module it reaches is known: a graph source, a packed library, or a `zyzz` entrypoint.
+    /// An import the graph cannot follow could lead back to the importer, so it settles nothing
+    /// that reaches it.
+    fn settled(&self) -> Map<FxHashSet<Arc<str>>> {
+        let ids: Vec<&Arc<str>> = self.options.modules.keys().collect();
+        let indexes: FxHashMap<&str, usize> = ids
+            .iter()
+            .enumerate()
+            .map(|(index, id)| (&***id, index))
+            .collect();
+        let mut edges: Vec<Vec<usize>> = vec![Vec::new(); ids.len()];
+        let mut unknown = vec![false; ids.len()];
+        let mut imports: Vec<Vec<ImportTarget>> = vec![Vec::new(); ids.len()];
+
+        for (index, id) in ids.iter().enumerate() {
+            let Some(parsed) = self.parse(id) else {
+                if let Some(flag) = unknown.get_mut(index) {
+                    *flag = true;
+                }
+
+                continue;
+            };
+
+            for statement in &parsed.program.body {
+                let (source, span, names) = match statement {
+                    Statement::ImportDeclaration(node) => {
+                        if node.import_kind == ImportOrExportKind::Type || type_only(node) {
+                            continue;
+                        }
+
+                        let names: Vec<Arc<str>> = node
+                            .specifiers
+                            .iter()
+                            .flatten()
+                            .filter(|specifier| {
+                                !matches!(specifier, ImportDeclarationSpecifier::ImportSpecifier(specifier)
+                                    if specifier.import_kind == ImportOrExportKind::Type)
+                            })
+                            .map(|specifier| Arc::from(specifier.name().as_str()))
+                            .collect();
+
+                        (&node.source.value, node.span, Some(names))
+                    }
+                    Statement::ExportFromDeclaration(node) => {
+                        if node.export_kind == ImportOrExportKind::Type {
+                            continue;
+                        }
+
+                        (&node.source.value, node.span, None)
+                    }
+                    Statement::ExportAllDeclaration(node) => {
+                        if node.export_kind == ImportOrExportKind::Type {
+                            continue;
+                        }
+
+                        (&node.source.value, node.span, None)
+                    }
+                    _ => continue,
+                };
+                let target = match self.resolve(id, source, span) {
+                    Ok(Some(target)) => match indexes.get(&*target) {
+                        Some(target) => Some(Some(*target)),
+                        None if self.libraries.contains_key(&target) => Some(None),
+                        None => None,
+                    },
+                    Ok(None) if source == "zyzz" || source.starts_with("zyzz/") => Some(None),
+                    _ => None,
+                };
+
+                match target {
+                    Some(target) => {
+                        if let (Some(target), Some(list)) = (target, edges.get_mut(index)) {
+                            list.push(target);
+                        }
+
+                        if let (Some(names), Some(list)) = (names, imports.get_mut(index)) {
+                            list.push((names, target));
+                        }
+                    }
+                    None => {
+                        if let Some(flag) = unknown.get_mut(index) {
+                            *flag = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        let components = strongly_connected(&edges);
+        let count = components
+            .iter()
+            .map(|component| component + 1)
+            .max()
+            .unwrap_or(0);
+        let mut members: Vec<Vec<usize>> = vec![Vec::new(); count];
+
+        for (index, component) in components.iter().enumerate() {
+            if let Some(list) = members.get_mut(*component) {
+                list.push(index);
+            }
+        }
+
+        // Tarjan's algorithm numbers each component after every component it reaches.
+        let mut known = vec![false; count];
+
+        for (component, list) in members.iter().enumerate() {
+            let value = list.iter().all(|member| {
+                !unknown.get(*member).copied().unwrap_or(true)
+                    && edges.get(*member).into_iter().flatten().all(|target| {
+                        let other = components.get(*target).copied().unwrap_or(component);
+
+                        other == component || known.get(other).copied().unwrap_or_default()
+                    })
+            });
+
+            if let Some(flag) = known.get_mut(component) {
+                *flag = value;
+            }
+        }
+
+        let mut settled: Map<FxHashSet<Arc<str>>> = Map::default();
+
+        for (index, declarations) in imports.into_iter().enumerate() {
+            let own = components.get(index).copied();
+            let names: FxHashSet<Arc<str>> = declarations
+                .into_iter()
+                .filter(|(_, target)| {
+                    target.is_none_or(|target| {
+                        let component = components.get(target).copied();
+
+                        component != own
+                            && component.is_some_and(|component| {
+                                known.get(component).copied().unwrap_or_default()
+                            })
+                    })
+                })
+                .flat_map(|(names, _)| names)
+                .collect();
+
+            if !names.is_empty()
+                && let Some(id) = ids.get(index)
+            {
+                settled.insert(Arc::clone(id), names);
+            }
+        }
+
+        settled
+    }
+
     /// Emits module CSS, shared stylesheets, and contracts for a web graph.
     #[expect(
         clippy::too_many_lines,
@@ -3789,6 +3948,11 @@ impl Build<'_, '_> {
         let mut transformed = previous
             .map(|previous| previous.transformed.clone())
             .unwrap_or_default();
+        let settled = if rewrite && !options.development {
+            self.settled()
+        } else {
+            Map::default()
+        };
         let (order, components, rendering) = if rewrite && !options.development {
             self.fold_order()
         } else {
@@ -3835,9 +3999,11 @@ impl Build<'_, '_> {
                 .flat_map(|edges| edges.iter())
                 .map(|(specifier, target)| (Arc::clone(specifier), exports.get(target).cloned()))
                 .collect();
+            let imports = settled.get(module_id);
             let reusable = transformed.get(module_id).filter(|cached| {
                 Arc::ptr_eq(&cached.extracted, &module)
                     && cached.components == read
+                    && cached.settled.as_ref() == imports
                     && cached.schemes == schemes
                     && cached.themes.len() == shared_themes.len()
                     && shared_themes.iter().all(|(name, theme)| {
@@ -3859,8 +4025,8 @@ impl Build<'_, '_> {
                 // Resolutions can retarget a component import without changing the module's
                 // extraction, so a transform reads the same folds only if it recorded them.
                 let same_components = match previous.transformed.get(module_id) {
-                    Some(cached) => cached.components == read,
-                    None => !rendering.contains(module_id),
+                    Some(cached) => cached.components == read && cached.settled.as_ref() == imports,
+                    None => !rendering.contains(module_id) && imports.is_none(),
                 };
 
                 same_components
@@ -3929,6 +4095,7 @@ impl Build<'_, '_> {
                         placeholder: None,
                         referenced: referenced.as_deref(),
                         schemes: Some(schemes),
+                        settled: imports,
                         shared: Some(if options.entry.is_none() {
                             options.shared.unwrap_or(Shared::Defaults)
                         } else {
@@ -3980,6 +4147,7 @@ impl Build<'_, '_> {
                     output: Arc::clone(&output),
                     owners: Arc::clone(&owner_signature),
                     schemes,
+                    settled: imports.cloned(),
                     themes: shared_themes.clone(),
                 },
             );

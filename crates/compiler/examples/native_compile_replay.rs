@@ -390,6 +390,7 @@ fn extracted<'a, 'j>(
         contribution_calls: Vec::new(),
         contribution_starts: Vec::new(),
         contributions: Vec::new(),
+        imported_applications: Vec::new(),
         namespaces: Vec::new(),
         native_vars,
         static_theme_references: Vec::new(),

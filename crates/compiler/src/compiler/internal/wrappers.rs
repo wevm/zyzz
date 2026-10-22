@@ -76,6 +76,9 @@ pub struct Options<'o> {
     pub imports: Option<&'o Imports>,
     /// Local name of the runtime `Props` namespace.
     pub runtime: &'o str,
+    /// Local names of imports whose modules finish evaluating before this one, so folded
+    /// elements need not read them.
+    pub settled: Option<&'o FxHashSet<Arc<str>>>,
     /// Complete module text.
     pub source: &'o str,
 }
@@ -83,6 +86,8 @@ pub struct Options<'o> {
 /// A module's wrappers and the edits that fold them.
 #[derive(Debug, Default)]
 pub struct Wrappers {
+    /// Names that the anchors of planned edits read.
+    pub anchored: FxHashSet<Arc<str>>,
     /// Replacements in source order, by original range.
     pub edits: Vec<(u32, u32, String)>,
     /// Folds of exported wrappers, by export name in source order.
@@ -92,6 +97,8 @@ pub struct Wrappers {
     /// Classes of the wrapper that a wrapper's element names, by the start of that element's
     /// application. The application's own classes follow them on the host element.
     pub prefixes: FxHashMap<u32, Prefix>,
+    /// Element name ranges that renamed elements no longer read.
+    pub renamed: Vec<(u32, u32)>,
 }
 
 /// Classes that precede a wrapper application's own classes on the host element.
@@ -228,6 +235,7 @@ pub fn find<'a>(
         imported: &imported,
         imports: options.imports,
         semantic,
+        settled: options.settled,
     };
     let mut symbols: Vec<SymbolId> = candidates.keys().copied().collect();
 
@@ -278,6 +286,7 @@ pub fn find<'a>(
             && let Some(anchors) = visible(semantic, scope, &anchors)
             && !(options.excluded)(candidate.element.span)
         {
+            wrappers.anchored.extend(anchors.iter().cloned());
             wrappers.prefixes.insert(
                 candidate.application,
                 Prefix {
@@ -285,7 +294,7 @@ pub fn find<'a>(
                     classes: Arc::clone(&target.classes),
                 },
             );
-            rename(&mut wrappers.edits, candidate.element, &target.tag);
+            rename(&mut wrappers, candidate.element, &target.tag);
         }
     }
 
@@ -316,7 +325,10 @@ pub fn find<'a>(
 
             (folds.get(&symbol).and_then(Option::as_ref), anchors)
         } else if imported.contains_key(&symbol) {
-            (resolver.imported(symbol), vec![resolver.named(symbol)])
+            (
+                resolver.imported(symbol),
+                resolver.import_anchor(symbol).into_iter().collect(),
+            )
         } else {
             continue;
         };
@@ -325,6 +337,7 @@ pub fn find<'a>(
             && let Some(anchors) = visible(semantic, node.scope_id(), &anchors)
             && !(options.excluded)(element.span)
         {
+            wrappers.anchored.extend(anchors.iter().cloned());
             use_site(&mut wrappers, element, fold, &anchors, options);
         }
     }
@@ -688,15 +701,17 @@ fn guarded(text: &mut String, anchors: &[Arc<str>], classes: &str) {
 }
 
 /// Renames an element's opening and closing names to a host element.
-fn rename(edits: &mut Vec<(u32, u32, String)>, element: &JSXElement<'_>, tag: &str) {
+fn rename(wrappers: &mut Wrappers, element: &JSXElement<'_>, tag: &str) {
     let name = element.opening_element.name.span();
 
-    edits.push((name.start, name.end, tag.to_owned()));
+    wrappers.edits.push((name.start, name.end, tag.to_owned()));
+    wrappers.renamed.push((name.start, name.end));
 
     if let Some(closing) = &element.closing_element {
         let name = closing.name.span();
 
-        edits.push((name.start, name.end, tag.to_owned()));
+        wrappers.edits.push((name.start, name.end, tag.to_owned()));
+        wrappers.renamed.push((name.start, name.end));
     }
 }
 
@@ -805,10 +820,13 @@ fn use_site(
         Some(_) => return,
     }
 
+    wrappers.renamed.push((name.start, name.end));
+
     if let Some(closing) = &element.closing_element {
         let name = closing.name.span();
 
         edits.push((name.start, name.end, fold.tag.to_string()));
+        wrappers.renamed.push((name.start, name.end));
     }
 
     wrappers.edits.append(&mut edits);
@@ -820,6 +838,7 @@ struct Resolver<'r, 'a> {
     semantic: &'r Semantic<'a>,
     imported: &'r FxHashMap<SymbolId, (&'a str, &'a str)>,
     imports: Option<&'r Imports>,
+    settled: Option<&'r FxHashSet<Arc<str>>>,
 }
 
 impl Resolver<'_, '_> {
@@ -865,7 +884,7 @@ impl Resolver<'_, '_> {
     /// initialization guard and the first imported wrapper it renders.
     fn anchors(&self, symbol: SymbolId, depth: usize) -> Vec<Anchor> {
         if self.imported.contains_key(&symbol) {
-            return vec![self.named(symbol)];
+            return self.import_anchor(symbol).into_iter().collect();
         }
 
         let Some(candidate) = self.candidates.get(&symbol) else {
@@ -874,7 +893,7 @@ impl Resolver<'_, '_> {
         let mut anchors: Vec<Anchor> = candidate.guard.iter().cloned().collect();
 
         match candidate.target {
-            Target::Import(target) => anchors.push(self.named(target)),
+            Target::Import(target) => anchors.extend(self.import_anchor(target)),
             Target::Local(target) if depth < DEPTH => {
                 anchors.extend(self.anchors(target, depth + 1));
             }
@@ -882,6 +901,17 @@ impl Resolver<'_, '_> {
         }
 
         anchors
+    }
+
+    /// The read of an imported wrapper, which keeps its module and throws before it initializes.
+    /// A settled import needs neither, as the transform keeps importing its module.
+    fn import_anchor(&self, symbol: SymbolId) -> Option<Anchor> {
+        let anchor = self.named(symbol);
+
+        (!self
+            .settled
+            .is_some_and(|settled| settled.contains(&anchor.1)))
+        .then_some(anchor)
     }
 
     /// A read of a binding by its own name.

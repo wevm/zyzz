@@ -88,6 +88,7 @@ fn options(input: &Input) -> transform::Options<'_, '_> {
         placeholder: None,
         referenced: None,
         schemes: None,
+        settled: None,
         shared: None,
         source: &input.source,
         style_classes: None,

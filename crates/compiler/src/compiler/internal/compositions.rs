@@ -28,7 +28,7 @@ use crate::compiler::internal::recipes;
 use crate::compiler::internal::scope::{self, Kind, Mode};
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::themes::{Link, Output, ScopeApplication};
-use crate::compiler::source::{Call, KnownInput, RuntimeInput};
+use crate::compiler::source::{Call, ImportedApplication, KnownInput, RuntimeInput};
 use crate::error::{Error, Result};
 use crate::internal::identity;
 use crate::internal::token::{Composition, CssOutput};
@@ -59,6 +59,15 @@ pub struct Options<'o, 'a> {
     pub source: &'a str,
     /// Validated ordered styles.
     pub styles: &'o [Arc<NamedStyle>],
+}
+
+/// Compositions and the imported applications a graph can fold.
+#[derive(Default)]
+pub struct Collected<'a> {
+    /// Ordered compositions of `cx(...)` calls.
+    pub entries: Vec<Entry<'a>>,
+    /// Imported style applications spread alone onto DOM elements.
+    pub imported: Vec<ImportedApplication>,
 }
 
 /// One composition and its precompiled presence alternatives.
@@ -99,13 +108,18 @@ struct Walker<'o, 'a> {
     ancestors: Vec<AstKind<'a>>,
     bodies: FxHashMap<u32, &'a ObjectExpression<'a>>,
     calls: FxHashMap<u32, &'o Call<'a>>,
+    /// Local import names that imported applications read directly, by call start.
+    direct: FxHashMap<u32, Arc<str>>,
     /// Applications of imported styles, by call.
     external_applications: Vec<Application>,
     /// The last call of each imported style, with its renamed style.
     externals: Vec<(Call<'a>, Arc<NamedStyle>)>,
+    imported: Vec<ImportedApplication>,
     links: Option<&'o Record<Link>>,
     nodes: Vec<&'a CallExpression<'a>>,
     semantic: &'o Semantic<'a>,
+    /// JSX spread attributes of `cx(...)` calls spread alone onto DOM elements, by call start.
+    spreads: FxHashMap<u32, Span>,
     undefined_reads: FxHashSet<u32>,
 }
 
@@ -149,6 +163,37 @@ impl<'o, 'a> Walker<'o, 'a> {
                 .get(&member.property.name),
             _ => None,
         }
+    }
+
+    /// The import a callee reads without an alias, as `button` or the namespace of `styles.card`.
+    fn direct(&self, node: &Expression<'a>) -> Option<&'a str> {
+        let object = match node {
+            Expression::StaticMemberExpression(member) if !member.optional => &member.object,
+            node => node,
+        };
+        let Expression::Identifier(identifier) = object else {
+            return None;
+        };
+        let binding = self.declaration(object)?;
+
+        (binding.kind == Kind::Import
+            && !self.aliases.contains_key(&binding.symbol)
+            && binding
+                .import
+                .is_some_and(|import| import.import_kind != ImportOrExportKind::Type))
+        .then_some(identifier.name.as_str())
+    }
+
+    /// The JSX spread attribute whose argument is the current call, when it is the element's only
+    /// spread or class attribute.
+    fn spread(&self, node: &CallExpression<'a>) -> Option<Span> {
+        let mut ancestors = self.ancestors.iter().rev().skip(1);
+        let Some(AstKind::JSXSpreadAttribute(spread)) = ancestors.next() else {
+            return None;
+        };
+
+        (spread.argument.span() == node.span && applications::alone(ancestors.next(), spread.span))
+            .then_some(spread.span)
     }
 
     /// Whether a callee names the `cx` import from `zyzz`.
@@ -265,6 +310,33 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                         None => self.externals.push((call, style)),
                     }
 
+                    if let Some(import) = self.direct(&node.callee) {
+                        let import: Arc<str> = Arc::from(import);
+
+                        // Recipes, dynamic styles, and HTML output own more than a class list.
+                        if node.arguments.is_empty()
+                            && link.style.as_ref().is_some_and(|packed| {
+                                packed.attributes.is_empty()
+                                    && packed.dynamic.is_none()
+                                    && packed.output.is_none()
+                                    && packed.prefixes.is_empty()
+                                    && packed.slots.is_empty()
+                            })
+                            && let Some(spread) = self.spread(node)
+                        {
+                            self.imported.push(ImportedApplication {
+                                callee_end: node.callee.span().end,
+                                end: node.span.end,
+                                import: Arc::clone(&import),
+                                name: Arc::clone(&name),
+                                spread,
+                                start: node.span.start,
+                            });
+                        }
+
+                        self.direct.insert(node.span.start, import);
+                    }
+
                     self.external_applications.push(application);
                 }
 
@@ -287,6 +359,10 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                 }
 
                 if matches!(node.callee, Expression::Identifier(_)) && self.is_cx(&node.callee) {
+                    if let Some(spread) = self.spread(node) {
+                        self.spreads.insert(node.span.start, spread);
+                    }
+
                     self.nodes.push(node);
                 }
             }
@@ -575,15 +651,59 @@ impl<'a> Synthesizer<'_, 'a> {
     }
 }
 
-/// Collects ordered compositions of `cx(...)` calls.
+/// Collects ordered compositions of `cx(...)` calls and the imported applications spread alone
+/// onto DOM elements.
 ///
 /// # Errors
 ///
 /// Returns `Themes.InvalidError` for unresolved, optional, conditional, or conflicting
 /// composition arguments.
-pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
-    if !imports_cx(options.program) {
-        return Ok(Vec::new());
+pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Collected<'a>> {
+    let composes = imports_cx(options.program);
+
+    if !composes && options.links.is_none_or(Record::is_empty) {
+        return Ok(Collected::default());
+    }
+
+    let mut walker = Walker {
+        aliases: FxHashMap::default(),
+        ancestors: Vec::new(),
+        bodies: FxHashMap::default(),
+        calls: options
+            .calls
+            .iter()
+            .map(|call| (call.start, call))
+            .collect(),
+        direct: FxHashMap::default(),
+        external_applications: Vec::new(),
+        externals: Vec::new(),
+        imported: Vec::new(),
+        links: options.links,
+        nodes: Vec::new(),
+        semantic: options.semantic,
+        spreads: FxHashMap::default(),
+        undefined_reads: FxHashSet::default(),
+    };
+
+    walker.visit_program(options.program);
+
+    let Walker {
+        bodies,
+        direct,
+        external_applications,
+        externals,
+        imported,
+        mut nodes,
+        spreads,
+        undefined_reads,
+        ..
+    } = walker;
+
+    if !composes {
+        return Ok(Collected {
+            entries: Vec::new(),
+            imported,
+        });
     }
 
     let applications = applications::create(
@@ -596,33 +716,6 @@ pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
         },
     );
     let bindings: Bindings<'_, 'a> = composition_bindings::create(options.semantic);
-    let mut walker = Walker {
-        aliases: FxHashMap::default(),
-        ancestors: Vec::new(),
-        bodies: FxHashMap::default(),
-        calls: options
-            .calls
-            .iter()
-            .map(|call| (call.start, call))
-            .collect(),
-        external_applications: Vec::new(),
-        externals: Vec::new(),
-        links: options.links,
-        nodes: Vec::new(),
-        semantic: options.semantic,
-        undefined_reads: FxHashSet::default(),
-    };
-
-    walker.visit_program(options.program);
-
-    let Walker {
-        bodies,
-        external_applications,
-        externals,
-        mut nodes,
-        undefined_reads,
-        ..
-    } = walker;
     let mut applied: FxHashMap<u32, Application> = applications
         .iter()
         .flat_map(applications::Applications::find)
@@ -659,19 +752,21 @@ pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
     nodes.sort_by_key(|node| node.span.end);
 
     for node in &nodes {
-        let entry = compose(
+        let mut entry = compose(
             node,
             &nodes,
             &options,
             &bindings,
             &undefined_reads,
             &applied,
+            &direct,
             &by_name,
             &mut calls,
             &mut styles,
             &bodies,
         )?;
 
+        entry.call.spread = spreads.get(&node.span.start).copied();
         result.push(entry);
     }
 
@@ -687,7 +782,10 @@ pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
             .any(|(start, end)| *start < entry.call.start && *end >= entry.call.end)
     });
 
-    Ok(result)
+    Ok(Collected {
+        entries: result,
+        imported,
+    })
 }
 
 #[expect(
@@ -701,6 +799,7 @@ fn compose<'o, 'a>(
     bindings: &Bindings<'_, 'a>,
     undefined_reads: &FxHashSet<u32>,
     applied: &FxHashMap<u32, Application>,
+    direct: &FxHashMap<u32, Arc<str>>,
     by_name: &FxHashMap<Arc<str>, Call<'a>>,
     calls: &mut FxHashMap<u32, Call<'a>>,
     styles: &mut FxHashMap<Arc<str>, Arc<NamedStyle>>,
@@ -973,6 +1072,10 @@ fn compose<'o, 'a>(
                         }
                         _ => None,
                     },
+                    import: call
+                        .ownership
+                        .as_ref()
+                        .and_then(|_| direct.get(&application.start).cloned()),
                     imported: call.ownership.is_some(),
                     initialized: call.ownership.is_none() && application.initialized,
                 });

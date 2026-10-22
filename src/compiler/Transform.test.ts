@@ -3723,9 +3723,9 @@ export const l2 = style({ borderLeft: '3px solid', paddingLeft: '3px' })
         let Replaced = (props: P) => <button className={__zyzzProps.merge("z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",props.className)}>{props.children}</button>
         const extra = 'extra'
         export const App = () => <main>
-        <button className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6"}>folded</button>
-        <button className={__zyzzProps.merge("z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6",extra)} key="key">merged</button>
-        <button className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6 literal"}>literal</button>
+        <button className={(styles.l2||styles.l2())&&"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6"}>folded</button>
+        <button className={(styles.l2||styles.l2())&&__zyzzProps.merge("z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6",extra)} key="key">merged</button>
+        <button className={(styles.l2||styles.l2())&&"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3 z_l0kPgl4 z_l0kPgl5 z_l0kPgl6 literal"}>literal</button>
         <span className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2"}>dropped</span>
         <Fixed className="ignored">fixed</Fixed>
         <L2 id="id">attribute</L2>
@@ -3950,6 +3950,8 @@ export const l2 = style({ borderLeft: '3px solid', paddingLeft: '3px' })
         source: `import { style } from 'zyzz'
 type P = { className?: string | undefined; children?: unknown }
 export function render() { return <Late>early</Late> }
+// A key evaluated before the class list would run before the wrapper read.
+export function keyed(key: () => string) { return <Late key={key()} className="x">keyed</Late> }
 const Early = (props: P) => <Late {...styles.early({ className: props.className })}>{props.children}</Late>
 export const first = () => <Early>first</Early>
 const Late = (props: P) => <button {...styles.late({ className: props.className })}>{props.children}</button>
@@ -3967,11 +3969,42 @@ export const late = style({ color: 'red' })
 
         type P = { className?: string | undefined; children?: unknown }
         export function render() { return <button className={Late&&"z_mespvT1"}>early</button> }
+        // A key evaluated before the class list would run before the wrapper read.
+        export function keyed(key: () => string) { return <Late key={key()} className="x">keyed</Late> }
         const Early = (props: P) => <button className={__zyzzProps.merge((Late&&"z_mespvT1 z_mespvT0"),props.className)}>{props.children}</button>
         export const first = () => <button className={Late&&"z_mespvT1 z_mespvT0"}>first</button>
         const Late = (props: P) => <button className={__zyzzProps.merge("z_mespvT1",props.className)}>{props.children}</button>
         export const after = () => <button className={"z_mespvT1"}>after</button>
         "
+      `)
+    })
+
+    test('keeps style guards of wrappers that can render before initialization', () => {
+      const output = Transform.compile({
+        moduleId: 'Eager.tsx',
+        source: `import { style } from 'zyzz'
+type P = { className?: string | undefined; children?: unknown }
+const Button = (props: P) => <button {...styles.button({ className: props.className })}>{props.children}</button>
+export const App = () => <Button>app</Button>
+// A synchronous render before the namespace initializes still reaches the style guard.
+App()
+namespace styles {
+export const button = style({ color: 'red' })
+}`,
+      })
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+
+        type P = { className?: string | undefined; children?: unknown }
+        const Button = (props: P) => <button className={styles.button?__zyzzProps.merge("z_Emit600",props.className):styles.button({className:props.className}).className}>{props.children}</button>
+        export const App = () => <button className={(styles.button||styles.button())&&"z_Emit600"}>app</button>
+        // A synchronous render before the namespace initializes still reaches the style guard.
+        App()
+        namespace styles {
+        export const button = (1 as unknown as import('zyzz').style.ReturnType)
+        }"
       `)
     })
 

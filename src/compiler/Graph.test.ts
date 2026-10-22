@@ -2769,6 +2769,27 @@ ${web.modules['app.ts']!.code}`,
 })
 
 describe('create', () => {
+  test('folds default-exported function wrappers', () => {
+    const output = Graph.compile({
+      modules: {
+        'app.tsx': `import Button from './button.tsx'
+export const App = () => <Button>app</Button>`,
+        'button.tsx': `import { style } from 'zyzz'
+export default function Button(props: { className?: string | undefined; children?: unknown }) {
+  return <button {...styles.button({ className: props.className })}>{props.children}</button>
+}
+namespace styles {
+  export const button = style({ color: 'red' })
+}`,
+      },
+    })
+
+    expect(output.modules['app.tsx']!.code).toMatchInlineSnapshot(`
+      "import Button from './button.tsx'
+      export const App = () => <button className={Button&&"z_0gnfN20"}>app</button>"
+    `)
+  })
+
   test('refolds consumers when a resolution retargets a wrapper import', () => {
     const compiler = Graph.create()
     const wrapper = (tag: string) => `import { style } from 'zyzz'

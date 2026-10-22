@@ -11,9 +11,11 @@
 //! directly, and a wrapper whose element names a forwarding wrapper renders that wrapper's host
 //! element itself. Definitions stay in place, so exports and other callers keep working.
 //!
-//! A folded element still reads the first imported wrapper its chain passes through, as
-//! `Button&&"classes"`. Bundlers then keep that module and the stylesheet it imports, and its own
-//! folded elements keep the next module in the chain.
+//! A folded element still reads what the unfolded chain would have read first, as
+//! `Button&&"classes"`: the first imported wrapper, whose module bundlers then keep with the
+//! stylesheet it imports, a style application that can run before its definition initializes,
+//! and a local wrapper declared after the element. Each read throws where the unfolded chain
+//! would.
 
 use std::sync::Arc;
 
@@ -21,7 +23,7 @@ use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
     Argument, BindingPattern, Declaration, ExportDefaultDeclarationKind, Expression,
-    FormalParameters, FunctionBody, IdentifierReference, ImportDeclarationSpecifier,
+    FormalParameters, Function, FunctionBody, IdentifierReference, ImportDeclarationSpecifier,
     ImportOrExportKind, JSXAttributeItem, JSXAttributeName, JSXAttributeValue, JSXChild,
     JSXElement, JSXElementName, JSXExpression, ModuleExportName, ObjectPropertyKind, Program,
     PropertyKey, PropertyKind, Statement, VariableDeclarationKind,
@@ -49,8 +51,20 @@ pub type Exports = IndexMap<Arc<str>, Fold, FxBuildHasher>;
 /// Exported folds of imported source modules, by import specifier.
 pub type Imports = FxHashMap<Arc<str>, Arc<Exports>>;
 
-/// A folded application of a style definition: its call end and class list.
-pub type Applied<'o> = (u32, &'o str);
+/// A folded application of a style definition.
+#[derive(Clone, Copy, Debug)]
+pub struct Applied<'o> {
+    /// Class list.
+    pub classes: &'o str,
+    /// End of the call.
+    pub end: u32,
+    /// The callee the folded application reads before initialization, as `styles.card`, when an
+    /// evaluation can precede the definition's initialization.
+    pub guard: Option<&'o str>,
+}
+
+/// A read a folded element keeps: the binding its text starts with, and the text.
+type Anchor = (SymbolId, Arc<str>);
 
 /// Inputs of [`find`].
 pub struct Options<'o> {
@@ -83,8 +97,9 @@ pub struct Wrappers {
 /// Classes that precede a wrapper application's own classes on the host element.
 #[derive(Debug)]
 pub struct Prefix {
-    /// Local name of the imported wrapper the class list reads first, which keeps its module.
-    pub anchor: Option<Arc<str>>,
+    /// Reads that precede the class list, each throwing or keeping a module as the unfolded
+    /// chain would.
+    pub anchors: Vec<Arc<str>>,
     /// Classes of the wrapper the element names.
     pub classes: Arc<str>,
 }
@@ -101,6 +116,8 @@ enum Target<'a> {
 struct Candidate<'a> {
     /// The application's call start.
     application: u32,
+    /// The application's initialization guard read.
+    guard: Option<Anchor>,
     classes: &'a str,
     element: &'a JSXElement<'a>,
     forwards: bool,
@@ -178,9 +195,16 @@ pub fn find<'a>(
                 }
             }
             Statement::ExportDefaultDeclaration(export) => {
-                if let ExportDefaultDeclarationKind::Identifier(local) = &export.declaration
-                    && let Some(symbol) = resolve(semantic, local)
-                {
+                let symbol = match &export.declaration {
+                    ExportDefaultDeclarationKind::Identifier(local) => resolve(semantic, local),
+                    ExportDefaultDeclarationKind::FunctionDeclaration(function) => {
+                        declare_function(function, semantic, options, &mut candidates)
+                            .map(|(symbol, _)| symbol)
+                    }
+                    _ => None,
+                };
+
+                if let Some(symbol) = symbol {
                     exported.push((symbol, "default"));
                 }
             }
@@ -203,6 +227,7 @@ pub fn find<'a>(
         candidates: &candidates,
         imported: &imported,
         imports: options.imports,
+        semantic,
     };
     let mut symbols: Vec<SymbolId> = candidates.keys().copied().collect();
 
@@ -230,35 +255,33 @@ pub fn find<'a>(
         let Some(candidate) = candidates.get(symbol) else {
             continue;
         };
-        let (target, anchor) = match candidate.target {
+        let (target, mut anchors) = match candidate.target {
             Target::Host(_) => continue,
-            Target::Import(target) => (resolver.target(target, &folds), resolver.anchor(target, 0)),
-            Target::Local(target) => {
-                let anchor = resolver.anchor(target, 0);
-                let (ready, latest) = resolver.latest(target, 0);
-
-                // A body placed before a declaration in its target's chain can run before it
-                // initializes, so it keeps reading that wrapper and throws as the unfolded
-                // element would.
-                match (candidate.element.span.start < ready, anchor) {
-                    (false, anchor) => (resolver.target(target, &folds), anchor),
-                    (true, None) => (resolver.target(target, &folds), Some(latest)),
-                    (true, Some(_)) => continue,
-                }
+            Target::Import(target) | Target::Local(target) => {
+                (resolver.target(target, &folds), resolver.anchors(target, 0))
             }
         };
+
+        // A body placed before a declaration in its target's chain can run before it
+        // initializes, so it keeps reading that wrapper and throws as the unfolded element would.
+        if let Target::Local(target) = candidate.target {
+            let (ready, latest) = resolver.latest(target, 0);
+
+            if candidate.element.span.start < ready {
+                anchors.push(resolver.named(latest));
+            }
+        }
+
         let scope = nodes.get_node(candidate.element.node_id.get()).scope_id();
 
         if let Some(target) = target.filter(|target| target.forwards)
-            && let Some(anchor) = anchor.map_or(Some(None), |anchor| {
-                visible(semantic, scope, anchor).map(Some)
-            })
+            && let Some(anchors) = visible(semantic, scope, &anchors)
             && !(options.excluded)(candidate.element.span)
         {
             wrappers.prefixes.insert(
                 candidate.application,
                 Prefix {
-                    anchor,
+                    anchors,
                     classes: Arc::clone(&target.classes),
                 },
             );
@@ -276,35 +299,33 @@ pub fn find<'a>(
         let Some(symbol) = resolve(semantic, name) else {
             continue;
         };
-        let (fold, anchor) = if candidates.contains_key(&symbol) {
-            let anchor = resolver.anchor(symbol, 0);
+        let (fold, anchors) = if candidates.contains_key(&symbol) {
+            let mut anchors = resolver.anchors(symbol, 0);
             let (ready, latest) = resolver.latest(symbol, 0);
-            let anchor = if element.span.start >= ready {
-                anchor
-            } else if anchor.is_none() && nodes.ancestor_kinds(node.id()).any(|kind| defers(&kind))
-            {
+
+            if element.span.start < ready {
                 // A function placed before a declaration in the chain can still run before it
                 // initializes, so its element keeps reading that wrapper and throws as the
-                // unfolded one would.
-                Some(latest)
-            } else {
-                continue;
-            };
+                // unfolded one would. A module-scope element would read it uninitialized.
+                if !nodes.ancestor_kinds(node.id()).any(|kind| defers(&kind)) {
+                    continue;
+                }
 
-            (folds.get(&symbol).and_then(Option::as_ref), anchor)
+                anchors.push(resolver.named(latest));
+            }
+
+            (folds.get(&symbol).and_then(Option::as_ref), anchors)
         } else if imported.contains_key(&symbol) {
-            (resolver.imported(symbol), Some(symbol))
+            (resolver.imported(symbol), vec![resolver.named(symbol)])
         } else {
-            (None, None)
+            continue;
         };
 
         if let Some(fold) = fold
-            && let Some(anchor) = anchor.map_or(Some(None), |anchor| {
-                visible(semantic, node.scope_id(), anchor).map(Some)
-            })
+            && let Some(anchors) = visible(semantic, node.scope_id(), &anchors)
             && !(options.excluded)(element.span)
         {
-            use_site(&mut wrappers, element, fold, anchor.as_deref(), options);
+            use_site(&mut wrappers, element, fold, &anchors, options);
         }
     }
 
@@ -366,30 +387,36 @@ fn declare<'a>(
             }
         }
         Declaration::FunctionDeclaration(function) => {
-            let Some(identifier) = &function.id else {
-                return bindings;
-            };
-            let Some(symbol) = identifier.symbol_id.get() else {
-                return bindings;
-            };
-
-            bindings.push((symbol, identifier.name.as_str()));
-
-            // Declarations hoist, so every use site reads an initialized binding.
-            if !function.r#async
-                && !function.generator
-                && function.this_param.is_none()
-                && !semantic.scoping().symbol_is_mutated(symbol)
-                && let Some(body) = function.body.as_deref().and_then(returned)
-                && let Some(candidate) = candidate(&function.params, body, 0, semantic, options)
-            {
-                candidates.insert(symbol, candidate);
-            }
+            bindings.extend(declare_function(function, semantic, options, candidates));
         }
         _ => {}
     }
 
     bindings
+}
+
+/// Records the wrapper a function declaration forms, returning its symbol and name.
+fn declare_function<'a>(
+    function: &'a Function<'a>,
+    semantic: &Semantic<'a>,
+    options: &Options<'a>,
+    candidates: &mut FxHashMap<SymbolId, Candidate<'a>>,
+) -> Option<(SymbolId, &'a str)> {
+    let identifier = function.id.as_ref()?;
+    let symbol = identifier.symbol_id.get()?;
+
+    // Declarations hoist, so every use site reads an initialized binding.
+    if !function.r#async
+        && !function.generator
+        && function.this_param.is_none()
+        && !semantic.scoping().symbol_is_mutated(symbol)
+        && let Some(body) = function.body.as_deref().and_then(returned)
+        && let Some(candidate) = candidate(&function.params, body, 0, semantic, options)
+    {
+        candidates.insert(symbol, candidate);
+    }
+
+    Some((symbol, identifier.name.as_str()))
 }
 
 /// The expression a function body's only statement returns.
@@ -473,11 +500,37 @@ fn candidate<'a>(
     let Expression::CallExpression(call) = &spread.argument else {
         return None;
     };
-    let (end, classes) = *options.applications.get(&call.span.start)?;
+    let Applied {
+        classes,
+        end,
+        guard,
+    } = *options.applications.get(&call.span.start)?;
 
     if end != call.span.end || classes.is_empty() {
         return None;
     }
+
+    // The guard's text starts with the binding that keeps it readable at a use site.
+    let guard = match guard {
+        Some(text) => {
+            let mut root = &call.callee;
+
+            while let Expression::StaticMemberExpression(member) = root {
+                root = &member.object;
+            }
+
+            let Expression::Identifier(root) = root else {
+                return None;
+            };
+
+            // An uninitialized member throws by being called, as the unfolded guard does.
+            Some((
+                resolve(semantic, root)?,
+                Arc::from(format!("({text}||{text}())")),
+            ))
+        }
+        None => None,
+    };
 
     let forwards = match call.arguments.as_slice() {
         [] => false,
@@ -538,6 +591,7 @@ fn candidate<'a>(
     Some(Candidate {
         application: call.span.start,
         classes,
+        guard,
         element,
         forwards,
         ready,
@@ -600,22 +654,36 @@ fn resolve(semantic: &Semantic<'_>, reference: &IdentifierReference<'_>) -> Opti
         .symbol_id()
 }
 
-/// The local name of an anchor binding, when a scope reads it without a nearer binding of the
-/// same name.
-fn visible(semantic: &Semantic<'_>, scope: ScopeId, anchor: SymbolId) -> Option<Arc<str>> {
+/// The text of each anchor, when a scope reads each one's binding without a nearer binding of
+/// the same name.
+fn visible(semantic: &Semantic<'_>, scope: ScopeId, anchors: &[Anchor]) -> Option<Vec<Arc<str>>> {
     let scoping = semantic.scoping();
-    let name = scoping.symbol_name(anchor);
+    let mut texts: Vec<Arc<str>> = Vec::with_capacity(anchors.len());
 
-    (scoping.find_binding(scope, name.into()) == Some(anchor)).then(|| Arc::from(name))
+    for (symbol, text) in anchors {
+        if scoping.find_binding(scope, scoping.symbol_name(*symbol).into()) != Some(*symbol) {
+            return None;
+        }
+
+        if !texts.contains(text) {
+            texts.push(Arc::clone(text));
+        }
+    }
+
+    Some(texts)
 }
 
-/// Writes a class list expression, read after an anchor that keeps its module.
-fn guarded(text: &mut String, anchor: Option<&str>, classes: &str) {
-    if let Some(anchor) = anchor {
+/// Writes the reads a class list expression makes first.
+pub fn write_anchors(text: &mut String, anchors: &[Arc<str>]) {
+    for anchor in anchors {
         text.push_str(anchor);
         text.push_str("&&");
     }
+}
 
+/// Writes a class list expression, read after its anchors.
+fn guarded(text: &mut String, anchors: &[Arc<str>], classes: &str) {
+    write_anchors(text, anchors);
     js::write_string(text, classes);
 }
 
@@ -637,7 +705,7 @@ fn use_site(
     wrappers: &mut Wrappers,
     element: &JSXElement<'_>,
     fold: &Fold,
-    anchor: Option<&str>,
+    anchors: &[Arc<str>],
     options: &Options<'_>,
 ) {
     let opening = &element.opening_element;
@@ -658,7 +726,11 @@ fn use_site(
         };
 
         match name.name.as_str() {
-            "className" if class_name.is_none() => class_name = Some(attribute),
+            // The anchor read in `className` must precede every other attribute, as the
+            // element name's read does.
+            "className" if class_name.is_none() && (!key || anchors.is_empty()) => {
+                class_name = Some(attribute);
+            }
             "key" if !key && attribute.value.is_some() => key = true,
             _ => return,
         }
@@ -673,7 +745,7 @@ fn use_site(
 
             text.push_str(&fold.tag);
             text.push_str(" className={");
-            guarded(&mut text, anchor, &fold.classes);
+            guarded(&mut text, anchors, &fold.classes);
             text.push('}');
             edits.push((name.start, name.end, text));
         }
@@ -703,7 +775,7 @@ fn use_site(
             let mut text = String::with_capacity(classes.len() + 4);
 
             text.push('{');
-            guarded(&mut text, anchor, &classes);
+            guarded(&mut text, anchors, &classes);
             text.push('}');
             edits.push((name.start, name.end, fold.tag.to_string()));
             edits.push((literal.span.start, literal.span.end, text));
@@ -718,10 +790,7 @@ fn use_site(
 
             open.push('{');
 
-            if let Some(anchor) = anchor {
-                open.push_str(anchor);
-                open.push_str("&&");
-            }
+            write_anchors(&mut open, anchors);
 
             open.push_str(options.runtime);
             open.push_str(".merge(");
@@ -748,6 +817,7 @@ fn use_site(
 /// Resolves wrapper folds through local and imported targets.
 struct Resolver<'r, 'a> {
     candidates: &'r FxHashMap<SymbolId, Candidate<'a>>,
+    semantic: &'r Semantic<'a>,
     imported: &'r FxHashMap<SymbolId, (&'a str, &'a str)>,
     imports: Option<&'r Imports>,
 }
@@ -791,18 +861,35 @@ impl Resolver<'_, '_> {
         fold
     }
 
-    /// The first imported wrapper a local wrapper's chain renders, whose module the folded
-    /// element must keep.
-    fn anchor(&self, symbol: SymbolId, depth: usize) -> Option<SymbolId> {
+    /// The reads a wrapper's unfolded chain makes before its host element: each local level's
+    /// initialization guard and the first imported wrapper it renders.
+    fn anchors(&self, symbol: SymbolId, depth: usize) -> Vec<Anchor> {
         if self.imported.contains_key(&symbol) {
-            return Some(symbol);
+            return vec![self.named(symbol)];
         }
 
-        match self.candidates.get(&symbol)?.target {
-            Target::Import(target) => Some(target),
-            Target::Local(target) if depth < DEPTH => self.anchor(target, depth + 1),
-            Target::Host(_) | Target::Local(_) => None,
+        let Some(candidate) = self.candidates.get(&symbol) else {
+            return Vec::new();
+        };
+        let mut anchors: Vec<Anchor> = candidate.guard.iter().cloned().collect();
+
+        match candidate.target {
+            Target::Import(target) => anchors.push(self.named(target)),
+            Target::Local(target) if depth < DEPTH => {
+                anchors.extend(self.anchors(target, depth + 1));
+            }
+            Target::Host(_) | Target::Local(_) => {}
         }
+
+        anchors
+    }
+
+    /// A read of a binding by its own name.
+    fn named(&self, symbol: SymbolId) -> Anchor {
+        (
+            symbol,
+            Arc::from(self.semantic.scoping().symbol_name(symbol)),
+        )
     }
 
     /// The latest declaration end along a local wrapper's chain of local targets, with the wrapper

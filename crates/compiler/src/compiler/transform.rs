@@ -1695,7 +1695,18 @@ pub fn compile<'a>(
             .filter_map(|application| {
                 let classes = generator.classes.get(&application.name)?;
 
-                Some((application.start, (application.end, classes.as_str())))
+                Some((
+                    application.start,
+                    wrappers::Applied {
+                        classes: classes.as_str(),
+                        end: application.end,
+                        guard: (!application.initialized).then(|| {
+                            source
+                                .get(application.start as usize..application.callee_end as usize)
+                                .unwrap_or_default()
+                        }),
+                    },
+                ))
             })
             .collect();
         // Definition and contribution calls are replaced whole.
@@ -1735,9 +1746,15 @@ pub fn compile<'a>(
             (Some(prefix), Some(own)) => {
                 let classes = quote(&format!("{} {own}", prefix.classes));
 
-                match &prefix.anchor {
-                    Some(anchor) => format!("({anchor}&&{classes})"),
-                    None => classes,
+                if prefix.anchors.is_empty() {
+                    classes
+                } else {
+                    let mut text = String::from("(");
+
+                    wrappers::write_anchors(&mut text, &prefix.anchors);
+                    text.push_str(&classes);
+                    text.push(')');
+                    text
                 }
             }
             _ => json_class(&generator.classes, &application.name),

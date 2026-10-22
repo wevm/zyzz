@@ -607,6 +607,14 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
       ...(input.conditions !== undefined
         ? { conditions: [...(input.conditions as string[])] }
         : {}),
+      ...(input.prefix !== undefined ? { prefix: input.prefix as string } : {}),
+      ...(input.silent !== undefined
+        ? {
+            silent: lookup(input.silent, (choices) => [
+              ...(choices as string[]),
+            ]),
+          }
+        : {}),
     }
   }
 
@@ -640,6 +648,9 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
     return Object.freeze({
       attributes: strings(input.attributes),
       identity: input.identity as string,
+      ...(input.prefixes !== undefined
+        ? { prefixes: strings(input.prefixes) }
+        : {}),
       slots: strings(input.slots),
     })
   }
@@ -697,6 +708,9 @@ function create(contracts: readonly Token.Contract[], options: decode.Options) {
             owners: (input.owners as Fields[]).map((owner) => ({
               attributes: [...(owner.attributes as string[])],
               identity: owner.identity as string,
+              ...(owner.prefixes !== undefined
+                ? { prefixes: [...(owner.prefixes as string[])] }
+                : {}),
               slots: [...(owner.slots as string[])],
             })),
             start: input.start as number,

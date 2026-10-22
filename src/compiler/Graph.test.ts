@@ -2705,32 +2705,26 @@ ${web.modules['app.ts']!.code}`,
       import { Ghost } from './ghost.tsx'
       import { Primary } from './primary.tsx'
       import { Left } from './left.tsx'
-      const Local = (props: { className?: string | undefined; children?: unknown }) => <button className={styles.local?__zyzzProps.merge((Ghost&&"z_0gnfN20 z_0gnfN21 z_0gnfN22 z_C1lRjj0 z_C1lRjj1 z_HXfo7a0"),props.className):styles.local({className:props.className}).className}>{props.children}</button>
+      const Local = (props: { className?: string | undefined; children?: unknown }) => <button className={__zyzzProps.merge((Ghost&&"z_0gnfN20 z_0gnfN21 z_0gnfN22 z_C1lRjj0 z_C1lRjj1 z_HXfo7a0"),props.className)}>{props.children}</button>
       export const App = () => <main><button className={Primary&&"z_0gnfN20 z_0gnfN21 z_0gnfN22 z_C1lRjj0 z_C1lRjj1 z_zXpW6o0 z_zXpW6o1"}>{1}</button><Left>left</Left><button className={Ghost&&"z_0gnfN20 z_0gnfN21 z_0gnfN22 z_C1lRjj0 z_C1lRjj1 z_HXfo7a0"}>local</button></main>
       // The folded element would read a parameter instead of the import that keeps its module.
       export const Shadowed = (Ghost: unknown) => <Local>{String(Ghost)}</Local>
-      namespace styles {
-        export const local = (1 as unknown as import('zyzz').style.ReturnType)
-      }"
+      "
     `)
     expect(output.modules['primary.tsx']!.code).toMatchInlineSnapshot(`
       "
       import { Ghost } from './ghost.tsx'
-      export const Primary = (props: { children?: unknown }) => <button className={(styles.primary?(Ghost&&"z_0gnfN20 z_0gnfN21 z_0gnfN22 z_C1lRjj0 z_C1lRjj1 z_zXpW6o0 z_zXpW6o1"):styles.primary().className)}>{props.children}</button>
-      namespace styles {
-        export const primary = (1 as unknown as import('zyzz').style.ReturnType)
-      }"
+      export const Primary = (props: { children?: unknown }) => <button className={(Ghost&&"z_0gnfN20 z_0gnfN21 z_0gnfN22 z_C1lRjj0 z_C1lRjj1 z_zXpW6o0 z_zXpW6o1")}>{props.children}</button>
+      "
     `)
     expect(output.modules['left.tsx']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
       import { Right } from './right.tsx'
-      export const Left = (props: { className?: string | undefined; children?: unknown }) => <Right className={styles.left?__zyzzProps.merge("z_Ct2jZL0",props.className):styles.left({className:props.className}).className}>{props.children}</Right>
-      export const Leaf = (props: { className?: string | undefined; children?: unknown }) => <i className={styles.left?__zyzzProps.merge("z_Ct2jZL0",props.className):styles.left({className:props.className}).className}>{props.children}</i>
-      namespace styles {
-        export const left = (1 as unknown as import('zyzz').style.ReturnType)
-      }"
+      export const Left = (props: { className?: string | undefined; children?: unknown }) => <Right className={__zyzzProps.merge("z_Ct2jZL0",props.className)}>{props.children}</Right>
+      export const Leaf = (props: { className?: string | undefined; children?: unknown }) => <i className={__zyzzProps.merge("z_Ct2jZL0",props.className)}>{props.children}</i>
+      "
     `)
 
     const rendered = await Wrappers.render({

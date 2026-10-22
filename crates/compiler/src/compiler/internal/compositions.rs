@@ -232,6 +232,7 @@ impl<'a> Visit<'a> for Walker<'_, 'a> {
                             attributes: style.attributes.clone(),
                             identity: Arc::clone(&name),
                             identity_first: false,
+                            prefixes: style.prefixes.clone(),
                             slots: style.slots.clone(),
                         }),
                         portable: style.class_name.clone(),
@@ -346,23 +347,11 @@ fn owners(call: &Call<'_>) -> Vec<Owner> {
             .collect();
     }
 
-    let conditions = call
+    let (attributes, prefixes) = call
         .recipe
         .as_ref()
-        .and_then(|recipe| recipe.conditions.as_ref())
-        .map_or(0, Vec::len);
-    let attributes = call
-        .recipe
-        .iter()
-        .flat_map(|recipe| recipe.axes.keys())
-        .flat_map(|axis| {
-            std::iter::once(Arc::from(format!("data-{axis}")))
-                .chain(
-                    (0..conditions)
-                        .map(move |condition| Arc::from(recipes::attribute(axis, condition))),
-                )
-                .collect::<Vec<Arc<str>>>()
-        });
+        .map(recipes::ownership)
+        .unwrap_or_default();
     let slots = call
         .slots
         .iter()
@@ -378,8 +367,9 @@ fn owners(call: &Call<'_>) -> Vec<Owner> {
 
     vec![Owner {
         identity_first: true,
-        attributes: attributes.collect(),
+        attributes,
         identity: Arc::clone(&call.name),
+        prefixes,
         slots: slots.collect(),
     }]
 }
@@ -600,7 +590,10 @@ pub fn collect<'o, 'a>(options: Options<'o, 'a>) -> Result<Vec<Entry<'a>>> {
         options.program,
         options.semantic,
         options.calls,
-        applications::Options { dynamic: true },
+        applications::Options {
+            dynamic: true,
+            exported: true,
+        },
     );
     let bindings: Bindings<'_, 'a> = composition_bindings::create(options.semantic);
     let mut walker = Walker {
@@ -720,6 +713,7 @@ fn compose<'o, 'a>(
     let mut conditions: u32 = 0;
     let mut attributes: FxHashMap<Arc<str>, Arc<str>> = FxHashMap::default();
     let mut guards: Vec<Arc<str>> = Vec::new();
+    let mut settled: Vec<u32> = Vec::new();
 
     let mut input = |inputs: &mut Vec<RuntimeInput>,
                      call: &Call<'a>,
@@ -903,6 +897,7 @@ fn compose<'o, 'a>(
                 && (nested.composition.is_some() || nested.runtime_composition.is_some())
         }) {
             guards.extend(nested.composition.iter().flatten().cloned());
+            settled.extend_from_slice(&nested.composition_settled);
             input(
                 &mut inputs,
                 &nested,
@@ -956,11 +951,11 @@ fn compose<'o, 'a>(
                     .get(application.start as usize..application.callee_end as usize)
                     .unwrap_or_default(),
             );
-            // Imported styles own nothing beyond their class when they bind no attributes or slots.
-            let props = call
-                .ownership
-                .as_ref()
-                .is_none_or(|owner| owner.attributes.is_empty() && owner.slots.is_empty());
+            // Imported styles own nothing beyond their class when they bind no attributes, choice
+            // classes, or slots.
+            let props = call.ownership.as_ref().is_none_or(|owner| {
+                owner.attributes.is_empty() && owner.prefixes.is_empty() && owner.slots.is_empty()
+            });
 
             if props
                 && !aliased
@@ -979,10 +974,16 @@ fn compose<'o, 'a>(
                         _ => None,
                     },
                     imported: call.ownership.is_some(),
+                    initialized: call.ownership.is_none() && application.initialized,
                 });
             }
 
-            guards.push(guard);
+            // A local application that follows initialization can never throw from its read.
+            if call.ownership.is_none() && application.initialized {
+                settled.push(application.start);
+            } else {
+                guards.push(guard);
+            }
         }
 
         selected.push(if call.ownership.is_some() {
@@ -1076,6 +1077,7 @@ fn compose<'o, 'a>(
         call.runtime_composition = Some(inputs.clone());
     } else {
         call.composition = Some(guards);
+        call.composition_settled = settled;
     }
 
     calls.insert(node.span.start, call.clone());

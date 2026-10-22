@@ -2,7 +2,7 @@
 
 Define finite style choices, defaults, and compound rules for one element.
 
-The compiler emits every choice and compound ahead of time. Applying the recipe selects choices through `data-*` attributes under one generated class, so a call never creates CSS.
+The compiler emits every choice and compound ahead of time. Applying the recipe selects choices through `data-*` attributes under one generated class, or through one class per choice with `selection: 'class'`, so a call never creates CSS.
 
 ```tsx title="Button.tsx"
 import { variants } from 'zyzz'
@@ -165,6 +165,28 @@ const button = variants({
 
 Recipes from `defineConfig` also accept the config's query aliases, such as `@media >=md`.
 
+### definition.selection
+
+- **Type:** `'attribute' | 'class'{:ts}`
+- **Default:** `'attribute'{:ts}`
+
+How applications carry selections. `'attribute'` writes one `data-*` attribute per selected axis. `'class'` appends one generated class per selected choice instead, and the emitted rules match `:where()` class selectors in the same order, so precedence is unchanged.
+
+```ts
+import { variants } from 'zyzz'
+
+const button = variants({
+  // [!code hl:2]
+  // Applications return classes without data-* attributes
+  selection: 'class',
+  variants: {
+    size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+  },
+})
+```
+
+Class selection omits the `data-*` keys from the return type. Choice classes are generated names, so selectors and tests outside the recipe cannot match a selected choice. Native compilation ignores the option.
+
 ### options.id
 
 - **Type:** `string{:ts}`
@@ -259,7 +281,7 @@ styles.button({ vars: { [variables.accent]: 'crimson' } })
 
 - **Type:** `string{:ts}`
 
-The recipe's generated class, followed by `options.className` when supplied.
+The recipe's generated class, followed by `options.className` when supplied. Class-selection recipes also include one class per selected choice.
 
 ```tsx /{...styles.button({ size: 'compact' })}/
 // Spreading assigns the class, data attributes, and style together
@@ -270,7 +292,7 @@ The recipe's generated class, followed by `options.className` when supplied.
 
 - **Type:** `string | undefined{:ts}`
 
-One attribute per selected axis, such as `data-size`. Defaults are serialized, and axes suppressed with `null` are omitted.
+One attribute per selected axis, such as `data-size`. Defaults are serialized, and axes suppressed with `null` are omitted. Class-selection recipes return no `data-*` attributes.
 
 ```ts /props['data-size']/
 const props = styles.button({ size: 'compact' })

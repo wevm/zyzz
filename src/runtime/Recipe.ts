@@ -17,6 +17,10 @@ export type Definition = {
     | undefined
   /** Dynamic choices and separate base/conditional input slots. */
   readonly payloads?: readonly Payload[] | undefined
+  /** Class prefix of a recipe that selects choices with classes instead of `data-*` attributes. */
+  readonly prefix?: string | undefined
+  /** Choices of a class-selection recipe that no rule matches, whose classes applications omit. */
+  readonly silent?: Readonly<Record<string, readonly string[]>> | undefined
 }
 
 /** Fixed input bindings for one dynamic choice. */
@@ -30,17 +34,61 @@ export type Payload = {
 }
 
 /**
- * Binds an unconditional recipe class to selection attributes and styling overrides.
+ * Names the class of one choice, as the compiler names it for class-selection recipes.
+ * @param options - Recipe class prefix, choice position, and an optional condition index.
+ * @returns The class, whose conditional form appends `_` and the condition index.
+ */
+export function choice(options: choice.Options): string {
+  const name = `${options.prefix}${options.index.toString(36)}`
+  return options.condition === undefined ? name : `${name}_${options.condition}`
+}
+
+/** Choice class identity. */
+export declare namespace choice {
+  /** Recipe prefix and choice position. */
+  type Options = {
+    /** Condition index of a conditional selection. */
+    readonly condition?: number | undefined
+    /** Position among every choice of the recipe, in axis order. */
+    readonly index: number
+    /** Recipe class prefix. */
+    readonly prefix: string
+  }
+}
+
+/** Positions of each axis's first choice among every choice of the recipe, in axis order. */
+export function offsets(axes: Definition['axes']): readonly number[] {
+  let offset = 0
+  return Object.values(axes).map((choices) => {
+    const start = offset
+    offset += choices.length
+    return start
+  })
+}
+
+/**
+ * Binds an unconditional recipe class to selection attributes or choice classes and styling overrides.
  * Type checking and compilation validate authoring; this path only selects data.
  * @param options - Precompiled classes, defaults, axes, and renderer output.
  * @returns A selection callable producing fresh props without retaining inputs.
  */
 export function create(options: create.Options) {
   const props = Props.create({ className: options.className })
-  // Attribute names and defaults are fixed, so calls only read the selection.
-  const axes = Object.keys(options.axes).map((axis) => ({
+  const starts = offsets(options.axes)
+  // Attribute names, choice classes, and defaults are fixed, so calls only read the selection.
+  const axes = Object.keys(options.axes).map((axis, index) => ({
     attribute: `data-${axis}` as const,
     axis,
+    classes: options.prefix
+      ? new Map(
+          options.axes[axis]!.map((name, position) => [
+            name,
+            options.silent?.[axis]?.includes(name)
+              ? ''
+              : ` ${choice({ index: starts[index]! + position, prefix: options.prefix! })}`,
+          ]),
+        )
+      : undefined,
     fallback: Object.hasOwn(options.defaults, axis)
       ? options.defaults[axis]
       : undefined,
@@ -48,6 +96,7 @@ export function create(options: create.Options) {
 
   return (input: Record<string, unknown> & style.Options = {}) => {
     const overrides: style.Options = input
+    let classes = ''
     // Props are fresh on every call, so selection attributes extend them in place.
     const result = props(overrides) as style.Props &
       Record<`data-${string}`, string>
@@ -61,9 +110,18 @@ export function create(options: create.Options) {
         | boolean
         | null
         | undefined
-      if (value !== null && value !== undefined)
-        result[entry.attribute] = String(value)
+      if (value === null || value === undefined) continue
+
+      if (entry.classes) classes += entry.classes.get(String(value)) ?? ''
+      else result[entry.attribute] = String(value)
     }
+
+    // A recipe without rules has no compiled class list, so its first choice class keeps no space.
+    if (classes)
+      (result as { className: string }).className = Props.merge(
+        `${options.className ?? ''}${classes}`.trimStart(),
+        overrides.className,
+      )
 
     return options.html ? Html.from(result) : result
   }
@@ -72,10 +130,32 @@ export function create(options: create.Options) {
 /** Generated recipe initialization inputs. */
 export declare namespace create {
   /** Fixed metadata retained by the compiled callable. */
-  type Options = Pick<Definition, 'axes' | 'defaults'> & {
+  type Options = Pick<Definition, 'axes' | 'defaults' | 'prefix' | 'silent'> & {
     /** Complete compiled class list. */
     readonly className: string
     /** Whether to return native HTML attributes. */
     readonly html?: boolean | undefined
+  }
+}
+
+/**
+ * Names the class marking that a condition overrides an axis, with a choice or `null`.
+ * @param options - Recipe class prefix, axis position, and condition index.
+ * @returns The class that excludes earlier selections of the axis while the condition matches.
+ */
+export function overridden(options: overridden.Options): string {
+  return `${options.prefix}${options.axis}-${options.condition}`
+}
+
+/** Override class identity. */
+export declare namespace overridden {
+  /** Recipe prefix, axis position, and condition index. */
+  type Options = {
+    /** Axis position. */
+    readonly axis: number
+    /** Condition index in declaration order. */
+    readonly condition: number
+    /** Recipe class prefix. */
+    readonly prefix: string
   }
 }

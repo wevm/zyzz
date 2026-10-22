@@ -47,6 +47,8 @@ pub struct Definition {
     /// Whether the definition was read from a contract, which lists `className` after
     /// `attributes` rather than last.
     pub packed: bool,
+    /// Choice-class prefixes of a recipe that selects with classes.
+    pub prefixes: Vec<Arc<str>>,
     /// Variable slots.
     pub slots: Vec<Arc<str>>,
     /// Static recipe alternatives.
@@ -86,19 +88,11 @@ pub fn create(call: &Call<'_>, style: Arc<NamedStyle>) -> Definition {
             .unwrap_or_else(|| single(&style)),
         slots: call.slots.clone().unwrap_or_default(),
     });
-    let attributes = call.recipe.as_ref().map_or_else(Vec::new, |recipe| {
-        let conditions = recipe.conditions.as_ref().map_or(0, Vec::len);
-
-        recipe
-            .axes
-            .keys()
-            .flat_map(|axis| {
-                std::iter::once(Arc::from(format!("data-{axis}"))).chain(
-                    (0..conditions).map(|condition| Arc::from(recipes::attribute(axis, condition))),
-                )
-            })
-            .collect()
-    });
+    let (attributes, prefixes) = call
+        .recipe
+        .as_ref()
+        .map(recipes::ownership)
+        .unwrap_or_default();
     let slots = call
         .slots
         .iter()
@@ -124,6 +118,7 @@ pub fn create(call: &Call<'_>, style: Arc<NamedStyle>) -> Definition {
         native_context: call.native_context.clone(),
         output: call.output,
         packed: false,
+        prefixes,
         slots,
         static_recipe,
         style,
@@ -634,6 +629,15 @@ pub fn read(
         .iter()
         .map(string)
         .collect::<Result<_>>()?;
+    let prefixes: Vec<Arc<str>> = match get(item, "prefixes") {
+        Data::Undefined => Vec::new(),
+        _ if version < 36 => {
+            return Err(invalid(
+                "Class-selection recipes require contract version 36 or later.",
+            ));
+        }
+        value => array(value)?.iter().map(string).collect::<Result<_>>()?,
+    };
     let slots: Vec<Arc<str>> = array(get(item, "slots"))?
         .iter()
         .map(string)
@@ -641,6 +645,7 @@ pub fn read(
     let output = get(item, "output");
 
     if attributes.iter().any(|name| !named(name, "data-"))
+        || prefixes.iter().any(|name| !named(name, "zv"))
         || slots.iter().any(|name| !named(name, "--z-"))
         || !(output.is_undefined() || output.as_str() == Some("html"))
     {
@@ -660,6 +665,7 @@ pub fn read(
         native_context: None,
         output: output.as_str().map(|_| Output::Html),
         packed: true,
+        prefixes,
         slots,
         static_recipe,
         style: reader.style(get(item, "style"), 0)?,
@@ -871,6 +877,11 @@ pub fn write(output: &mut String, definition: &Definition) {
 
     if definition.packed {
         class_name(output);
+    }
+
+    if !definition.prefixes.is_empty() {
+        output.push_str(",\"prefixes\":");
+        recipe::write_strings(output, &definition.prefixes);
     }
 
     if definition.output == Some(Output::Html) {

@@ -3,6 +3,7 @@ import type { style } from '../styleFunction.js'
 import * as Html from '../runtime/CompositionHtml.js'
 import * as Identity from './Identity.js'
 import * as Props from '../runtime/Props.js'
+import * as Recipe from '../runtime/Recipe.js'
 import * as Token from './Token.js'
 import * as Style from '../Style.js'
 import type * as Theme from './Theme.js'
@@ -14,10 +15,11 @@ export const metadata = Symbol.for('zyzz.authoring')
 // including definitions created by another bundled copy of the runtime.
 const data = Symbol.for('zyzz.style')
 
-/** Identity and replaceable attribute/slot ownership for an applied definition. */
+/** Identity and replaceable attribute, choice-class, and slot ownership for an applied definition. */
 export type Owner = {
   readonly name: string
   readonly attributes: readonly string[]
+  readonly prefixes?: readonly string[] | undefined
   readonly slots: readonly string[]
 }
 
@@ -193,7 +195,37 @@ export function variants(
   )
   const conditions = Object.keys((input.conditions ?? {}) as object)
   const defaults = (input.defaultVariants ?? {}) as Record<string, unknown>
+  const prefix = input.selection === 'class' ? Identity.recipe(id) : undefined
   const props = Props.create({ className })
+  const starts = Recipe.offsets(
+    Object.fromEntries(
+      axes.map(([axis, choices]) => [axis, Object.keys(choices)]),
+    ),
+  )
+  const compounds = (input.compoundVariants ?? []) as readonly {
+    when: Record<string, unknown>
+  }[]
+  // Class selection names a choice by its axis and choice positions. An empty choice that no
+  // compound names matches no rule, so its class is omitted, as compiled selection omits it.
+  function marker(axis: string, value: unknown, condition?: number) {
+    const index = axes.findIndex(([name]) => name === axis)
+    const choices = axes[index]![1]
+    const name = String(value)
+    const position = Object.keys(choices).indexOf(name)
+    const body = choices[name]
+    const silent =
+      typeof body === 'object' &&
+      body !== null &&
+      Object.keys(body).length === 0 &&
+      !compounds.some((compound) =>
+        ([] as unknown[])
+          .concat(compound.when[axis])
+          .some((choice) => String(choice) === name),
+      )
+    return position < 0 || silent
+      ? ''
+      : ` ${Recipe.choice({ condition, index: starts[index]! + position, prefix: prefix! })}`
+  }
 
   return (values: Record<string, unknown> & style.Options = {}) => {
     const result = { ...props(values as style.Options) } as {
@@ -225,8 +257,10 @@ export function variants(
         values[axis] === undefined ? defaults[axis] : values[axis],
         0,
       )
-      if (value !== undefined && value !== null)
-        result[`data-${axis}`] = String(value)
+      if (value === undefined || value === null) continue
+
+      if (prefix) result.className += marker(axis, value)
+      else result[`data-${axis}`] = String(value)
     }
     const selected = values.conditions as
       | Record<string, Record<string, unknown>>
@@ -234,9 +268,13 @@ export function variants(
     for (const [index, name] of conditions.entries()) {
       const context = selected?.[name]
       if (!context) continue
-      for (const [axis] of axes) {
+      for (const [position, [axis]] of axes.entries()) {
         const value = select(axis, context[axis], index + 1)
-        if (value !== undefined)
+        if (value === undefined) continue
+
+        if (prefix)
+          result.className += ` ${Recipe.overridden({ axis: position, condition: index, prefix })}${value === null ? '' : marker(axis, value, index)}`
+        else
           result[`data-zyzz-condition-${index}-${axis}`] =
             value === null ? 'n' : `s${value}`
       }
@@ -246,12 +284,15 @@ export function variants(
     return bind(options.output === 'html' ? Html.from(result) : result, [
       {
         name: className,
-        attributes: axes.flatMap(([axis]) => [
-          `data-${axis}`,
-          ...conditions.map(
-            (_, index) => `data-zyzz-condition-${index}-${axis}`,
-          ),
-        ]),
+        attributes: prefix
+          ? []
+          : axes.flatMap(([axis]) => [
+              `data-${axis}`,
+              ...conditions.map(
+                (_, index) => `data-zyzz-condition-${index}-${axis}`,
+              ),
+            ]),
+        ...(prefix ? { prefixes: [prefix] } : {}),
         slots: Object.keys(bindings),
       },
     ])

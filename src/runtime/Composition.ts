@@ -7,6 +7,8 @@ export type Owner = {
   readonly attributes: readonly string[]
   /** Stable authoring definition identity. */
   readonly identity: string
+  /** Choice-class prefixes of a class-selection recipe, replaced together for repeated applications. */
+  readonly prefixes?: readonly string[] | undefined
   /** Private callback slots replaced together for repeated applications. */
   readonly slots: readonly string[]
 }
@@ -62,6 +64,11 @@ export function create(options: create.Options) {
         for (const attribute of input.attributes) delete result[attribute]
       if (style && input.slots)
         for (const slot of input.slots) delete style[slot]
+      const prefixes = input.prefixes
+      if (external && prefixes)
+        external = external.filter(
+          (name) => !prefixes.some((prefix) => name.startsWith(prefix)),
+        )
       // An application's own class list adds nothing beyond the composition class.
       if (entry.className !== input.className)
         for (const name of entry.className.split(/\s+/))
@@ -108,6 +115,8 @@ export declare namespace create {
       readonly className?: string | undefined
       /** Presence bit assigned to a conditional argument. */
       readonly condition?: number | undefined
+      /** Choice-class prefixes replaced together for repeated applications. */
+      readonly prefixes?: readonly string[] | undefined
       /** Private callback slots replaced together for repeated applications. */
       readonly slots?: readonly string[] | undefined
     }[]

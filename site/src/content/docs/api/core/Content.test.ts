@@ -290,6 +290,15 @@ describe('variants API page', () => {
     `)
   })
 
+  test('compiles class selection', async () => {
+    const [selection] = await examples('variants', 'definition.selection')
+
+    expect(css(selection!.source)).toMatchInlineSnapshot(`
+      ".z_0{&:where(.zvcVOY47Ea0){padding:4px;}}
+      .z_1{&:where(.zvcVOY47Ea1){padding:8px;}}"
+    `)
+  })
+
   test('selects choices without a compiler transform', () => {
     const button = variants(
       {
@@ -338,6 +347,21 @@ describe('variants API page', () => {
         "style": {
           "--z-button-2-1-0-padding": "16px",
         },
+      }
+    `)
+    expect(
+      variants(
+        {
+          selection: 'class',
+          variants: {
+            size: { compact: { padding: '4px' }, regular: { padding: '8px' } },
+          },
+        },
+        { id: 'button' },
+      )({ size: 'regular' }),
+    ).toMatchInlineSnapshot(`
+      {
+        "className": "z-style-id-button zv1AOB2t481",
       }
     `)
     expect(() =>
@@ -1275,7 +1299,7 @@ describe('core API examples', () => {
       { cwd: root, encoding: 'utf8', timeout: 30000 },
     )
 
-    expect(files).toHaveLength(83)
+    expect(files).toHaveLength(84)
     expect(checked.status, checked.stdout + checked.stderr).toBe(0)
   }, 60_000)
 })

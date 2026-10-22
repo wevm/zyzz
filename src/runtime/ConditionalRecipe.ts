@@ -22,11 +22,27 @@ export declare namespace attribute {
 /** Binds conditional instructions while leaving query evaluation entirely to CSS. */
 export function create(options: create.Options) {
   const base = Recipe.create({ ...options, html: false })
+  const prefix = options.prefix
+  const starts = Recipe.offsets(options.axes)
   const conditions = options.conditions.map((name, condition) => ({
     name,
-    axes: Object.keys(options.axes).map((axis) => ({
+    axes: Object.keys(options.axes).map((axis, index) => ({
       axis,
       attribute: attribute({ axis, condition }),
+      // Class selection marks the override and adds the choice class for this condition.
+      classes: prefix
+        ? {
+            choices: new Map(
+              options.axes[axis]!.map((name, position) => [
+                name,
+                options.silent?.[axis]?.includes(name)
+                  ? ''
+                  : ` ${Recipe.choice({ condition, index: starts[index]! + position, prefix })}`,
+              ]),
+            ),
+            overridden: ` ${Recipe.overridden({ axis: index, condition, prefix })}`,
+          }
+        : undefined,
     })),
   }))
 
@@ -40,6 +56,7 @@ export function create(options: create.Options) {
           Record<string, string | boolean | null | undefined> | undefined
         >
       | undefined
+    let classes = ''
     for (const condition of conditions) {
       const selections =
         selected && Object.hasOwn(selected, condition.name)
@@ -47,14 +64,25 @@ export function create(options: create.Options) {
           : undefined
       if (!selections) continue
 
-      for (const { axis, attribute } of condition.axes) {
-        const value = Object.hasOwn(selections, axis)
-          ? selections[axis]
+      for (const entry of condition.axes) {
+        const value = Object.hasOwn(selections, entry.axis)
+          ? selections[entry.axis]
           : undefined
-        if (value !== undefined)
-          result[attribute] = value === null ? 'n' : `s${value}`
+        if (value === undefined) continue
+
+        if (entry.classes)
+          classes +=
+            entry.classes.overridden +
+            (value === null
+              ? ''
+              : (entry.classes.choices.get(String(value)) ?? ''))
+        else result[entry.attribute] = value === null ? 'n' : `s${value}`
       }
     }
+
+    if (classes)
+      (result as { className: string }).className =
+        `${result.className ?? ''}${classes}`.trimStart()
 
     return options.html ? Html.from(result) : result
   }

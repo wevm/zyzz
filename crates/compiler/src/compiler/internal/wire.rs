@@ -535,6 +535,22 @@ impl<'o> Encoder<'o> {
                 )
             }),
         );
+        optional(
+            &mut object,
+            "prefix",
+            recipe.prefix.as_deref().map(|prefix| json!(prefix)),
+        );
+        optional(
+            &mut object,
+            "silent",
+            recipe.silent.as_ref().map(|silent| {
+                pairs(
+                    silent
+                        .iter()
+                        .map(|(axis, choices)| (axis.to_string(), strings(choices.iter()))),
+                )
+            }),
+        );
 
         Value::Object(object)
     }
@@ -555,11 +571,18 @@ impl<'o> Encoder<'o> {
     }
 
     fn owner(owner: &Owner) -> Value {
-        json!({
-            "attributes": strings(owner.attributes.iter()),
-            "identity": &*owner.identity,
-            "slots": strings(owner.slots.iter()),
-        })
+        let mut object = Map::new();
+
+        object.insert("attributes".into(), strings(owner.attributes.iter()));
+        optional(
+            &mut object,
+            "prefixes",
+            (!owner.prefixes.is_empty()).then(|| strings(owner.prefixes.iter())),
+        );
+        object.insert("identity".into(), json!(&*owner.identity));
+        object.insert("slots".into(), strings(owner.slots.iter()));
+
+        Value::Object(object)
     }
 
     fn runtime_input(&self, input: &RuntimeInput) -> Value {
@@ -817,6 +840,11 @@ impl<'o> Encoder<'o> {
             &mut object,
             "className",
             packed.class_name.as_deref().map(|value| json!(value)),
+        );
+        optional(
+            &mut object,
+            "prefixes",
+            (!packed.prefixes.is_empty()).then(|| strings(packed.prefixes.iter())),
         );
         optional(
             &mut object,

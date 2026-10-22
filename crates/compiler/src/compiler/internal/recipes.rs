@@ -14,12 +14,14 @@ use oxc_ast::ast::{
 };
 use oxc_ast::builder::AstBuilder;
 use oxc_span::{GetSpan, Span};
+use rustc_hash::FxHashMap;
 
 use crate::compiler::internal::expression::{self, Template};
 use crate::compiler::internal::recipe_conditions::{self, Region};
 use crate::compiler::internal::recipe_payloads::{self, Payloads, Scalar};
 use crate::compiler::internal::statics::key_name;
 use crate::error::{Error, Result};
+use crate::internal::identity;
 use crate::internal::query::Metadata;
 use crate::internal::recipe;
 use crate::js::{self, Record};
@@ -157,20 +159,153 @@ fn predicate(attribute: &str, value: &str) -> String {
     output
 }
 
-/// Selectors that exclude every later condition of an axis.
-fn excluded(axis: &str, sources: &[Option<usize>]) -> String {
-    let mut output = String::new();
-
-    for condition in sources.iter().flatten() {
-        let _ = write!(output, ":not([{}])", attribute(axis, *condition));
-    }
-
-    output
-}
-
 /// The data attribute of a conditional choice, as `ConditionalRecipe.attribute` names it.
 pub fn attribute(axis: &str, condition: usize) -> String {
     format!("data-zyzz-condition-{condition}-{axis}")
+}
+
+/// The class prefix of a class-selection recipe, as `Identity.recipe` derives it from the
+/// definition identity. Generated names use `zv` nowhere else, and the fixed-length hash keeps
+/// one recipe's prefix from starting another's.
+pub fn prefix(identity: &str) -> String {
+    let hash = identity::compact(identity);
+
+    format!("zv{}", hash.get(..8).unwrap_or(&hash))
+}
+
+/// The class of one choice, by its position among every choice of the recipe in axis order, as
+/// `Recipe.choice` names it. A conditional selection appends `_` and its condition index.
+pub fn class(prefix: &str, index: usize, condition: Option<usize>) -> String {
+    let index = js::radix(index as u64, 36);
+
+    match condition {
+        Some(condition) => format!("{prefix}{index}_{condition}"),
+        None => format!("{prefix}{index}"),
+    }
+}
+
+/// Axis positions and choice positions among every choice of a recipe, in axis order, read once
+/// so naming each choice class is a lookup.
+pub struct Positions<'r> {
+    axes: FxHashMap<&'r str, usize>,
+    choices: FxHashMap<(&'r str, &'r str), usize>,
+}
+
+impl<'r> Positions<'r> {
+    /// Reads the positions of every declared axis and choice.
+    pub fn new(axes: &'r Record<Vec<Arc<str>>>) -> Self {
+        let mut positions = Self {
+            axes: FxHashMap::default(),
+            choices: FxHashMap::default(),
+        };
+
+        for (axis, choices) in axes.iter() {
+            positions.axes.insert(axis, positions.axes.len());
+
+            for choice in choices {
+                positions
+                    .choices
+                    .insert((axis, choice), positions.choices.len());
+            }
+        }
+
+        positions
+    }
+
+    /// The class of a declared choice, as [`class`] names it.
+    pub fn class(
+        &self,
+        prefix: &str,
+        axis: &str,
+        choice: &str,
+        condition: Option<usize>,
+    ) -> Option<String> {
+        self.choices
+            .get(&(axis, choice))
+            .map(|index| class(prefix, *index, condition))
+    }
+}
+
+/// The class marking that a condition overrides an axis, with a choice or `null`, as
+/// `Recipe.overridden` names it. Its `-` separator keeps it apart from choice classes.
+pub fn overridden(prefix: &str, axis: usize, condition: usize) -> String {
+    format!("{prefix}{axis}-{condition}")
+}
+
+/// The attributes and choice-class prefixes an application of a recipe owns, which a later
+/// application of the same recipe in one composition replaces.
+pub fn ownership(recipe: &runtime::Definition) -> (Vec<Arc<str>>, Vec<Arc<str>>) {
+    if let Some(prefix) = &recipe.prefix {
+        return (Vec::new(), vec![Arc::clone(prefix)]);
+    }
+
+    let conditions = recipe.conditions.as_ref().map_or(0, Vec::len);
+    let attributes = recipe
+        .axes
+        .keys()
+        .flat_map(|axis| {
+            std::iter::once(Arc::from(format!("data-{axis}")))
+                .chain((0..conditions).map(|condition| Arc::from(attribute(axis, condition))))
+        })
+        .collect();
+
+    (attributes, Vec::new())
+}
+
+/// How selections reach the element, read from the recipe's `selection` field.
+enum Selection {
+    /// `data-*` attributes, the default.
+    Attribute,
+    /// One class per choice and context, under this prefix.
+    Class(String),
+}
+
+impl Selection {
+    /// The selector matching one choice in a context.
+    fn choice(
+        &self,
+        positions: &Positions<'_>,
+        axis: &str,
+        choice: &str,
+        condition: Option<usize>,
+    ) -> String {
+        match self {
+            Self::Attribute => {
+                let name = condition.map_or_else(
+                    || format!("data-{axis}"),
+                    |condition| attribute(axis, condition),
+                );
+                let value = condition.map_or_else(|| choice.to_owned(), |_| format!("s{choice}"));
+
+                predicate(&name, &value)
+            }
+            Self::Class(prefix) => format!(
+                ".{}",
+                positions
+                    .class(prefix, axis, choice, condition)
+                    .unwrap_or_default()
+            ),
+        }
+    }
+
+    /// Selectors that exclude every later condition of an axis.
+    fn excluded(&self, positions: &Positions<'_>, axis: &str, sources: &[Option<usize>]) -> String {
+        let mut output = String::new();
+
+        for condition in sources.iter().flatten() {
+            match self {
+                Self::Attribute => {
+                    let _ = write!(output, ":not([{}])", attribute(axis, *condition));
+                }
+                Self::Class(prefix) => {
+                    let index = positions.axes.get(axis).copied().unwrap_or_default();
+                    let _ = write!(output, ":not(.{})", overridden(prefix, index, *condition));
+                }
+            }
+        }
+
+        output
+    }
 }
 
 fn is_axis(axis: &str) -> bool {
@@ -194,12 +329,13 @@ const RESERVED_AXES: [&str; 7] = [
     "vars",
 ];
 
-const FIELDS: [&str; 5] = [
+const FIELDS: [&str; 6] = [
     "base",
     "variants",
     "defaultVariants",
     "compoundVariants",
     "conditions",
+    "selection",
 ];
 
 struct Rule<'a> {
@@ -334,10 +470,37 @@ pub fn expand<'s, 'a>(
         }
     }
 
+    let selection = match field(&fields, "selection") {
+        None => Selection::Attribute,
+        Some(property) => match &property.value {
+            Expression::StringLiteral(literal) if literal.value == "attribute" => {
+                Selection::Attribute
+            }
+            Expression::StringLiteral(literal) if literal.value == "class" => {
+                Selection::Class(prefix(options.identity))
+            }
+            _ => {
+                return Err(invalid(
+                    "Recipe selection must be 'attribute' or 'class'.",
+                    property.value.span(),
+                ));
+            }
+        },
+    };
+
     let mut named = Vec::new();
 
     if let Some(conditions) = field(&fields, "conditions") {
         for (name, property) in entries(&conditions.value)? {
+            // Uncompiled authoring numbers conditions in `Object.keys` order, which moves array
+            // indexes first, so condition classes would not match.
+            if matches!(selection, Selection::Class(_)) && js::array_index(&name).is_some() {
+                return Err(invalid(
+                    "Class-selection condition names cannot be array indexes.",
+                    property.span,
+                ));
+            }
+
             named.push(recipe_conditions::read(
                 &name,
                 &property.value,
@@ -408,6 +571,17 @@ pub fn expand<'s, 'a>(
                 {
                     return Err(invalid(
                         "Recipe choice names require CSS-safe strings.",
+                        property.span,
+                    ));
+                }
+
+                // Uncompiled authoring numbers choices in `Object.keys` order, which moves array
+                // indexes first and omits `__proto__`, so class names would not match.
+                if matches!(selection, Selection::Class(_))
+                    && (js::array_index(key).is_some() || key == "__proto__")
+                {
+                    return Err(invalid(
+                        "Class-selection choice names cannot be array indexes or __proto__.",
                         property.span,
                     ));
                 }
@@ -666,6 +840,43 @@ pub fn expand<'s, 'a>(
         }
     }
 
+    // A choice class that no selector reads changes nothing, so applications omit it.
+    let silent = matches!(selection, Selection::Class(_))
+        .then(|| {
+            let mut silent: Record<Vec<Arc<str>>> = Record::new();
+
+            for rule in &rules {
+                let ([(axis, choices)], true, None) =
+                    (rule.matches.as_slice(), rule.suffix.is_empty(), &rule.bodies)
+                else {
+                    continue;
+                };
+                let Some(choice) = choices.first() else {
+                    continue;
+                };
+                let empty = matches!(&rule.property.value, Expression::ObjectExpression(body) if body.properties.is_empty());
+                let compounded = rules.iter().any(|other| {
+                    !other.suffix.is_empty()
+                        && other
+                            .matches
+                            .iter()
+                            .any(|(name, names)| name == axis && names.contains(choice))
+                });
+
+                if !empty || compounded {
+                    continue;
+                }
+
+                match silent.get_mut(axis) {
+                    Some(names) => names.push(Arc::clone(choice)),
+                    None => silent.insert(Arc::clone(axis), vec![Arc::clone(choice)]),
+                }
+            }
+
+            silent
+        })
+        .filter(|silent| !silent.is_empty());
+    let positions = Positions::new(&axes);
     let mut tree = Tree::default();
 
     for region in &regions {
@@ -687,13 +898,15 @@ pub fn expand<'s, 'a>(
                 let first = choices.first().map_or("", |choice| &**choice);
 
                 for (index, condition) in sources.iter().enumerate() {
-                    let name = condition.map_or_else(
-                        || format!("data-{axis}"),
-                        |condition| attribute(axis, condition),
+                    let excluded = selection.excluded(
+                        &positions,
+                        axis,
+                        sources.get(index + 1..).unwrap_or_default(),
                     );
-                    let excluded = excluded(axis, sources.get(index + 1..).unwrap_or_default());
-                    let value = condition.map_or_else(|| first.to_owned(), |_| format!("s{first}"));
-                    let selector = format!("&:where({}{excluded})", predicate(&name, &value));
+                    let selector = format!(
+                        "&:where({}{excluded})",
+                        selection.choice(&positions, axis, first, *condition)
+                    );
                     let model = condition.map_or(0, |condition| condition + 1);
                     let Some(body) = bodies
                         .get(model)
@@ -725,19 +938,16 @@ pub fn expand<'s, 'a>(
                     .iter()
                     .enumerate()
                     .flat_map(|(index, condition)| {
-                        let name = condition.map_or_else(
-                            || format!("data-{axis}"),
-                            |condition| attribute(axis, condition),
+                        let excluded = selection.excluded(
+                            &positions,
+                            axis,
+                            sources.get(index + 1..).unwrap_or_default(),
                         );
-                        let excluded = excluded(axis, sources.get(index + 1..).unwrap_or_default());
 
                         choices
                             .iter()
                             .map(|choice| {
-                                let value = condition
-                                    .map_or_else(|| choice.to_string(), |_| format!("s{choice}"));
-
-                                predicate(&name, &value) + &excluded
+                                selection.choice(&positions, axis, choice, *condition) + &excluded
                             })
                             .collect::<Vec<_>>()
                     })
@@ -806,6 +1016,11 @@ pub fn expand<'s, 'a>(
         default_payloads: dynamic.then_some(default_payloads),
         defaults,
         payloads: dynamic.then_some(payloads),
+        prefix: match selection {
+            Selection::Attribute => None,
+            Selection::Class(prefix) => Some(Arc::from(prefix)),
+        },
+        silent,
     };
     let (dynamic_recipe, static_recipe) = if dynamic {
         (alternatives, None)

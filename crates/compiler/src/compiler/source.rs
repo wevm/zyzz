@@ -100,6 +100,9 @@ pub struct KnownInput {
     pub condition: Option<Span>,
     /// Whether the definition is imported, so its class list may be unknown to this module.
     pub imported: bool,
+    /// Whether the application is local and always follows the definition's initialization, so
+    /// the callee read can never throw and is dropped.
+    pub initialized: bool,
 }
 
 /// A definition call available for a later source rewriter.
@@ -115,6 +118,9 @@ pub struct Call<'a> {
     pub composition_case: bool,
     /// Names of precompiled presence alternatives in bitmask order.
     pub composition_cases: Option<Vec<Arc<str>>>,
+    /// Starts of a compile-time composition's input applications that keep no guard, since
+    /// they always follow their definition's initialization.
+    pub composition_settled: Vec<u32>,
     /// Readable authored binding for contextual CSS names.
     pub css_name: Option<Arc<str>>,
     /// Configuration namespace for emitted CSS.

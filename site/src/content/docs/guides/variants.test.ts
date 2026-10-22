@@ -16,7 +16,7 @@ describe('variants guide', () => {
       document.matchAll(/```tsx?(?![^\n]*\btwoslash\b)[^\n]*\n([\s\S]*?)```/g),
     )
 
-    expect(examples).toHaveLength(8)
+    expect(examples).toHaveLength(9)
 
     const root = Path.resolve(import.meta.dirname, '../../../../..')
     const sources = new Map(

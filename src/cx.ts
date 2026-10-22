@@ -58,6 +58,9 @@ export function cx<
     const owned = source[Authoring.metadata] ?? []
     for (const owner of owned) {
       for (const attribute of owner.attributes) delete result[attribute]
+      for (const prefix of owner.prefixes ?? [])
+        for (let index = external.length - 1; index >= 0; index--)
+          if (external[index]!.startsWith(prefix)) external.splice(index, 1)
       for (const slot of previous.get(owner.name)?.slots ?? [])
         delete style[slot]
       for (const slot of owner.slots) delete style[slot]

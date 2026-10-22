@@ -8,6 +8,7 @@ use std::sync::Arc;
 use compiler::compiler::internal::{applications, names, relative, syntax};
 use compiler::compiler::source::Call;
 use oxc_allocator::Allocator;
+use rustc_hash::FxHashSet;
 
 /// Definition calls for every `style(...)` in a source, named by start offset.
 fn calls<'a>(source: &str) -> Vec<Call<'a>> {
@@ -62,7 +63,7 @@ fn applications(source: &str) -> String {
 
     dead.sort();
 
-    let definitions = applications.definitions();
+    let definitions = applications.definitions(&FxHashSet::default());
 
     let _ = writeln!(output, "dead: {dead:?}");
 
@@ -121,6 +122,29 @@ const later = style({ color: 'green' })
         apply style-261 at 402..433 initialized false terminal false
         apply style-497 at 475..482 initialized false terminal false
         "#);
+    }
+
+    #[test]
+    fn initializes_function_expression_reads_after_declaring_statements() {
+        let source = "import { style } from 'zyzz'
+type Size = 'small'
+const sizes = ['small']
+export const App = () => <p {...styles.title()} />
+export default function Page() { return <p {...styles.body()} /> }
+namespace styles {
+  export const title = style({ fontSize: 1 })
+  export const body = style({ fontSize: 2 })
+}
+";
+
+        // A hoisted declaration stays callable from an importer before the namespace initializes.
+        insta::assert_snapshot!(applications(source), @"
+        dead: []
+        fold style-233: initialized true
+        fold style-278: initialized false
+        apply style-233 at 105..119 initialized true terminal true
+        apply style-278 at 171..184 initialized false terminal true
+        ");
     }
 
     #[test]

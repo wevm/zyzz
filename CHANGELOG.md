@@ -1,5 +1,14 @@
 # zyzz
 
+## 0.0.39
+
+### Patch Changes
+
+- be0ca7d: Fixed `cx` applications of exported module-level `style` definitions, such as `cx(a(), b())` with `export const a = style(...)`, including definitions exported with `export { a }` and definitions declared after the composing function. Compilation previously failed with `Composition requires statically known local style applications.`
+- 4ff7d4c: Dropped initialization guards from applications inside function expressions when no earlier module statement can call them, and folded recipe and dynamic applications spread alone onto elements so their definitions, unread namespace members, and known `cx` argument reads no longer ship.
+- 23943be: Production builds fold wrapper components that apply one style, forward `children`, and pass at most the caller's `className`. A use site that passes only `children`, `className`, and `key` renders the host element with the merged class list, through local and imported source modules.
+- 5f211d9: Added `selection: 'class'` to `variants` definitions. Each selected choice then adds its own generated class instead of a `data-*` attribute, so applications return only `className` and `style`. Rules keep their order and `:where()` specificity, so defaults, `null`, compounds, conditions, payloads, and `cx` resolve as with attribute selection.
+
 ## 0.0.38
 
 ### Patch Changes

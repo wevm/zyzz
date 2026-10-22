@@ -1830,7 +1830,8 @@ export const button = variants({
         modules: {
           'app.ts': `import { cx } from 'zyzz'
 import { button } from './library.js'
-export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' }), flag && button({ size: 'sm' }))`,
+export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' }), flag && button({ size: 'sm' }))
+export const defaults = () => cx(button())`,
         },
         contracts: publisher.contracts,
         imports: { 'app.ts': { zyzz: null, './library.js': 'library.ts' } },
@@ -1888,6 +1889,13 @@ export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' 
         expect(await page.evaluate(`apply(true)`)).toMatchInlineSnapshot(
           `"className 4px rgb(0, 0, 0)"`,
         )
+        expect(
+          await page.evaluate(`{
+            const element = document.querySelector('button');
+            element.className = App.defaults().className;
+            getComputedStyle(element).paddingTop;
+          }`),
+        ).toMatchInlineSnapshot(`"4px"`)
       } finally {
         await browser.close()
       }

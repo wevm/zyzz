@@ -951,11 +951,11 @@ fn compose<'o, 'a>(
                     .get(application.start as usize..application.callee_end as usize)
                     .unwrap_or_default(),
             );
-            // Imported styles own nothing beyond their class when they bind no attributes or slots.
-            let props = call
-                .ownership
-                .as_ref()
-                .is_none_or(|owner| owner.attributes.is_empty() && owner.slots.is_empty());
+            // Imported styles own nothing beyond their class when they bind no attributes, choice
+            // classes, or slots.
+            let props = call.ownership.as_ref().is_none_or(|owner| {
+                owner.attributes.is_empty() && owner.prefixes.is_empty() && owner.slots.is_empty()
+            });
 
             if props
                 && !aliased

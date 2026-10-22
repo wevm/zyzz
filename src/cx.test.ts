@@ -1202,6 +1202,103 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
       }
     })
 
+    test('merges grouped applications into one class per presence alternative', async () => {
+      const render = async (cssOutput: 'atomic' | 'grouped') => {
+        const graph = Graph.compile({
+          imports: {
+            'app.tsx': { './config.js': 'config.ts', zyzz: null },
+            'config.ts': { zyzz: null },
+          },
+          modules: {
+            'config.ts': `import {defineConfig} from 'zyzz'; export const {style} = defineConfig({cssOutput:'${cssOutput}'});`,
+            'app.tsx': `import {cx} from 'zyzz'; import {style} from './config.js';
+            namespace styles {
+              export const base=style({color:'red',paddingLeft:'1px','@media (min-width: 1px)':{paddingLeft:'7px'},':hover':{color:'green'}});
+              export const on=style({color:'blue',paddingLeft:'2px'});
+              // A shorthand only partly overrides the query block, so this composition keeps its rules apart.
+              export const partial=style({padding:'4px'});
+            }
+            export const toggled=(on:boolean)=>cx(styles.base(),on && styles.on());
+            export const partial=cx(styles.base(),styles.partial());`,
+          },
+        })
+        const fixture = Vm.runInNewContext(
+          `${await Packed.bundle({
+            entry: 'app.tsx',
+            modules: Object.fromEntries(
+              Object.entries(graph.modules).map(([name, module]) => [
+                name,
+                module.code,
+              ]),
+            ),
+          })};Fixture;`,
+        )
+        const css = Object.values(graph.modules)
+          .map((module) => module.css)
+          .join('')
+        const browser = await chromium.launch()
+
+        try {
+          const page = await browser.newPage()
+          const results: string[] = []
+
+          for (const props of [
+            fixture.toggled(false),
+            fixture.toggled(true),
+            fixture.partial,
+          ]) {
+            await page.setContent(
+              `<style>${css}</style><div class="${props.className}"></div>`,
+            )
+            results.push(
+              await page.locator('div').evaluate((node) => {
+                const style = getComputedStyle(node)
+
+                return `${node.classList.length} ${style.color} ${style.paddingLeft}`
+              }),
+            )
+          }
+
+          return { css: graph.modules['app.tsx']!.css, results }
+        } finally {
+          await browser.close()
+        }
+      }
+
+      const grouped = await render('grouped')
+
+      expect(grouped.css).toMatchInlineSnapshot(`
+        ".z_kNYrjR0{color:red;padding-left:1px;@media (min-width: 1px){padding-left:7px;}&:hover{color:green;}}
+        .z_kNYrjR1{color:blue;padding-left:2px;}
+        .z_kNYrjR2{padding:4px;}
+        .z_kNYrjR3{color:red;padding-left:1px;@media (min-width: 1px){padding-left:7px;}&:hover{color:green;}}
+        .z_kNYrjR4{color:blue;padding-left:2px;&:hover{color:green;}}
+        .z_kNYrjR5{color:red;}
+        .z_kNYrjR6{padding-left:1px;}
+        .z_kNYrjR7{@media (min-width: 1px){padding-left:7px;}}
+        .z_kNYrjR8{&:hover{color:green;}}
+        .z_kNYrjR9{padding:4px;}"
+      `)
+      expect(grouped.results).toMatchInlineSnapshot(`
+        [
+          "1 rgb(255, 0, 0) 7px",
+          "1 rgb(0, 0, 255) 2px",
+          "5 rgb(255, 0, 0) 4px",
+        ]
+      `)
+
+      const atomic = await render('atomic')
+
+      // Atomic output keeps every class and resolves to the same values.
+      expect(atomic.results).toMatchInlineSnapshot(`
+        [
+          "4 rgb(255, 0, 0) 7px",
+          "6 rgb(0, 0, 255) 2px",
+          "5 rgb(255, 0, 0) 4px",
+        ]
+      `)
+    })
+
     test('diagnoses conditional omissions without dropping evaluation', () => {
       expect(() =>
         Transform.compile({

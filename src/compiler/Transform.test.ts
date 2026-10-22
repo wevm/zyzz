@@ -3858,7 +3858,7 @@ export const l2 = style({ borderLeft: '3px solid', paddingLeft: '3px' })
         [
           {
             "borderLeftWidth": "3px",
-            "className": "z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",
+            "className": "z_l0kPgl3",
             "color": "rgb(0, 0, 255)",
             "paddingLeft": "3px",
             "tag": "button",
@@ -3872,7 +3872,7 @@ export const l2 = style({ borderLeft: '3px solid', paddingLeft: '3px' })
           },
           {
             "borderLeftWidth": "3px",
-            "className": "z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 literal",
+            "className": "z_l0kPgl3 literal",
             "color": "rgb(0, 0, 255)",
             "paddingLeft": "3px",
             "tag": "button",
@@ -11995,7 +11995,7 @@ export const accent=style({color:'blue'});
             [
               "grouped",
               "grouped",
-              "atomic",
+              "grouped",
             ]
           `)
         const output = Transform.compile({ moduleId: 'config.ts', source })
@@ -12023,14 +12023,12 @@ export const accent=style({color:'blue'});
           expect(output.css).toMatchInlineSnapshot(`
             ".z_EZaLq60{color:red;padding:8px;}
             .z_EZaLq61{padding-left:2px;}
-            .z_EZaLq62{color:red;padding:8px;}
-            .z_EZaLq63{padding-left:2px;}"
+            .z_EZaLq62{color:red;padding:8px;padding-left:2px;}"
           `)
           expect(emitted.css).toMatchInlineSnapshot(`
             ".z_0{color:red;padding:8px;}
             .z_1{padding-left:2px;}
-            .z_2{color:red;padding:8px;}
-            .z_3{padding-left:2px;}"
+            .z_2{color:red;padding:8px;padding-left:2px;}"
           `)
         }
       }

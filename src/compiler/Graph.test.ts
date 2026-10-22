@@ -2945,6 +2945,104 @@ namespace styles {
       ]
     `)
   })
+
+  test('renders one merged class per folded wrapper chain in grouped output', async () => {
+    const modules = {
+      'index.tsx': `import { style } from 'zyzz'
+type Props = { className?: string | undefined; children?: unknown }
+const Base = (props: Props) => <b {...styles.base({ className: props.className })}>{props.children}</b>
+const Ghost = (props: Props) => <Base {...styles.ghost({ className: props.className })}>{props.children}</Base>
+const Primary = (props: Props) => <Ghost {...styles.primary({ className: props.className })}>{props.children}</Ghost>
+const Partial = (props: Props) => <Base {...styles.partial({ className: props.className })}>{props.children}</Base>
+export const App = () => <main><Primary>primary</Primary><Ghost className="external">ghost</Ghost><Partial>partial</Partial></main>
+namespace styles {
+  export const base = style({ borderLeft: '1px solid', color: 'rgb(255, 0, 0)', paddingLeft: '1px', '@media (min-width: 1px)': { paddingLeft: '7px' } })
+  export const ghost = style({ borderLeft: '2px solid', paddingLeft: '2px' })
+  export const primary = style({ color: 'rgb(0, 0, 255)', paddingLeft: '3px' })
+  // A shorthand only partly overrides the query block, so this chain keeps its classes.
+  export const partial = style({ padding: '4px' })
+}`,
+    }
+    const render = (cssOutput: 'atomic' | 'grouped') => {
+      const output = Graph.compile({ cssOutput, modules })
+
+      return Wrappers.render({
+        css: output.modules['index.tsx']!.css,
+        entry: 'index.tsx',
+        modules: { 'index.tsx': output.modules['index.tsx']!.code },
+      })
+    }
+    const grouped = Graph.compile({ cssOutput: 'grouped', modules })
+
+    expect(grouped.modules['index.tsx']!.css).toMatchInlineSnapshot(`
+      ".z_HXfo7a0{border-left:1px solid;color:rgb(255, 0, 0);padding-left:1px;@media (min-width: 1px){padding-left:7px;}}
+      .z_HXfo7a1{border-left:2px solid;padding-left:2px;}
+      .z_HXfo7a2{color:rgb(0, 0, 255);padding-left:3px;}
+      .z_HXfo7a3{padding:4px;}
+      .z_HXfo7a4{border-left:2px solid;color:rgb(0, 0, 255);padding-left:3px;}
+      .z_HXfo7a5{color:rgb(255, 0, 0);border-left:2px solid;padding-left:2px;}"
+    `)
+
+    const rendered = await render('grouped')
+
+    expect(rendered.markup).toMatchInlineSnapshot(
+      `"<main><b class="z_HXfo7a4">primary</b><b class="z_HXfo7a5 external">ghost</b><b class="z_HXfo7a0 z_HXfo7a3">partial</b></main>"`,
+    )
+    expect(rendered.elements).toMatchInlineSnapshot(`
+      [
+        {
+          "borderLeftWidth": "2px",
+          "className": "z_HXfo7a4",
+          "color": "rgb(0, 0, 255)",
+          "paddingLeft": "3px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "2px",
+          "className": "z_HXfo7a5 external",
+          "color": "rgb(255, 0, 0)",
+          "paddingLeft": "2px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "1px",
+          "className": "z_HXfo7a0 z_HXfo7a3",
+          "color": "rgb(255, 0, 0)",
+          "paddingLeft": "4px",
+          "tag": "b",
+        },
+      ]
+    `)
+
+    const atomic = await render('atomic')
+
+    // Atomic output keeps every class and resolves to the same values.
+    expect(atomic.elements).toMatchInlineSnapshot(`
+      [
+        {
+          "borderLeftWidth": "2px",
+          "className": "z_HXfo7a0 z_HXfo7a1 z_HXfo7a2 z_HXfo7a3 z_HXfo7a4 z_HXfo7a5 z_HXfo7a6 z_HXfo7a7",
+          "color": "rgb(0, 0, 255)",
+          "paddingLeft": "3px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "2px",
+          "className": "z_HXfo7a0 z_HXfo7a1 z_HXfo7a2 z_HXfo7a3 z_HXfo7a4 z_HXfo7a5 external",
+          "color": "rgb(255, 0, 0)",
+          "paddingLeft": "2px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "1px",
+          "className": "z_HXfo7a0 z_HXfo7a1 z_HXfo7a2 z_HXfo7a3 z_HXfo7a8",
+          "color": "rgb(255, 0, 0)",
+          "paddingLeft": "4px",
+          "tag": "b",
+        },
+      ]
+    `)
+  })
 })
 
 describe('create', () => {

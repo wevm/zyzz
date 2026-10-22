@@ -508,6 +508,210 @@ fn representation(output: &mut String, style: &NamedStyle) {
     }
 }
 
+/// Whether two properties can set a common longhand. Every line, reset, and logical dimension
+/// joins its widest domain, so the answer errs toward an overlap.
+pub fn overlaps(left: &str, right: &str) -> bool {
+    if left == right {
+        return true;
+    }
+
+    let resets = canonical(left) == "all" || canonical(right) == "all";
+    let lines = Lines {
+        border: true,
+        column_rule: true,
+        outline: true,
+    };
+    let mut domains: FxHashSet<String> = FxHashSet::default();
+
+    reach(canonical(left), resets, &lines, &mut domains, 0);
+
+    let mut other: FxHashSet<String> = FxHashSet::default();
+
+    reach(canonical(right), resets, &lines, &mut other, 0);
+    !domains.is_disjoint(&other)
+}
+
+/// Collects the domains of a property and of every longhand its shorthand resets.
+fn reach(
+    property: &str,
+    resets: bool,
+    lines: &Lines,
+    output: &mut FxHashSet<String>,
+    depth: usize,
+) {
+    output.insert(domain(property, resets, lines, true).into_owned());
+
+    // Shorthands nest a few levels deep, so the bound only guards malformed tables.
+    if depth < 8
+        && let Some(children) = cascade::shorthand(property)
+    {
+        for child in children {
+            reach(child, resets, lines, output, depth + 1);
+        }
+    }
+}
+
+/// The conflict domain of a property. `resets` joins every ordinary property under `all`, `lines`
+/// joins line longhands, and `logical_sizing` joins logical and physical dimensions.
+fn domain<'p>(
+    property: &'p str,
+    resets: bool,
+    lines: &Lines,
+    logical_sizing: bool,
+) -> Cow<'p, str> {
+    if resets && !property.starts_with("--") && property != "direction" && property != "unicodeBidi"
+    {
+        return Cow::Borrowed("all");
+    }
+
+    let fixed = |name: &'static str| Cow::Borrowed(name);
+
+    if matches!(
+        property,
+        "marker" | "markerStart" | "markerMid" | "markerEnd"
+    ) {
+        return fixed("marker");
+    }
+
+    if property.starts_with("corner") {
+        return fixed("cornerShape");
+    }
+
+    if property.starts_with("containIntrinsic") {
+        return fixed("containIntrinsicSize");
+    }
+
+    if property.starts_with("interestDelay") {
+        return fixed("interestDelay");
+    }
+
+    if property.starts_with("backgroundPosition") {
+        return fixed("backgroundPosition");
+    }
+
+    if lines.column_rule && property.starts_with("columnRule") {
+        return fixed("columnRule");
+    }
+
+    if lines.outline && property.starts_with("outline") {
+        return fixed("outline");
+    }
+
+    if property.starts_with("borderImage") {
+        return fixed("borderImage");
+    }
+
+    if property.starts_with("border") {
+        if lines.border {
+            return fixed("border");
+        }
+
+        if property.ends_with("Color") {
+            return fixed("borderColor");
+        }
+
+        if property.ends_with("Style") {
+            return fixed("borderStyle");
+        }
+
+        if property.ends_with("Width") {
+            return fixed("borderWidth");
+        }
+
+        return fixed("borderRadius");
+    }
+
+    if matches!(property, "flexDirection" | "flexFlow" | "flexWrap") {
+        return fixed("flexFlow");
+    }
+
+    for (prefix, name) in [
+        ("pageBreakAfter", "breakAfter"),
+        ("pageBreakBefore", "breakBefore"),
+        ("pageBreakInside", "breakInside"),
+        ("breakAfter", "breakAfter"),
+        ("breakBefore", "breakBefore"),
+        ("breakInside", "breakInside"),
+    ] {
+        if property == prefix {
+            return fixed(name);
+        }
+    }
+
+    if matches!(property, "fontStretch" | "fontWidth") {
+        return fixed("fontWidth");
+    }
+
+    if property.starts_with("fontSynthesis") {
+        return fixed("fontSynthesis");
+    }
+
+    if matches!(
+        property,
+        "whiteSpace"
+            | "whiteSpaceCollapse"
+            | "whiteSpaceTrim"
+            | "textWrap"
+            | "textWrapMode"
+            | "textWrapStyle"
+    ) {
+        return fixed("whiteSpace");
+    }
+
+    if matches!(property, "wordWrap" | "overflowWrap") {
+        return fixed("overflowWrap");
+    }
+
+    if property.starts_with("margin") {
+        return fixed("margin");
+    }
+
+    if property.starts_with("padding") {
+        return fixed("padding");
+    }
+
+    if matches!(
+        property,
+        "overflow" | "overflowX" | "overflowY" | "overflowBlock" | "overflowInline"
+    ) {
+        return fixed("overflow");
+    }
+
+    if property.starts_with("overscrollBehavior") {
+        return fixed("overscrollBehavior");
+    }
+
+    if property.starts_with("scrollMargin") {
+        return fixed("scrollMargin");
+    }
+
+    if property.starts_with("scrollPadding") {
+        return fixed("scrollPadding");
+    }
+
+    if matches!(property, "columnGap" | "gap" | "rowGap") {
+        return fixed("gap");
+    }
+
+    if property.starts_with("inset") || matches!(property, "top" | "right" | "bottom" | "left") {
+        return fixed("inset");
+    }
+
+    if logical_sizing && sizing(property, &["width", "height", "blockSize", "inlineSize"]) {
+        if property.starts_with("min") {
+            return fixed("min-size");
+        }
+
+        if property.starts_with("max") {
+            return fixed("max-size");
+        }
+
+        return fixed("size");
+    }
+
+    Cow::Borrowed(property)
+}
+
 impl<'a> Compiler<'a> {
     fn css_name(&mut self, property: &'a str) -> &str {
         self.css_names
@@ -516,162 +720,7 @@ impl<'a> Compiler<'a> {
     }
 
     fn domain<'p>(&self, property: &'p str) -> Cow<'p, str> {
-        if self.resets
-            && !property.starts_with("--")
-            && property != "direction"
-            && property != "unicodeBidi"
-        {
-            return Cow::Borrowed("all");
-        }
-
-        let fixed = |name: &'static str| Cow::Borrowed(name);
-
-        if matches!(
-            property,
-            "marker" | "markerStart" | "markerMid" | "markerEnd"
-        ) {
-            return fixed("marker");
-        }
-
-        if property.starts_with("corner") {
-            return fixed("cornerShape");
-        }
-
-        if property.starts_with("containIntrinsic") {
-            return fixed("containIntrinsicSize");
-        }
-
-        if property.starts_with("interestDelay") {
-            return fixed("interestDelay");
-        }
-
-        if property.starts_with("backgroundPosition") {
-            return fixed("backgroundPosition");
-        }
-
-        if self.lines.column_rule && property.starts_with("columnRule") {
-            return fixed("columnRule");
-        }
-
-        if self.lines.outline && property.starts_with("outline") {
-            return fixed("outline");
-        }
-
-        if property.starts_with("borderImage") {
-            return fixed("borderImage");
-        }
-
-        if property.starts_with("border") {
-            if self.lines.border {
-                return fixed("border");
-            }
-
-            if property.ends_with("Color") {
-                return fixed("borderColor");
-            }
-
-            if property.ends_with("Style") {
-                return fixed("borderStyle");
-            }
-
-            if property.ends_with("Width") {
-                return fixed("borderWidth");
-            }
-
-            return fixed("borderRadius");
-        }
-
-        if matches!(property, "flexDirection" | "flexFlow" | "flexWrap") {
-            return fixed("flexFlow");
-        }
-
-        for (prefix, name) in [
-            ("pageBreakAfter", "breakAfter"),
-            ("pageBreakBefore", "breakBefore"),
-            ("pageBreakInside", "breakInside"),
-            ("breakAfter", "breakAfter"),
-            ("breakBefore", "breakBefore"),
-            ("breakInside", "breakInside"),
-        ] {
-            if property == prefix {
-                return fixed(name);
-            }
-        }
-
-        if matches!(property, "fontStretch" | "fontWidth") {
-            return fixed("fontWidth");
-        }
-
-        if property.starts_with("fontSynthesis") {
-            return fixed("fontSynthesis");
-        }
-
-        if matches!(
-            property,
-            "whiteSpace"
-                | "whiteSpaceCollapse"
-                | "whiteSpaceTrim"
-                | "textWrap"
-                | "textWrapMode"
-                | "textWrapStyle"
-        ) {
-            return fixed("whiteSpace");
-        }
-
-        if matches!(property, "wordWrap" | "overflowWrap") {
-            return fixed("overflowWrap");
-        }
-
-        if property.starts_with("margin") {
-            return fixed("margin");
-        }
-
-        if property.starts_with("padding") {
-            return fixed("padding");
-        }
-
-        if matches!(
-            property,
-            "overflow" | "overflowX" | "overflowY" | "overflowBlock" | "overflowInline"
-        ) {
-            return fixed("overflow");
-        }
-
-        if property.starts_with("overscrollBehavior") {
-            return fixed("overscrollBehavior");
-        }
-
-        if property.starts_with("scrollMargin") {
-            return fixed("scrollMargin");
-        }
-
-        if property.starts_with("scrollPadding") {
-            return fixed("scrollPadding");
-        }
-
-        if matches!(property, "columnGap" | "gap" | "rowGap") {
-            return fixed("gap");
-        }
-
-        if property.starts_with("inset") || matches!(property, "top" | "right" | "bottom" | "left")
-        {
-            return fixed("inset");
-        }
-
-        if self.logical_sizing && sizing(property, &["width", "height", "blockSize", "inlineSize"])
-        {
-            if property.starts_with("min") {
-                return fixed("min-size");
-            }
-
-            if property.starts_with("max") {
-                return fixed("max-size");
-            }
-
-            return fixed("size");
-        }
-
-        Cow::Borrowed(property)
+        domain(property, self.resets, &self.lines, self.logical_sizing)
     }
 
     fn domain_root(&mut self, property: &str) -> u32 {

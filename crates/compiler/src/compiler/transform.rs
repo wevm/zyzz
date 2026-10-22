@@ -42,9 +42,10 @@ use crate::mapping::edits::Edits;
 use crate::mapping::gen_mapping::{EncodedSourceMap, GenMapping, Mapping, Position};
 use crate::mapping::magic_string::{MagicString, MapOptions};
 use crate::runtime::recipe as runtime;
-use crate::style::{Declaration, NamedStyle};
+use crate::style::{Declaration, Label, NamedStyle, Rule};
 use crate::web::css;
 use crate::web::internal::class_name::{self, Registry, Units, Used, Visibility};
+use crate::web::internal::combination;
 use crate::web::internal::contributions;
 use crate::web::internal::themes::{Resource, Scope, Shared};
 
@@ -1584,7 +1585,7 @@ pub fn compile<'a>(
             || !extracted.theme_scripts.is_empty()
             || !extracted.theme_selections.is_empty(),
     );
-    let styles: Vec<Arc<NamedStyle>> = if portable || options.development {
+    let mut styles: Vec<Arc<NamedStyle>> = if portable || options.development {
         extracted.styles.styles.clone()
     } else {
         let dead = local_applications
@@ -1628,6 +1629,59 @@ pub fn compile<'a>(
                 .collect()
         }
     };
+    // Definition and contribution calls are replaced whole.
+    let replaced = Intervals::new(
+        extracted
+            .calls
+            .iter()
+            .map(|call| (call.start, call.end))
+            .chain(
+                extracted
+                    .contribution_calls
+                    .iter()
+                    .map(|call| (call.start, call.end)),
+            )
+            .collect(),
+    );
+    let excluded = |span: Span| replaced.contains(span.start + 1, span.end);
+    // Development keeps every component, so tools and updates still see each one.
+    let chains = if portable || options.development {
+        Vec::new()
+    } else {
+        fold_chains(
+            &mut styles,
+            &FoldChains {
+                css_output: options.css_output,
+                excluded: &excluded,
+                folded: &folded,
+                imports: options.wrappers,
+                outputs: &outputs,
+                parsed,
+                program,
+                source,
+            },
+        )
+    };
+    let labels = if chains.is_empty() {
+        extracted.styles.labels.clone()
+    } else {
+        extracted.styles.labels.as_ref().map(|labels| {
+            let mut labels = (**labels).clone();
+
+            for (index, chain) in chains.iter().enumerate() {
+                if let Some(last) = chain.levels.last().and_then(|level| labels.get(level)) {
+                    let label = Label {
+                        name: Arc::from(format!("{}-fold-{index}", last.name)),
+                        namespace: last.namespace.clone(),
+                    };
+
+                    labels.insert(Arc::clone(&chain.name), label);
+                }
+            }
+
+            Arc::new(labels)
+        })
+    };
     let vars: Vec<(Arc<str>, Scope)> = extracted
         .vars
         .iter()
@@ -1648,7 +1702,7 @@ pub fn compile<'a>(
         css_output: options.css_output,
         deferred_scopes: options.deferred_scopes,
         development: options.development,
-        labels: extracted.styles.labels.as_deref(),
+        labels: labels.as_deref(),
         names: portable.then_some(&names),
         schemes,
         scope: None,
@@ -1666,6 +1720,17 @@ pub fn compile<'a>(
 
         css::compile(&css_options, Some(&mut units))?
     };
+    // A level's identity classes stay on the element, so only its generated classes combine.
+    let generated: FxHashMap<&str, String> = chains
+        .iter()
+        .flat_map(|chain| &chain.levels)
+        .filter_map(|level| {
+            emitted
+                .classes
+                .get(level)
+                .map(|classes| (&**level, classes.clone()))
+        })
+        .collect();
     let classes = classes(
         extracted,
         &mut emitted,
@@ -1673,7 +1738,9 @@ pub fn compile<'a>(
         &portable_names,
         options.referenced,
     );
+    let combined = combinations(&chains, &classes, &generated);
     let generator = Generator {
+        chains: &chains,
         classes,
         shadowed,
         owners: options.owners,
@@ -1710,21 +1777,6 @@ pub fn compile<'a>(
                 ))
             })
             .collect();
-        // Definition and contribution calls are replaced whole.
-        let replaced = Intervals::new(
-            extracted
-                .calls
-                .iter()
-                .map(|call| (call.start, call.end))
-                .chain(
-                    extracted
-                        .contribution_calls
-                        .iter()
-                        .map(|call| (call.start, call.end)),
-                )
-                .collect(),
-        );
-        let excluded = |span: Span| replaced.contains(span.start + 1, span.end);
         // A selection's use site keeps reading the guard of an application that can run before
         // its definition initializes, so it throws where the component would.
         let recipes: FxHashMap<u32, selections::Recipe<'_>> = extracted
@@ -1776,6 +1828,7 @@ pub fn compile<'a>(
             &parsed.semantic,
             &wrappers::Options {
                 applications: &applications,
+                combined: Some(&combined),
                 excluded: &excluded,
                 imports: options.wrappers,
                 recipes: &recipes,
@@ -2346,6 +2399,239 @@ fn classes(
         .collect()
 }
 
+/// Marks a folded application's classes while chains are planned, before CSS names exist.
+const PLACEHOLDER: char = '\u{1}';
+
+/// One merged style for the local styles a folded wrapper chain applies to one element.
+struct Chain {
+    /// Applied local styles in chain order.
+    levels: Vec<Arc<str>>,
+    /// Planned fold classes of the use sites the chain reaches, with a placeholder per level.
+    list: Arc<str>,
+    /// Name of the merged style.
+    name: Arc<str>,
+}
+
+/// Inputs of [`fold_chains`].
+struct FoldChains<'f, 'a> {
+    /// Default output mode of styles without their own.
+    css_output: Option<CssOutput>,
+    /// Whether another edit replaces a range whole.
+    excluded: &'f dyn Fn(Span) -> bool,
+    /// Applications that fold to their class list.
+    folded: &'f [&'f Application],
+    /// Exported folds of imported modules.
+    imports: Option<&'f wrappers::Imports>,
+    /// Whether each definition renders HTML attributes.
+    outputs: &'f FxHashMap<&'f str, bool>,
+    parsed: &'f Parsed<'a>,
+    program: &'a Program<'a>,
+    source: &'a str,
+}
+
+/// Plans the wrapper folds of a module before CSS names exist, and adds one merged style to
+/// `styles` for each chain of two or more local styles that a use site applies alone. The use
+/// site then renders that style's class in place of the chain's classes.
+fn fold_chains(styles: &mut Vec<Arc<NamedStyle>>, options: &FoldChains<'_, '_>) -> Vec<Chain> {
+    let by_name: FxHashMap<&str, &Arc<NamedStyle>> =
+        styles.iter().map(|style| (&*style.name, style)).collect();
+    let mut names: Vec<&str> = Vec::new();
+    let mut indices: FxHashMap<&str, usize> = FxHashMap::default();
+    // Styles without rules render no class, so no fold applies them.
+    let tokens: Vec<(&Application, String)> = options
+        .folded
+        .iter()
+        .filter(|application| {
+            !options
+                .outputs
+                .get(&*application.name)
+                .copied()
+                .unwrap_or_default()
+                && by_name.get(&*application.name).is_some_and(|style| {
+                    !style.declarations.is_empty()
+                        || style.rules.as_ref().is_some_and(|rules| !rules.is_empty())
+                })
+        })
+        .map(|application| {
+            let index = *indices.entry(&application.name).or_insert_with(|| {
+                names.push(&application.name);
+                names.len() - 1
+            });
+
+            (*application, format!("{PLACEHOLDER}{index}"))
+        })
+        .collect();
+
+    if tokens.is_empty() {
+        return Vec::new();
+    }
+
+    let applications: FxHashMap<u32, wrappers::Applied<'_>> = tokens
+        .iter()
+        .map(|(application, token)| {
+            (
+                application.start,
+                wrappers::Applied {
+                    classes: token.as_str(),
+                    end: application.end,
+                    guard: (!application.initialized).then(|| {
+                        options
+                            .source
+                            .get(application.start as usize..application.callee_end as usize)
+                            .unwrap_or_default()
+                    }),
+                },
+            )
+        })
+        .collect();
+    let planned = wrappers::find(
+        options.program,
+        &options.parsed.semantic,
+        &wrappers::Options {
+            applications: &applications,
+            combined: None,
+            excluded: options.excluded,
+            imports: options.imports,
+            // Selection folds keep their own classes, so planning leaves them out.
+            recipes: &FxHashMap::default(),
+            runtime: "",
+            source: options.source,
+            strings: false,
+            taken: &|_| false,
+            typed: false,
+        },
+    );
+    let mut chains: Vec<Chain> = Vec::new();
+    let mut merged: Vec<Arc<NamedStyle>> = Vec::new();
+    let mut seen: FxHashSet<&str> = FxHashSet::default();
+
+    for list in &planned.lists {
+        if !seen.insert(list) {
+            continue;
+        }
+
+        let levels: Vec<&str> = list
+            .split(' ')
+            .filter_map(|token| token.strip_prefix(PLACEHOLDER))
+            .filter_map(|index| index.parse::<usize>().ok())
+            .filter_map(|index| names.get(index).copied())
+            .collect();
+
+        if levels.len() < 2 {
+            continue;
+        }
+
+        let rules: Vec<Rule> = levels
+            .iter()
+            .filter_map(|level| by_name.get(level))
+            .map(|style| Rule {
+                condition: None,
+                style: Arc::clone(style),
+            })
+            .collect();
+        let mut name = format!("fold-{}", chains.len());
+
+        while by_name.contains_key(name.as_str()) {
+            name.push('_');
+        }
+
+        let name: Arc<str> = Arc::from(name);
+        let Some(combined) = combination::merge(&name, &rules, options.css_output) else {
+            continue;
+        };
+        let independent = rules
+            .iter()
+            .all(|rule| rule.style.composition == Some(Composition::Independent));
+
+        merged.push(Arc::new(NamedStyle {
+            composition: independent.then_some(Composition::Independent),
+            css_output: Some(CssOutput::Grouped),
+            name: Arc::clone(&name),
+            rules: Some(combined),
+            ..NamedStyle::default()
+        }));
+        chains.push(Chain {
+            levels: levels.into_iter().map(Arc::from).collect(),
+            list: Arc::clone(list),
+            name,
+        });
+    }
+
+    styles.extend(merged);
+    chains
+}
+
+/// The class lists that replace each chain's fold classes, by those classes. A chain's merged
+/// class takes the place of its levels' generated classes, and their identity classes remain.
+fn combinations(
+    chains: &[Chain],
+    classes: &IndexMap<Arc<str>, String, FxBuildHasher>,
+    generated: &FxHashMap<&str, String>,
+) -> FxHashMap<String, String> {
+    let mut result: FxHashMap<String, String> = FxHashMap::default();
+
+    'chains: for chain in chains {
+        let Some(own) = classes.get(&chain.name).filter(|own| !own.is_empty()) else {
+            continue;
+        };
+        let mut levels = chain.levels.iter();
+        let mut from = String::with_capacity(chain.list.len() * 2);
+        let mut to: Vec<&str> = Vec::new();
+
+        for token in chain.list.split(' ') {
+            if !from.is_empty() {
+                from.push(' ');
+            }
+
+            if !token.starts_with(PLACEHOLDER) {
+                from.push_str(token);
+                to.push(token);
+                continue;
+            }
+
+            let Some(list) = levels.next().and_then(|level| {
+                classes
+                    .get(level)
+                    .map(|list| (list, generated.get(&**level)))
+            }) else {
+                continue 'chains;
+            };
+            let (list, generated) = list;
+
+            from.push_str(list);
+
+            if !to.contains(&own.as_str()) {
+                to.push(own);
+            }
+
+            to.extend(list.split(' ').filter(|class| {
+                generated.is_none_or(|generated| !generated.split(' ').any(|name| name == *class))
+            }));
+        }
+
+        let mut joined = String::with_capacity(from.len());
+
+        for (index, class) in to.iter().enumerate() {
+            if to
+                .get(..index)
+                .is_some_and(|earlier| earlier.contains(class))
+            {
+                continue;
+            }
+
+            if !joined.is_empty() {
+                joined.push(' ');
+            }
+
+            joined.push_str(class);
+        }
+
+        result.insert(from, joined);
+    }
+
+    result
+}
+
 /// Marks the HTML styles that linked HTML compositions read, so they bind composition helpers.
 fn prepare(link: &themes::Link, calls: &[Call<'_>], prepared: &mut FxHashSet<Arc<str>>) {
     if link
@@ -2395,6 +2681,8 @@ struct State {
 }
 
 struct Generator<'g, 'a> {
+    /// Merged styles of folded wrapper chains.
+    chains: &'g [Chain],
     classes: IndexMap<Arc<str>, String, FxBuildHasher>,
     /// Whether a module binding renames `Object` or `String`, which specialized selectors read.
     shadowed: bool,
@@ -3759,6 +4047,20 @@ impl<'a> Generator<'_, 'a> {
                 Some((call, styles.get(&*call.name).copied()))
             }
         };
+        // A merged chain rule maps to the last level its body ends with.
+        let chain_owners: FxHashMap<&str, &Call<'a>> = self
+            .chains
+            .iter()
+            .filter_map(|chain| {
+                let class = self.classes.get(&chain.name)?;
+                let last = chain.levels.last()?;
+
+                Some((
+                    class.as_str(),
+                    extracted.calls.iter().find(|call| call.name == *last)?,
+                ))
+            })
+            .collect();
         let mut theme_owners: FxHashMap<&str, (u32, &str)> = FxHashMap::default();
 
         for call in &extracted.theme_calls {
@@ -3962,6 +4264,17 @@ impl<'a> Generator<'_, 'a> {
                             .any(|class| rule.contains(&format!(".{class}{{")))))
             {
                 unmapped(&mut map, line);
+                rules.push(Cow::Borrowed(rule));
+                continue;
+            }
+
+            if let Some(call) = chain_owners.get(&*name) {
+                map.add_mapping(&Mapping {
+                    generated: generated(0, line),
+                    name: Some(&call.name),
+                    original: Some(lines.position(call.start)),
+                    source: Some(module_id),
+                });
                 rules.push(Cow::Borrowed(rule));
                 continue;
             }

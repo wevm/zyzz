@@ -4,6 +4,7 @@
 
 pub mod block;
 pub mod class_name;
+pub mod combination;
 pub mod contributions;
 pub mod namespace;
 pub mod themes;

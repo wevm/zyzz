@@ -35,6 +35,7 @@ use crate::internal::token::{Composition, CssOutput};
 use crate::js::{self, Record, Utf16Index};
 use crate::runtime::composition::Owner;
 use crate::style::{Declaration, NamedStyle, Rule};
+use crate::web::internal::combination;
 
 /// Static composition extraction inputs.
 #[derive(Clone, Copy)]
@@ -411,6 +412,48 @@ fn rules(selected: &[Call<'_>], styles: &FxHashMap<Arc<str>, Arc<NamedStyle>>) -
             }],
         })
         .collect()
+}
+
+/// The style of a set of applications. Plain applications of styles whose configuration groups
+/// their output merge into one rule, so the set renders one class. Other sets keep each
+/// application's rules.
+fn composed(
+    name: &Arc<str>,
+    selected: &[Call<'_>],
+    styles: &FxHashMap<Arc<str>, Arc<NamedStyle>>,
+) -> Arc<NamedStyle> {
+    let rules = rules(selected, styles);
+    let composition = independent(selected, styles);
+    // A nested composition merges only when it merged itself, so recipes and bindings never do.
+    let plain = selected.iter().all(|call| {
+        call.recipe.is_none()
+            && call.slots.is_none()
+            && call.portable.is_none()
+            && ((call.composition.is_none() && call.runtime_composition.is_none())
+                || styles
+                    .get(&call.name)
+                    .is_some_and(|style| style.css_output == Some(CssOutput::Grouped)))
+    });
+
+    if plain && let Some(merged) = combination::merge(name, &rules, None) {
+        return Arc::new(NamedStyle {
+            composition,
+            css_output: Some(CssOutput::Grouped),
+            declarations: Vec::new(),
+            name: Arc::clone(name),
+            rules: Some(merged),
+            targets: None,
+        });
+    }
+
+    Arc::new(NamedStyle {
+        composition,
+        css_output: Some(CssOutput::Atomic),
+        declarations: Vec::new(),
+        name: Arc::clone(name),
+        rules: Some(rules),
+        targets: None,
+    })
 }
 
 /// A composition of independent styles keeps their sharing contract.
@@ -1017,14 +1060,7 @@ fn compose<'o, 'a>(
         options.identity,
         options.offsets.utf16(node.span.start)
     ));
-    let style = Arc::new(NamedStyle {
-        composition: independent(&selected, styles),
-        css_output: Some(CssOutput::Atomic),
-        declarations: Vec::new(),
-        name: Arc::clone(&name),
-        rules: Some(rules(&selected, styles)),
-        targets: None,
-    });
+    let style = composed(&name, &selected, styles);
     let identities: Vec<&str> = selected
         .iter()
         .filter_map(|call| call.identity.as_deref())
@@ -1126,14 +1162,7 @@ fn compose<'o, 'a>(
             case.portable_inputs = Some(inputs);
         }
 
-        let style = Arc::new(NamedStyle {
-            composition: independent(&included, styles),
-            css_output: Some(CssOutput::Atomic),
-            declarations: Vec::new(),
-            name: Arc::clone(&case_name),
-            rules: Some(rules(&included, styles)),
-            targets: None,
-        });
+        let style = composed(&case_name, &included, styles);
 
         names.push(case_name);
         cases.push((case, style));

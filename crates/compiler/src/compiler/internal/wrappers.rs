@@ -11,6 +11,9 @@
 //! directly, and a wrapper whose element names a forwarding wrapper renders that wrapper's host
 //! element itself. Definitions stay in place, so exports and other callers keep working.
 //!
+//! A use site without a `className` expression can render one combined class list in place of
+//! its chain's classes, which [`Options::combined`] supplies by those classes.
+//!
 //! A folded element still reads what the unfolded chain would have read first, as
 //! `Button&&"classes"`: the first imported wrapper, whose module bundlers then keep with the
 //! stylesheet it imports, a style application that can run before its definition initializes,
@@ -83,6 +86,8 @@ type Anchor = (SymbolId, Arc<str>);
 pub struct Options<'o> {
     /// Folded `className` applications, by call start.
     pub applications: &'o FxHashMap<u32, Applied<'o>>,
+    /// Class lists that replace a use site's fold classes, by those classes.
+    pub combined: Option<&'o FxHashMap<String, String>>,
     /// Whether another edit replaces a range whole, so no element inside it folds.
     pub excluded: &'o dyn Fn(Span) -> bool,
     /// Exported folds of imported modules.
@@ -108,6 +113,9 @@ pub struct Wrappers {
     pub edits: Vec<(u32, u32, String)>,
     /// Folds of exported wrappers, by export name in source order.
     pub exports: Exports,
+    /// Fold classes of use sites whose element receives no other generated class, in source
+    /// order. A combination of their classes can replace them.
+    pub lists: Vec<Arc<str>>,
     /// Whether an edit calls the runtime `merge`.
     pub merges: bool,
     /// Classes of the wrapper that a wrapper's element names, by the start of that element's
@@ -871,16 +879,23 @@ fn use_site(
 
     let name = opening.name.span();
     let mut edits: Vec<(u32, u32, String)> = Vec::with_capacity(3);
+    // An expression `className` can add a generated class whose rules fall between the chain's
+    // rules, so only use sites without one, or with a literal one, render a combination.
+    let combined = options
+        .combined
+        .and_then(|combined| combined.get(&*fold.classes))
+        .map_or(&*fold.classes, String::as_str);
 
     match class_name.map(|attribute| &attribute.value) {
         None => {
-            let mut text = String::with_capacity(fold.tag.len() + fold.classes.len() + 14);
+            let mut text = String::with_capacity(fold.tag.len() + combined.len() + 14);
 
             text.push_str(&fold.tag);
             text.push_str(" className={");
-            guarded(&mut text, anchors, &fold.classes);
+            guarded(&mut text, anchors, combined);
             text.push('}');
             edits.push((name.start, name.end, text));
+            wrappers.lists.push(Arc::clone(&fold.classes));
         }
         // A caller's `className` reaches the host element only through forwarding levels.
         Some(_) if !fold.forwards => return,
@@ -896,9 +911,9 @@ fn use_site(
                 return;
             }
 
-            let mut classes = String::with_capacity(fold.classes.len() + raw.len() + 1);
+            let mut classes = String::with_capacity(combined.len() + raw.len() + 1);
 
-            classes.push_str(&fold.classes);
+            classes.push_str(combined);
 
             if !raw.is_empty() {
                 classes.push(' ');
@@ -912,6 +927,7 @@ fn use_site(
             text.push('}');
             edits.push((name.start, name.end, fold.tag.to_string()));
             edits.push((literal.span.start, literal.span.end, text));
+            wrappers.lists.push(Arc::clone(&fold.classes));
         }
         Some(Some(JSXAttributeValue::ExpressionContainer(container))) => {
             if matches!(container.expression, JSXExpression::EmptyExpression(_)) {

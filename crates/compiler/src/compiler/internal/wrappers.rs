@@ -16,6 +16,9 @@
 //! stylesheet it imports, a style application that can run before its definition initializes,
 //! and a local wrapper declared after the element. Each read throws where the unfolded chain
 //! would.
+//!
+//! Selection components, whose props select a recipe's choices, fold their use sites through
+//! [`selections`] with the same reads.
 
 use std::sync::Arc;
 
@@ -32,10 +35,11 @@ use oxc_semantic::{ScopeId, Semantic, SymbolId};
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
+use crate::compiler::internal::selections::{self, Helpers, Recipe, Selection};
 use crate::js;
 
 /// The host element a wrapper renders and the classes it applies there.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Fold {
     /// Classes the host element receives before a forwarded `className`. Never empty.
     pub classes: Arc<str>,
@@ -45,8 +49,17 @@ pub struct Fold {
     pub tag: Arc<str>,
 }
 
-/// Folds of a module's exported wrappers, by export name.
-pub type Exports = IndexMap<Arc<str>, Fold, FxBuildHasher>;
+/// How an exported component folds.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Export {
+    /// A selection component.
+    Selection(Arc<Selection>),
+    /// A wrapper.
+    Wrapper(Fold),
+}
+
+/// Folds of a module's exported components, by export name.
+pub type Exports = IndexMap<Arc<str>, Export, FxBuildHasher>;
 
 /// Exported folds of imported source modules, by import specifier.
 pub type Imports = FxHashMap<Arc<str>, Arc<Exports>>;
@@ -74,6 +87,8 @@ pub struct Options<'o> {
     pub excluded: &'o dyn Fn(Span) -> bool,
     /// Exported folds of imported modules.
     pub imports: Option<&'o Imports>,
+    /// Recipe applications spread alone onto host elements, by call start.
+    pub recipes: &'o FxHashMap<u32, Recipe<'o>>,
     /// Local name of the runtime `Props` namespace.
     pub runtime: &'o str,
     /// Local names of imports whose modules finish evaluating before this one, so folded
@@ -81,6 +96,12 @@ pub struct Options<'o> {
     pub settled: Option<&'o FxHashSet<Arc<str>>>,
     /// Complete module text.
     pub source: &'o str,
+    /// Whether `String` reads the global.
+    pub strings: bool,
+    /// Whether a name is already bound in the module.
+    pub taken: &'o dyn Fn(&str) -> bool,
+    /// Annotates generated parameters for TypeScript modules.
+    pub typed: bool,
 }
 
 /// A module's wrappers and the edits that fold them.
@@ -99,6 +120,9 @@ pub struct Wrappers {
     pub prefixes: FxHashMap<u32, Prefix>,
     /// Element name ranges that renamed elements no longer read.
     pub renamed: Vec<(u32, u32)>,
+    /// Module-scope selectors and tables that folded selection use sites read, in creation
+    /// order.
+    pub statements: Vec<String>,
 }
 
 /// Classes that precede a wrapper application's own classes on the host element.
@@ -133,6 +157,15 @@ struct Candidate<'a> {
     target: Target<'a>,
 }
 
+/// A module's foldable components by local symbol.
+#[derive(Default)]
+struct Candidates<'a> {
+    /// Selection components, with the end of each declaration and the application's
+    /// initialization guard read.
+    selections: FxHashMap<SymbolId, (Arc<Selection>, u32, Option<Anchor>)>,
+    wrappers: FxHashMap<SymbolId, Candidate<'a>>,
+}
+
 /// How a component reads its props.
 enum Props {
     /// `(props) => ...`, read as `props.className` and `props.children`.
@@ -154,7 +187,7 @@ pub fn find<'a>(
     semantic: &Semantic<'a>,
     options: &Options<'a>,
 ) -> Wrappers {
-    let mut candidates: FxHashMap<SymbolId, Candidate<'a>> = FxHashMap::default();
+    let mut found = Candidates::default();
     // Exported wrappers by local symbol, with each export name in source order.
     let mut exported: Vec<(SymbolId, &'a str)> = Vec::new();
     let mut imported: FxHashMap<SymbolId, (&'a str, &'a str)> = FxHashMap::default();
@@ -183,9 +216,7 @@ pub fn find<'a>(
                 }
             }
             Statement::ExportDeclaration(export) => {
-                for (symbol, name) in
-                    declare(&export.declaration, semantic, options, &mut candidates)
-                {
+                for (symbol, name) in declare(&export.declaration, semantic, options, &mut found) {
                     exported.push((symbol, name));
                 }
             }
@@ -205,7 +236,7 @@ pub fn find<'a>(
                 let symbol = match &export.declaration {
                     ExportDefaultDeclarationKind::Identifier(local) => resolve(semantic, local),
                     ExportDefaultDeclarationKind::FunctionDeclaration(function) => {
-                        declare_function(function, semantic, options, &mut candidates)
+                        declare_function(function, semantic, options, &mut found)
                             .map(|(symbol, _)| symbol)
                     }
                     _ => None,
@@ -217,15 +248,19 @@ pub fn find<'a>(
             }
             other => {
                 if let Some(declaration) = other.as_declaration() {
-                    declare(declaration, semantic, options, &mut candidates);
+                    declare(declaration, semantic, options, &mut found);
                 }
             }
         }
     }
 
     let mut wrappers = Wrappers::default();
+    let Candidates {
+        selections: local,
+        wrappers: candidates,
+    } = found;
 
-    if candidates.is_empty() && imported.is_empty() {
+    if candidates.is_empty() && local.is_empty() && imported.is_empty() {
         return wrappers;
     }
 
@@ -252,9 +287,17 @@ pub fn find<'a>(
 
     for (symbol, name) in exported {
         if let Some(Some(fold)) = folds.get(&symbol) {
-            wrappers.exports.insert(Arc::from(name), fold.clone());
+            wrappers
+                .exports
+                .insert(Arc::from(name), Export::Wrapper(fold.clone()));
+        } else if let Some((selection, _, _)) = local.get(&symbol) {
+            wrappers
+                .exports
+                .insert(Arc::from(name), Export::Selection(Arc::clone(selection)));
         }
     }
+
+    let mut helpers = Helpers::new(options.runtime, options.taken, options.typed);
 
     let nodes = semantic.nodes();
 
@@ -308,6 +351,43 @@ pub fn find<'a>(
         let Some(symbol) = resolve(semantic, name) else {
             continue;
         };
+        let selection = if let Some((selection, ready, guard)) = local.get(&symbol) {
+            let mut anchors: Vec<Anchor> = guard.iter().cloned().collect();
+
+            // A module-scope element before the declaration would read it uninitialized, and
+            // one inside a function keeps reading it, so it throws as the component would.
+            if element.span.start < *ready {
+                if !nodes.ancestor_kinds(node.id()).any(|kind| defers(&kind)) {
+                    continue;
+                }
+
+                anchors.push(resolver.named(symbol));
+            }
+
+            Some((&**selection, anchors))
+        } else {
+            resolver
+                .imported_selection(symbol)
+                .map(|selection| (selection, vec![resolver.named(symbol)]))
+        };
+
+        if let Some((selection, anchors)) = selection {
+            if let Some(anchors) = visible(semantic, node.scope_id(), &anchors)
+                && !(options.excluded)(element.span)
+            {
+                selections::use_site(
+                    element,
+                    selection,
+                    &anchors,
+                    options.source,
+                    &mut helpers,
+                    &mut wrappers.edits,
+                );
+            }
+
+            continue;
+        }
+
         let (fold, anchors) = if candidates.contains_key(&symbol) {
             let mut anchors = resolver.anchors(symbol, 0);
             let (ready, latest) = resolver.latest(symbol, 0);
@@ -343,6 +423,8 @@ pub fn find<'a>(
     }
 
     wrappers.edits.sort_unstable_by_key(|(start, _, _)| *start);
+    wrappers.merges |= helpers.merges;
+    wrappers.statements = helpers.statements;
     wrappers
 }
 
@@ -351,7 +433,7 @@ fn declare<'a>(
     declaration: &'a Declaration<'a>,
     semantic: &Semantic<'a>,
     options: &Options<'a>,
-    candidates: &mut FxHashMap<SymbolId, Candidate<'a>>,
+    candidates: &mut Candidates<'a>,
 ) -> Vec<(SymbolId, &'a str)> {
     let mut bindings = Vec::new();
 
@@ -391,11 +473,16 @@ fn declare<'a>(
                     _ => None,
                 };
 
-                if let Some((params, body)) = body
-                    && let Some(candidate) =
-                        candidate(params, body, declarator.span.end, semantic, options)
-                {
-                    candidates.insert(symbol, candidate);
+                if let Some((params, body)) = body {
+                    record(
+                        candidates,
+                        symbol,
+                        params,
+                        body,
+                        declarator.span.end,
+                        semantic,
+                        options,
+                    );
                 }
             }
         }
@@ -413,7 +500,7 @@ fn declare_function<'a>(
     function: &'a Function<'a>,
     semantic: &Semantic<'a>,
     options: &Options<'a>,
-    candidates: &mut FxHashMap<SymbolId, Candidate<'a>>,
+    candidates: &mut Candidates<'a>,
 ) -> Option<(SymbolId, &'a str)> {
     let identifier = function.id.as_ref()?;
     let symbol = identifier.symbol_id.get()?;
@@ -424,12 +511,55 @@ fn declare_function<'a>(
         && function.this_param.is_none()
         && !semantic.scoping().symbol_is_mutated(symbol)
         && let Some(body) = function.body.as_deref().and_then(returned)
-        && let Some(candidate) = candidate(&function.params, body, 0, semantic, options)
     {
-        candidates.insert(symbol, candidate);
+        record(
+            candidates,
+            symbol,
+            &function.params,
+            body,
+            0,
+            semantic,
+            options,
+        );
     }
 
     Some((symbol, identifier.name.as_str()))
+}
+
+/// Records the wrapper or selection component a function forms.
+fn record<'a>(
+    candidates: &mut Candidates<'a>,
+    symbol: SymbolId,
+    params: &'a FormalParameters<'a>,
+    body: &'a Expression<'a>,
+    ready: u32,
+    semantic: &Semantic<'a>,
+    options: &Options<'a>,
+) {
+    if let Some(candidate) = candidate(params, body, ready, semantic, options) {
+        candidates.wrappers.insert(symbol, candidate);
+    } else if let Some((selection, call)) =
+        selections::candidate(params, body, semantic, options.recipes, options.strings)
+    {
+        let guard = match options
+            .recipes
+            .get(&call.span.start)
+            .and_then(|recipe| recipe.guard)
+        {
+            Some(text) => {
+                let Some(guard) = guard_read(semantic, &call.callee, text) else {
+                    return;
+                };
+
+                Some(guard)
+            }
+            None => None,
+        };
+
+        candidates
+            .selections
+            .insert(symbol, (Arc::new(selection), ready, guard));
+    }
 }
 
 /// The expression a function body's only statement returns.
@@ -523,25 +653,8 @@ fn candidate<'a>(
         return None;
     }
 
-    // The guard's text starts with the binding that keeps it readable at a use site.
     let guard = match guard {
-        Some(text) => {
-            let mut root = &call.callee;
-
-            while let Expression::StaticMemberExpression(member) = root {
-                root = &member.object;
-            }
-
-            let Expression::Identifier(root) = root else {
-                return None;
-            };
-
-            // An uninitialized member throws by being called, as the unfolded guard does.
-            Some((
-                resolve(semantic, root)?,
-                Arc::from(format!("({text}||{text}())")),
-            ))
-        }
+        Some(text) => Some(guard_read(semantic, &call.callee, text)?),
         None => None,
     };
 
@@ -610,6 +723,26 @@ fn candidate<'a>(
         ready,
         target,
     })
+}
+
+/// The initialization guard read of an application whose callee text is `text`. The text starts
+/// with the binding that keeps it readable at a use site.
+fn guard_read(semantic: &Semantic<'_>, callee: &Expression<'_>, text: &str) -> Option<Anchor> {
+    let mut root = callee;
+
+    while let Expression::StaticMemberExpression(member) = root {
+        root = &member.object;
+    }
+
+    let Expression::Identifier(root) = root else {
+        return None;
+    };
+
+    // An uninitialized member throws by being called, as the unfolded guard does.
+    Some((
+        resolve(semantic, root)?,
+        Arc::from(format!("({text}||{text}())")),
+    ))
 }
 
 /// Whether an expression reads the caller's prop `key`.
@@ -944,7 +1077,20 @@ impl Resolver<'_, '_> {
     fn imported(&self, symbol: SymbolId) -> Option<&Fold> {
         let (specifier, name) = self.imported.get(&symbol)?;
 
-        self.imports?.get(*specifier)?.get(*name)
+        match self.imports?.get(*specifier)?.get(*name)? {
+            Export::Wrapper(fold) => Some(fold),
+            Export::Selection(_) => None,
+        }
+    }
+
+    /// The selection of an imported selection component.
+    fn imported_selection(&self, symbol: SymbolId) -> Option<&Selection> {
+        let (specifier, name) = self.imported.get(&symbol)?;
+
+        match self.imports?.get(*specifier)?.get(*name)? {
+            Export::Selection(selection) => Some(selection),
+            Export::Wrapper(_) => None,
+        }
     }
 
     /// The resolved fold of a wrapper's target binding.

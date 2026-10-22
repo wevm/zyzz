@@ -27,6 +27,7 @@ use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::recipes;
 use crate::compiler::internal::scope;
+use crate::compiler::internal::selections;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
@@ -1728,6 +1729,51 @@ pub fn compile<'a>(
                 .collect(),
         );
         let excluded = |span: Span| replaced.contains(span.start + 1, span.end);
+        // A selection's use site keeps reading the guard of an application that can run before
+        // its definition initializes, so it throws where the component would.
+        let recipes: FxHashMap<u32, selections::Recipe<'_>> = extracted
+            .calls
+            .iter()
+            .filter(|call| !outputs.get(&*call.name).copied().unwrap_or_default())
+            .filter_map(|call| {
+                let recipe = call.recipe.as_ref().filter(|recipe| {
+                    recipe.conditions.as_ref().is_none_or(Vec::is_empty)
+                        && recipe.payloads.as_ref().is_none_or(Vec::is_empty)
+                })?;
+                let classes = generator.classes.get(&call.name)?;
+
+                Some(
+                    bound
+                        .applications
+                        .get(&call.name)?
+                        .iter()
+                        .filter(|application| {
+                            !composing_span(application.start, application.end)
+                                && !html_starts.contains(&application.start)
+                        })
+                        .map(move |application| {
+                            (
+                                application.start,
+                                selections::Recipe {
+                                    classes: classes.as_str(),
+                                    definition: recipe,
+                                    end: application.end,
+                                    guard: (!application.initialized).then(|| {
+                                        source
+                                            .get(
+                                                application.start as usize
+                                                    ..application.callee_end as usize,
+                                            )
+                                            .unwrap_or_default()
+                                    }),
+                                },
+                            )
+                        }),
+                )
+            })
+            .flatten()
+            .collect();
+        let taken = |name: &str| walker.identifiers.contains_key(name);
 
         wrappers::find(
             program,
@@ -1736,9 +1782,13 @@ pub fn compile<'a>(
                 applications: &applications,
                 excluded: &excluded,
                 imports: options.wrappers,
+                recipes: &recipes,
                 runtime: &state.runtime,
                 settled: options.settled,
                 source,
+                strings: !shadowed,
+                taken: &taken,
+                typed,
             },
         )
     };
@@ -1916,6 +1966,7 @@ pub fn compile<'a>(
     state.consumed.extend(wrappers.renamed);
 
     state.callable |= wrappers.merges;
+    state.compositions.extend(wrappers.statements);
 
     for (call, folds) in &plans {
         let class_name = json_class(&generator.classes, &call.name);

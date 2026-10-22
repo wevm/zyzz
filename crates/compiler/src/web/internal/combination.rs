@@ -36,6 +36,24 @@ enum Scope {
 /// The deepest nesting a merge reads, which bounds recursion through authored blocks.
 const DEPTH: usize = 32;
 
+/// A declaration's piece, and its position within that piece in traversal order.
+type Occurrence = (usize, usize);
+
+/// A traversal of one block piece, which numbers its declarations in a fixed order.
+struct Visit<'v> {
+    dropped: &'v mut FxHashSet<Occurrence>,
+    ordinal: usize,
+    piece: usize,
+}
+
+impl Visit<'_> {
+    /// The occurrence of the next declaration in traversal order.
+    fn next(&mut self) -> Occurrence {
+        self.ordinal += 1;
+        (self.piece, self.ordinal - 1)
+    }
+}
+
 /// Merges grouped rules that one element always applies together, in order, into the rules of
 /// one grouped style. A rule without its own output mode takes `default`. Returns `None` when a
 /// rule is not grouped, carries target branches or cascade layers, or a nested block cannot move
@@ -51,26 +69,32 @@ pub fn merge(name: &Arc<str>, rules: &[Rule], default: Option<CssOutput>) -> Opt
         collect(rule, &mut pieces, 0)?;
     }
 
-    let declarations: Vec<(usize, &Declaration)> = pieces
+    // Repeated applications share their declarations, so each is known by its piece and its
+    // position there rather than by its address.
+    let declarations: Vec<(Occurrence, &Declaration)> = pieces
         .iter()
         .enumerate()
         .flat_map(|(index, piece)| match piece {
-            Piece::Declarations(list) => list.iter().map(|item| (index, item)).collect(),
+            Piece::Declarations(list) => list
+                .iter()
+                .enumerate()
+                .map(|(position, item)| ((index, position), item))
+                .collect(),
             Piece::Block(_) => Vec::new(),
         })
         .collect();
-    let mut dropped: FxHashSet<*const Declaration> = FxHashSet::default();
+    let mut dropped: FxHashSet<Occurrence> = FxHashSet::default();
 
     // Fallbacks repeat a property within one run, so only a later run overrides a declaration.
-    for (position, (index, declaration)) in declarations.iter().enumerate() {
+    for (position, ((index, _), declaration)) in declarations.iter().enumerate() {
         let overridden = declarations
             .get(position + 1..)
             .unwrap_or_default()
             .iter()
-            .any(|(later, other)| later > index && overrides(other, declaration));
+            .any(|((later, _), other)| later > index && overrides(other, declaration));
 
         if overridden {
-            dropped.insert(std::ptr::from_ref(*declaration));
+            dropped.insert(declarations[position].0);
         }
     }
 
@@ -80,20 +104,25 @@ pub fn merge(name: &Arc<str>, rules: &[Rule], default: Option<CssOutput>) -> Opt
         };
         let later: Vec<&Declaration> = declarations
             .iter()
-            .filter(|(position, _)| *position > index)
+            .filter(|((position, _), _)| *position > index)
             .map(|(_, declaration)| *declaration)
             .collect();
 
         if !later.is_empty() {
+            let mut visit = Visit {
+                dropped: &mut dropped,
+                ordinal: 0,
+                piece: index,
+            };
             let scope = scope(rule.condition.as_deref().unwrap_or("&"), Scope::Same);
 
-            moved(&rule.style, scope, &later, &mut dropped, 0)?;
+            moved(&rule.style, scope, &later, &mut visit, 0)?;
         }
     }
 
     let kept: Vec<Declaration> = declarations
         .iter()
-        .filter(|(_, declaration)| !dropped.contains(&std::ptr::from_ref(*declaration)))
+        .filter(|(occurrence, _)| !dropped.contains(occurrence))
         .map(|(_, declaration)| (*declaration).clone())
         .collect();
     let mut output: Vec<Rule> = Vec::with_capacity(pieces.len());
@@ -110,10 +139,17 @@ pub fn merge(name: &Arc<str>, rules: &[Rule], default: Option<CssOutput>) -> Opt
         });
     }
 
-    for piece in &pieces {
-        if let Piece::Block(rule) = piece
-            && let Some(style) = without(&rule.style, &dropped)
-        {
+    for (index, piece) in pieces.iter().enumerate() {
+        let Piece::Block(rule) = piece else {
+            continue;
+        };
+        let mut visit = Visit {
+            dropped: &mut dropped,
+            ordinal: 0,
+            piece: index,
+        };
+
+        if let Some(style) = without(&rule.style, &mut visit) {
             output.push(Rule {
                 condition: rule.condition.clone(),
                 style: Arc::new(style),
@@ -186,7 +222,7 @@ fn moved(
     style: &NamedStyle,
     scope: Scope,
     later: &[&Declaration],
-    dropped: &mut FxHashSet<*const Declaration>,
+    visit: &mut Visit<'_>,
     depth: usize,
 ) -> Option<()> {
     if depth > DEPTH {
@@ -200,19 +236,21 @@ fn moved(
                 None => scope,
             };
 
-            moved(&rule.style, inner, later, dropped, depth + 1)?;
+            moved(&rule.style, inner, later, visit, depth + 1)?;
         }
 
         return Some(());
     }
 
     for declaration in &style.declarations {
+        let occurrence = visit.next();
+
         if scope == Scope::Raised {
             continue;
         }
 
         if scope == Scope::Same && later.iter().any(|other| overrides(other, declaration)) {
-            dropped.insert(std::ptr::from_ref(declaration));
+            visit.dropped.insert(occurrence);
             continue;
         }
 
@@ -271,6 +309,7 @@ fn raised(list: &str) -> bool {
 
         match byte {
             b'\\' => index += 1,
+            b'/' if bytes.get(index) == Some(&b'*') => index = comment(list, index),
             b'(' | b'[' => {
                 // An attribute selector adds specificity before its brackets open.
                 adds |= byte == b'[' && depth == 0;
@@ -317,13 +356,14 @@ fn raised(list: &str) -> bool {
     nested && adds
 }
 
-/// A copy of a block without the dropped declarations, or `None` when nothing remains.
-fn without(style: &NamedStyle, dropped: &FxHashSet<*const Declaration>) -> Option<NamedStyle> {
+/// A copy of a block without the dropped declarations, or `None` when nothing remains. It visits
+/// declarations in the order [`moved`] numbers them.
+fn without(style: &NamedStyle, visit: &mut Visit<'_>) -> Option<NamedStyle> {
     if let Some(rules) = &style.rules {
         let rules: Vec<Rule> = rules
             .iter()
             .filter_map(|rule| {
-                without(&rule.style, dropped).map(|style| Rule {
+                without(&rule.style, visit).map(|style| Rule {
                     condition: rule.condition.clone(),
                     style: Arc::new(style),
                 })
@@ -339,7 +379,11 @@ fn without(style: &NamedStyle, dropped: &FxHashSet<*const Declaration>) -> Optio
     let declarations: Vec<Declaration> = style
         .declarations
         .iter()
-        .filter(|declaration| !dropped.contains(&std::ptr::from_ref(*declaration)))
+        .filter(|_| {
+            let occurrence = visit.next();
+
+            !visit.dropped.contains(&occurrence)
+        })
         .cloned()
         .collect();
 
@@ -347,4 +391,86 @@ fn without(style: &NamedStyle, dropped: &FxHashSet<*const Declaration>) -> Optio
         declarations,
         ..style.clone()
     })
+}
+
+/// Whether every nested selector in the rules matches the element that applies them, with one
+/// nesting reference as its subject. A combined class then replaces the rules' own classes on
+/// that element without changing which elements a relational selector reaches, or where a rule
+/// that styles another element sits in the cascade.
+pub fn targets_self(rules: &[Rule]) -> bool {
+    fn visit(style: &NamedStyle, depth: usize) -> bool {
+        depth <= DEPTH
+            && style.rules.iter().flatten().all(|rule| {
+                rule.condition.as_deref().is_none_or(subject) && visit(&rule.style, depth + 1)
+            })
+    }
+
+    rules
+        .iter()
+        .all(|rule| rule.condition.as_deref().is_none_or(subject) && visit(&rule.style, 0))
+}
+
+/// Whether every selector of a list has one nesting reference, outside any function, in its last
+/// compound selector.
+fn subject(list: &str) -> bool {
+    let list = js::trim(list);
+
+    if list.starts_with('@') {
+        return true;
+    }
+
+    let bytes = list.as_bytes();
+    let mut depth = 0_usize;
+    let mut nested = 0_usize;
+    let mut after = false;
+    let mut index = 0;
+
+    while let Some(byte) = bytes.get(index).copied() {
+        index += 1;
+
+        match byte {
+            b'\\' => index += 1,
+            b'/' if bytes.get(index) == Some(&b'*') => index = comment(list, index),
+            b'(' | b'[' => depth += 1,
+            b')' | b']' => depth = depth.saturating_sub(1),
+            b'&' if depth > 0 => return false,
+            _ if depth > 0 => {}
+            b',' => {
+                if nested != 1 {
+                    return false;
+                }
+
+                nested = 0;
+                after = false;
+            }
+            b'&' => {
+                nested += 1;
+                after = true;
+            }
+            // A combinator after the reference reaches another element.
+            b' ' | b'\t' | b'\n' | b'>' | b'+' | b'~' if after && !next_is_list(bytes, index) => {
+                return false;
+            }
+            _ => {}
+        }
+    }
+
+    nested == 1
+}
+
+/// Whether only whitespace separates `index` from the next selector of the list or its end.
+fn next_is_list(bytes: &[u8], index: usize) -> bool {
+    bytes
+        .get(index..)
+        .unwrap_or_default()
+        .iter()
+        .find(|byte| !byte.is_ascii_whitespace())
+        .is_none_or(|byte| *byte == b',')
+}
+
+/// The index after the comment that opens at `index - 1` with `/*`, or the end of the text.
+fn comment(text: &str, index: usize) -> usize {
+    text.get(index + 1..)
+        .and_then(|rest| rest.find("*/"))
+        .map_or(text.len(), |end| index + 1 + end + 2)
 }

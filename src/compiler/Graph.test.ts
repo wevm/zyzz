@@ -2954,13 +2954,17 @@ const Base = (props: Props) => <b {...styles.base({ className: props.className }
 const Ghost = (props: Props) => <Base {...styles.ghost({ className: props.className })}>{props.children}</Base>
 const Primary = (props: Props) => <Ghost {...styles.primary({ className: props.className })}>{props.children}</Ghost>
 const Partial = (props: Props) => <Base {...styles.partial({ className: props.className })}>{props.children}</Base>
-export const App = () => <main><Primary>primary</Primary><Ghost className="external">ghost</Ghost><Partial>partial</Partial></main>
+const Sibling = (props: Props) => <b {...styles.sibling({ className: props.className })}>{props.children}</b>
+const Enhanced = (props: Props) => <Sibling {...styles.ghost({ className: props.className })}>{props.children}</Sibling>
+export const App = () => <main><Primary>primary</Primary><Ghost className="external">ghost</Ghost><Partial>partial</Partial><Sibling>sibling</Sibling><Enhanced>enhanced</Enhanced></main>
 namespace styles {
   export const base = style({ borderLeft: '1px solid', color: 'rgb(255, 0, 0)', paddingLeft: '1px', '@media (min-width: 1px)': { paddingLeft: '7px' } })
   export const ghost = style({ borderLeft: '2px solid', paddingLeft: '2px' })
   export const primary = style({ color: 'rgb(0, 0, 255)', paddingLeft: '3px' })
   // A shorthand only partly overrides the query block, so this chain keeps its classes.
   export const partial = style({ padding: '4px' })
+  // A sibling selector reaches elements outside the chain, so this chain keeps its classes too.
+  export const sibling = style({ paddingLeft: '5px', selectors: { '& + &': { paddingLeft: '9px' } } })
 }`,
     }
     const render = (cssOutput: 'atomic' | 'grouped') => {
@@ -2979,27 +2983,28 @@ namespace styles {
       .z_HXfo7a1{border-left:2px solid;padding-left:2px;}
       .z_HXfo7a2{color:rgb(0, 0, 255);padding-left:3px;}
       .z_HXfo7a3{padding:4px;}
-      .z_HXfo7a4{border-left:2px solid;color:rgb(0, 0, 255);padding-left:3px;}
-      .z_HXfo7a5{color:rgb(255, 0, 0);border-left:2px solid;padding-left:2px;}"
+      .z_HXfo7a4{padding-left:5px;& + &{padding-left:9px;}}
+      .z_HXfo7a5{border-left:2px solid;color:rgb(0, 0, 255);padding-left:3px;}
+      .z_HXfo7a6{color:rgb(255, 0, 0);border-left:2px solid;padding-left:2px;}"
     `)
 
     const rendered = await render('grouped')
 
     expect(rendered.markup).toMatchInlineSnapshot(
-      `"<main><b class="z_HXfo7a4">primary</b><b class="z_HXfo7a5 external">ghost</b><b class="z_HXfo7a0 z_HXfo7a3">partial</b></main>"`,
+      `"<main><b class="z_HXfo7a5">primary</b><b class="z_HXfo7a6 external">ghost</b><b class="z_HXfo7a0 z_HXfo7a3">partial</b><b class="z_HXfo7a4">sibling</b><b class="z_HXfo7a4 z_HXfo7a1">enhanced</b></main>"`,
     )
     expect(rendered.elements).toMatchInlineSnapshot(`
       [
         {
           "borderLeftWidth": "2px",
-          "className": "z_HXfo7a4",
+          "className": "z_HXfo7a5",
           "color": "rgb(0, 0, 255)",
           "paddingLeft": "3px",
           "tag": "b",
         },
         {
           "borderLeftWidth": "2px",
-          "className": "z_HXfo7a5 external",
+          "className": "z_HXfo7a6 external",
           "color": "rgb(255, 0, 0)",
           "paddingLeft": "2px",
           "tag": "b",
@@ -3009,6 +3014,20 @@ namespace styles {
           "className": "z_HXfo7a0 z_HXfo7a3",
           "color": "rgb(255, 0, 0)",
           "paddingLeft": "4px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_HXfo7a4",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "5px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "2px",
+          "className": "z_HXfo7a4 z_HXfo7a1",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "9px",
           "tag": "b",
         },
       ]
@@ -3038,6 +3057,20 @@ namespace styles {
           "className": "z_HXfo7a0 z_HXfo7a1 z_HXfo7a2 z_HXfo7a3 z_HXfo7a8",
           "color": "rgb(255, 0, 0)",
           "paddingLeft": "4px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_HXfo7a9 z_HXfo7aa",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "5px",
+          "tag": "b",
+        },
+        {
+          "borderLeftWidth": "2px",
+          "className": "z_HXfo7a9 z_HXfo7aa z_HXfo7a4 z_HXfo7a5",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "9px",
           "tag": "b",
         },
       ]

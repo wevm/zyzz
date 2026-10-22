@@ -2536,6 +2536,13 @@ fn fold_chains(styles: &mut Vec<Arc<NamedStyle>>, options: &FoldChains<'_, '_>) 
         }
 
         let name: Arc<str> = Arc::from(name);
+
+        // The merged rule follows every authored rule, so only rules that style the folded
+        // element itself keep their cascade.
+        if !combination::targets_self(&rules) {
+            continue;
+        }
+
         let Some(combined) = combination::merge(&name, &rules, options.css_output) else {
             continue;
         };

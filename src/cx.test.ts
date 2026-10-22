@@ -1219,7 +1219,8 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
               export const partial=style({padding:'4px'});
             }
             export const toggled=(on:boolean)=>cx(styles.base(),on && styles.on());
-            export const partial=cx(styles.base(),styles.partial());`,
+            export const partial=cx(styles.base(),styles.partial());
+            export const repeated=cx(styles.base(),styles.on(),styles.base());`,
           },
         })
         const fixture = Vm.runInNewContext(
@@ -1246,6 +1247,7 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
             fixture.toggled(false),
             fixture.toggled(true),
             fixture.partial,
+            fixture.repeated,
           ]) {
             await page.setContent(
               `<style>${css}</style><div class="${props.className}"></div>`,
@@ -1277,13 +1279,15 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
         .z_kNYrjR6{padding-left:1px;}
         .z_kNYrjR7{@media (min-width: 1px){padding-left:7px;}}
         .z_kNYrjR8{&:hover{color:green;}}
-        .z_kNYrjR9{padding:4px;}"
+        .z_kNYrjR9{padding:4px;}
+        .z_kNYrjRa{color:red;padding-left:1px;&:hover{color:green;}@media (min-width: 1px){padding-left:7px;}&:hover{color:green;}}"
       `)
       expect(grouped.results).toMatchInlineSnapshot(`
         [
           "1 rgb(255, 0, 0) 7px",
           "1 rgb(0, 0, 255) 2px",
           "5 rgb(255, 0, 0) 4px",
+          "1 rgb(255, 0, 0) 7px",
         ]
       `)
 
@@ -1295,6 +1299,7 @@ import {cx,style} from 'zyzz'; const a=style((values:{padding:string})=>({paddin
           "4 rgb(255, 0, 0) 7px",
           "6 rgb(0, 0, 255) 2px",
           "5 rgb(255, 0, 0) 4px",
+          "10 rgb(255, 0, 0) 7px",
         ]
       `)
     })

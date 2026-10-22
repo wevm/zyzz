@@ -294,8 +294,8 @@ describe('variants API page', () => {
     const [selection] = await examples('variants', 'definition.selection')
 
     expect(css(selection!.source)).toMatchInlineSnapshot(`
-      ".z_0{&:where(.z-v-cVOY47Eaufh-0-0){padding:4px;}}
-      .z_1{&:where(.z-v-cVOY47Eaufh-0-1){padding:8px;}}"
+      ".z_0{&:where(.zvcVOY47Ea0){padding:4px;}}
+      .z_1{&:where(.zvcVOY47Ea1){padding:8px;}}"
     `)
   })
 
@@ -361,7 +361,7 @@ describe('variants API page', () => {
       )({ size: 'regular' }),
     ).toMatchInlineSnapshot(`
       {
-        "className": "z-style-id-button z-v-1AOB2t48t-P-0-1",
+        "className": "z-style-id-button zv1AOB2t481",
       }
     `)
     expect(() =>

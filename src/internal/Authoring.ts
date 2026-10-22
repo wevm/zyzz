@@ -197,6 +197,11 @@ export function variants(
   const defaults = (input.defaultVariants ?? {}) as Record<string, unknown>
   const prefix = input.selection === 'class' ? Identity.recipe(id) : undefined
   const props = Props.create({ className })
+  const starts = Recipe.offsets(
+    Object.fromEntries(
+      axes.map(([axis, choices]) => [axis, Object.keys(choices)]),
+    ),
+  )
   const compounds = (input.compoundVariants ?? []) as readonly {
     when: Record<string, unknown>
   }[]
@@ -219,7 +224,7 @@ export function variants(
       )
     return position < 0 || silent
       ? ''
-      : ` ${Recipe.choice({ axis: index, choice: position, condition, prefix: prefix! })}`
+      : ` ${Recipe.choice({ condition, index: starts[index]! + position, prefix: prefix! })}`
   }
 
   return (values: Record<string, unknown> & style.Options = {}) => {
@@ -287,7 +292,7 @@ export function variants(
                 (_, index) => `data-zyzz-condition-${index}-${axis}`,
               ),
             ]),
-        ...(prefix ? { prefixes: [`${prefix}-`] } : {}),
+        ...(prefix ? { prefixes: [prefix] } : {}),
         slots: Object.keys(bindings),
       },
     ])

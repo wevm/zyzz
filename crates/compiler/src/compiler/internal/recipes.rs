@@ -164,31 +164,59 @@ pub fn attribute(axis: &str, condition: usize) -> String {
 }
 
 /// The class prefix of a class-selection recipe, as `Identity.recipe` derives it from the
-/// definition identity. Its fixed-length hash keeps one recipe's prefix from starting another's.
+/// definition identity. Generated names use `zv` nowhere else, and the fixed-length hash keeps
+/// one recipe's prefix from starting another's.
 pub fn prefix(identity: &str) -> String {
-    format!("z-v-{}", identity::compact(identity))
+    let hash = identity::compact(identity);
+
+    format!("zv{}", hash.get(..8).unwrap_or(&hash))
 }
 
-/// The class of one choice, by axis and choice position, as `Recipe.choice` names it. A
-/// conditional selection appends its condition index.
-pub fn class(prefix: &str, axis: usize, choice: usize, condition: Option<usize>) -> String {
+/// The class of one choice, by its position among every choice of the recipe in axis order, as
+/// `Recipe.choice` names it. A conditional selection appends `_` and its condition index.
+pub fn class(prefix: &str, index: usize, condition: Option<usize>) -> String {
+    let index = js::radix(index as u64, 36);
+
     match condition {
-        Some(condition) => format!("{prefix}-{axis}-{choice}-{condition}"),
-        None => format!("{prefix}-{axis}-{choice}"),
+        Some(condition) => format!("{prefix}{index}_{condition}"),
+        None => format!("{prefix}{index}"),
     }
 }
 
+/// The class of a declared choice, as [`class`] names it.
+pub fn choice_class(
+    prefix: &str,
+    axes: &Record<Vec<Arc<str>>>,
+    axis: &str,
+    choice: &str,
+    condition: Option<usize>,
+) -> Option<String> {
+    let mut offset = 0;
+
+    for (name, choices) in axes.iter() {
+        if **name == *axis {
+            let position = choices.iter().position(|name| **name == *choice)?;
+
+            return Some(class(prefix, offset + position, condition));
+        }
+
+        offset += choices.len();
+    }
+
+    None
+}
+
 /// The class marking that a condition overrides an axis, with a choice or `null`, as
-/// `Recipe.overridden` names it.
+/// `Recipe.overridden` names it. Its `-` separator keeps it apart from choice classes.
 pub fn overridden(prefix: &str, axis: usize, condition: usize) -> String {
-    format!("{prefix}-{axis}-s{condition}")
+    format!("{prefix}{axis}-{condition}")
 }
 
 /// The attributes and choice-class prefixes an application of a recipe owns, which a later
 /// application of the same recipe in one composition replaces.
 pub fn ownership(recipe: &runtime::Definition) -> (Vec<Arc<str>>, Vec<Arc<str>>) {
     if let Some(prefix) = &recipe.prefix {
-        return (Vec::new(), vec![Arc::from(format!("{prefix}-"))]);
+        return (Vec::new(), vec![Arc::clone(prefix)]);
     }
 
     let conditions = recipe.conditions.as_ref().map_or(0, Vec::len);
@@ -231,15 +259,10 @@ impl Selection {
 
                 predicate(&name, &value)
             }
-            Self::Class(prefix) => {
-                let (index, choices) = position(axes, axis);
-                let choice = choices
-                    .iter()
-                    .position(|name| **name == *choice)
-                    .unwrap_or_default();
-
-                format!(".{}", class(prefix, index, choice, condition))
-            }
+            Self::Class(prefix) => format!(
+                ".{}",
+                choice_class(prefix, axes, axis, choice, condition).unwrap_or_default()
+            ),
         }
     }
 
@@ -258,7 +281,10 @@ impl Selection {
                     let _ = write!(output, ":not([{}])", attribute(axis, *condition));
                 }
                 Self::Class(prefix) => {
-                    let index = position(axes, axis).0;
+                    let index = axes
+                        .keys()
+                        .position(|name| **name == *axis)
+                        .unwrap_or_default();
                     let _ = write!(output, ":not(.{})", overridden(prefix, index, *condition));
                 }
             }
@@ -266,16 +292,6 @@ impl Selection {
 
         output
     }
-}
-
-/// The position and choices of a declared axis.
-fn position<'r>(axes: &'r Record<Vec<Arc<str>>>, axis: &str) -> (usize, &'r [Arc<str>]) {
-    axes.iter()
-        .enumerate()
-        .find(|(_, (name, _))| ***name == *axis)
-        .map_or((0, &[][..]), |(index, (_, choices))| {
-            (index, choices.as_slice())
-        })
 }
 
 fn is_axis(axis: &str) -> bool {

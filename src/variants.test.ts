@@ -1563,7 +1563,7 @@ namespace classes {${recipes("\n    selection: 'class',")}
       })
 
       expect(output.css.includes('[data-')).toMatchInlineSnapshot('true')
-      expect(output.css.includes(':where(.z-v-')).toMatchInlineSnapshot('true')
+      expect(output.css.includes(':where(.zv')).toMatchInlineSnapshot('true')
 
       const browser = await chromium.launch({
         headless: true,
@@ -1731,7 +1731,7 @@ namespace classes {${recipes("\n    selection: 'class',")}
           ),
         ).toMatchInlineSnapshot(`
           {
-            "className": "z_Zf5JrJ1f z_Zf5JrJ1g z_Zf5JrJ1h z_Zf5JrJ1i z_Zf5JrJ1j z_Zf5JrJ1k z_Zf5JrJ1l z_Zf5JrJ1m z_Zf5JrJ1n z_Zf5JrJ1o z_Zf5JrJ1p z_Zf5JrJ1q z-v-1xOvZXeSIPY-0-1 z-v-1xOvZXeSIPY-1-0 extra",
+            "className": "z_Zf5JrJ1f z_Zf5JrJ1g z_Zf5JrJ1h z_Zf5JrJ1i z_Zf5JrJ1j z_Zf5JrJ1k z_Zf5JrJ1l z_Zf5JrJ1m z_Zf5JrJ1n z_Zf5JrJ1o z_Zf5JrJ1p z_Zf5JrJ1q zv1xOvZXeS1 zv1xOvZXeS2 extra",
           }
         `)
         expect(
@@ -1746,7 +1746,7 @@ namespace classes {${recipes("\n    selection: 'class',")}
         expect(await page.evaluate(`App.selected.html({ size: 'lg' })`))
           .toMatchInlineSnapshot(`
             {
-              "class": "z_Zf5JrJ2q z_Zf5JrJ2r z_Zf5JrJ2s z-v-6hr07stxA3r-0-1",
+              "class": "z_Zf5JrJ2q z_Zf5JrJ2r z_Zf5JrJ2s zv6hr07stx1",
             }
           `)
       } finally {
@@ -1837,7 +1837,7 @@ export const repeated = (flag: boolean) => cx(button({ size: 'lg', tone: 'loud' 
       })
 
       expect(
-        consumer.modules['app.ts']!.code.includes('"prefixes":["z-v-'),
+        consumer.modules['app.ts']!.code.includes('"prefixes":["zv'),
       ).toMatchInlineSnapshot(`true`)
 
       const code = await Packed.bundle({
@@ -1983,7 +1983,7 @@ export const initialized = renderToStaticMarkup(<button {...classes.button({ var
           ]
         `)
         expect(await page.evaluate(`App.initialized`)).toMatchInlineSnapshot(
-          `"<button class="z_kNYrjR7 z_kNYrjR8 z_kNYrjR9 z_kNYrjRa z_kNYrjRb z_kNYrjRc z_kNYrjRd z-v-dmeg0QWeINt-2-1 z-v-dmeg0QWeINt-1-2 z-v-dmeg0QWeINt-0-0">Initialized</button>"`,
+          `"<button class="z_kNYrjR7 z_kNYrjR8 z_kNYrjR9 z_kNYrjRa z_kNYrjRb z_kNYrjRc z_kNYrjRd zvdmeg0QWe6 zvdmeg0QWe4 zvdmeg0QWe0">Initialized</button>"`,
         )
       } finally {
         await browser.close()

@@ -117,7 +117,7 @@ export function composition(names: readonly string[]): string {
 
 /** Names the choice-class prefix of a class-selection recipe from its definition identity. */
 export function recipe(id: string): string {
-  return `z-v-${compact(id)}`
+  return `zv${compact(id).slice(0, 8)}`
 }
 
 /** Names a stylesheet declaration with a caller-owned identity. */

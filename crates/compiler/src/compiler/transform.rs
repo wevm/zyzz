@@ -437,7 +437,7 @@ fn write_class_selector(
         "((input{parameter}={{}})=>{{const external=input.className,style=input.style,vars=input.vars,inline=vars?{{...vars,...style}}:style;let value,className={initial};"
     );
 
-    for (index, (axis, choices)) in recipe.axes.iter().enumerate() {
+    for (axis, choices) in recipe.axes.iter() {
         let mut key = String::new();
 
         js::write_string(&mut key, axis);
@@ -461,18 +461,19 @@ fn write_class_selector(
             .and_then(|silent| silent.get(axis))
             .map_or(&[][..], Vec::as_slice);
 
-        for (choice, name) in choices.iter().enumerate() {
+        for name in choices {
             if silent.contains(name) {
                 continue;
             }
 
+            let Some(class) = recipes::choice_class(prefix, &recipe.axes, axis, name, None) else {
+                continue;
+            };
+
             output.push_str("value===");
             js::write_string(output, name);
             output.push('?');
-            js::write_string(
-                output,
-                &format!(" {}", recipes::class(prefix, index, choice, None)),
-            );
+            js::write_string(output, &format!(" {class}"));
             output.push(':');
         }
 
@@ -699,14 +700,9 @@ fn fold_recipe(
             .is_some_and(|names| names.iter().any(|name| **name == *choice))
     };
     let class = |axis: &str, choice: &str| {
-        let (index, choices) = recipe
-            .axes
-            .iter()
-            .enumerate()
-            .find(|(_, (name, _))| ***name == *axis)?;
-        let position = choices.1.iter().position(|name| **name == *choice)?;
-
-        (!silent(axis, choice)).then(|| recipes::class(prefix, index, position, None))
+        (!silent(axis, choice))
+            .then(|| recipes::choice_class(prefix, &recipe.axes, axis, choice, None))
+            .flatten()
     };
     let mut fields: SmallVec<[(&str, Span); 4]> = SmallVec::new();
 

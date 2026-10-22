@@ -23,6 +23,7 @@ export declare namespace attribute {
 export function create(options: create.Options) {
   const base = Recipe.create({ ...options, html: false })
   const prefix = options.prefix
+  const starts = Recipe.offsets(options.axes)
   const conditions = options.conditions.map((name, condition) => ({
     name,
     axes: Object.keys(options.axes).map((axis, index) => ({
@@ -36,7 +37,7 @@ export function create(options: create.Options) {
                 name,
                 options.silent?.[axis]?.includes(name)
                   ? ''
-                  : ` ${Recipe.choice({ axis: index, choice: position, condition, prefix })}`,
+                  : ` ${Recipe.choice({ condition, index: starts[index]! + position, prefix })}`,
               ]),
             ),
             overridden: ` ${Recipe.overridden({ axis: index, condition, prefix })}`,

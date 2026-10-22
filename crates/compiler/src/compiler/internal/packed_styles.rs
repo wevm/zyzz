@@ -640,7 +640,7 @@ pub fn read(
     let output = get(item, "output");
 
     if attributes.iter().any(|name| !named(name, "data-"))
-        || prefixes.iter().any(|name| !named(name, "z-v-"))
+        || prefixes.iter().any(|name| !named(name, "zv"))
         || slots.iter().any(|name| !named(name, "--z-"))
         || !(output.is_undefined() || output.as_str() == Some("html"))
     {

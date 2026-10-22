@@ -35,27 +35,35 @@ export type Payload = {
 
 /**
  * Names the class of one choice, as the compiler names it for class-selection recipes.
- * @param options - Recipe class prefix, positions, and an optional condition index.
- * @returns The class, whose conditional form appends the condition index.
+ * @param options - Recipe class prefix, choice position, and an optional condition index.
+ * @returns The class, whose conditional form appends `_` and the condition index.
  */
 export function choice(options: choice.Options): string {
-  const name = `${options.prefix}-${options.axis}-${options.choice}`
-  return options.condition === undefined ? name : `${name}-${options.condition}`
+  const name = `${options.prefix}${options.index.toString(36)}`
+  return options.condition === undefined ? name : `${name}_${options.condition}`
 }
 
 /** Choice class identity. */
 export declare namespace choice {
-  /** Recipe prefix and positions in authored order. */
+  /** Recipe prefix and choice position. */
   type Options = {
-    /** Axis position. */
-    readonly axis: number
-    /** Choice position within the axis. */
-    readonly choice: number
     /** Condition index of a conditional selection. */
     readonly condition?: number | undefined
+    /** Position among every choice of the recipe, in axis order. */
+    readonly index: number
     /** Recipe class prefix. */
     readonly prefix: string
   }
+}
+
+/** Positions of each axis's first choice among every choice of the recipe, in axis order. */
+export function offsets(axes: Definition['axes']): readonly number[] {
+  let offset = 0
+  return Object.values(axes).map((choices) => {
+    const start = offset
+    offset += choices.length
+    return start
+  })
 }
 
 /**
@@ -66,6 +74,7 @@ export declare namespace choice {
  */
 export function create(options: create.Options) {
   const props = Props.create({ className: options.className })
+  const starts = offsets(options.axes)
   // Attribute names, choice classes, and defaults are fixed, so calls only read the selection.
   const axes = Object.keys(options.axes).map((axis, index) => ({
     attribute: `data-${axis}` as const,
@@ -76,7 +85,7 @@ export function create(options: create.Options) {
             name,
             options.silent?.[axis]?.includes(name)
               ? ''
-              : ` ${choice({ axis: index, choice: position, prefix: options.prefix! })}`,
+              : ` ${choice({ index: starts[index]! + position, prefix: options.prefix! })}`,
           ]),
         )
       : undefined,
@@ -135,7 +144,7 @@ export declare namespace create {
  * @returns The class that excludes earlier selections of the axis while the condition matches.
  */
 export function overridden(options: overridden.Options): string {
-  return `${options.prefix}-${options.axis}-s${options.condition}`
+  return `${options.prefix}${options.axis}-${options.condition}`
 }
 
 /** Override class identity. */

@@ -3950,9 +3950,12 @@ export const l2 = style({ borderLeft: '3px solid', paddingLeft: '3px' })
         source: `import { style } from 'zyzz'
 type P = { className?: string | undefined; children?: unknown }
 export function render() { return <Late>early</Late> }
+const Early = (props: P) => <Late {...styles.early({ className: props.className })}>{props.children}</Late>
+export const first = () => <Early>first</Early>
 const Late = (props: P) => <button {...styles.late({ className: props.className })}>{props.children}</button>
 export const after = () => <Late>after</Late>
 namespace styles {
+export const early = style({ padding: '1px' })
 export const late = style({ color: 'red' })
 }`,
       })
@@ -3963,9 +3966,11 @@ export const late = style({ color: 'red' })
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
         type P = { className?: string | undefined; children?: unknown }
-        export function render() { return <button className={Late&&"z_mespvT0"}>early</button> }
-        const Late = (props: P) => <button className={__zyzzProps.merge("z_mespvT0",props.className)}>{props.children}</button>
-        export const after = () => <button className={"z_mespvT0"}>after</button>
+        export function render() { return <button className={Late&&"z_mespvT1"}>early</button> }
+        const Early = (props: P) => <button className={__zyzzProps.merge((Late&&"z_mespvT1 z_mespvT0"),props.className)}>{props.children}</button>
+        export const first = () => <button className={Late&&"z_mespvT1 z_mespvT0"}>first</button>
+        const Late = (props: P) => <button className={__zyzzProps.merge("z_mespvT1",props.className)}>{props.children}</button>
+        export const after = () => <button className={"z_mespvT1"}>after</button>
         "
       `)
     })

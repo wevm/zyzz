@@ -232,8 +232,19 @@ pub fn find<'a>(
         };
         let (target, anchor) = match candidate.target {
             Target::Host(_) => continue,
-            Target::Import(target) | Target::Local(target) => {
-                (resolver.target(target, &folds), resolver.anchor(target, 0))
+            Target::Import(target) => (resolver.target(target, &folds), resolver.anchor(target, 0)),
+            Target::Local(target) => {
+                let anchor = resolver.anchor(target, 0);
+                let (ready, latest) = resolver.latest(target, 0);
+
+                // A body placed before a declaration in its target's chain can run before it
+                // initializes, so it keeps reading that wrapper and throws as the unfolded
+                // element would.
+                match (candidate.element.span.start < ready, anchor) {
+                    (false, anchor) => (resolver.target(target, &folds), anchor),
+                    (true, None) => (resolver.target(target, &folds), Some(latest)),
+                    (true, Some(_)) => continue,
+                }
             }
         };
         let scope = nodes.get_node(candidate.element.node_id.get()).scope_id();
@@ -265,15 +276,17 @@ pub fn find<'a>(
         let Some(symbol) = resolve(semantic, name) else {
             continue;
         };
-        let (fold, anchor) = if let Some(candidate) = candidates.get(&symbol) {
+        let (fold, anchor) = if candidates.contains_key(&symbol) {
             let anchor = resolver.anchor(symbol, 0);
-            let anchor = if element.span.start >= candidate.ready {
+            let (ready, latest) = resolver.latest(symbol, 0);
+            let anchor = if element.span.start >= ready {
                 anchor
             } else if anchor.is_none() && nodes.ancestor_kinds(node.id()).any(|kind| defers(&kind))
             {
-                // A function placed before the declaration can still run before it initializes,
-                // so its element keeps reading the wrapper and throws as the unfolded one would.
-                Some(symbol)
+                // A function placed before a declaration in the chain can still run before it
+                // initializes, so its element keeps reading that wrapper and throws as the
+                // unfolded one would.
+                Some(latest)
             } else {
                 continue;
             };
@@ -789,6 +802,24 @@ impl Resolver<'_, '_> {
             Target::Import(target) => Some(target),
             Target::Local(target) if depth < DEPTH => self.anchor(target, depth + 1),
             Target::Host(_) | Target::Local(_) => None,
+        }
+    }
+
+    /// The latest declaration end along a local wrapper's chain of local targets, with the wrapper
+    /// declared there. Elements before it may run before the whole chain initializes.
+    fn latest(&self, symbol: SymbolId, depth: usize) -> (u32, SymbolId) {
+        let Some(candidate) = self.candidates.get(&symbol) else {
+            return (0, symbol);
+        };
+        let own = (candidate.ready, symbol);
+
+        match candidate.target {
+            Target::Local(target) if depth < DEPTH => {
+                let next = self.latest(target, depth + 1);
+
+                if next.0 > own.0 { next } else { own }
+            }
+            _ => own,
         }
     }
 

@@ -367,6 +367,49 @@ Chains fold through local and imported source modules. Each level's classes prec
 
 Folded components no longer appear in React DevTools or component stacks, and the element's `type` is the host element. Development builds keep every component, so tools and Fast Refresh still see each one. Definitions remain in place, so exports and other callers keep working.
 
+### Fold Selection Components
+
+Production builds also fold components whose props only select recipe choices. The whole body is one host element spreading one recipe application, and each value is a pure expression of props: literals, prop reads, `!`, `===`, `!==`, `&&`, `||`, `??`, and conditionals.
+
+```tsx title="Badge.tsx"
+import type { ReactNode } from 'react'
+import { variants } from 'zyzz'
+
+type Props = {
+  children?: ReactNode
+  tone?: 'info' | 'warning'
+  urgent?: boolean
+}
+
+// 1. Props select the recipe's choices without other work
+const Badge = (props: Props) => (
+  <span {...styles.badge({ tone: props.urgent ? 'warning' : props.tone })}>
+    {props.children}
+  </span>
+)
+
+// [!code hl:2]
+// 2. Renders one <span> whose class list a precompiled table selects
+export const Status = (props: { late: boolean }) => (
+  <Badge urgent={props.late}>Due</Badge>
+)
+
+namespace styles {
+  export const badge = variants({
+    base: { padding: '2px 6px' },
+    defaultVariants: { tone: 'info' },
+    selection: 'class',
+    variants: {
+      tone: { info: { color: 'blue' }, warning: { color: 'orange' } },
+    },
+  })
+}
+```
+
+A use site passing only those props, `children`, `className`, and `key` renders the host element. Each prop expression evaluates once, in source order, as an argument of a generated selector. Recipes with few class combinations read a constant table, and literal props select at build time.
+
+Both selection modes, defaults, `null`, booleans, and compound variants select as at runtime, through local and imported source modules. A `ref`, a spread, any other prop, a call, or a statement in the component keeps it rendering at runtime.
+
 ### Bind Dynamic Values
 
 A typed callback handles a value that changes per instance, such as progress or a measured size. The compiler turns the callback body into static rules backed by private CSS variables. Each call assigns those variables without creating CSS.

@@ -30,6 +30,7 @@ pub mod recipe_payloads;
 pub mod recipes;
 pub mod relative;
 pub mod scope;
+pub mod selections;
 pub mod selectors;
 pub mod statics;
 pub mod stylesheets;

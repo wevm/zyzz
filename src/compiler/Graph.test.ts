@@ -2695,6 +2695,185 @@ ${web.modules['app.ts']!.code}`,
       `[Source.ExtractError: pkg/card.ts:7: Import theme contracts by name; namespace imports are not supported.]`,
     )
   })
+  test('folds selection components through imported modules', async () => {
+    const modules = {
+      'chip.tsx': `import { variants } from 'zyzz'
+export const Chip = (props: { children?: unknown; className?: string | undefined; tone?: unknown }) => <span {...styles.chip({ className: props.className, tone: props.tone })}>{props.children}</span>
+export default function Flag(props: { on?: unknown }) {
+  return <i {...styles.flag({ on: !!props.on })} />
+}
+namespace styles {
+  export const chip = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    selection: 'class',
+    variants: { tone: { blue: { color: 'rgb(0, 0, 255)' }, red: { color: 'rgb(255, 0, 0)' } } },
+  })
+
+  export const flag = variants({
+    base: { paddingLeft: '1px' },
+    variants: { on: { false: {}, true: { paddingLeft: '2px' } } },
+  })
+}`,
+      'index.tsx': `import Flag, { Chip } from './chip.tsx'
+import { Left } from './left.tsx'
+import { Right } from './right.tsx'
+const tones = ['blue', 'red', undefined]
+export const App = () => <main>
+{tones.map((tone) => <Chip tone={tone} className="x" key={String(tone)}>{String(tone)}</Chip>)}
+<Flag on />
+<Flag on={tones.length > 3} />
+<Left />
+<Right />
+</main>`,
+      // Components that import each other keep rendering at runtime.
+      'left.tsx': `import { variants } from 'zyzz'
+import { Cycle } from './right.tsx'
+export const Left = () => <Cycle tone="blue" />
+export const Leaf = (props: { tone?: unknown }) => <b {...styles.leaf({ tone: props.tone })} />
+namespace styles {
+  export const leaf = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    selection: 'class',
+    variants: { tone: { blue: { color: 'rgb(0, 0, 255)' } } },
+  })
+}`,
+      'right.tsx': `import { variants } from 'zyzz'
+import { Leaf } from './left.tsx'
+export { Right }
+const Right = () => <Leaf tone="blue" />
+export const Cycle = (props: { tone?: unknown }) => <s {...styles.cycle({ tone: props.tone })} />
+namespace styles {
+  export const cycle = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    selection: 'class',
+    variants: { tone: { blue: { paddingLeft: '3px' } } },
+  })
+}`,
+    }
+    const output = Graph.compile({ modules })
+
+    expect(output.modules['index.tsx']!.code).toMatchInlineSnapshot(`
+      "
+      const __zyzzClasses0=["z_VPvt2C0 z_VPvt2C1 z_VPvt2C2","z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 zv3cUiS2Go0","z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 zv3cUiS2Go1"];
+      function __zyzzSelect0(p0:unknown){return __zyzzClasses0[(p0==="blue"?1:p0==="red"?2:0)]+" x"}
+      function __zyzzSelect1(p0:unknown){return {className:"z_VPvt2C3 z_VPvt2C4","data-on":p0?"true":"false"}}
+      import Flag, { Chip } from './chip.tsx'
+      import { Left } from './left.tsx'
+      import { Right } from './right.tsx'
+      const tones = ['blue', 'red', undefined]
+      export const App = () => <main>
+      {tones.map((tone) => <span className={Chip&&__zyzzSelect0(tone)} key={String(tone)}>{String(tone)}</span>)}
+      <i className={Flag&&"z_VPvt2C3 z_VPvt2C4"} data-on={"true"} />
+      <i {...Flag&&__zyzzSelect1(tones.length > 3)} />
+      <Left />
+      <Right />
+      </main>"
+    `)
+    expect(
+      output.modules['left.tsx']!.code.match(/export const Left = .*/)?.[0],
+    ).toMatchInlineSnapshot(`"export const Left = () => <Cycle tone="blue" />"`)
+    expect(
+      output.modules['right.tsx']!.code.match(/const Right = .*/)?.[0],
+    ).toMatchInlineSnapshot(`"const Right = () => <Leaf tone="blue" />"`)
+
+    const rendered = await Wrappers.render({
+      css: Object.values(output.modules)
+        .map((module) => module.css)
+        .join('\n'),
+      entry: 'index.tsx',
+      modules: Object.fromEntries(
+        Object.entries(output.modules).map(([id, module]) => [id, module.code]),
+      ),
+    })
+
+    expect(rendered.markup).toMatchInlineSnapshot(
+      `"<main><span class="z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 zv3cUiS2Go0 x">blue</span><span class="z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 zv3cUiS2Go1 x">red</span><span class="z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 x">undefined</span><i class="z_VPvt2C3 z_VPvt2C4" data-on="true"></i><i class="z_VPvt2C3 z_VPvt2C4" data-on="false"></i><s class="z_jwICbk0 z_jwICbk1 zvflh0gSLM0"></s><b class="z_Ct2jZL0 z_Ct2jZL1 zv6HXhnMYV0"></b></main>"`,
+    )
+    expect(rendered.elements).toMatchInlineSnapshot(`
+      [
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 zv3cUiS2Go0 x",
+          "color": "rgb(0, 0, 255)",
+          "paddingLeft": "0px",
+          "tag": "span",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 zv3cUiS2Go1 x",
+          "color": "rgb(255, 0, 0)",
+          "paddingLeft": "0px",
+          "tag": "span",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_VPvt2C0 z_VPvt2C1 z_VPvt2C2 x",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "0px",
+          "tag": "span",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_VPvt2C3 z_VPvt2C4",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "2px",
+          "tag": "i",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_VPvt2C3 z_VPvt2C4",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "1px",
+          "tag": "i",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_jwICbk0 z_jwICbk1 zvflh0gSLM0",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "3px",
+          "tag": "s",
+        },
+        {
+          "borderLeftWidth": "0px",
+          "className": "z_Ct2jZL0 z_Ct2jZL1 zv6HXhnMYV0",
+          "color": "rgb(0, 0, 255)",
+          "paddingLeft": "0px",
+          "tag": "b",
+        },
+      ]
+    `)
+
+    const development = Graph.compile({ development: true, modules })
+    const unfolded = await Wrappers.render({
+      css: Object.values(development.modules)
+        .map((module) => module.css)
+        .join('\n'),
+      entry: 'index.tsx',
+      modules: Object.fromEntries(
+        Object.entries(development.modules).map(([id, module]) => [
+          id,
+          module.code,
+        ]),
+      ),
+    })
+    // Development labels its class names, so they are renamed before comparing.
+    const relabel = (text: string) =>
+      Object.entries(development.modules).reduce(
+        (text, [id, module]) =>
+          Object.entries(module.classes).reduce(
+            (text, [name, classes]) =>
+              text.replaceAll(classes, output.modules[id]!.classes[name]!),
+            text,
+          ),
+        text,
+      )
+
+    // Components that render at runtime produce the same markup.
+    expect(relabel(unfolded.markup) === rendered.markup).toMatchInlineSnapshot(
+      `true`,
+    )
+  })
+
   test('folds wrapper components through imported modules', async () => {
     const output = Graph.compile({ modules: wrappers })
 

@@ -4022,6 +4022,517 @@ export const button = style({ color: 'red' })
   })
 })
 
+describe('selections', () => {
+  describe('compile', () => {
+    const source = `import { variants } from 'zyzz'
+type Tone = 'red' | 'blue' | null | undefined
+type P = { children?: unknown; className?: string | undefined; on?: unknown; size?: unknown; tone?: unknown }
+// Defaults, a boolean axis with a silent choice, and a compound variant.
+const Chip = (props: P) => <span {...styles.chip({ className: props.className, on: props.on === true, size: props.size, tone: props.tone })}>{props.children}</span>
+// Conditionals and logical operators over destructured props.
+const Mark = ({ $strong, $tone, $on, children }: { $strong?: unknown; $tone?: unknown; $on?: unknown; children?: unknown }) => (
+  <b {...styles.chip({ on: $on ?? false, size: $tone && 'large', tone: $strong ? 'blue' : $tone })}>
+    {children}
+  </b>
+)
+// Attribute selection writes data attributes.
+const Flag = (props: P & { off?: unknown }) => <i {...styles.flag({ className: props.className, on: !props.off, tone: props.tone })}>{props.children}</i>
+// Too many combinations for a table, so classes concatenate.
+const Wide = (props: { a?: unknown; b?: unknown; c?: unknown; d?: unknown }) => <u {...styles.wide({ a: props.a, b: props.b, c: props.c, d: props.d })} />
+const order: string[] = []
+const pick = <T,>(value: T): T => (order.push(String(value)), value)
+export const App = () => <>
+<main>
+<Chip>default</Chip>
+<Chip tone="blue" on>literal</Chip>
+<Chip tone={null} size="small">null</Chip>
+<Chip tone={pick('blue')} size={pick('large')} on={pick(true)} className={pick('extra')}>expressions</Chip>
+<Chip tone={pick(undefined)} size={pick(null)} on={pick(1)}>nullish</Chip>
+<Chip tone={pick('green')} size={pick(true)}>unknown</Chip>
+<Chip key="key" tone="blue" className="literal">keyed</Chip>
+<Chip tone={pick('red')} className="" key={pick('last')}>last key</Chip>
+<Chip className={pick(undefined)}>class</Chip>
+<Chip />
+<Mark>mark</Mark>
+<Mark $strong>strong</Mark>
+<Mark $tone={pick('red')} $on={pick(null)}>tone</Mark>
+<Mark $tone={pick('')} $strong={pick(0)} $on={pick(true)}>empty</Mark>
+<Flag>flag</Flag>
+<Flag tone="blue" off>literal flag</Flag>
+<Flag tone={pick(null)} off={pick(undefined)} className={pick('extra')}>null flag</Flag>
+<Flag tone={pick(undefined)} className="literal">default flag</Flag>
+<Flag tone={pick(false)}>false flag</Flag>
+<Wide />
+<Wide a="y" b={pick('z')} c={pick(undefined)} d={pick('w')} />
+</main>
+<p>{order.join(' ')}</p>
+</>
+namespace styles {
+  export const chip = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    compoundVariants: [{ style: { borderLeft: '4px solid' }, when: { on: true, tone: 'blue' } }],
+    defaultVariants: { tone: 'red' },
+    selection: 'class',
+    variants: {
+      on: { false: {}, true: { paddingLeft: '2px' } },
+      size: { large: { paddingLeft: '8px' }, small: { paddingLeft: '4px' } },
+      tone: { blue: { color: 'rgb(0, 0, 255)' }, red: { color: 'rgb(255, 0, 0)' } },
+    },
+  })
+
+  export const flag = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    defaultVariants: { tone: 'red' },
+    variants: {
+      on: { false: {}, true: { paddingLeft: '2px' } },
+      tone: { blue: { color: 'rgb(0, 0, 255)' }, false: { color: 'rgb(0, 128, 0)' }, red: { color: 'rgb(255, 0, 0)' } },
+    },
+  })
+
+  export const wide = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    defaultVariants: { a: 'x' },
+    selection: 'class',
+    variants: {
+      a: { w: { paddingLeft: '1px' }, x: { paddingLeft: '2px' }, y: { paddingLeft: '3px' } },
+      b: { w: { color: 'rgb(1, 0, 0)' }, x: { color: 'rgb(2, 0, 0)' }, z: { color: 'rgb(3, 0, 0)' } },
+      c: { w: { borderLeft: '1px solid' }, x: { borderLeft: '2px solid' }, y: { borderLeft: '3px solid' } },
+      d: { w: { borderLeftColor: 'red' }, x: { borderLeftColor: 'blue' }, y: { borderLeftColor: 'green' } },
+    },
+  })
+}`
+
+    test('folds selection components into host elements with the runtime props', async () => {
+      const output = Transform.compile({
+        cssOutput: 'grouped',
+        moduleId: 'App.tsx',
+        source,
+      })
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        const __zyzzClasses0=["z_l0kPgl0","z_l0kPgl0 zv4meQUdh64","z_l0kPgl0 zv4meQUdh65","z_l0kPgl0 zv4meQUdh62","z_l0kPgl0 zv4meQUdh62 zv4meQUdh64","z_l0kPgl0 zv4meQUdh62 zv4meQUdh65","z_l0kPgl0 zv4meQUdh63","z_l0kPgl0 zv4meQUdh63 zv4meQUdh64","z_l0kPgl0 zv4meQUdh63 zv4meQUdh65","z_l0kPgl0 zv4meQUdh61","z_l0kPgl0 zv4meQUdh61 zv4meQUdh64","z_l0kPgl0 zv4meQUdh61 zv4meQUdh65","z_l0kPgl0 zv4meQUdh61 zv4meQUdh62","z_l0kPgl0 zv4meQUdh61 zv4meQUdh62 zv4meQUdh64","z_l0kPgl0 zv4meQUdh61 zv4meQUdh62 zv4meQUdh65","z_l0kPgl0 zv4meQUdh61 zv4meQUdh63","z_l0kPgl0 zv4meQUdh61 zv4meQUdh63 zv4meQUdh64","z_l0kPgl0 zv4meQUdh61 zv4meQUdh63 zv4meQUdh65"];
+        function __zyzzSelect0(p0:unknown,p1:unknown,p2:unknown,p3:unknown){return __zyzzProps.merge(__zyzzClasses0[((p2===true)?9:0)+(p1==="large"?3:p1==="small"?6:0)+(p0===void 0?2:p0==="blue"?1:p0==="red"?2:0)],p3)}
+        function __zyzzSelect1(p0:unknown,p1:unknown,p2:unknown){return __zyzzClasses0[((p2===true)?9:0)+(p1==="large"?3:p1==="small"?6:0)+(p0===void 0?2:p0==="blue"?1:p0==="red"?2:0)]}
+        function __zyzzSelect2(p0:unknown,p1:unknown){return __zyzzClasses0[(p1==="large"?3:p1==="small"?6:0)+(p0===void 0?2:p0==="blue"?1:p0==="red"?2:0)]}
+        function __zyzzSelect3(p0:unknown){return __zyzzClasses0[(p0===void 0?2:p0==="blue"?1:p0==="red"?2:0)]}
+        function __zyzzSelect4(p0:unknown){return __zyzzProps.merge("z_l0kPgl0 zv4meQUdh65",p0)}
+        function __zyzzSelect5(p0:unknown,p1:unknown){let v:unknown;return __zyzzClasses0[((v=p1??false)===true||v==="true"?9:0)+((v=p0&&"large")==="large"?3:v==="small"?6:0)+(p0===void 0?2:p0==="blue"?1:p0==="red"?2:0)]}
+        function __zyzzSelect6(p0:unknown,p1:unknown,p2:unknown){let v:unknown;return __zyzzClasses0[((v=p2??false)===true||v==="true"?9:0)+((v=p0&&"large")==="large"?3:v==="small"?6:0)+((v=p1?"blue":p0)===void 0?2:v==="blue"?1:v==="red"?2:0)]}
+        function __zyzzSelect7(p0:unknown,p1:unknown,p2:unknown){return {className:__zyzzProps.merge("z_l0kPgl1",p2),"data-on":(!p1)?"true":"false","data-tone":(p0===void 0?"red":p0===null?void 0:String(p0))}}
+        function __zyzzSelect8(p0:unknown){return {className:"z_l0kPgl1 literal","data-on":"true","data-tone":(p0===void 0?"red":p0===null?void 0:String(p0))}}
+        function __zyzzSelect9(p0:unknown){return {className:"z_l0kPgl1","data-on":"true","data-tone":(p0===void 0?"red":p0===null?void 0:String(p0))}}
+        function __zyzzSelect10(p0:unknown,p1:unknown,p2:unknown){return "z_l0kPgl2 zvbfdqSph82"+(p0==="w"?" zvbfdqSph83":p0==="x"?" zvbfdqSph84":p0==="z"?" zvbfdqSph85":"")+(p1==="w"?" zvbfdqSph86":p1==="x"?" zvbfdqSph87":p1==="y"?" zvbfdqSph88":"")+(p2==="w"?" zvbfdqSph89":p2==="x"?" zvbfdqSph8a":p2==="y"?" zvbfdqSph8b":"")}
+        let __zyzzValue:unknown;
+
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+
+        type Tone = 'red' | 'blue' | null | undefined
+        type P = { children?: unknown; className?: string | undefined; on?: unknown; size?: unknown; tone?: unknown }
+        // Defaults, a boolean axis with a silent choice, and a compound variant.
+        const Chip = (props: P) => <span {...styles.chip({ className: props.className, on: props.on === true, size: props.size, tone: props.tone })}>{props.children}</span>
+        // Conditionals and logical operators over destructured props.
+        const Mark = ({ $strong, $tone, $on, children }: { $strong?: unknown; $tone?: unknown; $on?: unknown; children?: unknown }) => (
+          <b className={"z_l0kPgl0"+((__zyzzValue=($on ?? false))===void 0?"":__zyzzValue===true||__zyzzValue==="true"?" zv4meQUdh61":"")+((__zyzzValue=($tone && 'large'))===void 0?"":__zyzzValue==="large"?" zv4meQUdh62":__zyzzValue==="small"?" zv4meQUdh63":"")+((__zyzzValue=($strong ? 'blue' : $tone))===void 0?" zv4meQUdh65":__zyzzValue==="blue"?" zv4meQUdh64":__zyzzValue==="red"?" zv4meQUdh65":"")}>
+            {children}
+          </b>
+        )
+        // Attribute selection writes data attributes.
+        const Flag = (props: P & { off?: unknown }) => <i {...styles.flag({ className: props.className, on: !props.off, tone: props.tone })}>{props.children}</i>
+        // Too many combinations for a table, so classes concatenate.
+        const Wide = (props: { a?: unknown; b?: unknown; c?: unknown; d?: unknown }) => <u className={"z_l0kPgl2"+((__zyzzValue=(props.a))===void 0?" zvbfdqSph81":__zyzzValue==="w"?" zvbfdqSph80":__zyzzValue==="x"?" zvbfdqSph81":__zyzzValue==="y"?" zvbfdqSph82":"")+((__zyzzValue=(props.b))===void 0?"":__zyzzValue==="w"?" zvbfdqSph83":__zyzzValue==="x"?" zvbfdqSph84":__zyzzValue==="z"?" zvbfdqSph85":"")+((__zyzzValue=(props.c))===void 0?"":__zyzzValue==="w"?" zvbfdqSph86":__zyzzValue==="x"?" zvbfdqSph87":__zyzzValue==="y"?" zvbfdqSph88":"")+((__zyzzValue=(props.d))===void 0?"":__zyzzValue==="w"?" zvbfdqSph89":__zyzzValue==="x"?" zvbfdqSph8a":__zyzzValue==="y"?" zvbfdqSph8b":"")} />
+        const order: string[] = []
+        const pick = <T,>(value: T): T => (order.push(String(value)), value)
+        export const App = () => <>
+        <main>
+        <span className={"z_l0kPgl0 zv4meQUdh65"}>default</span>
+        <span className={"z_l0kPgl0 zv4meQUdh61 zv4meQUdh64"}>literal</span>
+        <span className={"z_l0kPgl0 zv4meQUdh63"}>null</span>
+        <span className={__zyzzSelect0(pick('blue'),pick('large'),pick(true),pick('extra'))}>expressions</span>
+        <span className={__zyzzSelect1(pick(undefined),pick(null),pick(1))}>nullish</span>
+        <span className={__zyzzSelect2(pick('green'),pick(true))}>unknown</span>
+        <span key="key" className={"z_l0kPgl0 zv4meQUdh64 literal"}>keyed</span>
+        <span className={__zyzzSelect3(pick('red'))} key={pick('last')}>last key</span>
+        <span className={__zyzzSelect4(pick(undefined))}>class</span>
+        <span className={"z_l0kPgl0 zv4meQUdh65"} />
+        <b className={"z_l0kPgl0 zv4meQUdh65"}>mark</b>
+        <b className={"z_l0kPgl0 zv4meQUdh64"}>strong</b>
+        <b className={__zyzzSelect5(pick('red'),pick(null))}>tone</b>
+        <b className={__zyzzSelect6(pick(''),pick(0),pick(true))}>empty</b>
+        <i className={"z_l0kPgl1"} data-on={"true"} data-tone={"red"}>flag</i>
+        <i className={"z_l0kPgl1"} data-on={"false"} data-tone={"blue"}>literal flag</i>
+        <i {...__zyzzSelect7(pick(null),pick(undefined),pick('extra'))}>null flag</i>
+        <i {...__zyzzSelect8(pick(undefined))}>default flag</i>
+        <i {...__zyzzSelect9(pick(false))}>false flag</i>
+        <u className={"z_l0kPgl2 zvbfdqSph81"} />
+        <u className={__zyzzSelect10(pick('z'),pick(undefined),pick('w'))} />
+        </main>
+        <p>{order.join(' ')}</p>
+        </>
+        namespace styles {
+          export const chip = (((input:Record<string,unknown>&import('zyzz').style.Options={})=>{const external=input.className,style=input.style,vars=input.vars,inline=vars?{...vars,...style}:style;let value,className="z_l0kPgl0";value=Object.hasOwn(input,"on")?input["on"]:void 0;if(value!==null&&value!==void 0){value=String(value);className+=value==="true"?" zv4meQUdh61":""}value=Object.hasOwn(input,"size")?input["size"]:void 0;if(value!==null&&value!==void 0){value=String(value);className+=value==="large"?" zv4meQUdh62":value==="small"?" zv4meQUdh63":""}value=Object.hasOwn(input,"tone")?input["tone"]:void 0;if(value===void 0)value="red";if(value!==null&&value!==void 0){value=String(value);className+=value==="blue"?" zv4meQUdh64":value==="red"?" zv4meQUdh65":""}if(external)className+=" "+external;return inline?{className,style:inline}:{className}}) as unknown as import('zyzz').variants.ReturnType<{selection:'class';variants:{"on":{"false":{};"true":{}};"size":{"large":{};"small":{}};"tone":{"blue":{};"red":{}}}}>)
+
+          export const flag = (((input:Record<string,unknown>&import('zyzz').style.Options={})=>{const external=input.className,style=input.style,vars=input.vars,inline=vars?{...vars,...style}:style,className=external?"z_l0kPgl1"+" "+external:"z_l0kPgl1",result:Record<string,unknown>=inline?{className,style:inline}:{className};let value;value=Object.hasOwn(input,"on")?input["on"]:void 0;if(value!==null&&value!==void 0)result["data-on"]=String(value);value=Object.hasOwn(input,"tone")?input["tone"]:void 0;if(value===void 0)value="red";if(value!==null&&value!==void 0)result["data-tone"]=String(value);return result}) as unknown as import('zyzz').variants.ReturnType<{variants:{"on":{"false":{};"true":{}};"tone":{"blue":{};"false":{};"red":{}}}}>)
+
+          export declare const wide: import('zyzz').variants.ReturnType<{selection:'class';variants:{"a":{"w":{};"x":{};"y":{}};"b":{"w":{};"x":{};"z":{}};"c":{"w":{};"x":{};"y":{}};"d":{"w":{};"x":{};"y":{}}}}>
+        }"
+      `)
+
+      const rendered = await Wrappers.render({
+        css: output.css,
+        entry: 'App.tsx',
+        modules: { 'App.tsx': output.code },
+      })
+
+      expect(rendered.markup).toMatchInlineSnapshot(
+        `"<main><span class="z_l0kPgl0 zv4meQUdh65">default</span><span class="z_l0kPgl0 zv4meQUdh61 zv4meQUdh64">literal</span><span class="z_l0kPgl0 zv4meQUdh63">null</span><span class="z_l0kPgl0 zv4meQUdh61 zv4meQUdh62 zv4meQUdh64 extra">expressions</span><span class="z_l0kPgl0 zv4meQUdh65">nullish</span><span class="z_l0kPgl0">unknown</span><span class="z_l0kPgl0 zv4meQUdh64 literal">keyed</span><span class="z_l0kPgl0 zv4meQUdh65">last key</span><span class="z_l0kPgl0 zv4meQUdh65">class</span><span class="z_l0kPgl0 zv4meQUdh65"></span><b class="z_l0kPgl0 zv4meQUdh65">mark</b><b class="z_l0kPgl0 zv4meQUdh64">strong</b><b class="z_l0kPgl0 zv4meQUdh62 zv4meQUdh65">tone</b><b class="z_l0kPgl0 zv4meQUdh61">empty</b><i class="z_l0kPgl1" data-on="true" data-tone="red">flag</i><i class="z_l0kPgl1" data-on="false" data-tone="blue">literal flag</i><i class="z_l0kPgl1 extra" data-on="true">null flag</i><i class="z_l0kPgl1 literal" data-on="true" data-tone="red">default flag</i><i class="z_l0kPgl1" data-on="true" data-tone="false">false flag</i><u class="z_l0kPgl2 zvbfdqSph81"></u><u class="z_l0kPgl2 zvbfdqSph82 zvbfdqSph85 zvbfdqSph89"></u></main><p>blue large true extra undefined null 1 green true red last undefined red null  0 true null undefined extra undefined false z undefined w</p>"`,
+      )
+      expect(rendered.elements).toMatchInlineSnapshot(`
+        [
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "4px",
+            "className": "z_l0kPgl0 zv4meQUdh61 zv4meQUdh64",
+            "color": "rgb(0, 0, 255)",
+            "paddingLeft": "2px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh63",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "4px",
+            "className": "z_l0kPgl0 zv4meQUdh61 zv4meQUdh62 zv4meQUdh64 extra",
+            "color": "rgb(0, 0, 255)",
+            "paddingLeft": "8px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh64 literal",
+            "color": "rgb(0, 0, 255)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "span",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh64",
+            "color": "rgb(0, 0, 255)",
+            "paddingLeft": "0px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh62 zv4meQUdh65",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "8px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl0 zv4meQUdh61",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "2px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl1",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "2px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl1",
+            "color": "rgb(0, 0, 255)",
+            "paddingLeft": "0px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl1 extra",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "2px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl1 literal",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "2px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl1",
+            "color": "rgb(0, 128, 0)",
+            "paddingLeft": "2px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl2 zvbfdqSph81",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "2px",
+            "tag": "u",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl2 zvbfdqSph82 zvbfdqSph85 zvbfdqSph89",
+            "color": "rgb(3, 0, 0)",
+            "paddingLeft": "3px",
+            "tag": "u",
+          },
+        ]
+      `)
+
+      const development = Transform.compile({
+        cssOutput: 'grouped',
+        development: true,
+        moduleId: 'App.tsx',
+        source,
+      })
+      const unfolded = await Wrappers.render({
+        css: development.css,
+        entry: 'App.tsx',
+        modules: { 'App.tsx': development.code },
+      })
+
+      // Development labels its class names, so they are renamed before comparing.
+      const relabel = (text: string) =>
+        Object.entries(development.classes).reduce(
+          (text, [name, classes]) =>
+            text.replaceAll(classes, output.classes[name]!),
+          text,
+        )
+
+      // Components that render at runtime produce the same markup and styles.
+      expect(
+        relabel(unfolded.markup) === rendered.markup,
+      ).toMatchInlineSnapshot(`true`)
+      expect(
+        relabel(JSON.stringify(unfolded.elements)) ===
+          JSON.stringify(rendered.elements),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('keeps components and use sites that cannot fold', () => {
+      const output = Transform.compile({
+        moduleId: 'App.tsx',
+        source: `import { variants } from 'zyzz'
+type P = { children?: unknown; className?: string | undefined; tone?: unknown }
+const Chip = (props: P) => <span {...styles.chip({ className: props.className, tone: props.tone })}>{props.children}</span>
+const Bare = (props: P) => <hr {...styles.chip({ tone: props.tone })} />
+const Called = (props: P) => <span {...styles.chip({ tone: String(props.tone) })}>{props.children}</span>
+const Loose = (props: P) => <span {...styles.chip({ tone: props.tone == 'blue' ? 'blue' : 'red' })}>{props.children}</span>
+const Templated = (props: P) => <span {...styles.chip({ tone: \`\${props.tone}\` })}>{props.children}</span>
+const Whole = (props: P) => <span {...styles.chip({ tone: props })}>{props.children}</span>
+const Scoped = (props: P) => <span {...styles.chip({ tone: props.tone ?? fallback })}>{props.children}</span>
+const Labeled = (props: P) => <span aria-label="label" {...styles.chip({ tone: props.tone })}>{props.children}</span>
+const Styled = (props: P) => <span {...styles.chip({ style: { color: 'red' }, tone: props.tone })}>{props.children}</span>
+const Stated = (props: P) => { const tone = props.tone; return <span {...styles.chip({ tone })}>{props.children}</span> }
+const Defaulted = ({ tone = 'blue', children }: P) => <span {...styles.chip({ tone })}>{children}</span>
+const Rest = ({ tone, ...rest }: P) => <span {...styles.chip({ tone })}>{rest.children}</span>
+const Nested = (props: P) => <Chip {...styles.chip({ tone: props.tone })}>{props.children}</Chip>
+let Replaced = (props: P) => <span {...styles.chip({ tone: props.tone })}>{props.children}</span>
+const fallback = 'red'
+const ref = { current: null }
+export const App = () => <main>
+<Chip ref={ref}>ref</Chip>
+<Chip {...{ tone: 'blue' }}>spread</Chip>
+<Chip id="id">unknown prop</Chip>
+<Chip children="attribute" />
+<Chip tone="blue" key="key" className="x">middle key</Chip>
+<Chip tone="a&amp;b">entity</Chip>
+<Bare className="x" />
+<Bare>children</Bare>
+<Called tone="blue">called</Called>
+<Loose tone="blue">loose</Loose>
+<Templated tone="blue">template</Templated>
+<Whole tone="blue">whole</Whole>
+<Scoped tone="blue">scoped</Scoped>
+<Labeled tone="blue">labeled</Labeled>
+<Styled tone="blue">styled</Styled>
+<Stated tone="blue">statements</Stated>
+<Defaulted tone="blue">default</Defaulted>
+<Rest tone="blue">rest</Rest>
+<Nested tone="blue">nested</Nested>
+<Replaced tone="blue">let</Replaced>
+</main>
+namespace styles {
+  export const chip = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    selection: 'class',
+    variants: { tone: { blue: { color: 'rgb(0, 0, 255)' }, red: { color: 'rgb(255, 0, 0)' } } },
+  })
+}`,
+      })
+
+      expect(output.code.slice(output.code.indexOf('export const App')))
+        .toMatchInlineSnapshot(`
+        "export const App = () => <main>
+        <Chip ref={ref}>ref</Chip>
+        <Chip {...{ tone: 'blue' }}>spread</Chip>
+        <Chip id="id">unknown prop</Chip>
+        <Chip children="attribute" />
+        <Chip tone="blue" key="key" className="x">middle key</Chip>
+        <Chip tone="a&amp;b">entity</Chip>
+        <Bare className="x" />
+        <Bare>children</Bare>
+        <Called tone="blue">called</Called>
+        <Loose tone="blue">loose</Loose>
+        <Templated tone="blue">template</Templated>
+        <Whole tone="blue">whole</Whole>
+        <Scoped tone="blue">scoped</Scoped>
+        <Labeled tone="blue">labeled</Labeled>
+        <Styled tone="blue">styled</Styled>
+        <Stated tone="blue">statements</Stated>
+        <Defaulted tone="blue">default</Defaulted>
+        <Rest tone="blue">rest</Rest>
+        <Nested tone="blue">nested</Nested>
+        <Replaced tone="blue">let</Replaced>
+        </main>
+        namespace styles {
+          export const chip = (((input:Record<string,unknown>&import('zyzz').style.Options={})=>{const external=input.className,style=input.style,vars=input.vars,inline=vars?{...vars,...style}:style;let value,className="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2";value=Object.hasOwn(input,"tone")?input["tone"]:void 0;if(value!==null&&value!==void 0){value=String(value);className+=value==="blue"?" zv4meQUdh60":value==="red"?" zv4meQUdh61":""}if(external)className+=" "+external;return inline?{className,style:inline}:{className}}) as unknown as import('zyzz').variants.ReturnType<{selection:'class';variants:{"tone":{"blue":{};"red":{}}}}>)
+        }"
+      `)
+    })
+
+    test('keeps reading selection components declared after the function that renders them', () => {
+      const output = Transform.compile({
+        moduleId: 'Early.tsx',
+        source: `import { variants } from 'zyzz'
+type P = { children?: unknown; className?: string | undefined; tone?: unknown }
+export function render(tone: unknown) { return <Late tone={tone}>early</Late> }
+// A key evaluated before the class list would run before the component read.
+export function keyed(key: () => string) { return <Late key={key()} tone="blue">keyed</Late> }
+const Late = (props: P) => <span {...styles.chip({ className: props.className, tone: props.tone })}>{props.children}</span>
+export const after = () => <Late tone="blue">after</Late>
+namespace styles {
+  export const chip = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    selection: 'class',
+    variants: { tone: { blue: { color: 'rgb(0, 0, 255)' }, red: { color: 'rgb(255, 0, 0)' } } },
+  })
+}`,
+      })
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        const __zyzzClasses0=["z_mespvT0 z_mespvT1 z_mespvT2","z_mespvT0 z_mespvT1 z_mespvT2 zvajgFh3sB0","z_mespvT0 z_mespvT1 z_mespvT2 zvajgFh3sB1"];
+        function __zyzzSelect0(p0:unknown){return __zyzzClasses0[(p0==="blue"?1:p0==="red"?2:0)]}
+
+        type P = { children?: unknown; className?: string | undefined; tone?: unknown }
+        export function render(tone: unknown) { return <span className={Late&&__zyzzSelect0(tone)}>early</span> }
+        // A key evaluated before the class list would run before the component read.
+        export function keyed(key: () => string) { return <Late key={key()} tone="blue">keyed</Late> }
+        const Late = (props: P) => <span {...styles.chip({ className: props.className, tone: props.tone })}>{props.children}</span>
+        export const after = () => <span className={"z_mespvT0 z_mespvT1 z_mespvT2 zvajgFh3sB0"}>after</span>
+        namespace styles {
+          export const chip = (((input:Record<string,unknown>&import('zyzz').style.Options={})=>{const external=input.className,style=input.style,vars=input.vars,inline=vars?{...vars,...style}:style;let value,className="z_mespvT0 z_mespvT1 z_mespvT2";value=Object.hasOwn(input,"tone")?input["tone"]:void 0;if(value!==null&&value!==void 0){value=String(value);className+=value==="blue"?" zvajgFh3sB0":value==="red"?" zvajgFh3sB1":""}if(external)className+=" "+external;return inline?{className,style:inline}:{className}}) as unknown as import('zyzz').variants.ReturnType<{selection:'class';variants:{"tone":{"blue":{};"red":{}}}}>)
+        }"
+      `)
+    })
+
+    test('keeps style guards of selection components that can render before initialization', () => {
+      const output = Transform.compile({
+        moduleId: 'Eager.tsx',
+        source: `import { variants } from 'zyzz'
+type P = { children?: unknown; tone?: unknown }
+const Chip = (props: P) => <span {...styles.chip({ tone: props.tone })}>{props.children}</span>
+export const App = () => <Chip tone="blue">app</Chip>
+// A synchronous render before the namespace initializes still reaches the recipe.
+App()
+namespace styles {
+  export const chip = variants({
+    base: { color: 'rgb(0, 0, 0)' },
+    selection: 'class',
+    variants: { tone: { blue: { color: 'rgb(0, 0, 255)' } } },
+  })
+}`,
+      })
+
+      // The folded element still throws before the namespace initializes, as the component would.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        type P = { children?: unknown; tone?: unknown }
+        const Chip = (props: P) => <span {...styles.chip({ tone: props.tone })}>{props.children}</span>
+        export const App = () => <span className={(styles.chip||styles.chip())&&"z_Emit600 z_Emit601 zv4TfDB8ee0"}>app</span>
+        // A synchronous render before the namespace initializes still reaches the recipe.
+        App()
+        namespace styles {
+          export const chip = (((input:Record<string,unknown>&import('zyzz').style.Options={})=>{const external=input.className,style=input.style,vars=input.vars,inline=vars?{...vars,...style}:style;let value,className="z_Emit600 z_Emit601";value=Object.hasOwn(input,"tone")?input["tone"]:void 0;if(value!==null&&value!==void 0){value=String(value);className+=value==="blue"?" zv4TfDB8ee0":""}if(external)className+=" "+external;return inline?{className,style:inline}:{className}}) as unknown as import('zyzz').variants.ReturnType<{selection:'class';variants:{"tone":{"blue":{}}}}>)
+        }"
+      `)
+    })
+
+    test('keeps development components unfolded', () => {
+      const output = Transform.compile({
+        development: true,
+        moduleId: 'App.tsx',
+        source,
+      })
+
+      expect(
+        output.code.includes('<Chip tone="blue" on>literal</Chip>'),
+      ).toMatchInlineSnapshot(`true`)
+    })
+  })
+})
+
 describe('atRuleAcceptance', () => {
   const source = `import {counterStyle,fontFace,page,viewTransition,customMedia,cssFunction,namespace,importCss,global} from 'zyzz/web';
 export const dots=counterStyle({system:'cyclic',symbols:'"●"'});

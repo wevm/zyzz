@@ -160,6 +160,10 @@ jobs:
           persist-credentials: false
       - name: Install dependencies
         uses: $/.github/actions/install-dependencies
+      - name: Remove Microsoft package sources
+        # Some runner images list an unsigned packages.microsoft.com source, which fails `apt-get update`.
+        # No step installs a package from it.
+        run: grep -rl packages.microsoft.com /etc/apt/sources.list.d | xargs -r sudo rm -f
       - name: Install browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
       - name: Install Python

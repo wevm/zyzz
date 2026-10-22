@@ -11,10 +11,11 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
-    Argument, ArrayExpressionElement, BindingPattern, Expression, ImportDeclarationSpecifier,
-    ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind,
-    Statement,
+    Argument, ArrayExpressionElement, BinaryOperator, BindingPattern, Expression,
+    ImportDeclarationSpecifier, ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program,
+    PropertyKey, PropertyKind, Statement, UnaryOperator,
 };
+use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smallvec::SmallVec;
@@ -25,6 +26,7 @@ use crate::compiler::internal::dynamic;
 use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::recipes;
+use crate::compiler::internal::scope;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
@@ -567,6 +569,251 @@ fn json_class(classes: &IndexMap<Arc<str>, String, FxBuildHasher>, name: &str) -
         .map_or_else(|| "undefined".to_owned(), |value| quote(value))
 }
 
+/// The declared type of a recipe callable.
+fn recipe_type(call: &Call<'_>, recipe: &runtime::Definition, html: bool) -> String {
+    let axes: Vec<String> = recipe
+        .axes
+        .iter()
+        .map(|(axis, choices)| {
+            let choices: Vec<String> = choices
+                .iter()
+                .map(|choice| {
+                    let signature = call
+                        .recipe_types
+                        .as_ref()
+                        .and_then(|types| types.get(axis))
+                        .and_then(|types| types.get(choice));
+
+                    match signature {
+                        Some(signature) if !signature.is_empty() => {
+                            format!("{}:(values:{signature})=>{{}}", quote(choice))
+                        }
+                        _ => format!("{}:{{}}", quote(choice)),
+                    }
+                })
+                .collect();
+
+            format!("{}:{{{}}}", quote(axis), choices.join(";"))
+        })
+        .collect();
+    let conditions = recipe.conditions.as_ref().map(|conditions| {
+        conditions
+            .iter()
+            .map(|name| format!("{}:unknown", quote(name)))
+            .collect::<Vec<_>>()
+            .join(";")
+    });
+    let conditions = match conditions {
+        Some(conditions) if !conditions.is_empty() => {
+            format!(";conditions:{{{conditions}}}")
+        }
+        _ => String::new(),
+    };
+    let output = if html { ",\"html\"" } else { "" };
+    let selection = if recipe.prefix.is_some() {
+        "selection:'class';"
+    } else {
+        ""
+    };
+
+    format!(
+        "import('zyzz').variants.ReturnType<{{{selection}variants:{{{}}}{conditions}}}{output}>",
+        axes.join(";")
+    )
+}
+
+/// The declared type of an erased or unread definition.
+fn return_type(call: &Call<'_>, html: bool) -> String {
+    if let Some(recipe) = &call.recipe {
+        return recipe_type(call, recipe, html);
+    }
+
+    match (&call.slots, html) {
+        (Some(_), html) => format!(
+            "import('zyzz').style.Dynamic<{}{}>",
+            call.values_type.as_deref().unwrap_or_default(),
+            if html { ",'html'" } else { "" }
+        ),
+        (None, true) => "import('zyzz').style.ReturnType<'html'>".to_owned(),
+        (None, false) => "import('zyzz').style.ReturnType".to_owned(),
+    }
+}
+
+/// The attributes a recipe application selects, after its class list, or `None` when its values
+/// object is not a plain literal of axes whose values the fold can reorder.
+///
+/// The selector reads axes in definition order, while an object literal evaluates in authored
+/// order, so each value must be a literal, a read of a module or local binding, or a negation or
+/// strict comparison of them. Member reads can run getters, so they keep the selector. A value
+/// that can be nullish must be a binding read, which the fold repeats.
+fn recipe_attributes(
+    source: &str,
+    application: &Bound<'_>,
+    recipe: &runtime::Definition,
+    semantic: &Semantic<'_>,
+    rewritten: &FxHashMap<&str, Vec<Span>>,
+) -> Option<String> {
+    let mut values: FxHashMap<&str, &Expression<'_>> = FxHashMap::default();
+
+    for property in &application.values.properties {
+        let ObjectPropertyKind::ObjectProperty(property) = property else {
+            return None;
+        };
+
+        if property.computed || property.method || property.kind != PropertyKind::Init {
+            return None;
+        }
+
+        let key = match &property.key {
+            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
+            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
+            _ => return None,
+        };
+
+        if !recipe.axes.contains_key(key) || values.insert(key, &property.value).is_some() {
+            return None;
+        }
+    }
+
+    let mut output = String::new();
+
+    for axis in recipe.axes.keys() {
+        let fallback = recipe.defaults.get(axis).cloned().flatten();
+        let value = values.get(&**axis).map(|value| unwrap(value));
+        let selected = match value {
+            None => fallback.as_deref().map(quote),
+            Some(Expression::NullLiteral(_)) => None,
+            Some(Expression::StringLiteral(literal)) => Some(quote(&literal.value)),
+            Some(Expression::BooleanLiteral(literal)) => Some(format!("\"{}\"", literal.value)),
+            Some(Expression::TemplateLiteral(template)) if template.expressions.is_empty() => {
+                Some(quote(template.quasis.first()?.value.cooked.as_deref()?))
+            }
+            Some(value) if !reorderable(value, semantic, rewritten) => return None,
+            Some(value) => {
+                let text = source.get(value.span().start as usize..value.span().end as usize)?;
+
+                Some(if !nullable(value) {
+                    format!("String({text})")
+                } else if let Some(fallback) = &fallback {
+                    format!(
+                        "({text})===void 0?{}:({text})===null?void 0:String({text})",
+                        quote(fallback)
+                    )
+                } else {
+                    format!("({text})==null?void 0:String({text})")
+                })
+            }
+        };
+
+        if let Some(selected) = selected {
+            let _ = write!(output, ",{}:{selected}", quote(&format!("data-{axis}")));
+        }
+    }
+
+    Some(output)
+}
+
+/// Whether an expression reads values without calls, getters, conversions, or rewritten names, so
+/// moving or repeating it changes no result. A global name can be an accessor of the global object.
+fn reorderable(
+    expression: &Expression<'_>,
+    semantic: &Semantic<'_>,
+    rewritten: &FxHashMap<&str, Vec<Span>>,
+) -> bool {
+    match unwrap(expression) {
+        Expression::BooleanLiteral(_)
+        | Expression::NullLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::StringLiteral(_) => true,
+        Expression::Identifier(identifier) => {
+            !rewritten.contains_key(identifier.name.as_str())
+                && scope::resolve(semantic, identifier).is_some()
+        }
+        Expression::ParenthesizedExpression(inner) => {
+            reorderable(&inner.expression, semantic, rewritten)
+        }
+        Expression::UnaryExpression(unary) => {
+            unary.operator == UnaryOperator::LogicalNot
+                && reorderable(&unary.argument, semantic, rewritten)
+        }
+        Expression::BinaryExpression(binary) => {
+            matches!(
+                binary.operator,
+                BinaryOperator::StrictEquality | BinaryOperator::StrictInequality
+            ) && reorderable(&binary.left, semantic, rewritten)
+                && reorderable(&binary.right, semantic, rewritten)
+        }
+        _ => false,
+    }
+}
+
+/// Whether a reorderable expression can evaluate to `null` or `undefined`.
+fn nullable(expression: &Expression<'_>) -> bool {
+    match unwrap(expression) {
+        Expression::ParenthesizedExpression(inner) => nullable(&inner.expression),
+        Expression::BinaryExpression(_)
+        | Expression::BooleanLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::StringLiteral(_)
+        | Expression::UnaryExpression(_) => false,
+        _ => true,
+    }
+}
+
+/// Each field of a bound application with its text before and after the authored value.
+type BoundFields = SmallVec<[(String, &'static str, Span); 4]>;
+
+/// The fields a dynamic application folds with, or `None` when its values object is not a plain
+/// literal naming every slot once.
+fn bound_fields(
+    application: &Bound<'_>,
+    slots: &dynamic::Slots,
+    properties: &js::Record<&str>,
+) -> Option<BoundFields> {
+    let mut fields = BoundFields::new();
+    let mut seen: FxHashSet<&str> = FxHashSet::default();
+
+    if properties.is_empty() {
+        return None;
+    }
+
+    for property in &application.values.properties {
+        let ObjectPropertyKind::ObjectProperty(property) = property else {
+            return None;
+        };
+
+        if property.computed || property.method || property.kind != PropertyKind::Init {
+            return None;
+        }
+
+        let key = match &property.key {
+            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
+            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
+            _ => return None,
+        };
+        let slot = slots.get(key)?;
+
+        if !seen.insert(key) {
+            return None;
+        }
+
+        fields.push(match properties.get(key) {
+            Some(target) => (
+                format!("{}:(", quote(target)),
+                ")||\"unset\"",
+                property.value.span(),
+            ),
+            None => (
+                format!("{}:`${{(", quote(&slot.name)),
+                ")}`||\" \"",
+                property.value.span(),
+            ),
+        });
+    }
+
+    (fields.len() == slots.len()).then_some(fields)
+}
+
 /// Folds a dynamic application into its props, writing each field that fills one declaration to
 /// that property and each other field to its private variable.
 ///
@@ -578,65 +825,16 @@ fn fold_bound(
     module: &mut Edits<'_>,
     source: &str,
     application: &Bound<'_>,
-    slots: &dynamic::Slots,
-    properties: &js::Record<&str>,
+    fields: &BoundFields,
     class_name: &str,
 ) -> Result<()> {
-    // Each field's key with its text before and after the authored value.
-    let mut fields: SmallVec<[(&str, String, &str, Span); 4]> = SmallVec::new();
-    let mut seen: FxHashSet<&str> = FxHashSet::default();
-
-    for property in &application.values.properties {
-        let ObjectPropertyKind::ObjectProperty(property) = property else {
-            return Ok(());
-        };
-
-        if property.computed || property.method || property.kind != PropertyKind::Init {
-            return Ok(());
-        }
-
-        let key = match &property.key {
-            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
-            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
-            _ => return Ok(()),
-        };
-        let Some(slot) = slots.get(key) else {
-            return Ok(());
-        };
-
-        if !seen.insert(key) {
-            return Ok(());
-        }
-
-        let field = match properties.get(key) {
-            Some(target) => (
-                key,
-                format!("{}:(", quote(target)),
-                ")||\"unset\"",
-                property.value.span(),
-            ),
-            None => (
-                key,
-                format!("{}:`${{(", quote(&slot.name)),
-                ")}`||\" \"",
-                property.value.span(),
-            ),
-        };
-
-        fields.push(field);
-    }
-
-    if fields.len() != slots.len() || properties.is_empty() {
-        return Ok(());
-    }
-
     let callee = source
         .get(application.start as usize..application.callee_end as usize)
         .unwrap_or_default();
     let mut previous = application.start;
     let mut closing = "";
 
-    for (index, (_, opening, close, value)) in fields.iter().enumerate() {
+    for (index, (opening, close, value)) in fields.iter().enumerate() {
         let mut text = String::with_capacity(callee.len() + class_name.len() + opening.len() + 24);
 
         if index == 0 {
@@ -679,20 +877,67 @@ fn write_choice_test(output: &mut String, value: &str, name: &str) {
     js::write_string(output, name);
 }
 
+/// Authored axes and value spans of a class-selection recipe application.
+type ClassFields<'a> = SmallVec<[(&'a str, Span); 4]>;
+
+/// The axes a class-selection recipe application selects, with each value's span, in authored
+/// order, or `None` when its values object is not a plain literal of distinct axes. Choice names a
+/// non-string selection could stringify to also keep the call.
+fn recipe_classes<'a>(
+    application: &Bound<'a>,
+    recipe: &runtime::Definition,
+) -> Option<ClassFields<'a>> {
+    recipe.prefix.as_ref()?;
+
+    let mut fields: ClassFields<'a> = SmallVec::new();
+
+    for property in &application.values.properties {
+        let ObjectPropertyKind::ObjectProperty(property) = property else {
+            return None;
+        };
+
+        if property.computed || property.method || property.kind != PropertyKind::Init {
+            return None;
+        }
+
+        let key = match &property.key {
+            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
+            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
+            _ => return None,
+        };
+
+        if !recipe.axes.contains_key(key) || fields.iter().any(|(seen, _)| *seen == key) {
+            return None;
+        }
+
+        fields.push((key, property.value.span()));
+    }
+
+    // A number or other value would stringify to a numeric choice name.
+    let numeric = recipe
+        .axes
+        .values()
+        .flatten()
+        .any(|name| name.parse::<f64>().is_ok() || name.trim() != &**name);
+
+    (!numeric).then_some(fields)
+}
+
 /// Folds a class-selection recipe application spread alone onto a DOM element into one
 /// `className` expression. Each authored value stays in place, in authored order, so rewrites
-/// inside it still apply, and omitted axes contribute their default class to the constant prefix.
-/// Other inputs, or choice names a non-string selection could stringify to, keep the call.
-fn fold_recipe(
+/// inside it still apply, and is read once into `value`. Omitted axes contribute their default
+/// class to the constant prefix, and applications before initialization keep a callable guard.
+fn fold_classes(
     module: &mut Edits<'_>,
     source: &str,
     application: &Bound<'_>,
+    fields: &[(&str, Span)],
     recipe: &runtime::Definition,
     class_name: &str,
     value: &str,
-) -> Result<bool> {
+) -> Result<()> {
     let Some(prefix) = &recipe.prefix else {
-        return Ok(false);
+        return Ok(());
     };
     let silent = |axis: &str, choice: &str| {
         recipe
@@ -707,40 +952,6 @@ fn fold_recipe(
             .then(|| positions.class(prefix, axis, choice, None))
             .flatten()
     };
-    let mut fields: SmallVec<[(&str, Span); 4]> = SmallVec::new();
-
-    for property in &application.values.properties {
-        let ObjectPropertyKind::ObjectProperty(property) = property else {
-            return Ok(false);
-        };
-
-        if property.computed || property.method || property.kind != PropertyKind::Init {
-            return Ok(false);
-        }
-
-        let key = match &property.key {
-            PropertyKey::StaticIdentifier(identifier) => identifier.name.as_str(),
-            PropertyKey::StringLiteral(literal) => literal.value.as_str(),
-            _ => return Ok(false),
-        };
-
-        if !recipe.axes.contains_key(key) || fields.iter().any(|(seen, _)| *seen == key) {
-            return Ok(false);
-        }
-
-        fields.push((key, property.value.span()));
-    }
-
-    // A number or other value would stringify to a numeric choice name.
-    if recipe
-        .axes
-        .values()
-        .flatten()
-        .any(|name| name.parse::<f64>().is_ok() || name.trim() != &**name)
-    {
-        return Ok(false);
-    }
-
     let mut constant = String::from(class_name);
 
     for (axis, _) in recipe.axes.iter() {
@@ -759,30 +970,22 @@ fn fold_recipe(
     let callee = source
         .get(application.start as usize..application.callee_end as usize)
         .unwrap_or_default();
+    let mut text = String::from("className={");
+
+    if !application.initialized {
+        // Keep a callable guard so bundlers also keep failures before initialization.
+        let _ = write!(text, "{callee}?");
+    }
+
+    js::write_string(&mut text, constant.trim_start());
+
     let mut previous = application.spread.start;
-    let mut closing = String::new();
 
-    for (index, (axis, span)) in fields.iter().enumerate() {
-        let mut text = String::with_capacity(closing.len() + constant.len() + 32);
-
-        if index == 0 {
-            text.push_str("className={");
-
-            if !application.initialized {
-                // Keep a callable guard so bundlers also keep failures before initialization.
-                let _ = write!(text, "{callee}?");
-            }
-
-            js::write_string(&mut text, constant.trim_start());
-        } else {
-            text.push_str(&closing);
-        }
-
+    for (axis, span) in fields {
         let _ = write!(text, "+(({value}=(");
-        module.overwrite(previous, span.start, text)?;
+        module.overwrite(previous, span.start, std::mem::take(&mut text))?;
         previous = span.end;
-        closing.clear();
-        closing.push_str("))===void 0?");
+        text.push_str("))===void 0?");
 
         let fallback = recipe
             .defaults
@@ -791,38 +994,32 @@ fn fold_recipe(
             .and_then(|fallback| class(axis, fallback));
 
         js::write_string(
-            &mut closing,
+            &mut text,
             &fallback.map_or_else(String::new, |name| format!(" {name}")),
         );
-        closing.push(':');
+        text.push(':');
 
         for choice in recipe.axes.get(axis).into_iter().flatten() {
             let Some(name) = class(axis, choice) else {
                 continue;
             };
 
-            write_choice_test(&mut closing, value, choice);
-            closing.push('?');
-            js::write_string(&mut closing, &format!(" {name}"));
-            closing.push(':');
+            write_choice_test(&mut text, value, choice);
+            text.push('?');
+            js::write_string(&mut text, &format!(" {name}"));
+            text.push(':');
         }
 
-        closing.push_str("\"\")");
+        text.push_str("\"\")");
     }
 
-    if fields.is_empty() {
-        return Ok(false);
-    }
-
-    let suffix = if application.initialized {
-        format!("{closing}}}")
+    if application.initialized {
+        text.push('}');
     } else {
-        format!("{closing}:{callee}().className}}")
-    };
+        let _ = write!(text, ":{callee}().className}}");
+    }
 
-    module.overwrite(previous, application.spread.end, suffix)?;
-
-    Ok(true)
+    module.overwrite(previous, application.spread.end, text)
 }
 
 /// Locates emitted declarations, skipping selectors, conditions, and quoted CSS data. Offsets are
@@ -1233,12 +1430,145 @@ pub fn compile<'a>(
         .collect();
     let folded_starts: FxHashSet<u32> =
         folded.iter().map(|application| application.start).collect();
+    let bound = local_applications
+        .as_ref()
+        .map(applications::Applications::bound)
+        .unwrap_or_default();
+    let mut plans: Vec<(&Call<'_>, Vec<(&Bound<'_>, BoundFields)>)> = Vec::new();
+    let mut selections: Vec<(&Call<'_>, Vec<(&Bound<'_>, String)>)> = Vec::new();
+    let mut class_selections: Vec<(&Call<'_>, Vec<(&Bound<'_>, ClassFields<'_>)>)> = Vec::new();
+    // Dynamic and recipe definitions whose every read folds to props after initialization, so no
+    // read needs their callable.
+    let mut inlined: FxHashSet<Arc<str>> = FxHashSet::default();
+    let shadowed = parsed
+        .semantic
+        .scoping()
+        .symbol_names()
+        .any(|name| name == "Object" || name == "String");
+
+    if !bound.applications.is_empty() {
+        let named: FxHashMap<&str, &NamedStyle> = extracted
+            .styles
+            .styles
+            .iter()
+            .map(|style| (&*style.name, &**style))
+            .collect();
+
+        for call in &extracted.calls {
+            let (Some(slots), Some(applied)) = (&call.slots, bound.applications.get(&call.name))
+            else {
+                continue;
+            };
+
+            if outputs.get(&*call.name).copied().unwrap_or_default() {
+                continue;
+            }
+
+            let Some(style) = named.get(&*call.name) else {
+                continue;
+            };
+            let properties = dynamic::inline(style, slots, &call.keywords);
+            let folds: Vec<(&Bound<'_>, BoundFields)> = applied
+                .iter()
+                .filter(|application| {
+                    !composing_span(application.start, application.end)
+                        && !html_starts.contains(&application.start)
+                })
+                .filter_map(|application| {
+                    bound_fields(application, slots, &properties)
+                        .map(|fields| (application, fields))
+                })
+                .collect();
+
+            if folds.len() == applied.len()
+                && folds.iter().all(|(application, _)| application.initialized)
+                && !bound.partial.contains(&call.name)
+            {
+                inlined.insert(Arc::clone(&call.name));
+            }
+
+            plans.push((call, folds));
+        }
+
+        // Folded selections call `String`, as the specialized selector does.
+        for call in extracted.calls.iter().filter(|_| !shadowed) {
+            let (Some(recipe), Some(applied)) = (&call.recipe, bound.applications.get(&call.name))
+            else {
+                continue;
+            };
+
+            if outputs.get(&*call.name).copied().unwrap_or_default()
+                || recipe
+                    .conditions
+                    .as_ref()
+                    .is_some_and(|conditions| !conditions.is_empty())
+                || recipe
+                    .payloads
+                    .as_ref()
+                    .is_some_and(|payloads| !payloads.is_empty())
+            {
+                continue;
+            }
+
+            // Class selection reads each value once, so guarded applications fold too, and only
+            // the callable's last guarded read keeps the definition.
+            if recipe.prefix.is_some() {
+                let folds: Vec<(&Bound<'_>, ClassFields<'_>)> = applied
+                    .iter()
+                    .filter(|application| {
+                        !composing_span(application.start, application.end)
+                            && !html_starts.contains(&application.start)
+                    })
+                    .filter_map(|application| {
+                        recipe_classes(application, recipe).map(|fields| (application, fields))
+                    })
+                    .collect();
+
+                if folds.len() == applied.len()
+                    && folds.iter().all(|(application, _)| application.initialized)
+                    && !bound.partial.contains(&call.name)
+                {
+                    inlined.insert(Arc::clone(&call.name));
+                }
+
+                class_selections.push((call, folds));
+                continue;
+            }
+
+            // Guarded applications keep the callable, so only those after initialization fold.
+            let folds: Vec<(&Bound<'_>, String)> = applied
+                .iter()
+                .filter(|application| {
+                    application.initialized
+                        && !composing_span(application.start, application.end)
+                        && !html_starts.contains(&application.start)
+                })
+                .filter_map(|application| {
+                    recipe_attributes(
+                        source,
+                        application,
+                        recipe,
+                        &parsed.semantic,
+                        &walker.identifiers,
+                    )
+                    .map(|attributes| (application, attributes))
+                })
+                .collect();
+
+            if folds.len() == applied.len() && !bound.partial.contains(&call.name) {
+                inlined.insert(Arc::clone(&call.name));
+            }
+
+            selections.push((call, folds));
+        }
+    }
+
     let local = if portable || options.development {
         None
     } else {
         local_applications
             .as_ref()
-            .map(applications::Applications::definitions)
+            .map(|applications| applications.definitions(&inlined))
     };
     // Styles applied only alone to DOM elements, or inside cx, never meet another style's
     // classes, so atomic ones share rules like independent styles.
@@ -1354,11 +1684,7 @@ pub fn compile<'a>(
     );
     let generator = Generator {
         classes,
-        shadowed: parsed
-            .semantic
-            .scoping()
-            .symbol_names()
-            .any(|name| name == "Object" || name == "String"),
+        shadowed,
         owners: options.owners,
         style_classes: options.style_classes,
         emitted: &emitted,
@@ -1469,40 +1795,34 @@ pub fn compile<'a>(
         }
     }
 
-    let bound = local_applications
-        .as_ref()
-        .map(applications::Applications::bound)
-        .unwrap_or_default();
+    for (call, folds) in &plans {
+        let class_name = json_class(&generator.classes, &call.name);
 
-    let named: FxHashMap<&str, &NamedStyle> = if bound.is_empty() {
-        FxHashMap::default()
-    } else {
-        styles
-            .iter()
-            .map(|style| (&*style.name, &**style))
-            .collect()
-    };
+        for (application, fields) in folds {
+            fold_bound(&mut module, source, application, fields, &class_name)?;
+        }
+    }
 
     let value = unique(&walker.identifiers, "__zyzzValue");
     let mut folded = false;
 
-    for call in &extracted.calls {
-        let (Some(recipe), Some(applied)) = (&call.recipe, bound.get(&call.name)) else {
-            continue;
-        };
-        let (Some(class_name), false) = (
-            generator.classes.get(&call.name),
-            outputs.get(&*call.name).copied().unwrap_or_default(),
-        ) else {
+    for (call, folds) in &class_selections {
+        let class_name = generator.classes.get(&call.name).map_or("", String::as_str);
+        let Some(recipe) = &call.recipe else {
             continue;
         };
 
-        for application in applied {
-            if composing_span(application.start, application.end) {
-                continue;
-            }
-
-            folded |= fold_recipe(&mut module, source, application, recipe, class_name, &value)?;
+        for (application, fields) in folds {
+            fold_classes(
+                &mut module,
+                source,
+                application,
+                fields,
+                recipe,
+                class_name,
+                &value,
+            )?;
+            folded = true;
         }
     }
 
@@ -1515,40 +1835,14 @@ pub fn compile<'a>(
         });
     }
 
-    for call in &extracted.calls {
-        let (Some(slots), Some(applied)) = (&call.slots, bound.get(&call.name)) else {
-            continue;
-        };
-
-        if outputs.get(&*call.name).copied().unwrap_or_default() {
-            continue;
-        }
-
-        let Some(style) = named.get(&*call.name) else {
-            continue;
-        };
-        let properties = dynamic::inline(style, slots, &call.keywords);
-
-        if properties.is_empty() {
-            continue;
-        }
-
+    for (call, folds) in &selections {
         let class_name = json_class(&generator.classes, &call.name);
 
-        for application in applied {
-            if composing_span(application.start, application.end)
-                || html_starts.contains(&application.start)
-            {
-                continue;
-            }
-
-            fold_bound(
-                &mut module,
-                source,
-                application,
-                slots,
-                &properties,
-                &class_name,
+        for (application, attributes) in folds {
+            module.overwrite(
+                application.start,
+                application.end,
+                format!("({{className:{class_name}{attributes}}})"),
             )?;
         }
     }
@@ -2027,7 +2321,11 @@ impl<'a> Generator<'_, 'a> {
     ) -> String {
         let callee = &known.callee;
         let cast = if self.typed { " as unknown" } else { "" };
-        let read = format!("(({callee}{cast})||{callee}(),{value})");
+        let read = if known.initialized {
+            value.to_owned()
+        } else {
+            format!("(({callee}{cast})||{callee}(),{value})")
+        };
         let Some(condition) = known.condition else {
             return read;
         };
@@ -2087,14 +2385,24 @@ impl<'a> Generator<'_, 'a> {
             .iter()
             .zip(known)
             .filter_map(|(input, known)| {
+                let known = (*known)?;
                 let value = input.condition.map_or_else(
                     || "0".to_owned(),
                     |condition| (1_u32 << condition).to_string(),
                 );
 
-                Some(self.known_argument(module, (*known)?, &value, true))
+                // An unconditional input that reads nothing adds no presence bit.
+                if known.initialized && input.condition.is_none() {
+                    return None;
+                }
+
+                Some(self.known_argument(module, known, &value, true))
             })
             .collect();
+
+        if terms.is_empty() {
+            return format!("{factory}[0]");
+        }
 
         format!("{factory}[{}]", terms.join("|"))
     }
@@ -2302,11 +2610,36 @@ impl<'a> Generator<'_, 'a> {
             )?;
         }
 
+        let composed = Intervals::new(
+            extracted
+                .calls
+                .iter()
+                .filter(|call| call.composition.is_some())
+                .map(|call| (call.start, call.end))
+                .collect(),
+        );
+        // Arguments of rewritten compositions that follow initialization read nothing at runtime.
+        // A contained composition is never rewritten, so its arguments keep their reads.
+        let settled: FxHashSet<u32> = extracted
+            .calls
+            .iter()
+            .filter(|call| !call.composition_case && !composed.contains(call.start, call.end))
+            .flat_map(|call| {
+                call.runtime_composition
+                    .iter()
+                    .flatten()
+                    .filter(|input| input.known.as_ref().is_some_and(|known| known.initialized))
+                    .filter_map(|input| input.application_start)
+                    .chain(call.composition_settled.iter().copied())
+            })
+            .collect();
         // Definitions read only through folded applications need no class list of their own. True
         // marks definitions whose every read follows initialization.
         let read: FxHashSet<&str> = found
             .iter()
-            .filter(|application| !folded.contains(&application.start))
+            .filter(|application| {
+                !folded.contains(&application.start) && !settled.contains(&application.start)
+            })
             .map(|application| &*application.name)
             .collect();
         let mut unread: FxHashMap<&str, bool> = FxHashMap::with_capacity_and_hasher(
@@ -2346,6 +2679,15 @@ impl<'a> Generator<'_, 'a> {
                 .flat_map(|namespace| namespace.ends.iter().map(|(name, end)| (&**name, *end))),
         );
 
+        // Members of a kept namespace that nothing reads become ambient, so the namespace object
+        // carries no property for them.
+        for (name, (start, end)) in local.iter().flat_map(|local| local.declarations.iter()) {
+            if unread.get(&**name).copied().unwrap_or_default() {
+                module.prepend_right(*start, "declare ")?;
+                erased.insert(name, *end);
+            }
+        }
+
         // An ambient namespace keeps member types without runtime initialization. A namespace no
         // type names has nothing left to declare, so it is removed with its members.
         let removed: FxHashSet<&str> = namespaces
@@ -2366,24 +2708,15 @@ impl<'a> Generator<'_, 'a> {
             if let Some(end) = erased.get(&*call.name)
                 && !removed.contains(&*call.name)
             {
-                let annotation = if call.output == Some(ThemeOutput::Html) {
-                    ": import('zyzz').style.ReturnType<'html'>"
-                } else {
-                    ": import('zyzz').style.ReturnType"
-                };
+                let annotation = format!(
+                    ": {}",
+                    return_type(call, call.output == Some(ThemeOutput::Html))
+                );
 
                 module.overwrite(*end, call.start, annotation)?;
             }
         }
 
-        let composed = Intervals::new(
-            extracted
-                .calls
-                .iter()
-                .filter(|call| call.composition.is_some())
-                .map(|call| (call.start, call.end))
-                .collect(),
-        );
         let mut rewrites: Vec<&Call<'a>> = extracted.calls.iter().collect();
 
         // Rewrite contained expressions before the enclosing composition reads them. Contained
@@ -2421,7 +2754,20 @@ impl<'a> Generator<'_, 'a> {
                 state.uses_composition_html = true;
             }
 
-            let replacement = if let Some(inputs) = &call.runtime_composition {
+            let replacement = if let Some(initialized) = unread.get(&*call.name) {
+                if erased.contains_key(&*call.name) {
+                    String::new()
+                } else {
+                    // Guards read only truthiness, and failures before initialization still call it.
+                    let value = if *initialized { "void 0" } else { "1" };
+
+                    if typed {
+                        format!("({value} as unknown as {})", return_type(call, html))
+                    } else {
+                        value.to_owned()
+                    }
+                }
+            } else if let Some(inputs) = &call.runtime_composition {
                 let base = format!("{}{}", state.composition, self.parsed.utf16(call.start));
                 let mut factory = base.clone();
 
@@ -2556,54 +2902,7 @@ impl<'a> Generator<'_, 'a> {
                 } else {
                     value
                 };
-                let axes: Vec<String> = recipe
-                    .axes
-                    .iter()
-                    .map(|(axis, choices)| {
-                        let choices: Vec<String> = choices
-                            .iter()
-                            .map(|choice| {
-                                let signature = call
-                                    .recipe_types
-                                    .as_ref()
-                                    .and_then(|types| types.get(axis))
-                                    .and_then(|types| types.get(choice));
-
-                                match signature {
-                                    Some(signature) if !signature.is_empty() => {
-                                        format!("{}:(values:{signature})=>{{}}", quote(choice))
-                                    }
-                                    _ => format!("{}:{{}}", quote(choice)),
-                                }
-                            })
-                            .collect();
-
-                        format!("{}:{{{}}}", quote(axis), choices.join(";"))
-                    })
-                    .collect();
-                let conditions = recipe.conditions.as_ref().map(|conditions| {
-                    conditions
-                        .iter()
-                        .map(|name| format!("{}:unknown", quote(name)))
-                        .collect::<Vec<_>>()
-                        .join(";")
-                });
-                let conditions = match conditions {
-                    Some(conditions) if !conditions.is_empty() => {
-                        format!(";conditions:{{{conditions}}}")
-                    }
-                    _ => String::new(),
-                };
-                let output = if html { ",\"html\"" } else { "" };
-                let selection = if recipe.prefix.is_some() {
-                    "selection:'class';"
-                } else {
-                    ""
-                };
-                let kind = format!(
-                    "import('zyzz').variants.ReturnType<{{{selection}variants:{{{}}}{conditions}}}{output}>",
-                    axes.join(";")
-                );
+                let kind = recipe_type(call, recipe, html);
 
                 // A specialized selector returns plain records, which assert through unknown.
                 let cast = if specialized { " as unknown" } else { "" };
@@ -2662,20 +2961,6 @@ impl<'a> Generator<'_, 'a> {
                     format!("({result} as {kind})")
                 } else {
                     result
-                }
-            } else if let Some(initialized) = unread.get(&*call.name) {
-                if erased.contains_key(&*call.name) {
-                    String::new()
-                } else {
-                    // Guards read only truthiness, and failures before initialization still call it.
-                    let value = if *initialized { "void 0" } else { "1" };
-                    let html = if html { "<'html'>" } else { "" };
-
-                    if typed {
-                        format!("({value} as unknown as import('zyzz').style.ReturnType{html})")
-                    } else {
-                        value.to_owned()
-                    }
                 }
             } else if application.folded {
                 if compose_html {

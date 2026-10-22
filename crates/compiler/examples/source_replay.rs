@@ -104,7 +104,7 @@ fn replay(case: &Value) -> Value {
 
             dead.sort();
 
-            let definitions = applications.definitions();
+            let definitions = applications.definitions(&FxHashSet::default());
             let values: Map<String, Value> = definitions
                 .values
                 .iter()

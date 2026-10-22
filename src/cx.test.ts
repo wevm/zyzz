@@ -355,6 +355,101 @@ namespace styles {
     }
   })
 
+  test('composes exported module-level definitions', async () => {
+    const graph = Graph.compile({
+      modules: {
+        'app.ts': `import { a } from './recipe.js'
+export * from './recipe.js'
+export const imported = a()`,
+        'recipe.ts': `import { cx, style } from 'zyzz'
+export const a = style({ color: 'rgb(255, 0, 0)' })
+export const b = style({ padding: '2px' })
+const tone = style({ fontWeight: 700 })
+export { tone }
+export function card() { return cx(a(), b(), tone()) }
+export function late() { return cx(c(), d()) }
+export function button() { return cx(styles.button(), ring()) }
+export const c = style({ color: 'rgb(0, 0, 255)' })
+export const d = style({ margin: '3px' })
+export const ring = style({ outline: '4px solid rgb(0, 128, 0)' })
+namespace styles {
+  export const button = style({ background: 'rgb(220, 38, 38)' })
+}`,
+      },
+      imports: {
+        'app.ts': { './recipe.js': 'recipe.ts' },
+        'recipe.ts': { zyzz: null },
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: Object.fromEntries(
+        Object.entries(graph.modules).map(([name, module]) => [
+          name,
+          module.code,
+        ]),
+      ),
+    })
+    const fixture = Vm.runInNewContext(`${code};Fixture;`)
+    const css =
+      (graph.sharedCss ?? '') +
+      Object.values(graph.modules)
+        .map((module) => module.css)
+        .join('')
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${css}</style><div id="card" class="${fixture.card().className}"></div><div id="late" class="${fixture.late().className}"></div><button id="button" class="${fixture.button().className}"></button><div id="imported" class="${fixture.imported.className}"></div>`,
+      )
+
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).padding),
+      ).toMatchInlineSnapshot(`"2px"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((node) => getComputedStyle(node).fontWeight),
+      ).toMatchInlineSnapshot(`"700"`)
+      expect(
+        await page
+          .locator('#late')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+      expect(
+        await page
+          .locator('#late')
+          .evaluate((node) => getComputedStyle(node).margin),
+      ).toMatchInlineSnapshot(`"3px"`)
+      expect(
+        await page
+          .locator('#button')
+          .evaluate((node) => getComputedStyle(node).backgroundColor),
+      ).toMatchInlineSnapshot(`"rgb(220, 38, 38)"`)
+      expect(
+        await page
+          .locator('#button')
+          .evaluate((node) => getComputedStyle(node).outline),
+      ).toMatchInlineSnapshot(`"rgb(0, 128, 0) solid 4px"`)
+      expect(
+        await page
+          .locator('#imported')
+          .evaluate((node) => getComputedStyle(node).color),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('emits only reachable nested composition groups', () => {
     const output = Source.extract({
       moduleId: 'nested.ts',

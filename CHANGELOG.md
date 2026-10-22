@@ -1,5 +1,13 @@
 # zyzz
 
+## 0.0.40
+
+### Patch Changes
+
+- bddfd77: Folded applications of imported styles in production graph compiles, and compiled a `cx` call or no-argument application spread alone onto a DOM element to a `className` attribute instead of a spread of frozen props. Imports whose modules evaluate first also dropped their initialization reads, so bundlers remove unread definitions and their runtime while a bare import keeps the module's stylesheet.
+- b0324d4: Folded selection components in production builds, across local and imported modules. When a component's body is one host element spreading one recipe application of pure prop expressions, a use site passing only those props, `children`, `className`, and `key` renders that element directly with a class list from a precompiled table or concatenation.
+- 43137e0: Merged each `cx` combination and folded wrapper chain whose local styles always apply together into one class in grouped output, dropping overridden declarations. Combinations whose nested blocks a later declaration only partly overrides keep their separate rules.
+
 ## 0.0.39
 
 ### Patch Changes

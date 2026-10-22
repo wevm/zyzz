@@ -7,9 +7,11 @@
 //! settled imported application spread to one constant class list, or a constant `className`.
 //! An element that names another wrapper may instead pass it nothing or only the caller's
 //! `className`. Chains whose levels become constant only once other folds apply still resolve,
-//! as those folds supply their class lists here. Each wrapper resolves to the host element and class list its runtime chain
-//! renders. Every level merges its own classes before the classes it receives, as `Props.merge`
-//! does, so outer levels still follow inner ones in the class list and win the same conflicts.
+//! as those folds supply their class lists here.
+//!
+//! Each wrapper resolves to the host element and class list its runtime chain renders. Every
+//! level merges its own classes before the classes it receives, as `Props.merge` does, so outer
+//! levels still follow inner ones in the class list and win the same conflicts.
 //!
 //! A use site that passes only `children`, `className`, and `key` then renders the host element
 //! directly, and a wrapper whose element names a forwarding wrapper renders that wrapper's host

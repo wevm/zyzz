@@ -3537,10 +3537,10 @@ export const button=variants({base:{display:'flex'},variants:{active:{false:{opa
     test('folds recipe and dynamic applications spread alone onto elements and erases their definitions', async () => {
       const source = `import { style, variants } from 'zyzz'
 type Props = { active: boolean; tone?: 'loud' | 'quiet' | null | undefined; width: \`\${number}px\` }
-export const App = (props: Props) => <main>
-<button id="first" {...styles.button({ active: props.active, tone: props.tone })} />
-<button id="second" {...styles.button({ active: !props.active, tone: 'loud' })} />
-<div id="bar" {...styles.bar({ width: props.width })} />
+export const App = ({ active, tone, width }: Props) => <main>
+<button id="first" {...styles.button({ active, tone })} />
+<button id="second" {...styles.button({ active: !active, tone: 'loud' })} />
+<div id="bar" {...styles.bar({ width })} />
 </main>
 namespace styles {
 export const button=variants({base:{display:'flex'},variants:{active:{false:{opacity:0.5},true:{}},tone:{loud:{color:'red'},quiet:{color:'gray'}}},defaultVariants:{tone:'quiet'}})
@@ -3552,10 +3552,10 @@ export const bar=style((values:{width:\`\${number}px\`})=>({width:values.width})
       expect(output.code).toMatchInlineSnapshot(`
         "
         type Props = { active: boolean; tone?: 'loud' | 'quiet' | null | undefined; width: \`\${number}px\` }
-        export const App = (props: Props) => <main>
-        <button id="first" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3","data-active":(props.active)==null?void 0:String(props.active),"data-tone":(props.tone)===void 0?"quiet":(props.tone)===null?void 0:String(props.tone)})} />
-        <button id="second" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3","data-active":String(!props.active),"data-tone":"loud"})} />
-        <div id="bar" {...({className:"z_l0kPgl4",style:{"width":(props.width)||"unset"}})} />
+        export const App = ({ active, tone, width }: Props) => <main>
+        <button id="first" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3","data-active":(active)==null?void 0:String(active),"data-tone":(tone)===void 0?"quiet":(tone)===null?void 0:String(tone)})} />
+        <button id="second" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl3","data-active":String(!active),"data-tone":"loud"})} />
+        <div id="bar" {...({className:"z_l0kPgl4",style:{"width":(width)||"unset"}})} />
         </main>
         "
       `)
@@ -3646,15 +3646,17 @@ export const bar=style((values:{width:\`\${number}px\`})=>({width:values.width})
         await browser.close()
       }
 
-      // A value that calls a function keeps the selector, since the fold would reorder it.
-      const called = Transform.compile({
-        moduleId: 'App.tsx',
-        source: source.replace('tone: props.tone', 'tone: pick()'),
-      })
+      // Calls and member reads can run code, which the fold would reorder or repeat.
+      for (const value of ['tone: pick()', 'tone: state.tone']) {
+        const kept = Transform.compile({
+          moduleId: 'App.tsx',
+          source: source.replace('active, tone })', `active, ${value} })`),
+        })
 
-      expect(called.code.includes('Object.hasOwn')).toMatchInlineSnapshot(
-        `true`,
-      )
+        expect(kept.code.includes('Object.hasOwn')).toMatchInlineSnapshot(
+          `true`,
+        )
+      }
     })
   })
 })

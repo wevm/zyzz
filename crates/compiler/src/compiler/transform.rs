@@ -15,6 +15,7 @@ use oxc_ast::ast::{
     ImportDeclarationSpecifier, ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program,
     PropertyKey, PropertyKind, Statement, UnaryOperator,
 };
+use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smallvec::SmallVec;
@@ -24,6 +25,7 @@ use crate::compiler::internal::contributions::Factory;
 use crate::compiler::internal::dynamic;
 use crate::compiler::internal::expression::unwrap;
 use crate::compiler::internal::packed_styles;
+use crate::compiler::internal::scope;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
@@ -552,12 +554,14 @@ fn return_type(call: &Call<'_>, html: bool) -> String {
 /// object is not a plain literal of axes whose values the fold can reorder.
 ///
 /// The selector reads axes in definition order, while an object literal evaluates in authored
-/// order, so each value must be a literal, a plain read, or a negation or strict comparison of
-/// them. A value that can be nullish must be a plain read, which the fold repeats.
+/// order, so each value must be a literal, a read of a module or local binding, or a negation or
+/// strict comparison of them. Member reads can run getters, so they keep the selector. A value
+/// that can be nullish must be a binding read, which the fold repeats.
 fn recipe_attributes(
     source: &str,
     application: &Bound<'_>,
     recipe: &runtime::Definition,
+    semantic: &Semantic<'_>,
     rewritten: &FxHashMap<&str, Vec<Span>>,
 ) -> Option<String> {
     let mut values: FxHashMap<&str, &Expression<'_>> = FxHashMap::default();
@@ -595,7 +599,7 @@ fn recipe_attributes(
             Some(Expression::TemplateLiteral(template)) if template.expressions.is_empty() => {
                 Some(quote(template.quasis.first()?.value.cooked.as_deref()?))
             }
-            Some(value) if !reorderable(value, rewritten) => return None,
+            Some(value) if !reorderable(value, semantic, rewritten) => return None,
             Some(value) => {
                 let text = source.get(value.span().start as usize..value.span().end as usize)?;
 
@@ -620,28 +624,35 @@ fn recipe_attributes(
     Some(output)
 }
 
-/// Whether an expression reads values without calls, conversions, or rewritten names, so moving
-/// it changes no result.
-fn reorderable(expression: &Expression<'_>, rewritten: &FxHashMap<&str, Vec<Span>>) -> bool {
+/// Whether an expression reads values without calls, getters, conversions, or rewritten names, so
+/// moving or repeating it changes no result. A global name can be an accessor of the global object.
+fn reorderable(
+    expression: &Expression<'_>,
+    semantic: &Semantic<'_>,
+    rewritten: &FxHashMap<&str, Vec<Span>>,
+) -> bool {
     match unwrap(expression) {
         Expression::BooleanLiteral(_)
         | Expression::NullLiteral(_)
         | Expression::NumericLiteral(_)
         | Expression::StringLiteral(_) => true,
-        Expression::Identifier(identifier) => !rewritten.contains_key(identifier.name.as_str()),
-        Expression::StaticMemberExpression(member) => {
-            !member.optional && reorderable(&member.object, rewritten)
+        Expression::Identifier(identifier) => {
+            !rewritten.contains_key(identifier.name.as_str())
+                && scope::resolve(semantic, identifier).is_some()
         }
-        Expression::ParenthesizedExpression(inner) => reorderable(&inner.expression, rewritten),
+        Expression::ParenthesizedExpression(inner) => {
+            reorderable(&inner.expression, semantic, rewritten)
+        }
         Expression::UnaryExpression(unary) => {
-            unary.operator == UnaryOperator::LogicalNot && reorderable(&unary.argument, rewritten)
+            unary.operator == UnaryOperator::LogicalNot
+                && reorderable(&unary.argument, semantic, rewritten)
         }
         Expression::BinaryExpression(binary) => {
             matches!(
                 binary.operator,
                 BinaryOperator::StrictEquality | BinaryOperator::StrictInequality
-            ) && reorderable(&binary.left, rewritten)
-                && reorderable(&binary.right, rewritten)
+            ) && reorderable(&binary.left, semantic, rewritten)
+                && reorderable(&binary.right, semantic, rewritten)
         }
         _ => false,
     }
@@ -1262,8 +1273,14 @@ pub fn compile<'a>(
                         && !html_starts.contains(&application.start)
                 })
                 .filter_map(|application| {
-                    recipe_attributes(source, application, recipe, &walker.identifiers)
-                        .map(|attributes| (application, attributes))
+                    recipe_attributes(
+                        source,
+                        application,
+                        recipe,
+                        &parsed.semantic,
+                        &walker.identifiers,
+                    )
+                    .map(|attributes| (application, attributes))
                 })
                 .collect();
 

@@ -249,6 +249,8 @@ struct Module {
     calls: Vec<CallSummary>,
     contribution_starts: Vec<u32>,
     contributions: Vec<Contribution>,
+    /// Identities of imported styles whose applications fold to their class lists.
+    imported: Vec<Arc<str>>,
     literals: Record<Arc<str>>,
     namespaces: Vec<namespace::Definition>,
     native_vars: Vec<VarsRead>,
@@ -298,6 +300,11 @@ impl Module {
                 .collect(),
             contribution_starts: extracted.contribution_starts.clone(),
             contributions: extracted.contributions.clone(),
+            imported: extracted
+                .imported_applications
+                .iter()
+                .map(|application| Arc::clone(&application.name))
+                .collect(),
             literals: Record::new(),
             namespaces: extracted.namespaces.clone(),
             native_vars: extracted.native_vars.clone(),
@@ -311,6 +318,16 @@ impl Module {
             variable_calls: extracted.variable_calls.clone(),
             vars: extracted.vars.clone(),
         }
+    }
+}
+
+impl Module {
+    /// Identities of the styles compiled elsewhere whose class lists a transform reads.
+    fn inputs(&self) -> impl Iterator<Item = &Arc<str>> {
+        self.calls
+            .iter()
+            .flat_map(|call| call.inputs.iter())
+            .chain(&self.imported)
     }
 }
 
@@ -4032,9 +4049,7 @@ impl Build<'_, '_> {
                 same_components
                     && previous.owners == owner_signature
                     && module
-                        .calls
-                        .iter()
-                        .flat_map(|call| call.inputs.iter())
+                        .inputs()
                         .all(|name| style_classes.get(name) == previous.classes.get(name))
             };
             let reused = match reusable {
@@ -4128,7 +4143,7 @@ impl Build<'_, '_> {
             };
             let mut classes: Vec<(Arc<str>, Option<Arc<str>>)> = Vec::new();
 
-            for name in module.calls.iter().flat_map(|call| call.inputs.iter()) {
+            for name in module.inputs() {
                 let value = style_classes.get(name).cloned();
 
                 match classes.iter_mut().find(|(existing, _)| existing == name) {

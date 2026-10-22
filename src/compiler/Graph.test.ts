@@ -3083,6 +3083,36 @@ export const read = other`,
 })
 
 describe('create', () => {
+  test('refolds imported applications after their definition changes', () => {
+    const compiler = Graph.create()
+    const modules = {
+      'base.ts': `import { style } from 'zyzz'
+export const base = style({ color: 'red' })`,
+      'index.tsx': `import { base } from './base.ts'
+export const App = () => <i {...base()} />`,
+    }
+
+    expect(compiler.compile({ modules }).modules['index.tsx']!.code)
+      .toMatchInlineSnapshot(`
+      "import './base.ts'
+      export const App = () => <i className={"z_edltVp0 z-style-edltVp-base"} />"
+    `)
+
+    const edited = compiler.compile({
+      modules: {
+        ...modules,
+        'base.ts': `import { style } from 'zyzz'
+export const other = style({ color: 'blue' })
+export const base = style({ color: 'red' })`,
+      },
+    })
+
+    expect(edited.modules['index.tsx']!.code).toMatchInlineSnapshot(`
+      "import './base.ts'
+      export const App = () => <i className={"z_edltVp1 z-style-edltVp-base"} />"
+    `)
+  })
+
   test('folds default-exported function wrappers', () => {
     const output = Graph.compile({
       modules: {

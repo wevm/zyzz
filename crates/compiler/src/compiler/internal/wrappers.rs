@@ -266,18 +266,19 @@ pub fn find<'a>(
             continue;
         };
         let (fold, anchor) = if let Some(candidate) = candidates.get(&symbol) {
-            // A module-scope element before the declaration still reads the uninitialized binding.
-            let ready = element.span.start >= candidate.ready
-                || nodes.ancestor_kinds(node.id()).any(|kind| defers(&kind));
-
-            if !ready {
+            let anchor = resolver.anchor(symbol, 0);
+            let anchor = if element.span.start >= candidate.ready {
+                anchor
+            } else if anchor.is_none() && nodes.ancestor_kinds(node.id()).any(|kind| defers(&kind))
+            {
+                // A function placed before the declaration can still run before it initializes,
+                // so its element keeps reading the wrapper and throws as the unfolded one would.
+                Some(symbol)
+            } else {
                 continue;
-            }
+            };
 
-            (
-                folds.get(&symbol).and_then(Option::as_ref),
-                resolver.anchor(symbol, 0),
-            )
+            (folds.get(&symbol).and_then(Option::as_ref), anchor)
         } else if imported.contains_key(&symbol) {
             (resolver.imported(symbol), Some(symbol))
         } else {

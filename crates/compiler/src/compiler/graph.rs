@@ -54,6 +54,10 @@ pub type Map<V> = IndexMap<Arc<str>, V, FxBuildHasher>;
 /// each specifier's target module.
 type Components = Map<Vec<(Arc<str>, Arc<str>)>>;
 
+/// A fold-aware transform order, the component edges it keeps, and the modules that render any
+/// imported binding as a JSX element.
+type FoldOrder = (Vec<Arc<str>>, Components, FxHashSet<Arc<str>>);
+
 /// Inputs of one graph compilation.
 #[derive(Clone, Debug, Default)]
 #[expect(
@@ -3322,7 +3326,7 @@ impl Build<'_, '_> {
     /// whose components a module renders joins only when it closes no cycle with dependency and
     /// component edges, so the order stays acyclic and each edge holds in every graph that
     /// contains both modules' imports. Without such edges the order is the extraction order.
-    fn fold_order(&self) -> (Vec<Arc<str>>, Components) {
+    fn fold_order(&self) -> FoldOrder {
         let ids: Vec<&Arc<str>> = self.extracted.keys().collect();
         let indexes: FxHashMap<&str, usize> = ids
             .iter()
@@ -3330,13 +3334,19 @@ impl Build<'_, '_> {
             .map(|(index, id)| (&***id, index))
             .collect();
         let mut candidates: Vec<Vec<(Arc<str>, usize)>> = vec![Vec::new(); ids.len()];
+        let mut rendering: FxHashSet<Arc<str>> = FxHashSet::default();
 
         for (index, id) in ids.iter().enumerate() {
             let Some(parsed) = self.parse(id) else {
                 continue;
             };
+            let imports = wrappers::imports(parsed.program, &parsed.semantic);
 
-            for (specifier, span) in wrappers::imports(parsed.program, &parsed.semantic) {
+            if !imports.is_empty() {
+                rendering.insert(Arc::clone(id));
+            }
+
+            for (specifier, span) in imports {
                 let Ok(Some(target)) = self.resolve(id, specifier, span) else {
                     continue;
                 };
@@ -3353,7 +3363,7 @@ impl Build<'_, '_> {
         let mut components = Components::default();
 
         if candidates.iter().all(Vec::is_empty) {
-            return (ids.into_iter().cloned().collect(), components);
+            return (ids.into_iter().cloned().collect(), components, rendering);
         }
 
         // Dependencies that extraction already ordered first.
@@ -3427,13 +3437,15 @@ impl Build<'_, '_> {
 
             while let Some((node, next)) = stack.last_mut() {
                 let node = *node;
-                let children = dependencies
-                    .get(node)
-                    .into_iter()
-                    .flatten()
-                    .chain(kept.get(node).into_iter().flatten());
+                let dependencies = dependencies.get(node).map_or(&[][..], Vec::as_slice);
+                let kept = kept.get(node).map_or(&[][..], Vec::as_slice);
+                // Dependency edges come first, then component edges, each visited once.
+                let child = dependencies.get(*next).or_else(|| {
+                    next.checked_sub(dependencies.len())
+                        .and_then(|index| kept.get(index))
+                });
 
-                if let Some(child) = children.copied().nth(*next) {
+                if let Some(&child) = child {
                     *next += 1;
 
                     if let Some(flag) = done.get_mut(child)
@@ -3454,7 +3466,7 @@ impl Build<'_, '_> {
             }
         }
 
-        (order, components)
+        (order, components, rendering)
     }
 
     /// Emits module CSS, shared stylesheets, and contracts for a web graph.
@@ -3777,10 +3789,14 @@ impl Build<'_, '_> {
         let mut transformed = previous
             .map(|previous| previous.transformed.clone())
             .unwrap_or_default();
-        let (order, components) = if rewrite && !options.development {
+        let (order, components, rendering) = if rewrite && !options.development {
             self.fold_order()
         } else {
-            (self.extracted.keys().cloned().collect(), Map::default())
+            (
+                self.extracted.keys().cloned().collect(),
+                Map::default(),
+                FxHashSet::default(),
+            )
         };
         let mut exports: FxHashMap<Arc<str>, Arc<wrappers::Exports>> = FxHashMap::default();
         // Development keeps every identity, so edits that add a selector reference never change
@@ -3840,17 +3856,12 @@ impl Build<'_, '_> {
             // A module that re-extracts equal after a dependency edit keeps its identity, so an
             // evicted transform is checked against the classes and owners it read.
             let same_inputs = |previous: &Cache| {
-                let same_components = components.get(module_id).is_none_or(|edges| {
-                    edges.iter().all(|(_, target)| {
-                        previous
-                            .result
-                            .modules
-                            .get(target)
-                            .and_then(Compiled::web)
-                            .and_then(|output| output.wrappers.as_ref())
-                            == exports.get(target)
-                    })
-                });
+                // Resolutions can retarget a component import without changing the module's
+                // extraction, so a transform reads the same folds only if it recorded them.
+                let same_components = match previous.transformed.get(module_id) {
+                    Some(cached) => cached.components == read,
+                    None => !rendering.contains(module_id),
+                };
 
                 same_components
                     && previous.owners == owner_signature

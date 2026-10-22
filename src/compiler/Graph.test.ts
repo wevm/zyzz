@@ -2769,6 +2769,34 @@ ${web.modules['app.ts']!.code}`,
 })
 
 describe('create', () => {
+  test('refolds consumers when a resolution retargets a wrapper import', () => {
+    const compiler = Graph.create()
+    const wrapper = (tag: string) => `import { style } from 'zyzz'
+export const Box = (props: { className?: string | undefined; children?: unknown }) => <${tag} {...styles.box({ className: props.className })}>{props.children}</${tag}>
+namespace styles {
+  export const box = style({ color: 'red' })
+}`
+    const modules = {
+      'a.tsx': wrapper('section'),
+      'app.tsx': `import { Box } from './box'
+export const App = () => <Box>box</Box>`,
+      'b.tsx': wrapper('article'),
+    }
+    const imports = (target: string) => ({
+      'a.tsx': { zyzz: null },
+      'app.tsx': { './box': target },
+      'b.tsx': { zyzz: null },
+    })
+
+    compiler.compile({ imports: imports('a.tsx'), modules })
+
+    expect(
+      compiler
+        .compile({ imports: imports('b.tsx'), modules })
+        .modules['app.tsx']!.code.match(/<\w+ className/)?.[0],
+    ).toMatchInlineSnapshot(`"<article className"`)
+  })
+
   test('refolds consumers when an imported wrapper changes', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules: wrappers })

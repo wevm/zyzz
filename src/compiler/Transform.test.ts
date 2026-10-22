@@ -3944,6 +3944,32 @@ export const l2 = style({ borderLeft: '3px solid', paddingLeft: '3px' })
       `)
     })
 
+    test('keeps reading wrappers declared after the function that renders them', () => {
+      const output = Transform.compile({
+        moduleId: 'Early.tsx',
+        source: `import { style } from 'zyzz'
+type P = { className?: string | undefined; children?: unknown }
+export function render() { return <Late>early</Late> }
+const Late = (props: P) => <button {...styles.late({ className: props.className })}>{props.children}</button>
+export const after = () => <Late>after</Late>
+namespace styles {
+export const late = style({ color: 'red' })
+}`,
+      })
+
+      // The early element still throws before \`Late\` initializes, as the component would.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        import { Props as __zyzzProps } from 'zyzz/runtime';
+
+        type P = { className?: string | undefined; children?: unknown }
+        export function render() { return <button className={Late&&"z_mespvT0"}>early</button> }
+        const Late = (props: P) => <button className={__zyzzProps.merge("z_mespvT0",props.className)}>{props.children}</button>
+        export const after = () => <button className={"z_mespvT0"}>after</button>
+        "
+      `)
+    })
+
     test('keeps development components unfolded', () => {
       const output = Transform.compile({
         development: true,

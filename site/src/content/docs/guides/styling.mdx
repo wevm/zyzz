@@ -363,7 +363,7 @@ namespace styles {
 }
 ```
 
-Chains fold through local and imported source modules. Each level's classes precede the classes it receives, as at runtime, so outer levels win the same conflicts in atomic and grouped output. A `ref`, a spread, any other prop, hooks, or conditions keep the component rendering at runtime.
+Chains fold through local and imported source modules. Each level's classes precede the classes it receives, as at runtime, so outer levels win the same conflicts in atomic and grouped output. A level may instead apply a constant `cx` call or a constant `className`. A `ref`, a spread, any other prop, hooks, or conditions keep the component rendering at runtime.
 
 Folded components no longer appear in React DevTools or component stacks, and the element's `type` is the host element. Development builds keep every component, so tools and Fast Refresh still see each one. Definitions remain in place, so exports and other callers keep working.
 
@@ -467,6 +467,8 @@ namespace styles {
 </Tabs>
 
 When a call is spread alone onto an element, a field that fills one unconditional declaration is written to that property inline, such as `style="width:40%"`, so the element skips variable substitution during style recalculation. A field typed `string` can hold a CSS-wide keyword, so it keeps its variable, as every other call does.
+
+Production builds fold a component whose whole body is one host element spreading such a call, with values built from its props by templates and `+`. A use site passing only those props, `children`, and `key`, each a literal or variable, renders the host element with the class list and inline style.
 
 A changing value has a narrower tool in most cases:
 

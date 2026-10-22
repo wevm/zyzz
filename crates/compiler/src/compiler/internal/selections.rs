@@ -128,16 +128,61 @@ const DEPTH: usize = 32;
 const TABLE: usize = 64;
 
 /// How a component reads its props.
-enum Params<'a> {
+pub enum Params<'a> {
     /// `(props) => ...`, read as `props.name`.
     Object(SymbolId),
     /// `({ name, other: alias }) => ...`, with each key's binding.
     Pattern(Vec<(&'a str, SymbolId)>),
 }
 
+impl<'a> Params<'a> {
+    /// How a component's only parameter reads its props, when it binds a name or a pattern of
+    /// distinct keys without defaults or a rest element.
+    pub fn new(params: &'a FormalParameters<'a>) -> Option<Self> {
+        let [param] = params.items.as_slice() else {
+            return None;
+        };
+
+        if params.rest.is_some() || param.initializer.is_some() || !param.decorators.is_empty() {
+            return None;
+        }
+
+        Some(match &param.pattern {
+            BindingPattern::BindingIdentifier(identifier) => {
+                Self::Object(identifier.symbol_id.get()?)
+            }
+            BindingPattern::ObjectPattern(pattern) => {
+                if pattern.rest.is_some() {
+                    return None;
+                }
+
+                let mut bindings: Vec<(&'a str, SymbolId)> = Vec::new();
+
+                for property in &pattern.properties {
+                    let PropertyKey::StaticIdentifier(key) = &property.key else {
+                        return None;
+                    };
+                    let BindingPattern::BindingIdentifier(value) = &property.value else {
+                        return None;
+                    };
+
+                    if property.computed || bindings.iter().any(|(seen, _)| *seen == key.name) {
+                        return None;
+                    }
+
+                    bindings.push((key.name.as_str(), value.symbol_id.get()?));
+                }
+
+                Self::Pattern(bindings)
+            }
+            _ => return None,
+        })
+    }
+}
+
 impl Params<'_> {
     /// The prop an expression reads directly.
-    fn read(&self, semantic: &Semantic<'_>, expression: &Expression<'_>) -> Option<Arc<str>> {
+    pub fn read(&self, semantic: &Semantic<'_>, expression: &Expression<'_>) -> Option<Arc<str>> {
         match (self, unwrap(expression)) {
             (Self::Object(symbol), Expression::StaticMemberExpression(member)) => {
                 let Expression::Identifier(object) = &member.object else {
@@ -170,44 +215,7 @@ pub fn candidate<'a>(
     recipes: &FxHashMap<u32, Recipe<'_>>,
     strings: bool,
 ) -> Option<(Selection, &'a CallExpression<'a>)> {
-    let [param] = params.items.as_slice() else {
-        return None;
-    };
-
-    if params.rest.is_some() || param.initializer.is_some() || !param.decorators.is_empty() {
-        return None;
-    }
-
-    let params = match &param.pattern {
-        BindingPattern::BindingIdentifier(identifier) => {
-            Params::Object(identifier.symbol_id.get()?)
-        }
-        BindingPattern::ObjectPattern(pattern) => {
-            if pattern.rest.is_some() {
-                return None;
-            }
-
-            let mut bindings: Vec<(&'a str, SymbolId)> = Vec::new();
-
-            for property in &pattern.properties {
-                let PropertyKey::StaticIdentifier(key) = &property.key else {
-                    return None;
-                };
-                let BindingPattern::BindingIdentifier(value) = &property.value else {
-                    return None;
-                };
-
-                if property.computed || bindings.iter().any(|(seen, _)| *seen == key.name) {
-                    return None;
-                }
-
-                bindings.push((key.name.as_str(), value.symbol_id.get()?));
-            }
-
-            Params::Pattern(bindings)
-        }
-        _ => return None,
-    };
+    let params = Params::new(params)?;
     let Expression::JSXElement(element) = expression else {
         return None;
     };
@@ -437,7 +445,7 @@ fn pure(
 }
 
 /// The primitive a literal expression evaluates to.
-fn literal(expression: &Expression<'_>) -> Option<Literal> {
+pub fn literal(expression: &Expression<'_>) -> Option<Literal> {
     Some(match unwrap(expression) {
         Expression::BooleanLiteral(literal) => Literal::Boolean(literal.value),
         Expression::NullLiteral(_) => Literal::Null,
@@ -453,7 +461,7 @@ fn literal(expression: &Expression<'_>) -> Option<Literal> {
 }
 
 /// Whether JSX drops a text child, as it drops whitespace that spans lines.
-fn insignificant(text: &str) -> bool {
+pub fn insignificant(text: &str) -> bool {
     text.bytes()
         .all(|byte| matches!(byte, b' ' | b'\t' | b'\n' | b'\r'))
         && text.contains(['\n', '\r'])

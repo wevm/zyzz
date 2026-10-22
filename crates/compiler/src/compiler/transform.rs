@@ -11,9 +11,9 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use oxc_ast::AstKind;
 use oxc_ast::ast::{
-    Argument, ArrayExpressionElement, BinaryOperator, BindingPattern, Expression,
-    ImportDeclarationSpecifier, ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program,
-    PropertyKey, PropertyKind, Statement, UnaryOperator,
+    Argument, ArrayExpressionElement, BindingPattern, Expression, ImportDeclarationSpecifier,
+    ImportOrExportKind, ObjectExpression, ObjectPropertyKind, Program, PropertyKey, PropertyKind,
+    Statement,
 };
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
@@ -22,17 +22,16 @@ use smallvec::SmallVec;
 
 use crate::compiler::internal::applications::{self, Application, Bound};
 use crate::compiler::internal::contributions::Factory;
-use crate::compiler::internal::dynamic;
-use crate::compiler::internal::expression::unwrap;
+use crate::compiler::internal::expression::{self, unwrap};
 use crate::compiler::internal::packed_styles;
 use crate::compiler::internal::recipes;
-use crate::compiler::internal::scope;
 use crate::compiler::internal::selections;
 use crate::compiler::internal::statics::key_literal;
 use crate::compiler::internal::syntax::Parsed;
 use crate::compiler::internal::themes::{self, Output as ThemeOutput};
 use crate::compiler::internal::wrappers;
-use crate::compiler::source::{Call, Extracted, KnownInput, RuntimeInput};
+use crate::compiler::internal::{dynamic, dynamics};
+use crate::compiler::source::{Call, Extracted, ImportedApplication, KnownInput, RuntimeInput};
 use crate::data::Data;
 use crate::error::{Error, Result};
 use crate::internal::token::{Composition, CssOutput, Reference};
@@ -699,7 +698,13 @@ fn recipe_attributes(
             Some(Expression::TemplateLiteral(template)) if template.expressions.is_empty() => {
                 Some(quote(template.quasis.first()?.value.cooked.as_deref()?))
             }
-            Some(value) if !reorderable(value, semantic, rewritten) => return None,
+            Some(value)
+                if !expression::reorderable(value, semantic, &|name| {
+                    rewritten.contains_key(name)
+                }) =>
+            {
+                return None;
+            }
             Some(value) => {
                 let text = source.get(value.span().start as usize..value.span().end as usize)?;
 
@@ -722,40 +727,6 @@ fn recipe_attributes(
     }
 
     Some(output)
-}
-
-/// Whether an expression reads values without calls, getters, conversions, or rewritten names, so
-/// moving or repeating it changes no result. A global name can be an accessor of the global object.
-fn reorderable(
-    expression: &Expression<'_>,
-    semantic: &Semantic<'_>,
-    rewritten: &FxHashMap<&str, Vec<Span>>,
-) -> bool {
-    match unwrap(expression) {
-        Expression::BooleanLiteral(_)
-        | Expression::NullLiteral(_)
-        | Expression::NumericLiteral(_)
-        | Expression::StringLiteral(_) => true,
-        Expression::Identifier(identifier) => {
-            !rewritten.contains_key(identifier.name.as_str())
-                && scope::resolve(semantic, identifier).is_some()
-        }
-        Expression::ParenthesizedExpression(inner) => {
-            reorderable(&inner.expression, semantic, rewritten)
-        }
-        Expression::UnaryExpression(unary) => {
-            unary.operator == UnaryOperator::LogicalNot
-                && reorderable(&unary.argument, semantic, rewritten)
-        }
-        Expression::BinaryExpression(binary) => {
-            matches!(
-                binary.operator,
-                BinaryOperator::StrictEquality | BinaryOperator::StrictInequality
-            ) && reorderable(&binary.left, semantic, rewritten)
-                && reorderable(&binary.right, semantic, rewritten)
-        }
-        _ => false,
-    }
 }
 
 /// Whether a reorderable expression can evaluate to `null` or `undefined`.
@@ -808,15 +779,18 @@ fn bound_fields(
             return None;
         }
 
+        // A value that is never empty never takes the empty value's fallback.
+        let filled = filled(&property.value);
+
         fields.push(match properties.get(key) {
             Some(target) => (
                 format!("{}:(", quote(target)),
-                ")||\"unset\"",
+                if filled { ")" } else { ")||\"unset\"" },
                 property.value.span(),
             ),
             None => (
                 format!("{}:`${{(", quote(&slot.name)),
-                ")}`||\" \"",
+                if filled { ")}`" } else { ")}`||\" \"" },
                 property.value.span(),
             ),
         });
@@ -825,13 +799,31 @@ fn bound_fields(
     (fields.len() == slots.len()).then_some(fields)
 }
 
+/// Whether an expression always evaluates to a non-empty string: a string or template whose
+/// static text is not empty.
+fn filled(expression: &Expression<'_>) -> bool {
+    match unwrap(expression) {
+        Expression::ParenthesizedExpression(inner) => filled(&inner.expression),
+        Expression::StringLiteral(literal) => !literal.value.is_empty(),
+        Expression::TemplateLiteral(template) => template.quasis.iter().any(|quasi| {
+            quasi
+                .value
+                .cooked
+                .as_ref()
+                .is_some_and(|text| !text.is_empty())
+        }),
+        _ => false,
+    }
+}
+
 /// Folds a dynamic application into its props, writing each field that fills one declaration to
 /// that property and each other field to its private variable.
 ///
 /// Values keep their authored text and order, so edits inside them still apply. An empty string
 /// writes `unset` to a property, the value a declaration takes when its variable is invalid at
-/// computed-value time, and a space to a variable, as the generated callable does. The emitted rule
-/// still reads the variable of an inlined field, which no folded application assigns.
+/// computed-value time, and a space to a variable, as the generated callable does. A value that is
+/// never empty, such as a template with static text, writes no fallback. The emitted rule still
+/// reads the variable of an inlined field, which no folded application assigns.
 fn fold_bound(
     module: &mut Edits<'_>,
     source: &str,
@@ -1758,10 +1750,36 @@ pub fn compile<'a>(
     };
     let mut state =
         generator.rewrite(&mut module, &walker, local.as_ref(), &found, &folded_starts)?;
+    // Imported applications fold like local ones once the graph knows their class lists. A settled
+    // import reads nothing, and a guard keeps failures before initialization otherwise.
+    let imported: Vec<(&ImportedApplication, &str, bool)> = if portable || options.development {
+        Vec::new()
+    } else {
+        extracted
+            .imported_applications
+            .iter()
+            .filter(|application| !replaced.contains(application.start, application.end))
+            .filter_map(|application| {
+                let class = generator.input_class(&application.name)?;
+
+                Some((application, class, generator.settled(&application.import)))
+            })
+            .collect()
+    };
     // Development keeps every component, so tools and updates still see each one.
     let wrappers = if portable || options.development {
         wrappers::Wrappers::default()
     } else {
+        let constants = state
+            .constants
+            .iter()
+            .map(|(start, (end, classes))| (*start, *end, classes.as_str()));
+        let settled = imported
+            .iter()
+            .filter(|(_, _, settled)| *settled)
+            .map(|(application, class, _)| (application.start, application.end, *class));
+        // Compositions and settled imported applications render one constant class list, which
+        // a wrapper's element can carry as its only attribute.
         let applications: FxHashMap<u32, wrappers::Applied<'_>> = folded
             .iter()
             .filter(|application| !outputs.get(&*application.name).copied().unwrap_or_default())
@@ -1778,9 +1796,21 @@ pub fn compile<'a>(
                                 .get(application.start as usize..application.callee_end as usize)
                                 .unwrap_or_default()
                         }),
+                        local: true,
                     },
                 ))
             })
+            .chain(constants.chain(settled).map(|(start, end, classes)| {
+                (
+                    start,
+                    wrappers::Applied {
+                        classes,
+                        end,
+                        guard: None,
+                        local: false,
+                    },
+                )
+            }))
             .collect();
         // A selection's use site keeps reading the guard of an application that can run before
         // its definition initializes, so it throws where the component would.
@@ -1826,6 +1856,30 @@ pub fn compile<'a>(
             })
             .flatten()
             .collect();
+        // A dynamic component's use site reads the fields its application folds to.
+        let dynamics: FxHashMap<u32, dynamics::Application<'_>> = plans
+            .iter()
+            .filter_map(|(call, folds)| Some((generator.classes.get(&call.name)?, folds)))
+            .flat_map(|(classes, folds)| {
+                folds.iter().map(move |(application, fields)| {
+                    (
+                        application.start,
+                        dynamics::Application {
+                            classes: classes.as_str(),
+                            end: application.end,
+                            fields: fields.as_slice(),
+                            guard: (!application.initialized).then(|| {
+                                source
+                                    .get(
+                                        application.start as usize..application.callee_end as usize,
+                                    )
+                                    .unwrap_or_default()
+                            }),
+                        },
+                    )
+                })
+            })
+            .collect();
         let taken = |name: &str| walker.identifiers.contains_key(name);
 
         wrappers::find(
@@ -1834,6 +1888,7 @@ pub fn compile<'a>(
             &wrappers::Options {
                 applications: &applications,
                 combined: Some(&combined),
+                dynamics: &dynamics,
                 excluded: &excluded,
                 imports: options.wrappers,
                 recipes: &recipes,
@@ -1965,52 +2020,26 @@ pub fn compile<'a>(
         }
     }
 
-    // Imported applications fold like local ones once the graph knows their class lists. A settled
-    // import reads nothing, and a guard keeps failures before initialization otherwise.
-    if !portable && !options.development {
-        let replaced = Intervals::new(
-            extracted
-                .calls
-                .iter()
-                .map(|call| (call.start, call.end))
-                .chain(
-                    extracted
-                        .contribution_calls
-                        .iter()
-                        .map(|call| (call.start, call.end)),
-                )
-                .collect(),
-        );
+    for (application, class, settled) in imported {
+        let class = quote(class);
+        let value = if settled {
+            state
+                .consumed
+                .push((application.start, application.callee_end));
+            class
+        } else {
+            let callee = source
+                .get(application.start as usize..application.callee_end as usize)
+                .unwrap_or_default();
 
-        for application in &extracted.imported_applications {
-            let Some(class) = generator.input_class(&application.name) else {
-                continue;
-            };
+            format!("({callee}?{class}:{callee}().className)")
+        };
 
-            if replaced.contains(application.start, application.end) {
-                continue;
-            }
-
-            let class = quote(class);
-            let value = if generator.settled(&application.import) {
-                state
-                    .consumed
-                    .push((application.start, application.callee_end));
-                class
-            } else {
-                let callee = source
-                    .get(application.start as usize..application.callee_end as usize)
-                    .unwrap_or_default();
-
-                format!("({callee}?{class}:{callee}().className)")
-            };
-
-            module.overwrite(
-                application.spread.start,
-                application.spread.end,
-                format!("className={{{value}}}"),
-            )?;
-        }
+        module.overwrite(
+            application.spread.start,
+            application.spread.end,
+            format!("className={{{value}}}"),
+        )?;
     }
 
     for (start, end, text) in wrappers.edits {
@@ -2539,6 +2568,7 @@ fn fold_chains(styles: &mut Vec<Arc<NamedStyle>>, options: &FoldChains<'_, '_>) 
                             .get(application.start as usize..application.callee_end as usize)
                             .unwrap_or_default()
                     }),
+                    local: true,
                 },
             )
         })
@@ -2549,6 +2579,7 @@ fn fold_chains(styles: &mut Vec<Arc<NamedStyle>>, options: &FoldChains<'_, '_>) 
         &wrappers::Options {
             applications: &applications,
             combined: None,
+            dynamics: &FxHashMap::default(),
             excluded: options.excluded,
             imports: options.imports,
             // Selection folds keep their own classes, so planning leaves them out.
@@ -2733,6 +2764,9 @@ struct State {
     composition_html: String,
     compositions: Vec<String>,
     conditional_recipe: String,
+    /// Compositions spread alone onto DOM elements that render one constant class list, by
+    /// call start, with the call end and the class list.
+    constants: FxHashMap<u32, (u32, String)>,
     html: String,
     payload_recipe: String,
     recipe: String,
@@ -2879,9 +2913,14 @@ impl<'a> Generator<'_, 'a> {
             }
 
             if read.is_empty() {
-                return Ok(classes
-                    .first()
-                    .map_or_else(String::new, |class| quote(class)));
+                let Some(class) = classes.first() else {
+                    return Ok(String::new());
+                };
+
+                state
+                    .constants
+                    .insert(call.start, (call.end, (*class).to_owned()));
+                return Ok(quote(class));
             }
         }
 
@@ -3338,6 +3377,15 @@ impl<'a> Generator<'_, 'a> {
                     )
                 }
             } else if let Some(guards) = &call.composition {
+                if guards.is_empty()
+                    && !html
+                    && let Some(classes) = self.classes.get(&call.name)
+                {
+                    state
+                        .constants
+                        .insert(call.start, (call.end, classes.clone()));
+                }
+
                 let base = if compose_html {
                     format!(
                         "{}.from({{className:{class_name}}})",

@@ -4008,6 +4008,119 @@ export const button = style({ color: 'red' })
       `)
     })
 
+    test('folds wrappers whose element carries one constant class list', async () => {
+      const source = `import { cx, style } from 'zyzz'
+type P = { className?: string | undefined; children?: unknown }
+const named = 'named'
+const Literal = ({ children }: P) => <b className="literal">{children}</b>
+const Quoted = ({ children }: P) => <b className={'quoted'}>{children}</b>
+const Template = ({ children }: P) => <b className={\`template\`}>{children}</b>
+const Named = ({ children }: P) => <b className={named}>{children}</b>
+const Composed = ({ children }: P) => <b {...cx(styles.base(), styles.ghost())}>{children}</b>
+const Forwarding = (props: P) => <i {...styles.base({ className: props.className })}>{props.children}</i>
+// Chains through a forwarding wrapper merge the inner classes first.
+const Outer = ({ children }: P) => <Forwarding className="outer">{children}</Forwarding>
+const Ladder = ({ children }: P) => <Forwarding {...cx(styles.ghost(), styles.primary())}>{children}</Forwarding>
+const Twice = ({ children }: P) => <Ladder>{children}</Ladder>
+const Passing = (props: P) => <Forwarding className={props.className}>{props.children}</Forwarding>
+const Bare = ({ children }: P) => <b>{children}</b>
+// A hoisted function can render before the binding initializes.
+function Hoisted({ children }: P) { return <b className={late}>{children}</b> }
+const late = 'late'
+let changing = 'changing'
+const Changing = ({ children }: P) => <b className={changing}>{children}</b>
+const Conditional = ({ children }: P) => <b {...cx(styles.base(), changing === 'on' && styles.ghost())}>{children}</b>
+const Extra = ({ children }: P) => <b id="extra" className="extra">{children}</b>
+const Empty = ({ children }: P) => <b className="">{children}</b>
+const Entity = ({ children }: P) => <b className="a&amp;b">{children}</b>
+export const App = () => <main>
+<Literal>literal</Literal>
+<Quoted key="key">quoted</Quoted>
+<Template>template</Template>
+<Named>named</Named>
+<Composed>composed</Composed>
+<Outer>outer</Outer>
+<Ladder>ladder</Ladder>
+<Twice>twice</Twice>
+<Passing className="passed">passed</Passing>
+<Bare>bare</Bare>
+<Literal className="ignored">ignored</Literal>
+<Hoisted>hoisted</Hoisted>
+<Changing>changing</Changing>
+<Conditional>conditional</Conditional>
+<Extra>extra</Extra>
+<Empty>empty</Empty>
+<Entity>entity</Entity>
+</main>
+namespace styles {
+  export const base = style({ borderLeft: '1px solid', color: 'rgb(255, 0, 0)', paddingLeft: '1px' })
+  export const ghost = style({ paddingLeft: '2px' })
+  export const primary = style({ color: 'rgb(0, 0, 255)' })
+}`
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      expect(output.code.slice(output.code.indexOf('export const App')))
+        .toMatchInlineSnapshot(`
+          "export const App = () => <main>
+          <b className={"literal"}>literal</b>
+          <b className={"quoted"} key="key">quoted</b>
+          <b className={"template"}>template</b>
+          <b className={"named"}>named</b>
+          <b className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl5 z_l0kPgl6"}>composed</b>
+          <i className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 outer"}>outer</i>
+          <i className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl7 z_l0kPgl8"}>ladder</i>
+          <i className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl7 z_l0kPgl8"}>twice</i>
+          <i className={"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 passed"}>passed</i>
+          <Bare>bare</Bare>
+          <Literal className="ignored">ignored</Literal>
+          <Hoisted>hoisted</Hoisted>
+          <Changing>changing</Changing>
+          <Conditional>conditional</Conditional>
+          <Extra>extra</Extra>
+          <Empty>empty</Empty>
+          <Entity>entity</Entity>
+          </main>
+          "
+        `)
+
+      const rendered = await Wrappers.render({
+        css: output.css,
+        entry: 'App.tsx',
+        modules: { 'App.tsx': output.code },
+      })
+
+      expect(rendered.markup).toMatchInlineSnapshot(
+        `"<main><b class="literal">literal</b><b class="quoted">quoted</b><b class="template">template</b><b class="named">named</b><b class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl5 z_l0kPgl6">composed</b><i class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 outer">outer</i><i class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl7 z_l0kPgl8">ladder</i><i class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 z_l0kPgl7 z_l0kPgl8">twice</i><i class="z_l0kPgl0 z_l0kPgl1 z_l0kPgl2 passed">passed</i><b>bare</b><b class="literal">ignored</b><b class="late">hoisted</b><b class="changing">changing</b><b class="z_l0kPgl0 z_l0kPgl9 z_l0kPgla">conditional</b><b id="extra" class="extra">extra</b><b class="">empty</b><b class="a&amp;b">entity</b></main>"`,
+      )
+
+      const development = Transform.compile({
+        development: true,
+        moduleId: 'App.tsx',
+        source,
+      })
+      const unfolded = await Wrappers.render({
+        css: development.css,
+        entry: 'App.tsx',
+        modules: { 'App.tsx': development.code },
+      })
+      // Development labels its class names, so they are renamed before comparing.
+      const relabel = (text: string) =>
+        Object.entries(development.classes).reduce(
+          (text, [name, classes]) =>
+            text.replaceAll(classes, output.classes[name]!),
+          text,
+        )
+
+      // Components that render at runtime produce the same markup and styles.
+      expect(
+        relabel(unfolded.markup) === rendered.markup,
+      ).toMatchInlineSnapshot(`true`)
+      expect(
+        relabel(JSON.stringify(unfolded.elements)) ===
+          JSON.stringify(rendered.elements),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
     test('keeps development components unfolded', () => {
       const output = Transform.compile({
         development: true,
@@ -4528,6 +4641,296 @@ namespace styles {
 
       expect(
         output.code.includes('<Chip tone="blue" on>literal</Chip>'),
+      ).toMatchInlineSnapshot(`true`)
+    })
+  })
+})
+
+describe('dynamics', () => {
+  describe('compile', () => {
+    const source = `import { style } from 'zyzz'
+type P = { children?: unknown; size?: unknown; tone?: unknown }
+const Shifted = ({ size, children }: P) => <b {...styles.shift({ padding: \`\${size}px\` })}>{children}</b>
+// Several fields, prop reads through the props object, and concatenation.
+const Bordered = (props: P) => <i {...styles.border({ color: \`rgb(\${props.tone}, 0, 0)\`, width: props.size + 'px' })}>{props.children}</i>
+// A value that can be empty keeps its fallback.
+const Bare = (props: P) => <u {...styles.shift({ padding: props.size })}>{props.children}</u>
+// A field that fills part of a declaration assigns its variable.
+const Calculated = ({ size, children }: P) => <s {...styles.calc({ padding: \`\${size}px\` })}>{children}</s>
+const Childless = ({ size }: P) => <b {...styles.shift({ padding: \`\${size}px\` })} />
+const Called = (props: P) => <b {...styles.shift({ padding: String(props.size) })}>{props.children}</b>
+const Labeled = (props: P) => <b id="label" {...styles.shift({ padding: \`\${props.size}px\` })}>{props.children}</b>
+const Keyed = (props: P) => <b {...styles.shift({ padding: \`\${props.children}px\` })}>{props.children}</b>
+const four = 4
+const order: string[] = []
+const pick = <T,>(value: T): T => (order.push(String(value)), value)
+export const App = () => <main>
+<Shifted size={four}>shifted</Shifted>
+<Shifted size="5" key="key">string</Shifted>
+<Shifted>missing</Shifted>
+<Bordered size={four} tone={255}>bordered</Bordered>
+<Bare size="">empty</Bare>
+<Bare size="3px">bare</Bare>
+<Calculated size={four}>calculated</Calculated>
+<Childless size={four} />
+<Childless size={four}>children</Childless>
+<Shifted size={pick(6)}>call</Shifted>
+<Shifted size={-1}>negative</Shifted>
+<Shifted size={four} id="id">unknown prop</Shifted>
+<Shifted size={four} className="extra">class</Shifted>
+<Bordered size={four} key="key" tone={255}>middle key</Bordered>
+<Called size={four}>called</Called>
+<Labeled size={four}>labeled</Labeled>
+<Keyed>{four}</Keyed>
+</main>
+namespace styles {
+  export const shift = style((values: { padding: \`\${number}px\` }) => ({ borderLeft: '1px solid', paddingLeft: values.padding }))
+  export const border = style((values: { color: string; width: \`\${number}px\` }) => ({ borderLeftStyle: 'solid', borderLeftWidth: values.width, color: values.color }))
+  export const calc = style((values: { padding: \`\${number}px\` }) => ({ paddingLeft: \`calc(\${values.padding} + 1px)\` }))
+}`
+
+    test('folds dynamic style components into host elements with their inline styles', async () => {
+      const output = Transform.compile({ moduleId: 'App.tsx', source })
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        type P = { children?: unknown; size?: unknown; tone?: unknown }
+        const Shifted = ({ size, children }: P) => <b {...({className:"z_l0kPgl0 z_l0kPgl1",style:{"paddingLeft":(\`\${size}px\`)}})}>{children}</b>
+        // Several fields, prop reads through the props object, and concatenation.
+        const Bordered = (props: P) => <i {...({className:"z_l0kPgl2 z_l0kPgl3",style:{"--z-l0kPgl-styles-border-color":\`\${(\`rgb(\${props.tone}, 0, 0)\`)}\`,"borderLeftWidth":(props.size + 'px')||"unset"}})}>{props.children}</i>
+        // A value that can be empty keeps its fallback.
+        const Bare = (props: P) => <u {...({className:"z_l0kPgl0 z_l0kPgl1",style:{"paddingLeft":(props.size)||"unset"}})}>{props.children}</u>
+        // A field that fills part of a declaration assigns its variable.
+        const Calculated = ({ size, children }: P) => <s {...styles.calc({ padding: \`\${size}px\` })}>{children}</s>
+        const Childless = ({ size }: P) => <b {...({className:"z_l0kPgl0 z_l0kPgl1",style:{"paddingLeft":(\`\${size}px\`)}})} />
+        const Called = (props: P) => <b {...({className:"z_l0kPgl0 z_l0kPgl1",style:{"paddingLeft":(String(props.size))||"unset"}})}>{props.children}</b>
+        const Labeled = (props: P) => <b id="label" {...({className:"z_l0kPgl0 z_l0kPgl1",style:{"paddingLeft":(\`\${props.size}px\`)}})}>{props.children}</b>
+        const Keyed = (props: P) => <b {...({className:"z_l0kPgl0 z_l0kPgl1",style:{"paddingLeft":(\`\${props.children}px\`)}})}>{props.children}</b>
+        const four = 4
+        const order: string[] = []
+        const pick = <T,>(value: T): T => (order.push(String(value)), value)
+        export const App = () => <main>
+        <b className={"z_l0kPgl0 z_l0kPgl1"} style={{"paddingLeft":(\`\${four}px\`)}}>shifted</b>
+        <b className={"z_l0kPgl0 z_l0kPgl1"} style={{"paddingLeft":(\`\${"5"}px\`)}} key="key">string</b>
+        <b className={"z_l0kPgl0 z_l0kPgl1"} style={{"paddingLeft":(\`\${void 0}px\`)}}>missing</b>
+        <i className={"z_l0kPgl2 z_l0kPgl3"} style={{"--z-l0kPgl-styles-border-color":\`\${(\`rgb(\${255}, 0, 0)\`)}\`,"borderLeftWidth":(four + 'px')||"unset"}}>bordered</i>
+        <u className={"z_l0kPgl0 z_l0kPgl1"} style={{"paddingLeft":("")||"unset"}}>empty</u>
+        <u className={"z_l0kPgl0 z_l0kPgl1"} style={{"paddingLeft":("3px")||"unset"}}>bare</u>
+        <Calculated size={four}>calculated</Calculated>
+        <b className={"z_l0kPgl0 z_l0kPgl1"} style={{"paddingLeft":(\`\${four}px\`)}} />
+        <Childless size={four}>children</Childless>
+        <Shifted size={pick(6)}>call</Shifted>
+        <Shifted size={-1}>negative</Shifted>
+        <Shifted size={four} id="id">unknown prop</Shifted>
+        <Shifted size={four} className="extra">class</Shifted>
+        <Bordered size={four} key="key" tone={255}>middle key</Bordered>
+        <Called size={four}>called</Called>
+        <Labeled size={four}>labeled</Labeled>
+        <Keyed>{four}</Keyed>
+        </main>
+        namespace styles {
+          export declare const shift: import('zyzz').style.Dynamic<{ padding: \`\${number}px\` }>
+          export declare const border: import('zyzz').style.Dynamic<{ color: string; width: \`\${number}px\` }>
+          export const calc = (((input:Parameters<import('zyzz').style.Dynamic<{ padding: \`\${number}px\` }>>[0])=>{const v0=input["padding"] as string | number;const external=input.className;const style=input.style;return {className:external?"z_l0kPgl4"+" "+external:"z_l0kPgl4",style:{...input.vars,...style,"--z-l0kPgl-styles-calc-padding":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{ padding: \`\${number}px\` }>)
+        }"
+      `)
+
+      const rendered = await Wrappers.render({
+        css: output.css,
+        entry: 'App.tsx',
+        modules: { 'App.tsx': output.code },
+      })
+
+      expect(rendered.markup).toMatchInlineSnapshot(
+        `"<main><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px">shifted</b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:5px">string</b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:undefinedpx">missing</b><i class="z_l0kPgl2 z_l0kPgl3" style="--z-l0kPgl-styles-border-color:rgb(255, 0, 0);border-left-width:4px">bordered</i><u class="z_l0kPgl0 z_l0kPgl1" style="padding-left:unset">empty</u><u class="z_l0kPgl0 z_l0kPgl1" style="padding-left:3px">bare</u><s class="z_l0kPgl4" style="--z-l0kPgl-styles-calc-padding:4px">calculated</s><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px"></b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px"></b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:6px">call</b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:-1px">negative</b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px">unknown prop</b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px">class</b><i class="z_l0kPgl2 z_l0kPgl3" style="--z-l0kPgl-styles-border-color:rgb(255, 0, 0);border-left-width:4px">middle key</i><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4">called</b><b id="label" class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px">labeled</b><b class="z_l0kPgl0 z_l0kPgl1" style="padding-left:4px">4</b></main>"`,
+      )
+      expect(rendered.elements).toMatchInlineSnapshot(`
+        [
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "5px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "4px",
+            "className": "z_l0kPgl2 z_l0kPgl3",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "u",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "3px",
+            "tag": "u",
+          },
+          {
+            "borderLeftWidth": "0px",
+            "className": "z_l0kPgl4",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "5px",
+            "tag": "s",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "6px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "4px",
+            "className": "z_l0kPgl2 z_l0kPgl3",
+            "color": "rgb(255, 0, 0)",
+            "paddingLeft": "0px",
+            "tag": "i",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+          {
+            "borderLeftWidth": "1px",
+            "className": "z_l0kPgl0 z_l0kPgl1",
+            "color": "rgb(0, 0, 0)",
+            "paddingLeft": "4px",
+            "tag": "b",
+          },
+        ]
+      `)
+
+      const development = Transform.compile({
+        development: true,
+        moduleId: 'App.tsx',
+        source,
+      })
+      const unfolded = await Wrappers.render({
+        css: development.css,
+        entry: 'App.tsx',
+        modules: { 'App.tsx': development.code },
+      })
+      // Development labels its class names and variables, so they are renamed before comparing.
+      const relabel = (text: string) =>
+        Object.entries(development.classes).reduce(
+          (text, [name, classes]) =>
+            text.replaceAll(classes, output.classes[name]!),
+          text,
+        )
+
+      // Components that render at runtime produce the same styles.
+      expect(
+        relabel(JSON.stringify(unfolded.elements)) ===
+          JSON.stringify(rendered.elements),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('keeps style guards of dynamic components that can render before initialization', () => {
+      const output = Transform.compile({
+        moduleId: 'Eager.tsx',
+        source: `import { style } from 'zyzz'
+type P = { children?: unknown; size?: unknown }
+export function render(size: unknown) { return <Late size={size}>early</Late> }
+const Late = ({ size, children }: P) => <b {...styles.shift({ padding: \`\${size}px\` })}>{children}</b>
+export const App = () => <Late size={1}>app</Late>
+// A synchronous render before the namespace initializes still reaches the definition.
+App()
+namespace styles {
+  export const shift = style((values: { padding: \`\${number}px\` }) => ({ paddingLeft: values.padding }))
+}`,
+      })
+
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        type P = { children?: unknown; size?: unknown }
+        export function render(size: unknown) { return <b className={(styles.shift||styles.shift())&&Late&&"z_Emit600"} style={{"paddingLeft":(\`\${size}px\`)}}>early</b> }
+        const Late = ({ size, children }: P) => <b {...(styles.shift?{className:"z_Emit600",style:{"paddingLeft":(\`\${size}px\`)}}:styles.shift())}>{children}</b>
+        export const App = () => <b className={(styles.shift||styles.shift())&&"z_Emit600"} style={{"paddingLeft":(\`\${1}px\`)}}>app</b>
+        // A synchronous render before the namespace initializes still reaches the definition.
+        App()
+        namespace styles {
+          export const shift = (((input:Parameters<import('zyzz').style.Dynamic<{ padding: \`\${number}px\` }>>[0])=>{const v0=input["padding"] as string | number;const external=input.className;const style=input.style;return {className:external?"z_Emit600"+" "+external:"z_Emit600",style:{...input.vars,...style,"--z-Emit60-styles-shift-padding":v0===''?' ':v0}}}) as import('zyzz').style.Dynamic<{ padding: \`\${number}px\` }>)
+        }"
+      `)
+    })
+
+    test('keeps development components unfolded', () => {
+      const output = Transform.compile({
+        development: true,
+        moduleId: 'App.tsx',
+        source,
+      })
+
+      expect(
+        output.code.includes('<Shifted size={four}>shifted</Shifted>'),
       ).toMatchInlineSnapshot(`true`)
     })
   })
@@ -8156,7 +8559,7 @@ namespace styles {
         ),
       ).toMatchInlineSnapshot(`
         "<main>
-        <div id="dot" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`)||"unset","width":(props.label as \`\${number}px\`)||"unset"}})} />
+        <div id="dot" {...({className:"z_l0kPgl0 z_l0kPgl1 z_l0kPgl2",style:{"transform":(\`translateX(\${props.x}px)\`),"width":(props.label as \`\${number}px\`)||"unset"}})} />
         <div id="shared" className="shared" {...styles.dot({ transform: 'translateX(0px)', width: '3px' })} />
         <div id="later" {...styles.later({ width: props.label })} />
         <div id="hover" {...styles.hover({ width: props.label })} />

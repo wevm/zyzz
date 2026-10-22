@@ -11,6 +11,7 @@ pub mod contract;
 pub mod contributions;
 pub mod descriptors;
 pub mod dynamic;
+pub mod dynamics;
 pub mod edits;
 pub mod expression;
 pub mod functions;

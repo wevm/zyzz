@@ -3,8 +3,10 @@
 use std::sync::Arc;
 
 use css::Lexer;
-use oxc_ast::ast::{Expression, TemplateLiteral, UnaryOperator};
+use oxc_ast::ast::{BinaryOperator, Expression, TemplateLiteral, UnaryOperator};
+use oxc_semantic::Semantic;
 
+use crate::compiler::internal::scope;
 use crate::internal::binding::Domain;
 use crate::internal::literal;
 use crate::internal::token::{self, Part, Value};
@@ -150,6 +152,39 @@ pub fn accepts_identifier(
     alternatives(&reference.value, &mut values);
 
     values.iter().all(|value| matches(&name, value))
+}
+
+/// Whether an expression reads values without calls, getters, conversions, or rewritten names, so
+/// moving or repeating it changes no result. A global name can be an accessor of the global object.
+pub fn reorderable(
+    expression: &Expression<'_>,
+    semantic: &Semantic<'_>,
+    rewritten: &dyn Fn(&str) -> bool,
+) -> bool {
+    match unwrap(expression) {
+        Expression::BooleanLiteral(_)
+        | Expression::NullLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::StringLiteral(_) => true,
+        Expression::Identifier(identifier) => {
+            !rewritten(identifier.name.as_str()) && scope::resolve(semantic, identifier).is_some()
+        }
+        Expression::ParenthesizedExpression(inner) => {
+            reorderable(&inner.expression, semantic, rewritten)
+        }
+        Expression::UnaryExpression(unary) => {
+            unary.operator == UnaryOperator::LogicalNot
+                && reorderable(&unary.argument, semantic, rewritten)
+        }
+        Expression::BinaryExpression(binary) => {
+            matches!(
+                binary.operator,
+                BinaryOperator::StrictEquality | BinaryOperator::StrictInequality
+            ) && reorderable(&binary.left, semantic, rewritten)
+                && reorderable(&binary.right, semantic, rewritten)
+        }
+        _ => false,
+    }
 }
 
 /// Removes `as`, `satisfies`, non-null, and angle-bracket assertions.

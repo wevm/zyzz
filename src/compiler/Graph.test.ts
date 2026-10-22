@@ -3059,6 +3059,95 @@ export const View = () => <App />`,
     `)
   })
 
+  test('folds wrappers over imported cx calls and imported dynamic components', async () => {
+    const modules = {
+      'base.ts': `import { style } from 'zyzz'
+export const base = style({ borderLeft: '1px solid', color: 'rgb(255, 0, 0)', paddingLeft: '1px' })`,
+      'ghost.ts': `import { style } from 'zyzz'
+export const ghost = style({ paddingLeft: '2px' })`,
+      'primary.ts': `import { style } from 'zyzz'
+export const primary = style({ color: 'rgb(0, 0, 255)' })`,
+      'dot.tsx': `import { style } from 'zyzz'
+type P = { children?: unknown; size?: number }
+export const Dot = ({ size, children }: P) => <i {...styles.dot({ padding: \`\${size}px\` })}>{children}</i>
+namespace styles {
+  export const dot = style((values: { padding: \`\${number}px\` }) => ({ borderLeft: '3px solid', paddingLeft: values.padding }))
+}`,
+      // Each style comes from its own module, and cx merges them onto one element.
+      'button.tsx': `import { cx } from 'zyzz'
+import { base } from './base.ts'
+import { ghost } from './ghost.ts'
+import { primary } from './primary.ts'
+type P = { children?: unknown }
+export const Button = ({ children }: P) => <button {...cx(base(), ghost(), primary())}>{children}</button>`,
+      'index.tsx': `import { Button } from './button.tsx'
+import { Dot } from './dot.tsx'
+const Local = ({ children }: { children?: unknown }) => <Button>{children}</Button>
+export const App = () => <main>
+  <Local>local</Local>
+  {[4, 5].map((size) => <Dot size={size} key={size}>{size}</Dot>)}
+</main>`,
+    }
+    const output = Graph.compile({ cssOutput: 'grouped', modules })
+
+    expect(output.modules['button.tsx']!.code).toMatchInlineSnapshot(`
+      "
+      import './base.ts'
+      import './ghost.ts'
+      import './primary.ts'
+      type P = { children?: unknown }
+      export const Button = ({ children }: P) => <button className={"z_0gnfN20 z-style-edltVp-base z-style-K_6uJb-ghost z-style-2W2Knw-primary"}>{children}</button>"
+    `)
+    expect(output.modules['index.tsx']!.code).toMatchInlineSnapshot(`
+      "import './button.tsx'
+      import { Dot } from './dot.tsx'
+      const Local = ({ children }: { children?: unknown }) => <button className={"z_0gnfN20 z-style-edltVp-base z-style-K_6uJb-ghost z-style-2W2Knw-primary"}>{children}</button>
+      export const App = () => <main>
+        <button className={"z_0gnfN20 z-style-edltVp-base z-style-K_6uJb-ghost z-style-2W2Knw-primary"}>local</button>
+        {[4, 5].map((size) => <i className={Dot&&"z_CI0DZb0"} style={{"paddingLeft":(\`\${size}px\`)}} key={size}>{size}</i>)}
+      </main>"
+    `)
+
+    const rendered = await Wrappers.render({
+      css: Object.values(output.modules)
+        .map((module) => module.css)
+        .join('\n'),
+      entry: 'index.tsx',
+      modules: Object.fromEntries(
+        Object.entries(output.modules).map(([id, module]) => [id, module.code]),
+      ),
+    })
+
+    expect(rendered.markup).toMatchInlineSnapshot(
+      `"<main><button class="z_0gnfN20 z-style-edltVp-base z-style-K_6uJb-ghost z-style-2W2Knw-primary">local</button><i class="z_CI0DZb0" style="padding-left:4px">4</i><i class="z_CI0DZb0" style="padding-left:5px">5</i></main>"`,
+    )
+    expect(rendered.elements).toMatchInlineSnapshot(`
+      [
+        {
+          "borderLeftWidth": "1px",
+          "className": "z_0gnfN20 z-style-edltVp-base z-style-K_6uJb-ghost z-style-2W2Knw-primary",
+          "color": "rgb(0, 0, 255)",
+          "paddingLeft": "2px",
+          "tag": "button",
+        },
+        {
+          "borderLeftWidth": "3px",
+          "className": "z_CI0DZb0",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "4px",
+          "tag": "i",
+        },
+        {
+          "borderLeftWidth": "3px",
+          "className": "z_CI0DZb0",
+          "color": "rgb(0, 0, 0)",
+          "paddingLeft": "5px",
+          "tag": "i",
+        },
+      ]
+    `)
+  })
+
   test('keeps import attributes on folded imports', () => {
     const output = Graph.compile({
       modules: {

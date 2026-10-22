@@ -1921,13 +1921,18 @@ function Attribute(props: Input) {
   return <button {...attributes.button({ active: props.active, full: props.full, variant: props.variant })}>Attribute</button>
 }
 
-function Selected(props: Input) {
+const Selected = (props: Input) => (
+  <button {...classes.button({ active: props.active, full: props.full, variant: props.variant })}>Class</button>
+)
+
+function Guarded(props: Input) {
   return <button {...classes.button({ active: props.active, full: props.full, variant: props.variant })}>Class</button>
 }
 
 export const render = (input: Input) => [
   renderToStaticMarkup(<Attribute {...input} />),
   renderToStaticMarkup(<Selected {...input} />),
+  renderToStaticMarkup(<Guarded {...input} />),
 ]
 
 namespace attributes {
@@ -1943,11 +1948,12 @@ export const initialized = renderToStaticMarkup(<button {...classes.button({ var
         'app.tsx'
       ]!
 
+      expect(output.code.includes('className={"')).toMatchInlineSnapshot(`true`)
       expect(output.code.includes('classes.button?')).toMatchInlineSnapshot(
-        `true`,
+        `false`,
       )
       expect(output.code.includes('{...classes.button(')).toMatchInlineSnapshot(
-        `false`,
+        `true`,
       )
       expect(
         output.code.includes('{...attributes.button('),
@@ -1978,7 +1984,10 @@ export const initialized = renderToStaticMarkup(<button {...classes.button({ var
         await page.setContent(`<style>${output.css}</style><main></main>`)
         await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
         await page.evaluate(`window.compare = (input) => {
-          const [attribute, selected] = App.render(input);
+          const [attribute, selected, guarded] = App.render(input);
+          // Folded classes follow authored argument order, which CSS never reads.
+          const set = (html) => html.match(/class="([^"]*)"/)[1].split(' ').sort().join(' ');
+          if (set(guarded) !== set(selected)) return 'guarded ' + guarded + ' != ' + selected;
           document.querySelector('main').innerHTML = attribute + selected;
           const [first, second] = [...document.querySelectorAll('button')].map((element) => {
             const style = getComputedStyle(element);
@@ -2038,6 +2047,14 @@ export const initialized = renderToStaticMarkup(<button {...classes.button({ var
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[Source.ExtractError: recipe.ts:75: Static object prototypes are unsupported.]`,
+      )
+      expect(() =>
+        Source.extract({
+          moduleId: 'recipe.ts',
+          source: `import {variants} from 'zyzz'; variants({selection:'class',conditions:{'2':'@media (width >= 1px)'},variants:{size:{sm:{color:'red'}}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: recipe.ts:71: Class-selection condition names cannot be array indexes.]`,
       )
     })
   })

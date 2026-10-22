@@ -492,6 +492,15 @@ pub fn expand<'s, 'a>(
 
     if let Some(conditions) = field(&fields, "conditions") {
         for (name, property) in entries(&conditions.value)? {
+            // Uncompiled authoring numbers conditions in `Object.keys` order, which moves array
+            // indexes first, so condition classes would not match.
+            if matches!(selection, Selection::Class(_)) && js::array_index(&name).is_some() {
+                return Err(invalid(
+                    "Class-selection condition names cannot be array indexes.",
+                    property.span,
+                ));
+            }
+
             named.push(recipe_conditions::read(
                 &name,
                 &property.value,

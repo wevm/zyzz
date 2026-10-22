@@ -926,10 +926,9 @@ fn recipe_classes<'a>(
 /// Folds a class-selection recipe application spread alone onto a DOM element into one
 /// `className` expression. Each authored value stays in place, in authored order, so rewrites
 /// inside it still apply, and is read once into `value`. Omitted axes contribute their default
-/// class to the constant prefix, and applications before initialization keep a callable guard.
+/// class to the constant prefix. Only applications after initialization fold.
 fn fold_classes(
     module: &mut Edits<'_>,
-    source: &str,
     application: &Bound<'_>,
     fields: &[(&str, Span)],
     recipe: &runtime::Definition,
@@ -967,15 +966,7 @@ fn fold_classes(
         }
     }
 
-    let callee = source
-        .get(application.start as usize..application.callee_end as usize)
-        .unwrap_or_default();
     let mut text = String::from("className={");
-
-    if !application.initialized {
-        // Keep a callable guard so bundlers also keep failures before initialization.
-        let _ = write!(text, "{callee}?");
-    }
 
     js::write_string(&mut text, constant.trim_start());
 
@@ -1013,12 +1004,7 @@ fn fold_classes(
         text.push_str("\"\")");
     }
 
-    if application.initialized {
-        text.push('}');
-    } else {
-        let _ = write!(text, ":{callee}().className}}");
-    }
-
+    text.push('}');
     module.overwrite(previous, application.spread.end, text)
 }
 
@@ -1510,13 +1496,14 @@ pub fn compile<'a>(
                 continue;
             }
 
-            // Class selection reads each value once, so guarded applications fold too, and only
-            // the callable's last guarded read keeps the definition.
+            // A guard's bare call would skip evaluating the authored values before it throws, so
+            // only applications after initialization fold, as for attribute selection.
             if recipe.prefix.is_some() {
                 let folds: Vec<(&Bound<'_>, ClassFields<'_>)> = applied
                     .iter()
                     .filter(|application| {
-                        !composing_span(application.start, application.end)
+                        application.initialized
+                            && !composing_span(application.start, application.end)
                             && !html_starts.contains(&application.start)
                     })
                     .filter_map(|application| {
@@ -1524,10 +1511,7 @@ pub fn compile<'a>(
                     })
                     .collect();
 
-                if folds.len() == applied.len()
-                    && folds.iter().all(|(application, _)| application.initialized)
-                    && !bound.partial.contains(&call.name)
-                {
+                if folds.len() == applied.len() && !bound.partial.contains(&call.name) {
                     inlined.insert(Arc::clone(&call.name));
                 }
 
@@ -1813,15 +1797,7 @@ pub fn compile<'a>(
         };
 
         for (application, fields) in folds {
-            fold_classes(
-                &mut module,
-                source,
-                application,
-                fields,
-                recipe,
-                class_name,
-                &value,
-            )?;
+            fold_classes(&mut module, application, fields, recipe, class_name, &value)?;
             folded = true;
         }
     }

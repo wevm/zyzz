@@ -98,11 +98,32 @@ pub struct KnownInput {
     pub callee: Arc<str>,
     /// Left operand of a conditional `&&` argument.
     pub condition: Option<Span>,
+    /// Local name of the import the callee reads directly. A graph that proves its module
+    /// evaluates first drops the callee read.
+    pub import: Option<Arc<str>>,
     /// Whether the definition is imported, so its class list may be unknown to this module.
     pub imported: bool,
     /// Whether the application is local and always follows the definition's initialization, so
     /// the callee read can never throw and is dropped.
     pub initialized: bool,
+}
+
+/// A no-argument application of an imported style spread alone onto a DOM element, which owns
+/// nothing beyond its class list.
+#[derive(Clone, Debug)]
+pub struct ImportedApplication {
+    /// Exclusive offset of the callee.
+    pub callee_end: u32,
+    /// Exclusive offset of the call.
+    pub end: u32,
+    /// Local name of the import the callee reads directly.
+    pub import: Arc<str>,
+    /// Identity of the applied style.
+    pub name: Arc<str>,
+    /// The JSX spread attribute whose argument is the call.
+    pub spread: Span,
+    /// Inclusive offset of the call.
+    pub start: u32,
 }
 
 /// A definition call available for a later source rewriter.
@@ -155,6 +176,8 @@ pub struct Call<'a> {
     pub shorthands: Option<crate::internal::token::Map<Arc<[Arc<str>]>>>,
     /// Typed runtime slots of a callback definition.
     pub slots: Option<Slots>,
+    /// The JSX spread attribute of a composition spread alone onto a DOM element.
+    pub spread: Option<Span>,
     /// Inclusive offset of the complete call.
     pub start: u32,
     /// Ordered static alternatives without selector lowering.
@@ -294,6 +317,8 @@ pub struct Extracted<'a> {
     pub contribution_starts: Vec<u32>,
     /// Static stylesheet effects.
     pub contributions: Vec<web::Definition>,
+    /// Imported style applications that a graph can fold into class lists.
+    pub imported_applications: Vec<ImportedApplication>,
     /// Module-owned namespace bindings retained when contributions are shared.
     pub namespaces: Vec<namespace::Definition>,
     /// Readonly native variable arguments and their complete catalogs.
@@ -2925,6 +2950,8 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         });
     }
 
+    let mut imported_applications = Vec::new();
+
     if options.target != Target::Native {
         let collected = compositions::collect(compositions::Options {
             allocator,
@@ -2940,8 +2967,10 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         });
 
         match collected {
-            Ok(entries) => {
-                for (position, entry) in entries.into_iter().enumerate() {
+            Ok(collected) => {
+                imported_applications = collected.imported;
+
+                for (position, entry) in collected.entries.into_iter().enumerate() {
                     let authored = parsed
                         .names()
                         .get(entry.call.start)
@@ -3177,6 +3206,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             contribution_calls: contributions.calls,
             contribution_starts,
             contributions: contribution_data,
+            imported_applications,
             namespaces,
             native_vars: Vec::new(),
             static_theme_references: Vec::new(),
@@ -3220,6 +3250,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
         contribution_calls: contributions.calls,
         contribution_starts,
         contributions: contribution_data,
+        imported_applications,
         namespaces,
         native_vars: themes.vars_reads,
         static_theme_references,

@@ -85,6 +85,9 @@ pub struct Options<'s, 'a> {
     pub referenced: Option<&'s FxHashSet<Arc<str>>>,
     /// Emits the color-scheme selection classes. Defaults to the module's own scheme helpers.
     pub schemes: Option<bool>,
+    /// Local names of imports whose modules finish evaluating before this one, so reads of
+    /// their definitions never throw.
+    pub settled: Option<&'s FxHashSet<Arc<str>>>,
     /// Separates generated token rules for independently loaded modules.
     pub shared: Option<Shared>,
     /// Complete module text.
@@ -1658,6 +1661,7 @@ pub fn compile<'a>(
                 outputs: &outputs,
                 parsed,
                 program,
+                settled: options.settled,
                 source,
             },
         )
@@ -1744,6 +1748,7 @@ pub fn compile<'a>(
         classes,
         shadowed,
         owners: options.owners,
+        settled: options.settled,
         style_classes: options.style_classes,
         emitted: &emitted,
         extracted,
@@ -1833,6 +1838,7 @@ pub fn compile<'a>(
                 imports: options.wrappers,
                 recipes: &recipes,
                 runtime: &state.runtime,
+                settled: options.settled,
                 source,
                 strings: !shadowed,
                 taken: &taken,
@@ -1959,9 +1965,59 @@ pub fn compile<'a>(
         }
     }
 
+    // Imported applications fold like local ones once the graph knows their class lists. A settled
+    // import reads nothing, and a guard keeps failures before initialization otherwise.
+    if !portable && !options.development {
+        let replaced = Intervals::new(
+            extracted
+                .calls
+                .iter()
+                .map(|call| (call.start, call.end))
+                .chain(
+                    extracted
+                        .contribution_calls
+                        .iter()
+                        .map(|call| (call.start, call.end)),
+                )
+                .collect(),
+        );
+
+        for application in &extracted.imported_applications {
+            let Some(class) = generator.input_class(&application.name) else {
+                continue;
+            };
+
+            if replaced.contains(application.start, application.end) {
+                continue;
+            }
+
+            let class = quote(class);
+            let value = if generator.settled(&application.import) {
+                state
+                    .consumed
+                    .push((application.start, application.callee_end));
+                class
+            } else {
+                let callee = source
+                    .get(application.start as usize..application.callee_end as usize)
+                    .unwrap_or_default();
+
+                format!("({callee}?{class}:{callee}().className)")
+            };
+
+            module.overwrite(
+                application.spread.start,
+                application.spread.end,
+                format!("className={{{value}}}"),
+            )?;
+        }
+    }
+
     for (start, end, text) in wrappers.edits {
         module.overwrite(start, end, text)?;
     }
+
+    state.consumed.extend(wrappers.renamed);
 
     state.callable |= wrappers.merges;
     state.compositions.extend(wrappers.statements);
@@ -2013,6 +2069,7 @@ pub fn compile<'a>(
     generator.themes(&mut module, &walker, &mut state)?;
     generator.aliases(&mut module)?;
     generator.imports(&mut module, &walker, program)?;
+    generator.retain(&mut module, program, &state.consumed, &wrappers.anchored)?;
     generator.runtime_import(&mut module, program, &state)?;
 
     let lines = Lines::new(source, &parsed.offsets);
@@ -2426,6 +2483,8 @@ struct FoldChains<'f, 'a> {
     outputs: &'f FxHashMap<&'f str, bool>,
     parsed: &'f Parsed<'a>,
     program: &'a Program<'a>,
+    /// Imports whose modules finish evaluating before this one.
+    settled: Option<&'f FxHashSet<Arc<str>>>,
     source: &'a str,
 }
 
@@ -2495,6 +2554,7 @@ fn fold_chains(styles: &mut Vec<Arc<NamedStyle>>, options: &FoldChains<'_, '_>) 
             // Selection folds keep their own classes, so planning leaves them out.
             recipes: &FxHashMap::default(),
             runtime: "",
+            settled: options.settled,
             source: options.source,
             strings: false,
             taken: &|_| false,
@@ -2667,6 +2727,8 @@ struct State {
     appearance: String,
     callable: bool,
     composition: String,
+    /// Callee ranges of imported applications that no longer read their import.
+    consumed: Vec<(u32, u32)>,
     composition_arguments: FxHashMap<(u32, u32), String>,
     composition_html: String,
     compositions: Vec<String>,
@@ -2694,6 +2756,7 @@ struct Generator<'g, 'a> {
     /// Whether a module binding renames `Object` or `String`, which specialized selectors read.
     shadowed: bool,
     owners: Option<&'g Owners>,
+    settled: Option<&'g FxHashSet<Arc<str>>>,
     style_classes: Option<&'g FxHashMap<Arc<str>, Arc<str>>>,
     emitted: &'g css::Output,
     extracted: &'g Extracted<'a>,
@@ -2716,6 +2779,32 @@ impl<'a> Generator<'_, 'a> {
         })
     }
 
+    /// Whether an import's module finishes evaluating before this one.
+    fn settled(&self, import: &str) -> bool {
+        self.settled.is_some_and(|settled| settled.contains(import))
+    }
+
+    /// Whether a known application always follows its definition's initialization, so its
+    /// callee read can never throw.
+    fn initialized(&self, known: &KnownInput) -> bool {
+        known.initialized
+            || known
+                .import
+                .as_deref()
+                .is_some_and(|import| self.settled(import))
+    }
+
+    /// The rewritten text of a source range.
+    fn text(&self, module: &mut Edits<'a>, span: Span) -> String {
+        module.slice(span.start, span.end).unwrap_or_else(|_| {
+            self.parsed
+                .source
+                .get(span.start as usize..span.end as usize)
+                .unwrap_or_default()
+                .to_owned()
+        })
+    }
+
     /// Replaces a known application with its callee read, which still throws before
     /// initialization, followed by `value`. Conditions keep their authored evaluation.
     fn known_argument(
@@ -2727,7 +2816,7 @@ impl<'a> Generator<'_, 'a> {
     ) -> String {
         let callee = &known.callee;
         let cast = if self.typed { " as unknown" } else { "" };
-        let read = if known.initialized {
+        let read = if self.initialized(known) {
             value.to_owned()
         } else {
             format!("(({callee}{cast})||{callee}(),{value})")
@@ -2735,15 +2824,7 @@ impl<'a> Generator<'_, 'a> {
         let Some(condition) = known.condition else {
             return read;
         };
-        let left = module
-            .slice(condition.start, condition.end)
-            .unwrap_or_else(|_| {
-                self.parsed
-                    .source
-                    .get(condition.start as usize..condition.end as usize)
-                    .unwrap_or_default()
-                    .to_owned()
-            });
+        let left = self.text(module, condition);
 
         if mask {
             format!("(({left})?{read}:0)")
@@ -2752,8 +2833,10 @@ impl<'a> Generator<'_, 'a> {
         }
     }
 
-    /// Selects one of the precompiled presence alternatives from a hoisted table of frozen props,
-    /// indexed by the presence mask of the conditional arguments.
+    /// Selects one of the precompiled presence alternatives, indexed by the presence mask of the
+    /// conditional arguments. A composition spread alone onto a DOM element becomes its
+    /// `className` attribute, a class list chosen by a conditional or from a hoisted string
+    /// table. Other compositions select from a hoisted table of frozen props.
     fn constant(
         &self,
         module: &mut Edits<'a>,
@@ -2762,55 +2845,86 @@ impl<'a> Generator<'_, 'a> {
         inputs: &[RuntimeInput],
         known: &[Option<&KnownInput>],
         factory: &str,
-    ) -> String {
+    ) -> Result<String> {
         let names: Vec<&str> = match &call.composition_cases {
             Some(cases) => cases.iter().map(|name| &**name).collect(),
             None => vec![&*call.name],
         };
+        let classes: Vec<&str> = names
+            .iter()
+            .map(|name| self.classes.get(*name).map_or("", String::as_str))
+            .collect();
+        // An unconditional input that reads nothing adds no presence bit.
+        let read: Vec<(&RuntimeInput, &KnownInput)> = inputs
+            .iter()
+            .zip(known)
+            .filter_map(|(input, known)| Some((input, (*known)?)))
+            .filter(|(input, known)| !self.initialized(known) || input.condition.is_some())
+            .collect();
+
+        if let Some(spread) = call.spread {
+            module.overwrite(spread.start, call.start, "className={")?;
+
+            if let ([(input, known)], [absent, present]) = (read.as_slice(), classes.as_slice())
+                && input.condition.is_some()
+                && self.initialized(known)
+                && let Some(condition) = known.condition
+            {
+                return Ok(format!(
+                    "({})?{}:{}",
+                    self.text(module, condition),
+                    quote(present),
+                    quote(absent)
+                ));
+            }
+
+            if read.is_empty() {
+                return Ok(classes
+                    .first()
+                    .map_or_else(String::new, |class| quote(class)));
+            }
+        }
+
         let mut table = String::from("[");
 
-        for (index, name) in names.iter().enumerate() {
+        for (index, class) in classes.iter().enumerate() {
             if index > 0 {
                 table.push(',');
             }
 
-            table.push_str("{className:");
-            js::write_string(
-                &mut table,
-                self.classes.get(*name).map_or("", String::as_str),
-            );
-            table.push('}');
+            if call.spread.is_some() {
+                js::write_string(&mut table, class);
+            } else {
+                table.push_str("{className:");
+                js::write_string(&mut table, class);
+                table.push('}');
+            }
         }
 
         table.push(']');
-        state.compositions.push(format!(
-            "const {factory}=/*#__PURE__*/{table}.map(Object.freeze);"
-        ));
+        state.compositions.push(if call.spread.is_some() {
+            format!("const {factory}={table};")
+        } else {
+            format!("const {factory}=/*#__PURE__*/{table}.map(Object.freeze);")
+        });
 
-        let terms: Vec<String> = inputs
+        let terms: Vec<String> = read
             .iter()
-            .zip(known)
-            .filter_map(|(input, known)| {
-                let known = (*known)?;
+            .map(|(input, known)| {
                 let value = input.condition.map_or_else(
                     || "0".to_owned(),
                     |condition| (1_u32 << condition).to_string(),
                 );
 
-                // An unconditional input that reads nothing adds no presence bit.
-                if known.initialized && input.condition.is_none() {
-                    return None;
-                }
-
-                Some(self.known_argument(module, known, &value, true))
+                self.known_argument(module, known, &value, true)
             })
             .collect();
 
         if terms.is_empty() {
-            return format!("{factory}[0]");
+            return Ok(format!("{factory}[0]"));
         }
 
-        format!("{factory}[{}]", terms.join("|"))
+        Ok(format!("{factory}[{}]", terms.join("|")))
     }
 
     /// Binds a runtime composition helper to the precompiled presence alternatives and the
@@ -3034,7 +3148,12 @@ impl<'a> Generator<'_, 'a> {
                 call.runtime_composition
                     .iter()
                     .flatten()
-                    .filter(|input| input.known.as_ref().is_some_and(|known| known.initialized))
+                    .filter(|input| {
+                        input
+                            .known
+                            .as_ref()
+                            .is_some_and(|known| self.initialized(known))
+                    })
                     .filter_map(|input| input.application_start)
                     .chain(call.composition_settled.iter().copied())
             })
@@ -3200,8 +3319,19 @@ impl<'a> Generator<'_, 'a> {
                     })
                     .collect();
 
+                for (input, known) in inputs.iter().zip(&known) {
+                    if let (Some(known), Some(start)) = (known, input.application_start)
+                        && known.import.is_some()
+                        && self.initialized(known)
+                    {
+                        let end = start + u32::try_from(known.callee.len()).unwrap_or(u32::MAX);
+
+                        state.consumed.push((start, end));
+                    }
+                }
+
                 if !html && known.iter().all(Option::is_some) {
-                    self.constant(module, &mut state, call, inputs, &known, &factory)
+                    self.constant(module, &mut state, call, inputs, &known, &factory)?
                 } else {
                     self.runtime_composition(
                         module, &mut state, call, inputs, &known, &factory, html,
@@ -3893,6 +4023,94 @@ impl<'a> Generator<'_, 'a> {
                         module.remove(previous.span().end, specifier.span().end)?;
                     }
                 }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Keeps importing each module whose bindings folded applications stopped reading. TypeScript
+    /// elides an import none of whose bindings are read, which would drop that module's
+    /// stylesheet and evaluation, so an import whose every read folded loses its bindings, and
+    /// one that keeps other reads gains a bare import beside it.
+    fn retain(
+        &self,
+        module: &mut Edits<'a>,
+        program: &Program<'a>,
+        consumed: &[(u32, u32)],
+        anchored: &FxHashSet<Arc<str>>,
+    ) -> Result<()> {
+        if consumed.is_empty() {
+            return Ok(());
+        }
+
+        let consumed = Intervals::new(consumed.to_vec());
+        let scoping = self.parsed.semantic.scoping();
+        let nodes = self.parsed.semantic.nodes();
+
+        for statement in &program.body {
+            let Statement::ImportDeclaration(node) = statement else {
+                continue;
+            };
+            let Some(specifiers) = node.specifiers.as_ref().filter(|list| !list.is_empty()) else {
+                continue;
+            };
+
+            if node.import_kind == ImportOrExportKind::Type
+                || node.source.value == "zyzz"
+                || node.source.value.starts_with("zyzz/")
+            {
+                continue;
+            }
+
+            let mut folded = false;
+            let mut read = false;
+
+            for specifier in specifiers {
+                let local = specifier.local();
+                let symbol = local.symbol_id.get().filter(|_| {
+                    !anchored.contains(local.name.as_str())
+                        && !matches!(specifier, ImportDeclarationSpecifier::ImportSpecifier(specifier)
+                            if specifier.import_kind == ImportOrExportKind::Type)
+                });
+                let Some(symbol) = symbol else {
+                    read = true;
+                    continue;
+                };
+
+                for reference in scoping.get_resolved_reference_ids(symbol) {
+                    let span = nodes
+                        .get_node(scoping.get_reference(*reference).node_id())
+                        .kind()
+                        .span();
+
+                    if consumed.contains(span.start + 1, span.end) {
+                        folded = true;
+                    } else {
+                        read = true;
+                    }
+                }
+            }
+
+            if !folded {
+                continue;
+            }
+
+            // The bare import repeats the source with its attributes.
+            let end = node
+                .with_clause
+                .as_ref()
+                .map_or(node.source.span.end, |clause| clause.span.end);
+            let specifier = self
+                .parsed
+                .source
+                .get(node.source.span.start as usize..end as usize)
+                .unwrap_or_default();
+
+            if read {
+                module.append_left(node.span.end, format!("\nimport {specifier};"))?;
+            } else {
+                module.overwrite(node.span.start, node.source.span.start, "import ")?;
             }
         }
 

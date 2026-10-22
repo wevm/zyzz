@@ -1476,8 +1476,9 @@ fn is_class_name(name: &str) -> bool {
     name == "class" || name == "className"
 }
 
-// Other spreads or class attributes could add another style's classes.
-fn alone(element: Option<&AstKind<'_>>, own: Span) -> bool {
+/// Whether `element` is a DOM element whose only spread or class attribute is `own`. Other
+/// spreads or class attributes could add another style's classes.
+pub fn alone(element: Option<&AstKind<'_>>, own: Span) -> bool {
     let Some(AstKind::JSXOpeningElement(element)) = element else {
         return false;
     };

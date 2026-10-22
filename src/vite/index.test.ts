@@ -2122,6 +2122,95 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
     }
   })
 
+  test('production erases imported definitions whose every read folds', async () => {
+    const { config, root } = await create({
+      'base.ts': `import { style } from 'zyzz'
+export const base = style({ borderLeft: '1px solid', color: 'rgb(255, 0, 0)', paddingLeft: '1px' })`,
+      'ghost.ts': `import { style } from 'zyzz'
+export const ghost = style({ paddingLeft: '2px' })
+export const primary = style({ color: 'rgb(0, 0, 255)' })`,
+      'index.html': `<main id="root"></main><script type="module" src="/main.tsx"></script>`,
+      'main.tsx': `import { cx } from 'zyzz'
+import { createRoot } from 'react-dom/client'
+import { base } from './base'
+import * as ghosts from './ghost'
+const App = () => <>
+  <i {...cx(base(), ghosts.ghost())}>ladder</i>
+  {[true, false].map((on) => <i key={String(on)} {...cx(base(), on && ghosts.primary())}>{String(on)}</i>)}
+  <b {...ghosts.ghost()}>imported</b>
+  <b {...ghosts.primary({ className: 'extra' })}>unfolded</b>
+</>
+createRoot(document.querySelector('#root')!).render(<App />)`,
+    })
+    let preview: Vite.PreviewServer | undefined
+    const browser = await chromium.launch()
+
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: { minify: false },
+        plugins: [zyzz(), react()],
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const javascript = result.output
+        .filter((file) => file.type === 'chunk')
+        .map((file) => file.code)
+        .join('\n')
+
+      // Only the definition that an unfolded application still calls remains.
+      expect(
+        [
+          ...javascript.matchAll(
+            /var (\w+) = \/\*#__PURE__\*\/ \w+\(\{ className/g,
+          ),
+        ].map((match) => match[1]),
+      ).toMatchInlineSnapshot(`
+        [
+          "primary",
+        ]
+      `)
+      expect(javascript.includes('.map(Object.freeze)')).toMatchInlineSnapshot(
+        `false`,
+      )
+
+      preview = await Vite.preview({ ...config, preview: { port: 0 } })
+
+      const page = await browser.newPage()
+
+      await page.goto(preview.resolvedUrls!.local[0]!)
+      await page.locator('#root > b').nth(1).waitFor()
+
+      expect(
+        await page.locator('#root > *').evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const style = getComputedStyle(node)
+
+            return [
+              node.textContent,
+              style.borderLeftWidth,
+              style.color,
+              style.paddingLeft,
+            ].join(' ')
+          }),
+        ),
+      ).toMatchInlineSnapshot(`
+        [
+          "ladder 1px rgb(255, 0, 0) 2px",
+          "true 1px rgb(0, 0, 255) 1px",
+          "false 1px rgb(255, 0, 0) 1px",
+          "imported 0px rgb(0, 0, 0) 2px",
+          "unfolded 0px rgb(0, 0, 255) 0px",
+        ]
+      `)
+    } finally {
+      await browser.close()
+      await preview?.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('production keeps only the identity classes that selectors reference', async () => {
     const { config, root } = await create({
       'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,

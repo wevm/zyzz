@@ -956,6 +956,7 @@ pub fn transform(input: &Value, separate: Option<&str>) -> Result<String> {
             placeholder: separate,
             referenced: None,
             schemes: field("schemes").and_then(Value::as_bool),
+            settled: None,
             shared: options.shared,
             source,
             style_classes: None,

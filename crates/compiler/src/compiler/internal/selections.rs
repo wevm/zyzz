@@ -315,35 +315,13 @@ pub fn candidate<'a>(
         }
     }
 
-    let positions = Positions::new(&definition.axes);
-    let axes = definition
-        .axes
-        .iter()
-        .map(|(axis, choices)| Axis {
-            choices: choices
+    let axes = axes(definition)
+        .map(|mut axis| {
+            axis.value = values
                 .iter()
-                .map(|choice| {
-                    let silent = definition
-                        .silent
-                        .as_ref()
-                        .and_then(|silent| silent.get(axis))
-                        .is_some_and(|names| names.contains(choice));
-                    let class = definition
-                        .prefix
-                        .as_deref()
-                        .filter(|_| !silent)
-                        .and_then(|prefix| positions.class(prefix, axis, choice, None))
-                        .map_or_else(String::new, |class| format!(" {class}"));
-
-                    (Arc::clone(choice), Arc::from(class))
-                })
-                .collect(),
-            default: definition.defaults.get(axis).cloned().flatten(),
-            name: Arc::clone(axis),
-            value: values
-                .iter()
-                .find(|(key, _)| *key == &**axis)
-                .map(|(_, value)| value.clone()),
+                .find(|(key, _)| *key == &*axis.name)
+                .map(|(_, value)| value.clone());
+            axis
         })
         .collect();
 
@@ -359,6 +337,35 @@ pub fn candidate<'a>(
         },
         call,
     ))
+}
+
+/// A recipe's axes in definition order, with each choice's class and no authored value.
+fn axes(definition: &runtime::Definition) -> impl Iterator<Item = Axis> {
+    let positions = Positions::new(&definition.axes);
+
+    definition.axes.iter().map(move |(axis, choices)| Axis {
+        choices: choices
+            .iter()
+            .map(|choice| {
+                let silent = definition
+                    .silent
+                    .as_ref()
+                    .and_then(|silent| silent.get(axis))
+                    .is_some_and(|names| names.contains(choice));
+                let class = definition
+                    .prefix
+                    .as_deref()
+                    .filter(|_| !silent)
+                    .and_then(|prefix| positions.class(prefix, axis, choice, None))
+                    .map_or_else(String::new, |class| format!(" {class}"));
+
+                (Arc::clone(choice), Arc::from(class))
+            })
+            .collect(),
+        default: definition.defaults.get(axis).cloned().flatten(),
+        name: Arc::clone(axis),
+        value: None,
+    })
 }
 
 /// A pure expression of a component's props, recording each prop it reads. Props that React or
@@ -1110,7 +1117,13 @@ fn render(
         ));
     }
 
-    let classes = classes(selection, &terms, &mut local, helpers)?;
+    let classes = classes(
+        &selection.axes,
+        &selection.classes,
+        &terms,
+        &mut local,
+        helpers,
+    )?;
     let merged = match (class_name, classes) {
         (None, classes) => classes,
         (Some(Binding::Known(literal)), Classes::Known(classes)) => {
@@ -1164,6 +1177,59 @@ fn render(
     let name = helpers.function(count, body, local);
 
     Some(Rendered::Call(format!("className={{{prefix}{name}("), ")}"))
+}
+
+/// The class list a class-selection recipe application renders on a host element.
+pub enum Applied {
+    /// A selector call, the name of a module-scope selector taking the application's
+    /// non-literal values in authored order.
+    Call(String),
+    /// A class list known at compile time.
+    Constant(String),
+}
+
+/// Plans a class-selection recipe application spread onto a host element, with its authored
+/// values in authored order as each axis name and, for a literal value, the literal. Literal
+/// values fold into the class list, and each other value becomes a selector argument, so it
+/// evaluates once, in authored order. Few class combinations read a constant table. Returns
+/// `None` when a base list that starts with whitespace would join differently.
+pub fn application(
+    classes: &str,
+    definition: &runtime::Definition,
+    values: &[(&str, Option<Literal>)],
+    helpers: &mut Helpers<'_>,
+) -> Option<Applied> {
+    let axes: Vec<Axis> = axes(definition).collect();
+    let mut count = 0;
+    let mut params: FxHashMap<&str, Binding> = FxHashMap::default();
+
+    for (key, literal) in values {
+        let binding = if let Some(literal) = literal {
+            Binding::Known(literal.clone())
+        } else {
+            count += 1;
+            Binding::Param(count - 1)
+        };
+
+        params.insert(key, binding);
+    }
+
+    let terms: Vec<Term> = axes
+        .iter()
+        .map(|axis| match params.get(&*axis.name) {
+            Some(Binding::Known(literal)) => Term::Known(literal.clone()),
+            Some(Binding::Param(index)) => Term::Param(*index),
+            None => Term::Known(Literal::Undefined),
+        })
+        .collect();
+    let mut local = false;
+
+    Some(
+        match self::classes(&axes, classes, &terms, &mut local, helpers)? {
+            Classes::Known(classes) => Applied::Constant(classes),
+            Classes::Code(code, _) => Applied::Call(helpers.function(count, code, local)),
+        },
+    )
 }
 
 /// The props an attribute-selection recipe renders for each term: the class list, then each
@@ -1280,14 +1346,14 @@ fn merge(classes: &str, external: Option<&str>) -> String {
 /// The class list a class-selection recipe renders for each term, or `None` when a base list
 /// that starts with whitespace would join differently.
 fn classes(
-    selection: &Selection,
+    axes: &[Axis],
+    base: &str,
     terms: &[Term],
     local: &mut bool,
     helpers: &mut Helpers<'_>,
 ) -> Option<Classes> {
     // Each axis adds one of its distinct classes, the first of which adds none.
-    let slots: Vec<Vec<&str>> = selection
-        .axes
+    let slots: Vec<Vec<&str>> = axes
         .iter()
         .map(|axis| {
             let mut slots = vec![""];
@@ -1301,8 +1367,6 @@ fn classes(
             slots
         })
         .collect();
-    let base = &*selection.classes;
-
     if base.starts_with(js::is_whitespace) {
         return None;
     }
@@ -1326,7 +1390,7 @@ fn classes(
         let mut code = String::new();
         let mut constant = String::from(base);
 
-        for ((axis, slots), term) in selection.axes.iter().zip(&slots).zip(terms) {
+        for ((axis, slots), term) in axes.iter().zip(&slots).zip(terms) {
             let write = |output: &mut String, slot: usize| {
                 js::write_string(output, slots.get(slot).copied().unwrap_or_default());
             };
@@ -1382,9 +1446,7 @@ fn classes(
     let mut constant = 0;
     let mut code = String::new();
 
-    for (((axis, slots), term), stride) in
-        selection.axes.iter().zip(&slots).zip(terms).zip(&strides)
-    {
+    for (((axis, slots), term), stride) in axes.iter().zip(&slots).zip(terms).zip(&strides) {
         let write = |output: &mut String, slot: usize| {
             let _ = write!(output, "{}", slot * stride);
         };

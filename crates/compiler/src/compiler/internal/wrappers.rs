@@ -123,8 +123,6 @@ pub struct Options<'o> {
     pub strings: bool,
     /// Whether a name is already bound in the module.
     pub taken: &'o dyn Fn(&str) -> bool,
-    /// Annotates generated parameters for TypeScript modules.
-    pub typed: bool,
 }
 
 /// A module's wrappers and the edits that fold them.
@@ -146,9 +144,6 @@ pub struct Wrappers {
     pub prefixes: FxHashMap<u32, Prefix>,
     /// Element name ranges that renamed elements no longer read.
     pub renamed: Vec<(u32, u32)>,
-    /// Module-scope selectors and tables that folded selection use sites read, in creation
-    /// order.
-    pub statements: Vec<String>,
 }
 
 /// Classes that precede a wrapper application's own classes on the host element.
@@ -219,11 +214,12 @@ enum Props {
 const DEPTH: usize = 64;
 
 /// Finds a module's wrappers, resolves their folds, and plans the edits of every foldable
-/// element.
+/// element. Folded selection use sites add their selectors and tables to `helpers`.
 pub fn find<'a>(
     program: &'a Program<'a>,
     semantic: &Semantic<'a>,
     options: &Options<'a>,
+    helpers: &mut Helpers<'_>,
 ) -> Wrappers {
     let mut found = Candidates::default();
     // Exported wrappers by local symbol, with each export name in source order.
@@ -341,8 +337,6 @@ pub fn find<'a>(
         }
     }
 
-    let mut helpers = Helpers::new(options.runtime, options.taken, options.typed);
-
     let nodes = semantic.nodes();
 
     // A wrapper's element that names a forwarding wrapper renders that wrapper's host element.
@@ -447,7 +441,7 @@ pub fn find<'a>(
                             selection,
                             &anchors,
                             options.source,
-                            &mut helpers,
+                            helpers,
                             &mut wrappers.edits,
                         );
                     }
@@ -492,8 +486,6 @@ pub fn find<'a>(
     }
 
     wrappers.edits.sort_unstable_by_key(|(start, _, _)| *start);
-    wrappers.merges |= helpers.merges;
-    wrappers.statements = helpers.statements;
     wrappers
 }
 

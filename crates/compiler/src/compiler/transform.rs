@@ -880,10 +880,10 @@ fn write_choice_test(output: &mut String, value: &str, name: &str) {
     js::write_string(output, name);
 }
 
-/// Authored axes and value spans of a class-selection recipe application.
-type ClassFields<'a> = SmallVec<[(&'a str, Span); 4]>;
+/// Authored axes and values of a class-selection recipe application.
+type ClassFields<'a> = SmallVec<[(&'a str, &'a Expression<'a>); 4]>;
 
-/// The axes a class-selection recipe application selects, with each value's span, in authored
+/// The axes a class-selection recipe application selects, with each value, in authored
 /// order, or `None` when its values object is not a plain literal of distinct axes. Choice names a
 /// non-string selection could stringify to also keep the call.
 fn recipe_classes<'a>(
@@ -913,7 +913,7 @@ fn recipe_classes<'a>(
             return None;
         }
 
-        fields.push((key, property.value.span()));
+        fields.push((key, &property.value));
     }
 
     // A number or other value would stringify to a numeric choice name.
@@ -926,6 +926,61 @@ fn recipe_classes<'a>(
     (!numeric).then_some(fields)
 }
 
+/// Folds a class-selection recipe application spread alone onto a DOM element into a constant
+/// `className` or one selector call. Literal values fold into the class list, and each other
+/// value stays in place as an argument, in authored order, so rewrites inside it still apply.
+/// Returns `false` when the selection cannot plan the class list, which `fold_classes` folds.
+fn select_classes(
+    module: &mut Edits<'_>,
+    application: &Bound<'_>,
+    fields: &[(&str, &Expression<'_>)],
+    recipe: &runtime::Definition,
+    class_name: &str,
+    helpers: &mut selections::Helpers<'_>,
+) -> Result<bool> {
+    let values: SmallVec<[(&str, Option<selections::Literal>); 4]> = fields
+        .iter()
+        .map(|(key, value)| (*key, selections::literal(value)))
+        .collect();
+    let Some(applied) = selections::application(class_name, recipe, &values, helpers) else {
+        return Ok(false);
+    };
+    let spread = application.spread;
+
+    match applied {
+        selections::Applied::Constant(classes) => {
+            let mut text = String::from("className={");
+
+            js::write_string(&mut text, &classes);
+            text.push('}');
+            module.overwrite(spread.start, spread.end, text)?;
+        }
+        selections::Applied::Call(name) => {
+            let mut text = format!("className={{{name}(");
+            let mut previous = spread.start;
+
+            for ((_, value), (_, literal)) in fields.iter().zip(&values) {
+                if literal.is_some() {
+                    continue;
+                }
+
+                let span = value.span();
+
+                if previous != spread.start {
+                    text.push(',');
+                }
+
+                module.overwrite(previous, span.start, std::mem::take(&mut text))?;
+                previous = span.end;
+            }
+
+            module.overwrite(previous, spread.end, ")}")?;
+        }
+    }
+
+    Ok(true)
+}
+
 /// Folds a class-selection recipe application spread alone onto a DOM element into one
 /// `className` expression. Each authored value stays in place, in authored order, so rewrites
 /// inside it still apply, and is read once into `value`. Omitted axes contribute their default
@@ -933,7 +988,7 @@ fn recipe_classes<'a>(
 fn fold_classes(
     module: &mut Edits<'_>,
     application: &Bound<'_>,
-    fields: &[(&str, Span)],
+    fields: &[(&str, &Expression<'_>)],
     recipe: &runtime::Definition,
     class_name: &str,
     value: &str,
@@ -975,7 +1030,9 @@ fn fold_classes(
 
     let mut previous = application.spread.start;
 
-    for (axis, span) in fields {
+    for (axis, expression) in fields {
+        let span = expression.span();
+
         let _ = write!(text, "+(({value}=(");
         module.overwrite(previous, span.start, std::mem::take(&mut text))?;
         previous = span.end;
@@ -1766,6 +1823,10 @@ pub fn compile<'a>(
             })
             .collect()
     };
+    let runtime = state.runtime.clone();
+    let taken = |name: &str| walker.identifiers.contains_key(name);
+    // Folded selection use sites and recipe applications share one set of selectors and tables.
+    let mut helpers = selections::Helpers::new(&runtime, &taken, typed);
     // Development keeps every component, so tools and updates still see each one.
     let wrappers = if portable || options.development {
         wrappers::Wrappers::default()
@@ -1880,7 +1941,6 @@ pub fn compile<'a>(
                 })
             })
             .collect();
-        let taken = |name: &str| walker.identifiers.contains_key(name);
 
         wrappers::find(
             program,
@@ -1897,8 +1957,8 @@ pub fn compile<'a>(
                 source,
                 strings: !shadowed,
                 taken: &taken,
-                typed,
             },
+            &mut helpers,
         )
     };
 
@@ -2049,7 +2109,6 @@ pub fn compile<'a>(
     state.consumed.extend(wrappers.renamed);
 
     state.callable |= wrappers.merges;
-    state.compositions.extend(wrappers.statements);
 
     for (call, folds) in &plans {
         let class_name = json_class(&generator.classes, &call.name);
@@ -2069,10 +2128,22 @@ pub fn compile<'a>(
         };
 
         for (application, fields) in folds {
-            fold_classes(&mut module, application, fields, recipe, class_name, &value)?;
-            folded = true;
+            if !select_classes(
+                &mut module,
+                application,
+                fields,
+                recipe,
+                class_name,
+                &mut helpers,
+            )? {
+                fold_classes(&mut module, application, fields, recipe, class_name, &value)?;
+                folded = true;
+            }
         }
     }
+
+    state.callable |= helpers.merges;
+    state.compositions.extend(helpers.statements);
 
     // Folded selections assign one module-scope value, read before the next assignment.
     if folded {
@@ -2589,8 +2660,8 @@ fn fold_chains(styles: &mut Vec<Arc<NamedStyle>>, options: &FoldChains<'_, '_>) 
             source: options.source,
             strings: false,
             taken: &|_| false,
-            typed: false,
         },
+        &mut selections::Helpers::new("", &|_| false, false),
     );
     let mut chains: Vec<Chain> = Vec::new();
     let mut merged: Vec<Arc<NamedStyle>> = Vec::new();

@@ -3659,6 +3659,122 @@ export const bar=style((values:{width:\`\${number}px\`})=>({width:values.width})
         )
       }
     })
+
+    test('folds class-selection recipe applications spread onto elements into class tables', async () => {
+      const source = `import { variants } from 'zyzz'
+const order: string[] = []
+const pick = <T,>(value: T): T => (order.push(String(value)), value)
+export const App = ({ size, tone }: { size?: unknown; tone?: unknown }) => <main>
+<button id="first" disabled {...styles.button({ tone, size: pick(size) })} />
+<button id="second" {...styles.button({ size: 'large', tone: pick(tone) })} />
+<button id="third" {...styles.button({ size: 'small', tone: 'loud' })} />
+<p>{order.join(' ')}</p>
+</main>
+namespace styles {
+export const button = variants({ base: { display: 'flex' }, defaultVariants: { tone: 'quiet' }, selection: 'class', variants: { size: { large: { paddingLeft: '8px' }, small: { paddingLeft: '4px' } }, tone: { loud: { color: 'rgb(255, 0, 0)' }, quiet: { color: 'rgb(128, 128, 128)' } } } })
+}`
+      const output = Transform.compile({
+        cssOutput: 'grouped',
+        moduleId: 'App.tsx',
+        source,
+      })
+
+      // Values stay in place as selector arguments, and literals fold into the table index.
+      expect(output.code).toMatchInlineSnapshot(`
+        "
+        const __zyzzClasses0=["z_l0kPgl0","z_l0kPgl0 zv3hmMUQlM2","z_l0kPgl0 zv3hmMUQlM3","z_l0kPgl0 zv3hmMUQlM0","z_l0kPgl0 zv3hmMUQlM0 zv3hmMUQlM2","z_l0kPgl0 zv3hmMUQlM0 zv3hmMUQlM3","z_l0kPgl0 zv3hmMUQlM1","z_l0kPgl0 zv3hmMUQlM1 zv3hmMUQlM2","z_l0kPgl0 zv3hmMUQlM1 zv3hmMUQlM3"];
+        function __zyzzSelect0(p0:unknown,p1:unknown){return __zyzzClasses0[(p1==="large"?3:p1==="small"?6:0)+(p0===void 0?2:p0==="loud"?1:p0==="quiet"?2:0)]}
+        function __zyzzSelect1(p0:unknown){return __zyzzClasses0[(p0===void 0?2:p0==="loud"?1:p0==="quiet"?2:0)+3]}
+
+        const order: string[] = []
+        const pick = <T,>(value: T): T => (order.push(String(value)), value)
+        export const App = ({ size, tone }: { size?: unknown; tone?: unknown }) => <main>
+        <button id="first" disabled className={__zyzzSelect0(tone,pick(size))} />
+        <button id="second" className={__zyzzSelect1(pick(tone))} />
+        <button id="third" className={"z_l0kPgl0 zv3hmMUQlM1 zv3hmMUQlM2"} />
+        <p>{order.join(' ')}</p>
+        </main>
+        "
+      `)
+
+      const bundle = await Esbuild.build({
+        bundle: true,
+        external: ['react'],
+        format: 'cjs',
+        jsx: 'automatic',
+        platform: 'node',
+        stdin: {
+          contents: output.code,
+          loader: 'tsx',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+      const module = {
+        exports: {} as { App: (props: object) => React.ReactNode },
+      }
+
+      new Function('module', 'exports', 'require', bundle.outputFiles[0]!.text)(
+        module,
+        module.exports,
+        Module.createRequire(import.meta.url),
+      )
+
+      const render = (props: object) =>
+        Server.renderToStaticMarkup(
+          React.createElement(module.exports.App, props),
+        )
+
+      // An omitted value takes the default, and an unknown one adds no class, as the runtime does.
+      expect(render({ size: 'large', tone: undefined })).toMatchInlineSnapshot(
+        `"<main><button id="first" disabled="" class="z_l0kPgl0 zv3hmMUQlM0 zv3hmMUQlM3"></button><button id="second" class="z_l0kPgl0 zv3hmMUQlM0 zv3hmMUQlM3"></button><button id="third" class="z_l0kPgl0 zv3hmMUQlM1 zv3hmMUQlM2"></button><p>large undefined</p></main>"`,
+      )
+      expect(render({ size: 'huge', tone: 'loud' })).toMatchInlineSnapshot(
+        `"<main><button id="first" disabled="" class="z_l0kPgl0 zv3hmMUQlM2"></button><button id="second" class="z_l0kPgl0 zv3hmMUQlM0 zv3hmMUQlM2"></button><button id="third" class="z_l0kPgl0 zv3hmMUQlM1 zv3hmMUQlM2"></button><p>large undefined huge loud</p></main>"`,
+      )
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style>${render({ size: 'small', tone: 'quiet' })}`,
+        )
+
+        expect(
+          await page
+            .locator('button')
+            .evaluateAll((elements) =>
+              elements.map((element) => [
+                element.id,
+                getComputedStyle(element).color,
+                getComputedStyle(element).paddingLeft,
+              ]),
+            ),
+        ).toMatchInlineSnapshot(`
+          [
+            [
+              "first",
+              "rgb(128, 128, 128)",
+              "4px",
+            ],
+            [
+              "second",
+              "rgb(128, 128, 128)",
+              "8px",
+            ],
+            [
+              "third",
+              "rgb(255, 0, 0)",
+              "4px",
+            ],
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
   })
 })
 
@@ -4236,7 +4352,8 @@ namespace styles {
         function __zyzzSelect8(p0:unknown){return {className:"z_l0kPgl1 literal","data-on":"true","data-tone":(p0===void 0?"red":p0===null?void 0:String(p0))}}
         function __zyzzSelect9(p0:unknown){return {className:"z_l0kPgl1","data-on":"true","data-tone":(p0===void 0?"red":p0===null?void 0:String(p0))}}
         function __zyzzSelect10(p0:unknown,p1:unknown,p2:unknown){return "z_l0kPgl2 zvbfdqSph82"+(p0==="w"?" zvbfdqSph83":p0==="x"?" zvbfdqSph84":p0==="z"?" zvbfdqSph85":"")+(p1==="w"?" zvbfdqSph86":p1==="x"?" zvbfdqSph87":p1==="y"?" zvbfdqSph88":"")+(p2==="w"?" zvbfdqSph89":p2==="x"?" zvbfdqSph8a":p2==="y"?" zvbfdqSph8b":"")}
-        let __zyzzValue:unknown;
+        function __zyzzSelect11(p0:unknown,p1:unknown,p2:unknown){return __zyzzClasses0[(p0===true||p0==="true"?9:0)+(p1==="large"?3:p1==="small"?6:0)+(p2===void 0?2:p2==="blue"?1:p2==="red"?2:0)]}
+        function __zyzzSelect12(p0:unknown,p1:unknown,p2:unknown,p3:unknown){return "z_l0kPgl2"+(p0===void 0?" zvbfdqSph81":p0==="w"?" zvbfdqSph80":p0==="x"?" zvbfdqSph81":p0==="y"?" zvbfdqSph82":"")+(p1==="w"?" zvbfdqSph83":p1==="x"?" zvbfdqSph84":p1==="z"?" zvbfdqSph85":"")+(p2==="w"?" zvbfdqSph86":p2==="x"?" zvbfdqSph87":p2==="y"?" zvbfdqSph88":"")+(p3==="w"?" zvbfdqSph89":p3==="x"?" zvbfdqSph8a":p3==="y"?" zvbfdqSph8b":"")}
 
         import { Props as __zyzzProps } from 'zyzz/runtime';
 
@@ -4246,14 +4363,14 @@ namespace styles {
         const Chip = (props: P) => <span {...styles.chip({ className: props.className, on: props.on === true, size: props.size, tone: props.tone })}>{props.children}</span>
         // Conditionals and logical operators over destructured props.
         const Mark = ({ $strong, $tone, $on, children }: { $strong?: unknown; $tone?: unknown; $on?: unknown; children?: unknown }) => (
-          <b className={"z_l0kPgl0"+((__zyzzValue=($on ?? false))===void 0?"":__zyzzValue===true||__zyzzValue==="true"?" zv4meQUdh61":"")+((__zyzzValue=($tone && 'large'))===void 0?"":__zyzzValue==="large"?" zv4meQUdh62":__zyzzValue==="small"?" zv4meQUdh63":"")+((__zyzzValue=($strong ? 'blue' : $tone))===void 0?" zv4meQUdh65":__zyzzValue==="blue"?" zv4meQUdh64":__zyzzValue==="red"?" zv4meQUdh65":"")}>
+          <b className={__zyzzSelect11($on ?? false,$tone && 'large',$strong ? 'blue' : $tone)}>
             {children}
           </b>
         )
         // Attribute selection writes data attributes.
         const Flag = (props: P & { off?: unknown }) => <i {...styles.flag({ className: props.className, on: !props.off, tone: props.tone })}>{props.children}</i>
         // Too many combinations for a table, so classes concatenate.
-        const Wide = (props: { a?: unknown; b?: unknown; c?: unknown; d?: unknown }) => <u className={"z_l0kPgl2"+((__zyzzValue=(props.a))===void 0?" zvbfdqSph81":__zyzzValue==="w"?" zvbfdqSph80":__zyzzValue==="x"?" zvbfdqSph81":__zyzzValue==="y"?" zvbfdqSph82":"")+((__zyzzValue=(props.b))===void 0?"":__zyzzValue==="w"?" zvbfdqSph83":__zyzzValue==="x"?" zvbfdqSph84":__zyzzValue==="z"?" zvbfdqSph85":"")+((__zyzzValue=(props.c))===void 0?"":__zyzzValue==="w"?" zvbfdqSph86":__zyzzValue==="x"?" zvbfdqSph87":__zyzzValue==="y"?" zvbfdqSph88":"")+((__zyzzValue=(props.d))===void 0?"":__zyzzValue==="w"?" zvbfdqSph89":__zyzzValue==="x"?" zvbfdqSph8a":__zyzzValue==="y"?" zvbfdqSph8b":"")} />
+        const Wide = (props: { a?: unknown; b?: unknown; c?: unknown; d?: unknown }) => <u className={__zyzzSelect12(props.a,props.b,props.c,props.d)} />
         const order: string[] = []
         const pick = <T,>(value: T): T => (order.push(String(value)), value)
         export const App = () => <>

@@ -11,6 +11,9 @@ import * as Literal from './Literal.js'
 import type * as Numeric from './Numeric.js'
 import * as Token from './Token.js'
 
+/** Any value marked important; its unmarked value is checked against the property. */
+export type Important = `${string} !important`
+
 /** Scalar declarations optionally carrying a trailing importance marker. */
 export type Atom<value> =
   | value
@@ -60,8 +63,29 @@ type AcceptedMember<
       : never
     : [value] extends [readonly [unknown, ...unknown[]]]
       ? AcceptedArray<value, property, properties>
-      : LiteralAccepted<value, property, properties>
+      : [value] extends [`${infer body} !important`]
+        ? AcceptedImportant<
+            value,
+            ScalarValue<body, property>,
+            property,
+            properties
+          >
+        : LiteralAccepted<value, property, properties>
   : never
+
+// Property domains accept any `!important` spelling, so the marked value is checked here
+// instead of each domain listing an important variant of every literal.
+type AcceptedImportant<
+  value,
+  body,
+  property extends PropertyKey,
+  properties,
+> = body extends `${string} !important`
+  ? never
+  : [body] extends [LiteralAccepted<body, property, properties>]
+    ? value
+    : // The domain without its important spelling keeps the diagnostic on this value.
+      Exclude<LiteralAccepted<body, property, properties>, Important>
 
 type ScalarValue<value, property> =
   value extends `${infer numeric extends number}`

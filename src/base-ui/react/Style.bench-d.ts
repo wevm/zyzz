@@ -24,7 +24,7 @@ bench('base ui / presence and valued states', () => {
   style(Select.Popup, {
     states: { side: { bottom: { marginTop: '8px' } } },
   })
-}).types([12733, 'instantiations'])
+}).types([11172, 'instantiations'])
 
 bench('base ui / configured states', () => {
   const { style } = defineConfig({
@@ -35,4 +35,4 @@ bench('base ui / configured states', () => {
     px: 'gap',
     states: { highlighted: { color: 'accent', px: 'gap' } },
   })
-}).types([21498, 'instantiations'])
+}).types([20398, 'instantiations'])

@@ -46,7 +46,7 @@ bench('define / declaration references', () => {
   }
 
   style({ marginLeft: slots.signed, opacity: slots.count, padding: slots.size })
-}).types([43530, 'instantiations'])
+}).types([40345, 'instantiations'])
 
 bench('define / untyped references', () => {
   const value = variable()
@@ -54,4 +54,4 @@ bench('define / untyped references', () => {
   style({ display: value, boxShadow: value, zIndex: value })
   value.set('inline-flex')
   value.set(42)
-}).types([115391, 'instantiations'])
+}).types([72285, 'instantiations'])

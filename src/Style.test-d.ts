@@ -832,12 +832,13 @@ describe('style', () => {
   test('only spaced important suffixes are accepted', () => {
     const configured = Config.create({ theme: { color: { brand: '#06c' } } })
 
+    // Domains accept any spaced important spelling; the unmarked value is checked separately.
     expectTypeOf<
       Extract<
         Style.DeclarationProperties<{ color: { brand: '#06c' } }>['color'],
-        `brand${string}`
+        `brand${string}` | `${string} !important`
       >
-    >().toEqualTypeOf<'brand' | 'brand !important'>()
+    >().toEqualTypeOf<'brand' | `${string} !important`>()
 
     configured.style({ color: 'brand !important' })
     style({ color: 'red !important', opacity: '0.5 !important' })

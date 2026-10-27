@@ -847,7 +847,7 @@ export class InvalidError extends Error {
 }
 
 type LiteralAtoms = {
-  readonly [property in keyof Literal.Properties]-?: Value.Atom<
+  readonly [property in keyof Literal.Properties]-?:
     | Exclude<Literal.Properties[property], undefined>
     | `${string} !custom`
     | Binding.Reference<'*'>
@@ -859,7 +859,7 @@ type LiteralAtoms = {
           ? Binding.Reference<kind>
           : never
       }[Binding.Kind]
-  >
+    | Value.Important
 }
 
 /** Supported primitive CSS declarations without theme references. */
@@ -905,14 +905,15 @@ type DeclarationValue<
       : [Token.Names<tokens, property>] extends [never]
         ? LiteralAtoms[property]
         :
-            | Value.Atom<`${string} !custom`>
+            | `${string} !custom`
             | Extract<LiteralAtoms[property], Binding.Reference>)
-  | Value.Atom<Token.Names<tokens, property>>
+  | Token.Names<tokens, property>
   | {
       [group in Token.Group]: property extends Token.Properties<group>
-        ? Value.Atom<Token.Reference<group> | Token.Variable<group>>
+        ? Token.Reference<group> | Token.Variable<group>
         : never
     }[Token.Group]
+  | Value.Important
 >
 
 /** Recursive theme-aware declaration and condition authoring. */

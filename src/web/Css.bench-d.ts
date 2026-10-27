@@ -27,14 +27,14 @@ bench('compile / literal styles', () => {
 
   void result.classes.card.length
   void result.css.length
-}).types([5078, 'instantiations'])
+}).types([3825, 'instantiations'])
 
 bench('compile / independent composition', () => {
   Css.compile({
     composition: 'independent',
     styles: Style.define({ card: { ':hover': { color: '#222' }, padding: 0 } }),
   })
-}).types([3197, 'instantiations'])
+}).types([2299, 'instantiations'])
 
 bench('compile / theme scopes', () => {
   const base = Vars.define({
@@ -51,4 +51,4 @@ bench('compile / theme scopes', () => {
   })
 
   void result.vars.alternate
-}).types([72628, 'instantiations'])
+}).types([64770, 'instantiations'])

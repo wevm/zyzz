@@ -1,5 +1,12 @@
 # zyzz
 
+## 0.0.43
+
+### Patch Changes
+
+- a918d95: Improved type-checking performance of `style` and `variants`. Declarations are now checked per key and value, so TypeScript reuses each check across styles: about 25% fewer instantiations, 4x fewer types and a third less memory on a large app. Accepted inputs and diagnostics are unchanged.
+- eb2eab7: Improved type-checking performance of configured `style` and `variants` further. Declaration values are now checked directly per property instead of through one-key objects, and lengths skip unit parsing unless a range rule needs it: about 12% fewer instantiations and 8% faster checks on a large app, and up to 35% fewer instantiations per call with the default theme. Accepted inputs and diagnostics are unchanged.
+
 ## 0.0.42
 
 ### Patch Changes

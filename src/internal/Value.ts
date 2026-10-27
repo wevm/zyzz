@@ -28,32 +28,40 @@ export type Accepted<style, properties> = {
   >
 }
 
-type AcceptedValue<value, property extends PropertyKey, properties> =
+/**
+ * Accepts one declaration value for one property. Checking the value and property directly,
+ * rather than through a one-key object, lets TypeScript cache the result per pair.
+ */
+export type AcceptedValue<value, property extends PropertyKey, properties> =
   Extract<
     value,
     `${string} !custom` | `${string} !custom !important`
   > extends never
-    ? AcceptedMember<Record<property, value>, properties>[property]
+    ? AcceptedMember<value, property, properties>
     : value extends unknown
-      ? AcceptedMember<Record<property, value>, properties>[property]
+      ? AcceptedMember<value, property, properties>
       : never
 
-type AcceptedMember<style, properties> = {
-  [property in keyof style]: property extends keyof properties
-    ? style[property] extends
-        | `${infer value} !custom`
-        | `${infer value} !custom !important`
-      ? ScalarValue<value, property> extends LiteralAccepted<
-          Record<property, ScalarValue<value, property>>,
-          Literal.Properties
-        >[property]
-        ? style[property]
-        : never
-      : style[property] extends readonly [unknown, ...unknown[]]
-        ? AcceptedArray<style[property], property, properties>
-        : LiteralAccepted<Pick<style, property>, properties>[property]
-    : never
-}
+// Tuple-wrapped checks keep each test non-distributive over a union value.
+type AcceptedMember<
+  value,
+  property extends PropertyKey,
+  properties,
+> = property extends keyof properties
+  ? [value] extends [
+      `${infer scalar} !custom` | `${infer scalar} !custom !important`,
+    ]
+    ? ScalarValue<scalar, property> extends LiteralAccepted<
+        ScalarValue<scalar, property>,
+        property,
+        Literal.Properties
+      >
+      ? value
+      : never
+    : [value] extends [readonly [unknown, ...unknown[]]]
+      ? AcceptedArray<value, property, properties>
+      : LiteralAccepted<value, property, properties>
+  : never
 
 type ScalarValue<value, property> =
   value extends `${infer numeric extends number}`
@@ -67,52 +75,52 @@ type ScalarValue<value, property> =
 type AcceptedArray<values, property extends PropertyKey, properties> = {
   [index in keyof values]: values[index] extends readonly unknown[]
     ? never
-    : Accepted<Record<property, values[index]>, properties>[property]
+    : AcceptedValue<values[index], property, properties>
 }
 
-type LiteralAccepted<style, properties> = {
-  [property in keyof style]: property extends keyof properties
-    ? style[property] extends { readonly [Token.scalar]: infer scalar }
-      ? property extends keyof Literal.Properties
-        ? [scalar] extends [Literal.Properties[property]]
-          ? style[property] & Checked<Record<property, scalar>>[property]
-          : never
+type LiteralAccepted<
+  value,
+  property extends PropertyKey,
+  properties,
+> = property extends keyof properties
+  ? [value] extends [{ readonly [Token.scalar]: infer scalar }]
+    ? property extends keyof Literal.Properties
+      ? [scalar] extends [Literal.Properties[property]]
+        ? value & CheckedValue<scalar, property>
         : never
-      : References<style[property], Exclude<properties[property], undefined>> &
-          (style[property] extends Binding.Reference
-            ? Binding.Reference<style[property]['type']> extends Exclude<
-                properties[property],
-                undefined
+      : never
+    : References<value, Exclude<properties[property], undefined>> &
+        ([value] extends [Binding.Reference]
+          ? Binding.Reference<
+              Extract<value, Binding.Reference>['type']
+            > extends Exclude<properties[property], undefined>
+            ? value
+            : never
+          : FunctionValue.Is<value> extends true
+            ? FunctionValue.Accepted<
+                value,
+                Exclude<properties[property], undefined>,
+                property
               >
-              ? style[property]
-              : never
-            : FunctionValue.Is<style[property]> extends true
-              ? FunctionValue.Accepted<
-                  style[property],
+            : [Exclude<value, undefined>] extends [
                   Exclude<properties[property], undefined>,
-                  property
-                >
-              : Exclude<style[property], undefined> extends Exclude<
-                    properties[property],
-                    undefined
-                  >
-                ? Exclude<style[property], undefined>
-                : property extends keyof Literal.Properties
-                  ? style[property] extends
-                      | string
-                      | readonly (number | string)[]
-                    ? Fold<style[property]> extends Input<
+                ]
+              ? Exclude<value, undefined>
+              : property extends keyof Literal.Properties
+                ? [value] extends [string | readonly (number | string)[]]
+                  ? [Fold<value>] extends [
+                      Input<
                         | Lowercase<
                             Extract<Literal.Properties[property], string>
                           >
                         | Extract<Literal.Properties[property], number>
-                      >
-                      ? style[property]
-                      : Exclude<properties[property], undefined>
+                      >,
+                    ]
+                    ? value
                     : Exclude<properties[property], undefined>
-                  : Exclude<properties[property], undefined>)
-    : never
-}
+                  : Exclude<properties[property], undefined>
+                : Exclude<properties[property], undefined>)
+  : never
 
 type References<value, allowed> = value extends Token.Reference
   ? value extends Extract<allowed, Token.Reference>
@@ -130,31 +138,37 @@ type Fold<value> = value extends string
 
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
-  [property in keyof style]: style[property] extends
-    | `${infer value} !custom`
-    | `${infer value} !custom !important`
-    ? value extends `${string} !${'custom' | 'important'}`
-      ? never
-      : LiteralChecked<Record<property, ScalarValue<value, property>>>[property]
-    : style[property] extends readonly [unknown, ...unknown[]]
-      ? CheckedArray<style[property], property, tokens>
-      : LiteralChecked<Record<property, style[property]>, tokens>[property]
+  [property in keyof style]: CheckedValue<style[property], property, tokens>
 }
 
-type LiteralChecked<style, tokens = {}> = {
-  [property in keyof style]: style[property] extends string & Binding.Reference
-    ? style[property] extends Binding.Reference<'*'>
-      ? unknown
-      : Checked<
-          { [key in property]: Binding.Reference<style[property]['type']> },
-          tokens
-        >[property]
-    : Literal.Properties extends style
-      ? unknown
-      : Importance<style[property]> &
-          RuleReference.Check<style[property], property> &
-          (property extends keyof typeof Literal.rules
-            ? style[property] extends (property extends
+/** Refines one declaration value for one property, cached per value, property and tokens. */
+export type CheckedValue<value, property extends PropertyKey, tokens = {}> = [
+  value,
+] extends [`${infer scalar} !custom` | `${infer scalar} !custom !important`]
+  ? scalar extends `${string} !${'custom' | 'important'}`
+    ? never
+    : LiteralChecked<ScalarValue<scalar, property>, property>
+  : [value] extends [readonly [unknown, ...unknown[]]]
+    ? CheckedArray<value, property, tokens>
+    : LiteralChecked<value, property, tokens>
+
+type LiteralChecked<value, property extends PropertyKey, tokens = {}> = [
+  value,
+] extends [string & Binding.Reference]
+  ? [value] extends [Binding.Reference<'*'>]
+    ? unknown
+    : CheckedValue<
+        Binding.Reference<Extract<value, Binding.Reference>['type']>,
+        property,
+        tokens
+      >
+  : Literal.Properties extends Record<property, value>
+    ? unknown
+    : Importance<value> &
+        RuleReference.Check<value, property> &
+        (property extends keyof typeof Literal.rules
+          ? [value] extends [
+              (property extends
                 | 'gridArea'
                 | 'gridColumn'
                 | 'gridColumnEnd'
@@ -162,8 +176,8 @@ type LiteralChecked<style, tokens = {}> = {
                 | 'gridRow'
                 | 'gridRowEnd'
                 | 'gridRowStart'
-                ? Fold<style[property]> extends Grid.Checked<
-                    Fold<style[property]>,
+                ? Fold<value> extends Grid.Checked<
+                    Fold<value>,
                     property extends 'gridArea'
                       ? 4
                       : property extends 'gridColumn' | 'gridRow'
@@ -174,20 +188,17 @@ type LiteralChecked<style, tokens = {}> = {
                   : never
                 : unknown) &
                 Check<
-                  style[property],
+                  value,
                   Token.Names<tokens, property>,
                   (typeof Literal.rules)[property]
-                >
-              ? unknown
-              : never
-            : unknown)
-}
+                >,
+            ]
+            ? unknown
+            : never
+          : unknown)
 
 type CheckedArray<values, property extends PropertyKey, tokens> = {
-  [index in keyof values]: Checked<
-    Record<property, values[index]>,
-    tokens
-  >[property]
+  [index in keyof values]: CheckedValue<values[index], property, tokens>
 }
 
 /** Lists the values a token-constrained property accepts, so mismatch diagnostics name them. */
@@ -287,15 +298,28 @@ type Scalar<input, rule> = number extends input
       > extends never
       ? never
       : Range<input, rule>
-    : input extends `${infer amount}${Literal.Unit | 'ms' | 's'}`
-      ? Range<amount, rule> extends never
-        ? never
-        : input
+    : // A dimension fails only a range rule, and only when negative or required to be positive,
+      // so every other dimension skips matching the unit suffixes.
+      rule extends Restricted
+      ? input extends `-${string}`
+        ? Dimension<input, rule>
+        : rule extends { kind: 'number'; min: 1 }
+          ? Dimension<input, rule>
+          : input
       : input
 
-type Range<input, rule> = rule extends
+type Restricted =
   | { kind: 'number' | 'percentage'; min: 0 | 1 }
   | { negative: false }
+
+type Dimension<input, rule> =
+  input extends `${infer amount}${Literal.Unit | 'ms' | 's'}`
+    ? Range<amount, rule> extends never
+      ? never
+      : input
+    : input
+
+type Range<input, rule> = rule extends Restricted
   ? input extends number | string
     ? `${input}` extends `-${string}`
       ? Numeric.Zero<input> extends true

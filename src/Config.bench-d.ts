@@ -20,7 +20,7 @@ bench('create / token-free authoring', () => {
 
   style({ color: '#fff', padding: '8px' })
   script()
-}).types([16414, 'instantiations'])
+}).types([8783, 'instantiations'])
 
 bench('create / inline theme with layers and shorthands', () => {
   const { style, vars: theme } = Config.create({
@@ -38,7 +38,7 @@ bench('create / inline theme with layers and shorthands', () => {
     ':hover': { color: theme.color.brand },
     margin: 'md',
   })
-}).types([47664, 'instantiations'])
+}).types([16866, 'instantiations'])
 
 bench('create / named theme catalog', () => {
   const base = Vars.define({
@@ -58,7 +58,7 @@ bench('create / named theme catalog', () => {
 
   style({ color: 'brand', padding: 'md' })
   themes({ colorScheme: 'dark', set: 'mint' })
-}).types([108537, 'instantiations'])
+}).types([9538, 'instantiations'])
 
 bench('create / html output', () => {
   const { style } = Config.create({ output: 'html' })
@@ -68,4 +68,31 @@ bench('create / html output', () => {
 
   void style({ padding: '8px' })().class
   void dynamic({ width: '25%' }).style
-}).types([21682, 'instantiations'])
+}).types([10954, 'instantiations'])
+
+bench('create / configured styles with shorthands', () => {
+  const { style } = Config.create({
+    layers: ['base', 'components'],
+    shorthands: {
+      px: ['paddingLeft', 'paddingRight'],
+      py: ['paddingTop', 'paddingBottom'],
+    },
+    vars: {
+      color: { border: '#ddd', ink: '#111', muted: '#666', surface: '#fff' },
+      radius: { md: '6px', sm: '4px' },
+      spacing: { 1: '4px', 2: '8px', 3: '12px', 4: '16px' },
+    },
+  })
+
+  style({
+    '@layer components': { borderRadius: 'md', px: 3, py: 2 },
+    ':hover': { backgroundColor: 'muted' },
+    alignItems: 'center',
+    backgroundColor: 'surface',
+    borderColor: 'border',
+    color: 'ink',
+    display: 'flex',
+    gap: 2,
+  })
+  style({ color: 'ink', display: 'flex', gap: 2, px: 4 })
+}).types([46652, 'instantiations'])

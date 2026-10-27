@@ -89,13 +89,14 @@ type AcceptedMember<
               : // Naming the expected tokens avoids a `never` diagnostic and keeps completions to accepted values.
                 [Value.Tokens<value, tokens, key>] extends [never]
                 ? Value.Mismatch<tokens, key>
-                : Value.Accepted<
-                    Record<key, value>,
+                : Value.AcceptedValue<
+                    value,
+                    key,
                     literal extends true
                       ? LiteralDeclarations
                       : DeclarationProperties<tokens>
-                  >[key] &
-                    Value.Checked<Record<key, value>, tokens>[key] &
+                  > &
+                    Value.CheckedValue<value, key, tokens> &
                     Value.Tokens<value, tokens, key>
             : key extends Condition.Keys<tokens, key>
               ? [value] extends [undefined]

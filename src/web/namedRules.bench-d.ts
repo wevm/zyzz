@@ -34,7 +34,7 @@ bench('counterStyle / descriptor inventory and identity', () => {
   })
 
   style({ listStyleType: dots })
-}).types([1171, 'instantiations'])
+}).types([1172, 'instantiations'])
 
 bench('fontPaletteValues and positionTry / identities', () => {
   const palette = fontPaletteValues({
@@ -50,7 +50,7 @@ bench('fontPaletteValues and positionTry / identities', () => {
   })
 
   style({ fontPalette: palette, positionTryFallbacks: below })
-}).types([51468, 'instantiations'])
+}).types([51481, 'instantiations'])
 
 bench('page / margin boxes', () => {
   page({

@@ -37,7 +37,9 @@ type Entries<entries> = {
 // Distributes over mixed element unions so each member keeps its own contract.
 type Entry<entry> = entry extends (...args: never) => unknown
   ? style.Composable<entry>
-  : entry & NoInfer<Style.Accepted<entry, {}, true>> & Completion.Properties
+  : entry &
+      NoInfer<Style.Accepted<entry, {}, true>> &
+      NoInfer<Completion.Properties>
 
 /**
  * Declares literal styles for source extraction. Requires a compile-time transform.
@@ -58,7 +60,7 @@ export function style<
       values: values,
     ) => styles &
       NoInfer<Style.Accepted<styles, {}, true> & Binding.Checked<styles>>) &
-    Completion.Properties<{}, NoInfer<styles>>,
+    NoInfer<Completion.Properties<{}, styles>>,
   // Exclude invalid callbacks by arity so they cannot mask object-property diagnostics.
   ...options: Parameters<callback> extends [Record<string, string | number>]
     ? values extends Binding.Inputs<values>
@@ -73,7 +75,7 @@ export function style<
 export function style<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<Style.Accepted<styles, {}, true>> &
-    Completion.Properties,
+    NoInfer<Completion.Properties>,
   options?: style.DefinitionOptions,
 ): style.ReturnType
 export function style<const entries>(

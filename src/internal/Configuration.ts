@@ -646,7 +646,7 @@ export type StyleFactory<
             Binding.Checked<styles> &
             Binding.TokenSlots<styles, values, tokens, mappings>
         >) &
-      Completion.Properties<tokens, NoInfer<styles>>,
+      NoInfer<Completion.Properties<tokens, styles>>,
     ...options: Parameters<callback> extends [Record<string, string | number>]
       ? values extends Binding.Inputs<values>
         ? [options?: style.DefinitionOptions]
@@ -660,7 +660,7 @@ export type StyleFactory<
   <const styles extends Record<string, unknown>>(
     styles: styles &
       NoInfer<Body<styles, tokens, layers, mappings>> &
-      Completion.Properties<tokens>,
+      NoInfer<Completion.Properties<tokens>>,
     options?: style.DefinitionOptions,
   ): style.ReturnType<output>
   <const entries>(
@@ -696,7 +696,7 @@ type Entry<
   ? style.Composable<entry>
   : entry &
       NoInfer<Body<entry, tokens, layers, mappings>> &
-      Completion.Properties<tokens>
+      NoInfer<Completion.Properties<tokens>>
 
 type Keys<styles> = styles extends unknown ? keyof styles : never
 

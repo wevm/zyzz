@@ -25,7 +25,7 @@ bench('customMedia / computed query keys', () => {
   const wide = customMedia('(width >= 80rem)')
 
   style({ [compact]: { display: 'block' }, [wide]: { display: 'grid' } })
-}).types([1691, 'instantiations'])
+}).types([1692, 'instantiations'])
 
 bench('cssFunction / typed parameters', () => {
   const mix = cssFunction({
@@ -39,7 +39,7 @@ bench('cssFunction / typed parameters', () => {
   })
 
   style({ width: mix(2, 'red', '50%') })
-}).types([8426, 'instantiations'])
+}).types([8429, 'instantiations'])
 
 bench('importCss and namespace / statement options', () => {
   importCss({

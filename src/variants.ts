@@ -259,7 +259,7 @@ export declare namespace variants {
   > = <const definition extends Record<string, unknown>>(
     definition: definition &
       NoInfer<Checked<definition, tokens, layers, mappings>> &
-      Suggestions<tokens, NoInfer<definition>>,
+      NoInfer<Suggestions<tokens, definition>>,
     options?: style.DefinitionOptions,
   ) => ReturnType<definition, output>
 

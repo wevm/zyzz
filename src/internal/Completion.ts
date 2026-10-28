@@ -10,17 +10,8 @@ export type Properties<
   tokens extends Theme.Tokens = {},
   styles = Record<string, unknown>,
 > = {
-  readonly [property in keyof Literal.Properties & keyof styles]?:
-    // Configured tokens replace literal CSS values, so only token names are suggested.
-    | ([Token.Names<tokens, property>] extends [never]
-        ? string extends Literal.Properties[property]
-          ? never
-          : Literal.Properties[property]
-        : never)
-    | Token.Names<tokens, property>
-    | (string & {})
-    | number
-    | object
+  readonly [property in keyof Literal.Properties &
+    keyof styles]?: Hints<tokens>[property]
 } & {
   // Escaped custom-property names can contain nesting characters.
   readonly [key in (`@${string}` | `:${string}` | `${string}&${string}`) &
@@ -38,6 +29,22 @@ export type Properties<
     ? never
     : 'typography') &
     keyof styles]?: Typography.Names<tokens> | (string & {})
+}
+
+// One hint table per token set: every call reads its entries instead of resolving token
+// names again for each property it authors.
+type Hints<tokens extends Theme.Tokens> = {
+  readonly [property in keyof Literal.Properties]:
+    // Configured tokens replace literal CSS values, so only token names are suggested.
+    | ([Token.Names<tokens, property>] extends [never]
+        ? string extends Literal.Properties[property]
+          ? never
+          : Literal.Properties[property]
+        : never)
+    | Token.Names<tokens, property>
+    | (string & {})
+    | number
+    | object
 }
 
 // Inferred validation checks extra fields, including vars and configured shorthands.

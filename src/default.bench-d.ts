@@ -29,7 +29,7 @@ bench('default / token declarations', () => {
     paddingBlock: 1,
     paddingInline: 3,
   })
-}).types([60416, 'instantiations'])
+}).types([60403, 'instantiations'])
 
 bench('default / mixed literal and token declarations', () => {
   style({
@@ -42,7 +42,7 @@ bench('default / mixed literal and token declarations', () => {
     transition: 'transform 160ms cubic-bezier(0.34, 1.36, 0.64, 1) !custom',
     width: 'calc(100% - 16px) !custom',
   })
-}).types([54548, 'instantiations'])
+}).types([54542, 'instantiations'])
 
 bench('default / nested conditions', () => {
   style({
@@ -56,7 +56,7 @@ bench('default / nested conditions', () => {
     color: 'gray.900',
     padding: 2,
   })
-}).types([33450, 'instantiations'])
+}).types([33456, 'instantiations'])
 
 bench('default / repeated declarations', () => {
   // Every app repeats declarations across styles; repeats should hit cached checks.
@@ -64,7 +64,7 @@ bench('default / repeated declarations', () => {
   style({ color: 'gray.1000', display: 'flex', gap: 2, padding: 3 })
   style({ color: 'gray.1000', display: 'flex', gap: 2, padding: 3 })
   style({ color: 'gray.1000', display: 'flex', gap: 2, padding: 3 })
-}).types([9908, 'instantiations'])
+}).types([9816, 'instantiations'])
 
 bench('default / recipe', () => {
   const button = variants({
@@ -97,4 +97,4 @@ bench('default / recipe', () => {
   })
 
   button({ size: 'lg', tone: 'primary' })
-}).types([54127, 'instantiations'])
+}).types([54116, 'instantiations'])

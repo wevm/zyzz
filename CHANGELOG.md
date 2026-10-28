@@ -1,5 +1,13 @@
 # zyzz
 
+## 0.0.44
+
+### Patch Changes
+
+- df139ee: Improved type-checking performance of `style` and `variants` further. Editor hints are excluded from type argument inference and resolved once per token set instead of per call: about 30% faster checks on a large app. Accepted inputs, diagnostics and completions are unchanged.
+- df139ee: Improved type-checking performance of `style`, `variants` and the web rule helpers. Property domains accept any spaced ` !important` spelling and the unmarked value is checked once, instead of every literal and token carrying an important variant: about 9% fewer instantiations on a large app and 10-50% fewer in most type benches. Accepted inputs and diagnostics are unchanged.
+- df139ee: Improved type-checking performance of declaration values further by removing `undefined` from property domains without distributing over every literal they accept.
+
 ## 0.0.43
 
 ### Patch Changes

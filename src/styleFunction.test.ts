@@ -1694,7 +1694,7 @@ pane()
           [
             {
               "code": 2322,
-              "message": "Type '"invalid-display"' is not assignable to type '("invalid-display" & Reference<"*">) | ("invalid-display" & readonly [Atom<Value<{ readonly kind: "enum"; readonly values: readonly ["-webkit-box", "-webkit-inline-box", "block", "block flex", ... 108 more ..., "table-row-group"]; }> | \`\${string} !custom\` | Reference<...>>, ...Atom<...>[]])'.",
+              "message": "Type '"invalid-display"' is not assignable to type '("invalid-display" & Reference<"*">) | ("invalid-display" & readonly [Value<{ readonly kind: "enum"; readonly values: readonly ["-webkit-box", "-webkit-inline-box", "block", "block flex", ... 108 more ..., "table-row-group"]; }> | \`\${string} !custom\` | Reference<...> | \`\${string} !important\`, ...(Value<...> | ... 2 ...'.",
               "span": "display",
             },
           ]
@@ -1704,7 +1704,7 @@ pane()
           [
             {
               "code": 2322,
-              "message": "Type '"invalid-opacity"' is not assignable to type '"invalid-opacity" & Fallbacks<Atom<\`\${string} !custom\` | Reference<"*"> | Reference<"number"> | Reference<"percentage"> | Value<{ readonly kind: "number"; readonly min: number; readonly max: number; readonly percentage: true; }>>>'.",
+              "message": "Type '"invalid-opacity"' is not assignable to type '"invalid-opacity" & (Fallbacks<\`\${string} !custom\` | Reference<"*"> | \`\${string} !important\` | Reference<"number"> | Reference<"percentage"> | Value<{ readonly kind: "number"; readonly min: number; readonly max: number; readonly percentage: true; }>> | undefined)'.",
               "span": "opacity",
             },
           ]

@@ -113,22 +113,16 @@ type LiteralAccepted<
         ? value & CheckedValue<scalar, property>
         : never
       : never
-    : References<value, NonNullable<properties[property]>> &
+    : References<value, properties[property]> &
         ([value] extends [Binding.Reference]
           ? Binding.Reference<
               Extract<value, Binding.Reference>['type']
-            > extends NonNullable<properties[property]>
+            > extends properties[property]
             ? value
             : never
           : FunctionValue.Is<value> extends true
-            ? FunctionValue.Accepted<
-                value,
-                NonNullable<properties[property]>,
-                property
-              >
-            : [Exclude<value, undefined>] extends [
-                  NonNullable<properties[property]>,
-                ]
+            ? FunctionValue.Accepted<value, properties[property], property>
+            : [Exclude<value, undefined>] extends [properties[property]]
               ? Exclude<value, undefined>
               : property extends keyof Literal.Properties
                 ? [value] extends [string | readonly (number | string)[]]
@@ -141,9 +135,9 @@ type LiteralAccepted<
                       >,
                     ]
                     ? value
-                    : NonNullable<properties[property]>
-                  : NonNullable<properties[property]>
-                : NonNullable<properties[property]>)
+                    : properties[property]
+                  : properties[property]
+                : properties[property])
   : never
 
 type References<value, allowed> = value extends Token.Reference

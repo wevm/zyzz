@@ -50,7 +50,7 @@ bench('fontPaletteValues and positionTry / identities', () => {
   })
 
   style({ fontPalette: palette, positionTryFallbacks: below })
-}).types([51481, 'instantiations'])
+}).types([67562, 'instantiations'])
 
 bench('page / margin boxes', () => {
   page({
@@ -64,7 +64,7 @@ bench('page / margin boxes', () => {
     },
     selector: ':first, :left',
   })
-}).types([393395, 'instantiations'])
+}).types([395126, 'instantiations'])
 
 bench('fontFeatureValues and viewTransition / descriptors', () => {
   fontFeatureValues({

@@ -773,7 +773,7 @@ pane()
         [
           {
             "code": 2322,
-            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [Atom<\`\${string} !custom\` | Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", ... 22 more ..., "unsafe start"]; }> | Reference<...>>, ...Atom<...>[]])'.",
+            "message": "Type '"invalid-alignment"' is not assignable to type '("invalid-alignment" & Reference<"*">) | ("invalid-alignment" & readonly [\`\${string} !custom\` | Value<{ readonly kind: "enum"; readonly values: readonly ["anchor-center", "baseline", "center", "end", ... 22 more ..., "unsafe start"]; }> | \`\${string} !important\` | Reference<...>, ...(\`\${string} !custom\` | ... 2 more ...'.",
             "span": "alignItems",
           },
         ]

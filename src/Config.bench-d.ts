@@ -20,7 +20,7 @@ bench('create / token-free authoring', () => {
 
   style({ color: '#fff', padding: '8px' })
   script()
-}).types([3989, 'instantiations'])
+}).types([4931, 'instantiations'])
 
 bench('create / inline theme with layers and shorthands', () => {
   const { style, vars: theme } = Config.create({
@@ -38,7 +38,7 @@ bench('create / inline theme with layers and shorthands', () => {
     ':hover': { color: theme.color.brand },
     margin: 'md',
   })
-}).types([13252, 'instantiations'])
+}).types([14296, 'instantiations'])
 
 bench('create / named theme catalog', () => {
   const base = Vars.define({
@@ -58,7 +58,7 @@ bench('create / named theme catalog', () => {
 
   style({ color: 'brand', padding: 'md' })
   themes({ colorScheme: 'dark', set: 'mint' })
-}).types([7044, 'instantiations'])
+}).types([7917, 'instantiations'])
 
 bench('create / html output', () => {
   const { style } = Config.create({ output: 'html' })
@@ -68,7 +68,7 @@ bench('create / html output', () => {
 
   void style({ padding: '8px' })().class
   void dynamic({ width: '25%' }).style
-}).types([5834, 'instantiations'])
+}).types([6996, 'instantiations'])
 
 bench('create / configured styles with shorthands', () => {
   const { style } = Config.create({
@@ -95,4 +95,4 @@ bench('create / configured styles with shorthands', () => {
     gap: 2,
   })
   style({ color: 'ink', display: 'flex', gap: 2, px: 4 })
-}).types([33213, 'instantiations'])
+}).types([35304, 'instantiations'])

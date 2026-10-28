@@ -846,9 +846,15 @@ export class InvalidError extends Error {
   override name = 'Style.InvalidError'
 }
 
+// A required homomorphic copy drops the optional `undefined` from each domain without
+// distributing over its literals, and keeps diagnostics naming the domain itself.
+type Domains = {
+  readonly [property in keyof Literal.Properties]-?: Literal.Properties[property]
+}
+
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?:
-    | NonNullable<Literal.Properties[property]>
+    | Domains[property]
     | `${string} !custom`
     | Binding.Reference<'*'>
     | {

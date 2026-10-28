@@ -41,7 +41,7 @@ bench('define / query aliases', () => {
     '@container sidebar >=card': { display: 'grid' },
     '@media tablet..desktop': { ':hover': { padding: 'gap' } },
   })
-}).types([10961, 'instantiations'])
+}).types([12087, 'instantiations'])
 
 bench('extend / overrides', () => {
   const theme = Vars.define({
@@ -69,4 +69,4 @@ bench('style / token names and references', () => {
     padding: 4,
     width: theme.spacing[4],
   })
-}).types([10764, 'instantiations'])
+}).types([12062, 'instantiations'])

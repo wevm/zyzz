@@ -25,4 +25,4 @@ bench('variants / conditional selections and compounds', () => {
     ],
   })
   button({ conditions: { wide: { size: null }, grid: { loading: false } } })
-}).types([18489, 'instantiations'])
+}).types([19894, 'instantiations'])

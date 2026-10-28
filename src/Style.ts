@@ -848,7 +848,7 @@ export class InvalidError extends Error {
 
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?:
-    | Exclude<Literal.Properties[property], undefined>
+    | NonNullable<Literal.Properties[property]>
     | `${string} !custom`
     | Binding.Reference<'*'>
     | {

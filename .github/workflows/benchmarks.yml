@@ -67,7 +67,7 @@ jobs:
       - name: Install candidate dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.2
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Measure candidate
@@ -106,7 +106,7 @@ jobs:
       - name: Install dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.2
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install browser
@@ -176,7 +176,7 @@ jobs:
         id: dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.2
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Record benchmark environment
@@ -293,7 +293,7 @@ jobs:
           retention-days: 30
       - name: Report timing comparisons
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
-        uses: wevm/actions/vendor/benchmark-action/github-action-benchmark/v1.22.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v1.22.2
+        uses: wevm/actions/vendor/benchmark-action/github-action-benchmark/v1.22.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           alert-threshold: '${{ env.BENCH_TIME_THRESHOLD }}%'
           external-data-json-path: ${{ runner.temp }}/benchmark-action/time-baseline.json
@@ -305,7 +305,7 @@ jobs:
           tool: customSmallerIsBetter
       - name: Check size regressions
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
-        uses: wevm/actions/vendor/benchmark-action/github-action-benchmark/v1.22.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v1.22.2
+        uses: wevm/actions/vendor/benchmark-action/github-action-benchmark/v1.22.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           alert-threshold: '${{ env.BENCH_SIZE_THRESHOLD }}%'
           external-data-json-path: ${{ runner.temp }}/benchmark-action/size-baseline.json
@@ -361,7 +361,7 @@ jobs:
         id: dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.2
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Record render environment
@@ -376,7 +376,7 @@ jobs:
           uname -a > bench/results/render-environment/platform.txt
       - name: Remove separate render comment
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: wevm/actions/vendor/marocchino/sticky-pull-request-comment/v2.9.4@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.4
+        uses: wevm/actions/vendor/marocchino/sticky-pull-request-comment/v2.9.4@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           delete: true
           header: render-benchmarks
@@ -457,7 +457,7 @@ jobs:
           cat reports/comment.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: wevm/actions/vendor/marocchino/sticky-pull-request-comment/v2.9.4@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.4
+        uses: wevm/actions/vendor/marocchino/sticky-pull-request-comment/v2.9.4@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           header: benchmarks
           path: reports/comment.md

@@ -63,7 +63,7 @@ jobs:
         run: pnpm install --frozen-lockfile --filter zyzz
       - if: ${{ !endsWith(matrix.target, '-musl') }}
         name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28 # v2.9.2
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
         with:
           key: ${{ matrix.target }}
           save-if: ${{ github.ref == 'refs/heads/main' }}

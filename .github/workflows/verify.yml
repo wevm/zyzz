@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build compiler binding
@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build package
@@ -105,7 +105,7 @@ jobs:
       - name: Install dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Check formatting
@@ -131,7 +131,7 @@ jobs:
       - name: Install dependencies
         uses: $/.github/actions/install-dependencies
       - name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Download compiler binding
@@ -262,7 +262,7 @@ jobs:
           retention-days: 30
       - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Report coverage
-        uses: wevm/actions/vendor/davelosert/vitest-coverage-report-action/v2.13.1@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/davelosert/vitest-coverage-report-action/v2.13.1@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           comment-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && 'pr' || 'none' }}
           file-coverage-mode: all
@@ -326,7 +326,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Audit GitHub Actions
-        uses: wevm/actions/vendor/zizmorcore/zizmor-action/v0.7.0@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/zizmorcore/zizmor-action/v0.7.0@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           advanced-security: false
           annotations: true

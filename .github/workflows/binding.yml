@@ -49,7 +49,7 @@ jobs:
           persist-credentials: false
       - if: ${{ !endsWith(matrix.target, '-musl') }}
         name: Set up pnpm
-        uses: wevm/actions/vendor/pnpm/action-setup/viem-wagmi@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/pnpm/action-setup/viem-wagmi@8963daf30237417f873c8e2f17e3bf9415e3a7b9
       - if: ${{ !endsWith(matrix.target, '-musl') }}
         name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -63,7 +63,7 @@ jobs:
         run: pnpm install --frozen-lockfile --filter zyzz
       - if: ${{ !endsWith(matrix.target, '-musl') }}
         name: Cache Rust builds
-        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/Swatinem/rust-cache/v2.9.2@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           key: ${{ matrix.target }}
           save-if: ${{ github.ref == 'refs/heads/main' }}

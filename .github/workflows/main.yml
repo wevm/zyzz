@@ -70,7 +70,7 @@ jobs:
         uses: $/.github/actions/install-dependencies
 
       - name: Create or update version PR
-        uses: wevm/actions/vendor/changesets/action/abitype@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/changesets/action/abitype@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           commit-message: 'chore: version packages'
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -107,7 +107,7 @@ jobs:
           pattern: binding-*
 
       - name: Publish packages and tags
-        uses: wevm/actions/vendor/changesets/action/abitype@73e899a58d51092d694fbaf94b7a1d8c09bfea28
+        uses: wevm/actions/vendor/changesets/action/abitype@8963daf30237417f873c8e2f17e3bf9415e3a7b9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           publish-script: pnpm run changeset:publish

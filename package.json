@@ -171,6 +171,11 @@
       "types": "./dist/base-ui/react/index.d.ts",
       "default": "./dist/base-ui/react/index.js"
     },
+    "./bun": {
+      "src": "./src/bun/index.ts",
+      "types": "./dist/bun/index.d.ts",
+      "default": "./dist/bun/index.js"
+    },
     "./compiler": {
       "src": "./src/compiler/index.ts",
       "types": "./dist/compiler/index.d.ts",

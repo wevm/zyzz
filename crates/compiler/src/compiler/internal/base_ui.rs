@@ -1,19 +1,23 @@
-//! Resolves imported Base UI components and lowers their catalogued states to selectors.
+//! Resolves imported Base UI components and declared parts, and lowers their states to
+//! selectors.
 
+use std::borrow::Cow;
 use std::sync::{Arc, LazyLock};
 
 use oxc_allocator::{Allocator, CloneIn, Vec as ArenaVec};
 use oxc_ast::ast::{
-    Expression, ImportDeclarationSpecifier, ObjectPropertyKind, PropertyKey, PropertyKind,
+    Argument, ArrayExpressionElement, Expression, ImportDeclarationSpecifier, ObjectPropertyKind,
+    PropertyKey, PropertyKind,
 };
 use oxc_ast::builder::AstBuilder;
 use oxc_semantic::Semantic;
 use oxc_span::{GetSpan, Span};
 use rustc_hash::FxHashMap;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::compiler::internal::{expression::unwrap, scope, statics::key_name};
 use crate::error::{Error, Result};
+use crate::js::Record;
 
 // Immutable generated definitions are shared, never per-module compiler state.
 static CATALOG: LazyLock<serde_json::Result<Value>> =
@@ -27,8 +31,165 @@ fn invalid(message: impl Into<String>, span: Span) -> Error {
     }
 }
 
+/// Whether a state name is camelCase ASCII, so its kebab-case attribute is a valid name.
+fn state_name(name: &str) -> bool {
+    let mut bytes = name.bytes();
+
+    bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
+        && bytes.all(|byte| byte.is_ascii_alphanumeric())
+}
+
+/// Whether a state is `"boolean"` or a nonempty list of values, as `part` validates it.
+fn valid_state(name: &str, domain: &Value) -> bool {
+    state_name(name)
+        && match domain {
+            Value::String(kind) => kind == "boolean",
+            Value::Array(values) => {
+                !values.is_empty()
+                    && values
+                        .iter()
+                        .all(|value| value.as_str().is_some_and(|value| !value.contains('\0')))
+            }
+            _ => false,
+        }
+}
+
+/// Whether a library contract's part descriptor is valid.
+pub(crate) fn valid(text: &str) -> bool {
+    serde_json::from_str::<Value>(text).is_ok_and(|value| {
+        value.as_object().is_some_and(|states| {
+            states
+                .iter()
+                .all(|(name, domain)| valid_state(name, domain))
+        })
+    })
+}
+
+/// Reads the descriptor of a `part(component, states)` call imported from
+/// `zyzz/base-ui/react` as JSON. Returns `None` for any other expression.
+pub(crate) fn declaration(
+    semantic: &Semantic<'_>,
+    node: &Expression<'_>,
+) -> Option<Result<Arc<str>>> {
+    let Expression::CallExpression(call) = unwrap(node) else {
+        return None;
+    };
+    let Expression::Identifier(callee) = unwrap(&call.callee) else {
+        return None;
+    };
+    let binding = scope::resolve(semantic, callee)?;
+    let import = binding
+        .import
+        .filter(|import| import.source.value == "zyzz/base-ui/react")?;
+    let specifier = import
+        .specifiers
+        .iter()
+        .flatten()
+        .find(|entry| entry.span().start == binding.start())?;
+
+    if !matches!(
+        specifier,
+        ImportDeclarationSpecifier::ImportSpecifier(named)
+            if !named.import_kind.is_type() && named.imported.name() == "part"
+    ) {
+        return None;
+    }
+
+    let fail = || invalid("Part states require a static object.", call.span);
+    let Some(Expression::ObjectExpression(states)) = call
+        .arguments
+        .get(1)
+        .and_then(Argument::as_expression)
+        .map(unwrap)
+    else {
+        return Some(Err(fail()));
+    };
+    let mut output = Map::new();
+
+    for state in &states.properties {
+        let ObjectPropertyKind::ObjectProperty(state) = state else {
+            return Some(Err(fail()));
+        };
+        let Some(name) = key_name(state)
+            .filter(|_| state.kind == PropertyKind::Init && !state.method && !state.shorthand)
+        else {
+            return Some(Err(fail()));
+        };
+        let domain = match unwrap(&state.value) {
+            Expression::StringLiteral(kind) => Value::String(kind.value.to_string()),
+            Expression::ArrayExpression(values) => Value::Array(
+                values
+                    .elements
+                    .iter()
+                    .map(|value| match value {
+                        ArrayExpressionElement::StringLiteral(value) => {
+                            Value::String(value.value.to_string())
+                        }
+                        _ => Value::Null,
+                    })
+                    .collect(),
+            ),
+            _ => Value::Null,
+        };
+
+        if !valid_state(&name, &domain) {
+            return Some(Err(invalid(
+                format!("Invalid part state: {name}."),
+                state.span,
+            )));
+        }
+
+        output.insert(name.into_owned(), domain);
+    }
+
+    Some(Ok(Arc::from(Value::Object(output).to_string())))
+}
+
+/// Builds the catalog entry [`lower`] reads from descriptor JSON. Each camelCase name maps to
+/// its kebab-case `data-*` attribute, as Base UI spells attributes.
+fn entry(text: &str, span: Span) -> Result<Value> {
+    let Ok(Value::Object(states)) = serde_json::from_str::<Value>(text) else {
+        return Err(invalid("Invalid part states.", span));
+    };
+    let mut output = Map::new();
+
+    for (name, domain) in states {
+        let mut attribute = String::with_capacity(name.len() + 8);
+
+        attribute.push_str("data-");
+
+        for character in name.chars() {
+            if character.is_ascii_uppercase() {
+                attribute.push('-');
+            }
+
+            attribute.push(character.to_ascii_lowercase());
+        }
+
+        let values = if domain.is_array() {
+            domain
+        } else {
+            Value::Null
+        };
+
+        output.insert(
+            name,
+            serde_json::json!({ "attribute": attribute, "values": values }),
+        );
+    }
+
+    Ok(serde_json::json!({ "states": output }))
+}
+
 /// Resolves only lexical imports and static member chains, never arbitrary component values.
-pub(crate) fn component(semantic: &Semantic<'_>, node: &Expression<'_>) -> Result<&'static Value> {
+///
+/// A part declared in the same module resolves through its `part` call. A part imported from
+/// another module resolves through `parts`, keyed by local name and member path.
+pub(crate) fn component(
+    semantic: &Semantic<'_>,
+    node: &Expression<'_>,
+    parts: &Record<Arc<str>>,
+) -> Result<Cow<'static, Value>> {
     let mut current = unwrap(node);
     let mut path = Vec::new();
 
@@ -56,6 +217,17 @@ pub(crate) fn component(semantic: &Semantic<'_>, node: &Expression<'_>) -> Resul
             node.span(),
         )
     })?;
+
+    if path.is_empty()
+        && let Some(init) = binding
+            .declarator
+            .filter(|_| binding.kind == scope::Kind::Variable)
+            .and_then(|declarator| declarator.init.as_ref())
+        && let Some(states) = declaration(semantic, init)
+    {
+        return entry(&states?, node.span()).map(Cow::Owned);
+    }
+
     let import = binding
         .import
         .filter(|import| !import.import_kind.is_type())
@@ -65,6 +237,25 @@ pub(crate) fn component(semantic: &Semantic<'_>, node: &Expression<'_>) -> Resul
                 node.span(),
             )
         })?;
+    let source = import.source.value.as_str();
+
+    if source != "@base-ui/react" && !source.starts_with("@base-ui/react/") {
+        let mut key = identifier.name.to_string();
+
+        for member in path.iter().rev() {
+            key.push('.');
+            key.push_str(member);
+        }
+
+        return match parts.get(&key) {
+            Some(states) => entry(states, node.span()).map(Cow::Owned),
+            None => Err(invalid(
+                "Components outside Base UI must declare their states with part().",
+                node.span(),
+            )),
+        };
+    }
+
     let specifier = import
         .specifiers
         .iter()
@@ -91,12 +282,13 @@ pub(crate) fn component(semantic: &Semantic<'_>, node: &Expression<'_>) -> Resul
     let catalog = CATALOG
         .as_ref()
         .map_err(|_| invalid("Invalid generated Base UI catalog.", node.span()))?;
-    let source = import.source.value.as_str();
     let found = catalog
         .get(path.join("."))
         .filter(|entry| source == "@base-ui/react" || entry["source"].as_str() == Some(source));
 
-    found.ok_or_else(|| invalid("Unknown Base UI component import.", node.span()))
+    found
+        .map(Cow::Borrowed)
+        .ok_or_else(|| invalid("Unknown Base UI component import.", node.span()))
 }
 
 fn property<'a>(

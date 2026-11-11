@@ -406,6 +406,7 @@ mod compile {
             libraries: Some(libraries),
             links: Record::new(),
             owners: None,
+            parts: Record::new(),
             style_classes: None,
         };
         let options = Options {

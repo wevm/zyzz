@@ -57,7 +57,7 @@ describe('Base UI guide', () => {
           Ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
         ),
       ).toMatchInlineSnapshot('[]')
-      expect(examples.length).toMatchInlineSnapshot('7')
+      expect(examples.length).toMatchInlineSnapshot(`9`)
 
       const outDir = Path.join(root, 'dist')
       await using host = await Host.create({
@@ -84,6 +84,8 @@ describe('Base UI guide', () => {
           "[data-pending]{opacity:.5;}",
           "[data-side="bottom"]{margin-top:4px;}",
           "[data-side="top"]{margin-bottom:4px;}",
+          "[data-open]{border-color:#000;}",
+          "[data-status="failed"]{color:red;}",
         ]
       `)
       expect(

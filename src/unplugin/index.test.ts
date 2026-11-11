@@ -1,8 +1,10 @@
 /** Exercises portable adapters with real builds, incremental compilation, and browser rendering. @module */
 import * as Esbuild from 'esbuild'
+import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Url from 'node:url'
+import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import * as Rollup from 'rollup'
 import * as Vite from 'vite'
@@ -473,6 +475,63 @@ describe('zyzz', () => {
           /*# sourceMappingURL=zyzz.css.map */
           "
         `)
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  }, 30000)
+
+  test('bun resolves installed packages and emits stylesheets', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-unplugin-bun-'))
+    try {
+      await PlainPackage.install(root)
+      await Fs.symlink(
+        process.cwd(),
+        Path.join(root, 'node_modules/zyzz'),
+        'dir',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'main.ts'),
+        `import {global} from 'zyzz/web';import {style,vars} from '@acme/tokens';global({':root':{'--gap':vars.spacing['16']}});export const props=style({padding:'16'})();`,
+      )
+      // Bun plugins run only inside the Bun runtime.
+      await Fs.writeFile(
+        Path.join(root, 'build.ts'),
+        `import {zyzz} from 'zyzz/bun';const result=await Bun.build({entrypoints:['./main.ts'],outdir:'./dist',plugins:[zyzz()]});if(!result.success)throw new AggregateError(result.logs);`,
+      )
+
+      await Util.promisify(ChildProcess.execFile)('bun', ['build.ts'], {
+        cwd: root,
+      })
+
+      expect(await Fs.readFile(Path.join(root, 'dist/zyzz.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ":root {
+          --gap: var(--z-acme-spacing-16, 16px);
+        }
+
+        .z-theme-acme_2f_variables-variables {
+          --z-acme_2f_variables-color-ink: #123456;
+          --z-acme_2f_variables-spacing-16: 16px;
+        }
+
+        .z-theme-acme-theme {
+          --z-acme-color-ink: #123456;
+          --z-acme-spacing-16: 16px;
+        }
+
+        .z_acme-YiE3S90 {
+          padding: var(--z-acme-spacing-16, 16px);
+        }
+
+        :where(:root){--buncss-light:initial;--buncss-dark: }
+        /*# sourceMappingURL=zyzz.css.map */
+        "
+      `)
+      expect(
+        (await Fs.readFile(Path.join(root, 'dist/main.js'), 'utf8')).includes(
+          'z_acme-YiE3S90',
+        ),
+      ).toMatchInlineSnapshot(`true`)
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
     }

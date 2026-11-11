@@ -12,6 +12,7 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Contracts from '../node/internal/Contracts.js'
+import * as Ignores from '../node/internal/Ignores.js'
 import * as Results from '../compiler/internal/Results.js'
 import * as Vite from '../vite/index.js'
 import * as ThemeRules from '../web/internal/Themes.js'
@@ -25,6 +26,15 @@ export type Options = {
   /** Source directory scanned for modules and global contributions. Defaults to the working directory. */
   readonly root?: string | undefined
 }
+
+/**
+ * Bun lowers `light-dark()` in bundled stylesheets, such as a package's component CSS, to
+ * `--buncss-light` and `--buncss-dark` fallbacks, and sets them only beside the `color-scheme`
+ * declarations it compiles. Elements outside those keep the light value, as `light-dark()` does
+ * under the default scheme. The rule follows the stylesheet, so source map lines stay unchanged.
+ * https://github.com/oven-sh/bun/pull/47025
+ */
+const bunColorScheme = ':where(:root){--buncss-light:initial;--buncss-dark: }\n'
 
 const excludedPattern = /\.(?:d|test|test-d|bench|bench-d)\.[cm]?[jt]sx?$/
 const sourcePattern = /\.[cm]?[jt]sx?$/
@@ -43,6 +53,8 @@ const portable = createUnplugin<Options | undefined, false>(
     let assets = new Map<string, Uint8Array>()
     let css = ''
     let cssMap = ''
+    // The bundler's output directory, which the scan skips like ignored files.
+    let outdir: string | undefined
     let script = ''
 
     function identity(file: string) {
@@ -60,7 +72,7 @@ const portable = createUnplugin<Options | undefined, false>(
       context.emitFile({
         type: 'asset',
         fileName: 'zyzz.css',
-        source: `${css}/*# sourceMappingURL=zyzz.css.map */\n`,
+        source: `${css}${meta.framework === 'bun' ? bunColorScheme : ''}/*# sourceMappingURL=zyzz.css.map */\n`,
       })
       context.emitFile({
         type: 'asset',
@@ -113,6 +125,8 @@ const portable = createUnplugin<Options | undefined, false>(
           > = Object.create(null)
           const contracts: Record<string, string> = Object.create(null)
 
+          const ignores = Ignores.create({ roots: [root] })
+
           async function scan(directory: string): Promise<void> {
             directories.add(directory)
             const entries = await Fs.readdir(directory, { withFileTypes: true })
@@ -137,6 +151,11 @@ const portable = createUnplugin<Options | undefined, false>(
                 continue
               const file = Path.join(directory, entry.name)
 
+              if (
+                (entry.isDirectory() && file === outdir) ||
+                ignores.ignored({ directory: entry.isDirectory(), path: file })
+              )
+                continue
               if (entry.isDirectory()) await scan(file)
               else if (
                 entry.isFile() &&
@@ -169,6 +188,17 @@ const portable = createUnplugin<Options | undefined, false>(
             }
 
             const native = this.getNativeBuildContext?.()
+            // Bun's plugin builder cannot resolve, so lookups use Bun's runtime resolver.
+            // https://github.com/oven-sh/bun/issues/2771
+            if (native?.framework === 'bun') {
+              if (native.build.config.external?.includes(specifier))
+                return undefined
+
+              return (globalThis as unknown as { Bun: Bun }).Bun.resolveSync(
+                specifier,
+                Path.dirname(importer),
+              )
+            }
             if (native?.framework === 'esbuild') {
               const result = await native.build.resolve(specifier, {
                 importer,
@@ -540,6 +570,13 @@ const portable = createUnplugin<Options | undefined, false>(
         })()
         await pending
       },
+      bun: {
+        setup(build) {
+          if (!build.config.outdir)
+            throw new Error('Zyzz requires a Bun outdir to emit CSS assets.')
+          outdir = Path.resolve(build.config.outdir)
+        },
+      },
       enforce: 'pre',
       esbuild: {
         config(options) {
@@ -551,6 +588,7 @@ const portable = createUnplugin<Options | undefined, false>(
             options.absWorkingDir ?? process.cwd(),
             options.outdir,
           )
+          outdir = options.outdir
         },
         setup(build) {
           // Unplugin forwards watchFiles but not watchDirs from its transform hook.
@@ -628,6 +666,8 @@ const portable = createUnplugin<Options | undefined, false>(
 
 /** Bundler factories. Vite retains its native CSS delivery and environment-specific HMR. */
 export const zyzz = {
+  /** Creates a Bun plugin that emits stylesheets into the build's `outdir`. */
+  bun: portable.bun,
   /** Creates an esbuild plugin that emits stylesheets and watches source directories. */
   esbuild: portable.esbuild,
   /** Creates a Rollup plugin with dependency-aware cached transforms. */
@@ -636,6 +676,11 @@ export const zyzz = {
   vite: Vite.zyzz,
   /** Creates a Webpack plugin that compiles before language loaders. */
   webpack: portable.webpack,
+}
+
+/** The Bun runtime capability the adapter reads. */
+type Bun = {
+  readonly resolveSync: (specifier: string, parent: string) => string
 }
 
 function inside(parent: string, child: string) {

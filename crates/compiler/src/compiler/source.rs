@@ -2205,6 +2205,8 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
     let context = options.context;
     let empty = Record::new();
     let links = context.map_or(&empty, |context| &context.links);
+    let no_parts = Record::new();
+    let parts = context.map_or(&no_parts, |context| &context.parts);
     let constants: FxHashMap<String, &'a Expression<'a>> = context
         .and_then(|context| context.constants.as_ref())
         .map(|constants| {
@@ -2347,7 +2349,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
                 continue;
             }
 
-            match base_ui::component(&parsed.semantic, argument) {
+            match base_ui::component(&parsed.semantic, argument, parts) {
                 Ok(component) => {
                     let Some(body) = call.arguments.get(1).and_then(Argument::as_expression) else {
                         normalized.insert(
@@ -2383,7 +2385,7 @@ pub fn extract<'a>(allocator: &'a Allocator, options: &Options<'_, 'a>) -> Resul
             }
             Err(error) => return Err(error),
         };
-        let value = if let Some(component) = component {
+        let value = if let Some(component) = &component {
             match base_ui::lower(allocator, value, component, &mut component_conditions, 0) {
                 // Normalization already resolved authored data. Re-normalizing would
                 // merge conditions expanded from distinct state and selector blocks.

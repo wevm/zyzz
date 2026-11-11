@@ -1,8 +1,14 @@
-/** Expands documented Base UI states for untransformed web authoring. @module */
+/** Expands documented Base UI and declared part states for untransformed web authoring. @module */
 import * as Attributes from './Attributes.generated.js'
 import * as Style from '../../../Style.js'
 import type { style } from '../../../styleFunction.js'
 import * as Token from '../../../internal/Token.js'
+
+/** A declared part's frozen state descriptor, keyed by camelCase state name. */
+export type Declared = Readonly<Record<string, 'boolean' | readonly string[]>>
+
+/** Holds a declared part's descriptor. A registered symbol lets separate zyzz copies agree. */
+export const states = Symbol.for('zyzz.base-ui.states')
 
 type Attribute = {
   readonly attribute: string
@@ -57,7 +63,26 @@ function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
-function lower(input: unknown, depth = 0): Record<string, unknown> {
+// Declared states follow the Base UI spelling: `popupOpen` becomes `data-popup-open`.
+function declaredAttribute(
+  declared: Declared,
+  name: string,
+): Attribute | undefined {
+  const domain = Object.hasOwn(declared, name) ? declared[name] : undefined
+  if (!domain) return undefined
+
+  return {
+    attribute: `data-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
+    presence: domain === 'boolean',
+    values: domain === 'boolean' ? [] : domain,
+  }
+}
+
+function lower(
+  input: unknown,
+  depth = 0,
+  declared?: Declared | undefined,
+): Record<string, unknown> {
   if (depth > 64)
     throw new Style.InvalidError([
       {
@@ -75,15 +100,15 @@ function lower(input: unknown, depth = 0): Record<string, unknown> {
     while (Object.hasOwn(result, key))
       key = `${selector}/*base-ui-${occurrence++}*/`
 
-    result[key] = lower(value, depth + 1)
+    result[key] = lower(value, depth + 1, declared)
   }
 
   for (const [key, value] of Object.entries(record(input))) {
     if (key === 'states') {
       for (const [name, body] of Object.entries(record(value))) {
-        const attribute = (
-          Attributes.attributes as Readonly<Record<string, Attribute>>
-        )[name]
+        const attribute = declared
+          ? declaredAttribute(declared, name)
+          : (Attributes.attributes as Readonly<Record<string, Attribute>>)[name]
         if (!attribute)
           throw new Style.InvalidError([
             {
@@ -142,7 +167,7 @@ function lower(input: unknown, depth = 0): Record<string, unknown> {
       result[key] = Object.fromEntries(
         Object.entries(targets).map((entry) => [
           entry[0],
-          entry[0] === 'web' ? lower(entry[1], depth + 1) : entry[1],
+          entry[0] === 'web' ? lower(entry[1], depth + 1, declared) : entry[1],
         ]),
       )
     } else result[key] = value
@@ -155,14 +180,20 @@ function lower(input: unknown, depth = 0): Record<string, unknown> {
 export function bind(factory: bind.Factory): bind.Factory {
   return (...args) => {
     const first = args[0]
-    const component =
-      args.length >= 2 &&
-      first !== null &&
-      typeof first === 'object' &&
-      '$$typeof' in first
-    if (!component) return factory(...args)
+    if (
+      args.length < 2 ||
+      first === null ||
+      (typeof first !== 'object' && typeof first !== 'function')
+    )
+      return factory(...args)
 
-    return factory(lower(args[1]), args[2])
+    // Declared parts may be plain functions, which a dynamic style callback also is.
+    const declared = (first as { readonly [states]?: Declared })[states]
+    if (declared) return factory(lower(args[1], 0, declared), args[2])
+    if (typeof first === 'object' && '$$typeof' in first)
+      return factory(lower(args[1]), args[2])
+
+    return factory(...args)
   }
 }
 

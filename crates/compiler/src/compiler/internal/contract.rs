@@ -8,6 +8,7 @@ use std::sync::Arc;
 use oxc_allocator::Allocator;
 use rustc_hash::FxHashMap;
 
+use crate::compiler::internal::base_ui;
 use crate::compiler::internal::configurations;
 use crate::compiler::internal::identifiers;
 use crate::compiler::internal::literals;
@@ -35,6 +36,8 @@ pub struct Library {
     pub links: Record<Link>,
     /// Validated literal expressions by export name, never executed.
     pub literals: Record<Arc<str>>,
+    /// Validated declared part descriptors by export name and member path.
+    pub parts: Record<Arc<str>>,
     /// Packed stylesheet sections.
     pub stylesheets: Vec<Section>,
     /// Theme and variable-set definitions by scope key.
@@ -534,7 +537,7 @@ fn supported(value: &Data) -> Option<u32> {
         return None;
     };
 
-    (1..=36).find(|candidate| *version == f64::from(*candidate))
+    (1..=37).find(|candidate| *version == f64::from(*candidate))
 }
 
 fn empty_theme() -> Result<Arc<theme::Definition>> {
@@ -777,6 +780,27 @@ pub fn read(
         }
     }
 
+    let mut parts = Record::new();
+    let raw_parts = get(data, "parts");
+
+    if !raw_parts.is_undefined() {
+        if version < 37 {
+            return Err(message(
+                "Part exports require contract version 37 or later.",
+            ));
+        }
+
+        for (path, value) in record(raw_parts)?.iter() {
+            let value = string(value)?;
+
+            if path.split('.').any(str::is_empty) || !base_ui::valid(&value) {
+                return Err(message("Invalid packed part export."));
+            }
+
+            parts.insert(Arc::clone(path), value);
+        }
+    }
+
     let mut class_rules = Record::new();
     let rules = get(data, "classRules");
 
@@ -797,6 +821,7 @@ pub fn read(
         class_rules,
         links,
         literals,
+        parts,
         stylesheets,
         themes: reader.themes,
     })
@@ -1379,6 +1404,8 @@ pub struct Write<'w> {
     pub literals: &'w Record<Arc<str>>,
     /// Portable identity of the module that publishes the contract.
     pub module_id: &'w str,
+    /// Declared part descriptors by export name and member path.
+    pub parts: &'w Record<Arc<str>>,
     /// Owned stylesheet sections.
     pub stylesheets: &'w [Section],
     /// Theme and variable-set definitions by scope key.
@@ -1396,6 +1423,14 @@ pub fn write(options: &Write<'_>) -> Result<String> {
     if !options.literals.is_empty() {
         output.push_str("\"literals\":");
         js::write_object(&mut output, options.literals.iter(), |output, value| {
+            js::write_string(output, value);
+        });
+        output.push(',');
+    }
+
+    if !options.parts.is_empty() {
+        output.push_str("\"parts\":");
+        js::write_object(&mut output, options.parts.iter(), |output, value| {
             js::write_string(output, value);
         });
         output.push(',');
@@ -1482,7 +1517,9 @@ pub fn write(options: &Write<'_>) -> Result<String> {
 
     // Readers before version 36 would drop class-selection ownership and keep both choice
     // classes of repeated applications, so these contracts require it.
-    let version = if options.links.values().any(selects_classes) {
+    let version = if !options.parts.is_empty() {
+        37
+    } else if options.links.values().any(selects_classes) {
         36
     } else if !options.literals.is_empty() {
         35

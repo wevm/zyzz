@@ -181,6 +181,62 @@ export namespace styles {
 }
 ```
 
+### Custom Parts
+
+Components outside Base UI declare their states with `part`. Each camelCase name maps to a kebab-case `data-*` attribute, as Base UI spells them, so `open` matches `[data-open]`. A `'boolean'` state matches presence. An array lists the values of a valued state.
+
+```tsx title="Tool.tsx"
+import type { ReactNode } from 'react'
+import { part } from 'zyzz/base-ui/react'
+
+function ToolRoot(props: ToolRoot.Props) {
+  return (
+    <div
+      className={props.className}
+      data-open={props.open ? '' : undefined}
+      data-status={props.status}
+    >
+      {props.children}
+    </div>
+  )
+}
+
+declare namespace ToolRoot {
+  type Props = {
+    children?: ReactNode
+    className?: string | undefined
+    open: boolean
+    status: 'running' | 'done' | 'failed'
+  }
+}
+
+// [!code hl:5]
+// Declares a presence state and a state with three values.
+export const Root = part(ToolRoot, {
+  open: 'boolean',
+  status: ['running', 'done', 'failed'],
+})
+```
+
+Component-first styles then check these state names and values. The compiler reads the literal descriptor from the declaring module, its re-exports, or the contract of a package that publishes only compiled JavaScript, and emits the selectors ahead of time.
+
+```ts title="tool.styles.ts"
+import { style } from 'zyzz/base-ui/react'
+import * as Tool from './Tool.js'
+
+export namespace styles {
+  export const root = style(Tool.Root, {
+    borderColor: 'gray',
+    // [!code hl:5]
+    // Emits [data-open] and [data-status="failed"] selectors.
+    states: {
+      open: { borderColor: 'black' },
+      status: { failed: { color: 'red' } },
+    },
+  })
+}
+```
+
 ### Supported Calls
 
 Component-first `style(Component, declarations)` accepts static objects for React DOM parts. Component-first callbacks, component-first `variants`, HTML output, and React Native are unsupported. Ordinary `style(...)` and `variants(...)` calls retain their existing APIs through this entrypoint and its config helpers.
@@ -189,11 +245,13 @@ Component-first `style(Component, declarations)` accepts static objects for Reac
 
 <Card.Group>
   <Card title="Conditions" icon="git-branch" href="/docs/guides/conditions">
-    Combine state selectors with<br />
+    Combine state selectors with
+    <br />
     queries and CSS conditions.
   </Card>
   <Card title="Themes & Tokens" icon="palette" href="/docs/guides/themes">
-    Share tokens across components<br />
+    Share tokens across components
+    <br />
     and switch color schemes.
   </Card>
 </Card.Group>

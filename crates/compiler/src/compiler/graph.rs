@@ -15,7 +15,7 @@ use oxc_ast::AstKind;
 use oxc_ast::ast::{
     BindingPattern, Declaration, ExportDefaultDeclarationKind, ExportSpecifier, Expression,
     ImportDeclarationSpecifier, ImportOrExportKind, ModuleExportName, ObjectPropertyKind, Program,
-    PropertyKind, Statement, StringLiteral, UnaryOperator,
+    PropertyKind, Statement, StringLiteral, UnaryOperator, VariableDeclarationKind,
 };
 use oxc_ast_visit::{Visit, VisitMut};
 use oxc_span::{GetSpan, Span};
@@ -27,7 +27,7 @@ use crate::compiler::internal::stylesheets::{self, Rendered, Section};
 use crate::compiler::internal::syntax::{self, Parsed};
 use crate::compiler::internal::themes::{self, Link, LinkKind, Owner, VarsRead};
 use crate::compiler::internal::{
-    identifiers, literals, native_vars, relative, statics, vars, wrappers,
+    base_ui, identifiers, literals, native_vars, relative, statics, vars, wrappers,
 };
 use crate::compiler::native;
 use crate::compiler::source::{self, Code, Diagnostic, ExtractError, Extracted, Target};
@@ -256,6 +256,8 @@ struct Module {
     native_vars: Vec<VarsRead>,
     /// Whether exports supply neither constants nor authoring links.
     opaque: bool,
+    /// Descriptor JSON of exported declared parts, by export name and member path.
+    parts: Record<Arc<str>>,
     styles: style::Definition,
     theme_appearances: Vec<Arc<str>>,
     theme_calls: Vec<themes::Call>,
@@ -309,6 +311,7 @@ impl Module {
             namespaces: extracted.namespaces.clone(),
             native_vars: extracted.native_vars.clone(),
             opaque: false,
+            parts: Record::new(),
             styles: extracted.styles.clone(),
             theme_appearances: extracted.theme_appearances.clone(),
             theme_calls: extracted.theme_calls.clone(),
@@ -695,6 +698,7 @@ struct Linked<'a> {
     imports: Arc<[Arc<str>]>,
     literals: Record<Arc<str>>,
     opaque: bool,
+    parts: Record<Arc<str>>,
 }
 
 /// Finds the first dynamic import a closed relative graph cannot follow.
@@ -762,6 +766,37 @@ fn literal(node: &Expression<'_>, depth: usize) -> bool {
                 && literal(&property.value, depth + 1)
         }),
         _ => false,
+    }
+}
+
+/// Copies the parts published under `name`, or every part when `name` is `None`, beneath
+/// `local`. Keys are export names followed by member paths, such as `Tool.Root`.
+fn forward_parts(
+    parts: &Record<Arc<str>>,
+    name: Option<&str>,
+    local: &str,
+    output: &mut Record<Arc<str>>,
+) {
+    for (key, states) in parts.iter() {
+        let suffix = match name {
+            None => Some(&**key),
+            Some(name) => key
+                .strip_prefix(name)
+                .filter(|rest| rest.is_empty() || rest.starts_with('.')),
+        };
+        let Some(suffix) = suffix else {
+            continue;
+        };
+        let mut path = String::with_capacity(local.len() + suffix.len() + 1);
+
+        path.push_str(local);
+
+        if name.is_none() {
+            path.push('.');
+        }
+
+        path.push_str(suffix);
+        output.insert(path, Arc::clone(states));
     }
 }
 
@@ -1105,6 +1140,7 @@ impl<'p, 'a> Build<'p, 'a> {
                                 links: &Record::new(),
                                 literals: &Record::new(),
                                 module_id: "",
+                                parts: &Record::new(),
                                 stylesheets: &[],
                                 themes: &themes,
                             })
@@ -1618,10 +1654,13 @@ impl<'p, 'a> Build<'p, 'a> {
         let mut links: Record<Link> = Record::new();
         let mut forwarded: Record<Link> = Record::new();
         let mut forwarded_literals = Record::new();
+        let mut parts: Record<Arc<str>> = Record::new();
+        let mut forwarded_parts: Record<Arc<str>> = Record::new();
         let mut explicit: FxHashSet<String> = FxHashSet::default();
         let mut stars: Vec<Input> = Vec::new();
         let mut imports: IndexSet<Arc<str>, FxBuildHasher> = IndexSet::default();
         let empty = Record::new();
+        let no_parts = Record::new();
 
         for node in &parsed.program.body {
             if let Some(declaration) = named_export(node)
@@ -1703,6 +1742,11 @@ impl<'p, 'a> Build<'p, 'a> {
                 Input::Module(module) => &module.theme_exports,
                 Input::Runtime => &empty,
             };
+            let declared = match &input {
+                Input::Library(library) => &library.parts,
+                Input::Module(module) => &module.parts,
+                Input::Runtime => &no_parts,
+            };
             let namespace = |name: &str| -> Option<Link> {
                 let first = contracts.values().next()?;
                 let mut key = String::from("[");
@@ -1740,6 +1784,13 @@ impl<'p, 'a> Build<'p, 'a> {
                             ImportDeclarationSpecifier::ImportNamespaceSpecifier(
                                 namespace_import,
                             ) => {
+                                forward_parts(
+                                    declared,
+                                    None,
+                                    &namespace_import.local.name,
+                                    &mut parts,
+                                );
+
                                 if !references_only() {
                                     return Err(self.fail(
                                         module_id,
@@ -1767,6 +1818,8 @@ impl<'p, 'a> Build<'p, 'a> {
                         };
                         let local = specifier.name();
 
+                        forward_parts(declared, Some(&name), &local, &mut parts);
+
                         if let Some(link) = contracts.get(&name) {
                             links.insert(local.as_str(), link.clone());
                         } else if let Some(value) =
@@ -1789,6 +1842,8 @@ impl<'p, 'a> Build<'p, 'a> {
 
                         let name = export_name(exported);
 
+                        forward_parts(declared, None, &name, &mut forwarded_parts);
+
                         if let Some(link) = namespace(&name) {
                             forwarded.insert(name.as_str(), link);
                         }
@@ -1806,6 +1861,8 @@ impl<'p, 'a> Build<'p, 'a> {
 
                         let name = export_name(&specifier.local);
                         let exported = export_name(&specifier.exported);
+
+                        forward_parts(declared, Some(&name), &exported, &mut forwarded_parts);
 
                         if let Some(link) = contracts.get(&name) {
                             forwarded.insert(exported.as_str(), link.clone());
@@ -1888,10 +1945,17 @@ impl<'p, 'a> Build<'p, 'a> {
             published_literals.insert(Arc::clone(name), Arc::clone(value));
         }
 
+        let mut published_parts = self.parts(module_id, parsed, &parts)?;
+
+        for (name, states) in forwarded_parts.iter() {
+            published_parts.insert(Arc::clone(name), Arc::clone(states));
+        }
+
         let context = themes::Context {
             constants: Some(values),
             factories: Some(factories),
             links,
+            parts,
             ..themes::Context::default()
         };
         let Some(allocator) = self.allocator(module_id) else {
@@ -1984,12 +2048,118 @@ impl<'p, 'a> Build<'p, 'a> {
             published_literals = Record::new();
         }
 
+        let mut star_parts = Record::new();
+        let mut ambiguous_parts = FxHashSet::default();
+
+        for input in &stars {
+            let source = match input {
+                Input::Library(library) => &library.parts,
+                Input::Module(module) => &module.parts,
+                Input::Runtime => continue,
+            };
+
+            for (path, states) in source.iter() {
+                let name = path.split('.').next().unwrap_or_default();
+
+                if name == "default" || explicit.contains(name) {
+                    continue;
+                }
+                if star_parts
+                    .get(path)
+                    .is_some_and(|previous: &Arc<str>| previous != states)
+                {
+                    ambiguous_parts.insert(Arc::clone(path));
+                }
+
+                star_parts.insert(Arc::clone(path), Arc::clone(states));
+            }
+        }
+
+        for (path, states) in star_parts.iter() {
+            if !ambiguous_parts.contains(path) {
+                published_parts.insert(Arc::clone(path), Arc::clone(states));
+            }
+        }
+
         Ok(Linked {
             extracted,
             imports: imports.into_iter().collect(),
             literals: published_literals,
             opaque: opaque(parsed.program),
+            parts: published_parts,
         })
+    }
+
+    /// Reads the parts a module declares with `part` and exports, directly or by re-exporting an
+    /// imported part. Importers resolve component-first styles through these descriptors.
+    fn parts(
+        &self,
+        module_id: &str,
+        parsed: &Parsed<'a>,
+        imported: &Record<Arc<str>>,
+    ) -> Result<Record<Arc<str>>> {
+        let mut declared: FxHashMap<&str, Arc<str>> = FxHashMap::default();
+        let mut published = Record::new();
+
+        for statement in &parsed.program.body {
+            let (variables, exported) = match statement {
+                Statement::VariableDeclaration(variables) => (variables, false),
+                Statement::ExportDeclaration(export) => match &export.declaration {
+                    Declaration::VariableDeclaration(variables) => (variables, true),
+                    _ => continue,
+                },
+                _ => continue,
+            };
+
+            if variables.kind != VariableDeclarationKind::Const {
+                continue;
+            }
+
+            for variable in &variables.declarations {
+                let (BindingPattern::BindingIdentifier(identifier), Some(init)) =
+                    (&variable.id, &variable.init)
+                else {
+                    continue;
+                };
+                let Some(states) = base_ui::declaration(&parsed.semantic, init) else {
+                    continue;
+                };
+                let states = states.map_err(|error| match error {
+                    Error::Themes { message, span } => self.fail(module_id, message, Some(span)),
+                    error => error,
+                })?;
+
+                if exported {
+                    published.insert(identifier.name.as_str(), Arc::clone(&states));
+                }
+
+                declared.insert(identifier.name.as_str(), states);
+            }
+        }
+
+        for statement in &parsed.program.body {
+            let Some(export) = named_export(statement).filter(|export| {
+                export.source.is_none() && export.export_kind != ImportOrExportKind::Type
+            }) else {
+                continue;
+            };
+
+            for specifier in export.specifiers {
+                if specifier.export_kind == ImportOrExportKind::Type {
+                    continue;
+                }
+
+                let local = export_name(&specifier.local);
+                let exported = export_name(&specifier.exported);
+
+                match declared.get(local.as_str()) {
+                    Some(states) => published.insert(exported.as_str(), Arc::clone(states)),
+                    None => forward_parts(imported, Some(&local), &exported, &mut published),
+                }
+            }
+        }
+
+        Ok(published)
     }
 
     /// Extracts a module once per compilation, reusing an earlier compilation's result when the
@@ -2087,6 +2257,7 @@ impl<'p, 'a> Build<'p, 'a> {
         let module = Arc::new(Module {
             literals: linked.literals,
             opaque: linked.opaque,
+            parts: linked.parts,
             ..Module::detach(&linked.extracted)
         });
         // A module re-extracted only because a dependency changed usually extracts as before.
@@ -3279,7 +3450,10 @@ impl Build<'_, '_> {
                 continue;
             };
 
-            if module.theme_exports.is_empty() && module.literals.is_empty() {
+            if module.theme_exports.is_empty()
+                && module.literals.is_empty()
+                && module.parts.is_empty()
+            {
                 continue;
             }
 
@@ -3297,6 +3471,7 @@ impl Build<'_, '_> {
                     links: &links,
                     literals: &module.literals,
                     module_id: id,
+                    parts: &module.parts,
                     stylesheets: &[],
                     themes: &self.themes,
                 })?,
@@ -4322,6 +4497,7 @@ impl Build<'_, '_> {
                                 links: &links,
                                 literals: &Record::new(),
                                 module_id: id,
+                                parts: &Record::new(),
                                 stylesheets: &[],
                                 themes: &shared_themes,
                             })?,
@@ -4336,6 +4512,7 @@ impl Build<'_, '_> {
 
                 if module.theme_exports.is_empty()
                     && module.literals.is_empty()
+                    && module.parts.is_empty()
                     && reached.is_empty()
                     && configurations.is_empty()
                 {
@@ -4382,6 +4559,7 @@ impl Build<'_, '_> {
                         links: &links,
                         literals: &module.literals,
                         module_id: id,
+                        parts: &module.parts,
                         stylesheets: &owned,
                         themes: &shared_themes,
                     })?,

@@ -13,7 +13,7 @@ import { Toast } from '@base-ui/react/toast'
 import { Toolbar } from '@base-ui/react/toolbar'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { style as rootStyle } from 'zyzz'
-import { style } from 'zyzz/base-ui/react'
+import { defineConfig, part, style, type Part } from 'zyzz/base-ui/react'
 
 describe('style', () => {
   test('covers generic, inherited, and aliased parts without leaking sibling states', () => {
@@ -185,6 +185,87 @@ describe('style', () => {
     // @ts-expect-error Arbitrary components do not receive Base UI states.
     style((_props: { className?: string }) => null, {
       states: { highlighted: {} },
+    })
+  })
+
+  test('checks declared part state names and values', () => {
+    function ToolRoot(_props: { className?: string | undefined }) {
+      return null
+    }
+    const Root = part(ToolRoot, {
+      open: 'boolean',
+      status: ['running', 'done', 'failed'],
+    })
+    const tool = style(Root, {
+      borderColor: 'gray',
+      states: {
+        open: { borderColor: 'black', ':hover': { color: 'blue' } },
+        status: { failed: { color: 'red' }, running: { color: 'blue' } },
+      },
+    })
+    const { style: configured } = defineConfig({
+      vars: { color: { accent: 'red', rule: 'gray' } },
+    })
+    configured(Root, {
+      borderColor: 'rule',
+      states: { status: { failed: { color: 'accent' } } },
+    })
+    const Typed = ToolRoot as typeof ToolRoot & Part<{ pending: boolean }>
+    style(Typed, { states: { pending: { opacity: 0.5 } } })
+
+    expectTypeOf(tool()).toEqualTypeOf<rootStyle.Props>()
+    expectTypeOf(Root).toExtend<typeof ToolRoot>()
+    style(Root, {
+      states: {
+        // @ts-expect-error Undeclared state names are rejected.
+        opne: { color: 'red' },
+      },
+    })
+    style(Root, {
+      states: {
+        status: {
+          // @ts-expect-error Undeclared values are rejected.
+          pending: { color: 'red' },
+        },
+      },
+    })
+    style(Root, {
+      states: {
+        open: {
+          // @ts-expect-error Boolean states match presence, not a true/false map.
+          true: {},
+        },
+      },
+    })
+    style(Root, {
+      states: {
+        open: {
+          // @ts-expect-error Declared state bodies retain CSS value validation.
+          display: 'invalid',
+        },
+      },
+    })
+    configured(Root, {
+      states: {
+        status: {
+          failed: {
+            // @ts-expect-error Configured token names remain checked in declared states.
+            color: 'missing',
+          },
+        },
+      },
+    })
+    style(Root, {
+      states: {
+        // @ts-expect-error Declared parts do not acquire Base UI states.
+        highlighted: {},
+      },
+    })
+    style(Select.Item, {
+      states: {
+        // @ts-expect-error Base UI parts do not acquire declared states.
+        status: {},
+      },
     })
   })
 

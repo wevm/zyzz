@@ -7,6 +7,7 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as Results from '../compiler/internal/Results.js'
 import * as Contracts from '../node/internal/Contracts.js'
+import * as Ignores from '../node/internal/Ignores.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
@@ -293,6 +294,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const roots = new Map<string, string | undefined>()
   const lazyImports = new WeakMap<Parser.ParseResult, string[]>()
   const nestedPackages = new Map<string, boolean>()
+  // Discovery skips what Git ignores and what a build writes, such as stale bundles beside sources.
+  let ignores = Ignores.create({ roots: [] })
+  let outDirs: readonly string[] = []
   const contributions = new Map<string, boolean>()
   let directories: readonly string[]
   // The directories discovery walks, and the include patterns that narrow it.
@@ -449,7 +453,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
               const file = Path.join(directory, item.name)
 
-              if (item.isDirectory()) return nested(file) ? [] : collect(file)
+              if (item.isDirectory())
+                return nested(file) || hidden(file, true) ? [] : collect(file)
               if (!item.isFile() || !eager(file, environment)) return []
 
               host.watch(file)
@@ -516,6 +521,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     return value
   }
 
+  /**
+   * Whether discovery skips a path below a source directory: a build output directory, or a path
+   * the applicable `.gitignore` files ignore.
+   */
+  function hidden(path: string, directory: boolean) {
+    return (
+      (directory && outDirs.includes(path)) ||
+      ignores.ignored({ directory, path })
+    )
+  }
+
   function eager(file: string, environment: Environment) {
     // Watcher events reach files outside the scopes that discovery walked.
     if (!scopes.some((scope) => contains(scope, file))) return false
@@ -529,10 +545,11 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       directory !== undefined && parent !== directory;
       parent = Path.dirname(parent)
     )
-      if (nested(parent)) return false
+      if (nested(parent) || hidden(parent, true)) return false
 
     return (
       eligible(file) &&
+      !hidden(file, false) &&
       file !== environment.config.configFile &&
       !environment.config.configFileDependencies.includes(file) &&
       // Server entrypoints must not contribute to the client stylesheet scan.
@@ -2157,12 +2174,28 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       // The root keeps the `app` namespace, so only bases outside it add source directories.
       directories = [root, ...bases.filter((base) => !contains(root, base))]
 
+      // A build output directory holding a source directory, such as `outDir: '..'`, stays walked.
+      outDirs = [
+        ...new Set(
+          [
+            config.build.outDir,
+            ...Object.values(config.environments).map(
+              (environment) => environment.build.outDir,
+            ),
+          ].map((directory) => Path.resolve(root, directory)),
+        ),
+      ].filter(
+        (output) =>
+          !directories.some((directory) => contains(output, directory)),
+      )
+
       // Portable build adapters share this module and do not require Vite.
       const { createFilter } = await import('vite')
       const patterns = [...configFiles, ...(options.exclude ?? [])]
 
       filter = createFilter(null, patterns, { resolve: root })
       exclusions.clear()
+      ignores = Ignores.create({ roots: directories })
       nestedPackages.clear()
       roots.clear()
 
@@ -2178,7 +2211,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         scoped = undefined
 
         // A `zyzz.config.*` module marks the application's source directory.
-        const configured = await configDirectories({ nested, root })
+        const configured = await configDirectories({ hidden, nested, root })
         if (configured.length) scopes = configured
       }
 
@@ -2854,7 +2887,7 @@ async function pattern(options: pattern.Options) {
  * The walk skips the directories discovery skips, including nested packages.
  */
 async function configDirectories(options: configDirectories.Options) {
-  const { nested, root } = options
+  const { hidden, nested, root } = options
   const found: string[] = []
 
   async function walk(directory: string): Promise<void> {
@@ -2864,7 +2897,7 @@ async function configDirectories(options: configDirectories.Options) {
       const file = Path.join(directory, item.name)
 
       if (item.isDirectory()) {
-        if (!nested(file)) await walk(file)
+        if (!nested(file) && !hidden(file, true)) await walk(file)
       } else if (
         item.isFile() &&
         /^zyzz\.config\.[cm]?[jt]sx?$/.test(item.name) &&
@@ -2885,6 +2918,8 @@ async function configDirectories(options: configDirectories.Options) {
 
 declare namespace configDirectories {
   type Options = {
+    /** Whether discovery skips a directory as ignored or build output. */
+    readonly hidden: (path: string, directory: boolean) => boolean
     /** Whether discovery skips a directory as a nested package. */
     readonly nested: (directory: string) => boolean
     /** The physical Vite root. */

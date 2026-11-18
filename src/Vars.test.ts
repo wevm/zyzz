@@ -2198,7 +2198,7 @@ describe('extend', () => {
 
       expect(result.modules['index.ts']!.css).toMatchInlineSnapshot(`
         ".z-theme-extend_2f_trimmed-theme{--z-extend_2f_trimmed-radius-sm:4px;}
-        .z_extend_2f_trimmed-r-SNdO0{border-radius:var(--z-extend_2f_trimmed-radius-sm,4px);}"
+        .z_U9Hd1W0{border-radius:var(--z-extend_2f_trimmed-radius-sm,4px);}"
       `)
     })
 

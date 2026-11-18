@@ -105,8 +105,8 @@ describe('compile', () => {
     const result = Graph.compile(options)
     expect(result.modules['item.ts']!.css).toMatchInlineSnapshot(`
       ".z-theme-packed-theme{--z-packed-spacing-gap:7px;--z-packed-color-ink:#123456;}
-      .z_packed-mhCyMV0{padding:var(--z-packed-spacing-gap,7px);}
-      .z_packed-mhCyMV1{&[data-highlighted]{color:var(--z-packed-color-ink,#123456);}}"
+      .z_tdG3MP0{padding:var(--z-packed-spacing-gap,7px);}
+      .z_tdG3MP1{&[data-highlighted]{color:var(--z-packed-color-ink,#123456);}}"
     `)
 
     const contract = JSON.parse(publisher.contracts['index.ts']!)
@@ -388,10 +388,10 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       right: { className: string }
     }
     expect(fixture.left.className).toMatchInlineSnapshot(
-      `"z_a_2d_b-A4MzJF0 z_a_2d_b-A4MzJF1"`,
+      `"z_9t_SVk0 z_9t_SVk1"`,
     )
     expect(fixture.right.className).toMatchInlineSnapshot(
-      `"z_a-oRmHDO0 z_a-oRmHDO1"`,
+      `"z_-wYM3t0 z_-wYM3t1"`,
     )
     const browser = await chromium.launch()
     try {
@@ -455,8 +455,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z_first-bugww80{color:var(--z-first-color-brand,red);}
-      .z_first-bugww81{&:hover{opacity:1;}}"
+      .z_R5b4kZ0{color:var(--z-first-color-brand,red);}
+      .z_R5b4kZ1{&:hover{opacity:1;}}"
     `)
     expect(output.modules['second.js']!.css).toMatchInlineSnapshot(`
       ".z-theme-first-theme{--z-first-color-brand:red;}
@@ -464,8 +464,8 @@ export const nested=style({color:fields.foo.bar,vars:{[fields['foo-bar']]:'red',
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z_second-XWlTb20{color:var(--z-second-color-brand,blue);}
-      .z_second-XWlTb21{&:hover{opacity:1;}}"
+      .z_Om0bVo0{color:var(--z-second-color-brand,blue);}
+      .z_Om0bVo1{&:hover{opacity:1;}}"
     `)
     const code = await Packed.bundle({
       entry: 'entry.js',
@@ -3772,7 +3772,7 @@ export const App = () => <Box>box</Box>`,
       .z_scheme-dark{color-scheme:dark;}
       .z_scheme-light{color-scheme:light;}
       .z_scheme-light-dark{color-scheme:light dark;}
-      .z_mint-LMAxOH0{color:var(--z-mint-color-brand,#f00);}"
+      .z_247AfK0{color:var(--z-mint-color-brand,#f00);}"
     `)
   })
 

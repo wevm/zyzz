@@ -2068,8 +2068,8 @@ ${configuration ? "zyzz.style({'@layer components':{color:'brand'}});\n// @ts-ex
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
         .z-theme-app-base{--z-app-color-brand:#06c;}
-        .z-theme-app-mint{--z-app-color-brand:#175;}.z_app-rnRBDm0{color:var(--z-app-color-brand,#06c);}
-        .z_app-rnRBDm1{padding:8px;}"
+        .z-theme-app-mint{--z-app-color-brand:#175;}.z_AF-UFH0{color:var(--z-app-color-brand,#06c);}
+        .z_AF-UFH1{padding:8px;}"
       `)
 
       const javascript = result.output
@@ -2287,7 +2287,7 @@ createRoot(document.querySelector('#root')!).render(<App />)`,
       expect(String(sheet.source)).toMatchInlineSnapshot(`
         ":root{--gap:var(--z-acme-spacing-16,16px);}
         .z-theme-acme_2f_variables-variables{--z-acme_2f_variables-color-ink:#123456;--z-acme_2f_variables-spacing-16:16px;}
-        .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}.z_acme-YiE3S90{padding:var(--z-acme-spacing-16,16px);}"
+        .z-theme-acme-theme{--z-acme-spacing-16:16px;--z-acme-color-ink:#123456;}.z_BP5wEF0{padding:var(--z-acme-spacing-16,16px);}"
       `)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })

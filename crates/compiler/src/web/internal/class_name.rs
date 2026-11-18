@@ -11,7 +11,7 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
-use crate::internal::literal;
+use crate::internal::{identity, literal};
 use crate::js;
 
 /// Inputs for [`create`]. A context retains declaration ordering and module ownership.
@@ -31,6 +31,9 @@ pub struct CreateOptions<'a> {
     /// Ordered declaration slot inside a contextual style.
     pub slot: Option<usize>,
 }
+
+/// Length of a namespaced qualifier, matching the module qualifiers of graph compilations.
+const QUALIFIER: usize = 6;
 
 /// Readable property prefixes for common declarations.
 const ALIASES: [(&str, &str); 15] = [
@@ -359,12 +362,23 @@ impl Units<'_> {
 
             name.push_str("z_");
 
-            if let Some(namespace) = namespace.filter(|namespace| !namespace.is_empty()) {
-                name.push_str(namespace);
-                name.push('-');
+            // A configuration namespace selects the qualifier instead of prefixing the name, so
+            // two configurations stay apart without lengthening every class.
+            match namespace.filter(|namespace| !namespace.is_empty()) {
+                Some(namespace) => {
+                    let mut key = String::with_capacity(namespace.len() + self.qualifier.len() + 1);
+
+                    key.push_str(namespace);
+                    key.push('\n');
+                    key.push_str(&self.qualifier);
+
+                    let compact = identity::compact(&key);
+
+                    name.push_str(compact.get(compact.len() - QUALIFIER..).unwrap_or(&compact));
+                }
+                None => name.push_str(&self.qualifier),
             }
 
-            name.push_str(&self.qualifier);
             name.push_str(&js::radix(index as u64, 36));
             name
         });

@@ -1277,11 +1277,11 @@ describe('CLI API page', () => {
           --z-app-color-brand: light-dark(#06c, #8cf);
         }
 
-        .z_app-sJkhe-0 {
+        .z_UUaZVs0 {
           color: var(--z-app-color-brand, light-dark(#06c, #8cf));
         }
 
-        .z_app-sJkhe-1 {
+        .z_UUaZVs1 {
           padding: 8px;
         }
         .z-theme-app-theme {
@@ -1402,7 +1402,7 @@ describe('CLI API page', () => {
       .toMatchInlineSnapshot(`
         "body{margin:0}
         .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_scheme-dark{color-scheme:dark}.z_scheme-light{color-scheme:light}.z_scheme-light-dark{color-scheme:light dark}
-        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_app-sJkhe-0{color:var(--z-app-color-brand,light-dark(#06c,#8cf))}.z_app-sJkhe-1{padding:8px}
+        .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}.z_UUaZVs0{color:var(--z-app-color-brand,light-dark(#06c,#8cf))}.z_UUaZVs1{padding:8px}
         .z-theme-app-theme{--z-app-color-brand:light-dark(#06c,#8cf)}
         "
       `)

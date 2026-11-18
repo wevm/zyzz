@@ -8,7 +8,7 @@ import type * as Vars from './Vars.js'
 import * as Condition from './internal/Condition.js'
 import * as Query from './internal/Query.js'
 import * as Binding from './internal/Binding.js'
-import type * as Literal from './internal/Literal.js'
+import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Typography from './internal/Typography.js'
 import * as Value from './internal/Value.js'
@@ -704,6 +704,7 @@ export function define(
           !custom &&
           !reference &&
           Token.mapped(theme, key) &&
+          !(typeof resolved === 'string' && Literal.isKeyword(key, resolved)) &&
           !(Binding.is(resolved) && !resolved[Binding.dynamic]) &&
           !(
             Token.isExpression(resolved) &&
@@ -912,7 +913,8 @@ type DeclarationValue<
         ? LiteralAtoms[property]
         :
             | `${string} !custom`
-            | Extract<LiteralAtoms[property], Binding.Reference>)
+            | Extract<LiteralAtoms[property], Binding.Reference>
+            | Literal.Keyword<property>)
   | Token.Names<tokens, property>
   | {
       [group in Token.Group]: property extends Token.Properties<group>

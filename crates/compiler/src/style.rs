@@ -15,7 +15,7 @@ use crate::internal::query::Metadata as Queries;
 use crate::internal::theme::Definition as Theme;
 use crate::internal::token::{self, Composition, CssOutput, Expression, Part, Reference};
 use crate::internal::value::{self, Parsed};
-use crate::internal::{condition, query, targets, typography, variable_sets};
+use crate::internal::{condition, literal, query, targets, typography, variable_sets};
 use crate::js;
 
 /// A declaration value.
@@ -906,6 +906,7 @@ impl Validator<'_> {
                     .mapped
                     .entry((std::ptr::from_ref(theme).addr(), Arc::clone(key)))
                     .or_insert_with(|| token::mapped(theme, key))
+                && !matches!(&resolved, Data::String(text) if literal::is_keyword(key, text))
                 && !matches!(&resolved, Data::Binding(binding) if !binding.dynamic)
                 && !matches!(&resolved, Data::Expression(expression) if expression.parts.iter().all(|part| matches!(part, Part::Reference(_)) || matches!(part, Part::Text(text) if text.is_empty())))
             {

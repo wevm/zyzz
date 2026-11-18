@@ -74,15 +74,38 @@ pub fn is_literal(property: &str, value: Scalar<'_>) -> bool {
 }
 
 fn string_literal(rule: &Rule, value: &str) -> bool {
-    let normalized = lexical::normalize(value);
-    let folded = fold(&normalized);
+    let folded = fold(&lexical::normalize(value));
 
-    if GLOBALS.contains(&folded.as_str()) {
+    if GLOBALS.contains(&folded.as_str()) || rule_keyword(rule, &folded) {
         return true;
     }
 
+    if rule.kind == Kind::Color && is_color_keyword(&folded) {
+        return true;
+    }
+
+    // Dimension and expression spellings always retain literal precedence.
+    is_dimension(value) || value.contains(['#', '(', ')'])
+}
+
+/// Whether a value is a CSS-wide keyword or one of the property's own keywords.
+///
+/// Token-mapped properties accept these without `!custom`. Color properties accept
+/// `currentColor`, `transparent`, and system colors, while named colors stay outside the scale.
+pub fn is_keyword(property: &str, value: &str) -> bool {
+    let folded = fold(&lexical::normalize(value));
+
+    GLOBALS.contains(&folded.as_str())
+        || literal::rule(property).is_some_and(|rule| rule_keyword(rule, &folded))
+}
+
+fn rule_keyword(rule: &Rule, folded: &str) -> bool {
     if rule.kind == Kind::Color
-        && (is_color_keyword(&folded) || folded == "transparent" || folded == "currentcolor")
+        && (folded == "transparent"
+            || folded == "currentcolor"
+            || SYSTEM_COLORS
+                .iter()
+                .any(|color| color.eq_ignore_ascii_case(folded)))
     {
         return true;
     }
@@ -105,12 +128,11 @@ fn string_literal(rule: &Rule, value: &str) -> bool {
         return true;
     }
 
-    if rule.auto == Some(true) && folded == "auto" {
+    if matches!(rule.kind, Kind::Image | Kind::Url) && folded == "none" {
         return true;
     }
 
-    // Dimension and expression spellings always retain literal precedence.
-    is_dimension(value) || value.contains(['#', '(', ')'])
+    rule.auto == Some(true) && folded == "auto"
 }
 
 /// Trims CSS whitespace and collapses internal runs to one space.

@@ -121,6 +121,91 @@ export const dynamic=style((values:{padding:'7px'})=>({padding:\`\${values.paddi
     }
   })
 
+  test('accepts CSS-wide and property keywords on token-mapped properties', () => {
+    const vars = `{color:{brand:'red',transparent:'#0000ff'},container:{md:'28rem'},spacing:{md:'8px'}}`
+    const accepted = `{backgroundColor:'transparent',borderColor:'CurrentColor',color:'inherit',marginInline:'auto',maxWidth:'none',outlineColor:'Highlight',padding:'unset !important',width:'fit-content'}`
+    const rejected = [
+      `{color:'red'}`,
+      `{padding:'auto'}`,
+      `{padding:'none'}`,
+      `{marginInline:'7px'}`,
+    ]
+
+    function compile(body: string) {
+      return Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz';const {style}=Config.create({vars:${vars}});export const box=style(${body});`,
+        },
+      })
+        .modules['app.ts']!.css.split('\n')
+        .filter((line) => line.startsWith('.z_'))
+        .join('\n')
+    }
+
+    // A color token named `transparent` still wins over the CSS keyword.
+    expect(compile(accepted)).toMatchInlineSnapshot(`
+      ".z_Zf5JrJ0{background-color:var(--z-color-transparent,#0000ff);}
+      .z_Zf5JrJ1{border-color:CurrentColor;}
+      .z_Zf5JrJ2{color:inherit;}
+      .z_Zf5JrJ3{margin-inline:auto;}
+      .z_Zf5JrJ4{max-width:none;}
+      .z_Zf5JrJ5{outline-color:Highlight;}
+      .z_Zf5JrJ6{padding:unset!important;}
+      .z_Zf5JrJ7{width:fit-content;}"
+    `)
+    expect(
+      rejected.map((body) => {
+        try {
+          compile(body)
+          return 'accepted'
+        } catch (error) {
+          return (error as Error).message
+        }
+      }),
+    ).toMatchInlineSnapshot(`
+      [
+        "app.ts:180: Expected a configured token or a CSS value with the " !custom" suffix.",
+        "app.ts:182: Expected a configured token or a CSS value with the " !custom" suffix.",
+        "app.ts:182: Expected a configured token or a CSS value with the " !custom" suffix.",
+        "app.ts:187: Expected a configured token or a CSS value with the " !custom" suffix.",
+      ]
+    `)
+
+    const { style } = PublicConfig.create({
+      id: 'keywords',
+      vars: {
+        color: { brand: 'red', transparent: '#0000ff' },
+        container: { md: '28rem' },
+        spacing: { md: '8px' },
+      },
+    })
+    const runtime = new Function('style', `return style(${accepted})`)(
+      style,
+    ) as () => unknown
+    expect(runtime()).toMatchInlineSnapshot(`
+      {
+        "className": "z-keywords-content-_5b__5b__22_backgroundColor_22__2c__5b__22_token_22__2c__22_id_2d_keywords_22__2c__22_color_2e_transparent_22__2c__22__23_0000ff_22__5d__2c_false_5d__2c__5b__22_borderColor_22__2c__22_CurrentColor_22__2c_false_5d__2c__5b__22_color_22__2c__22_inherit_22__2c_false_5d__2c__5b__22_marginInline_22__2c__22_auto_22__2c_false_5d__2c__5b__22_maxWidth_22__2c__22_none_22__2c_false_5d__2c__5b__22_outlineColor_22__2c__22_Highlight_22__2c_false_5d__2c__5b__22_padding_22__2c__22_unset_22__2c_true_5d__2c__5b__22_width_22__2c__22_fit_2d_content_22__2c_false_5d__5d_",
+      }
+    `)
+    expect(
+      rejected.map((body) => {
+        try {
+          new Function('style', `return style(${body})`)(style)
+          return 'accepted'
+        } catch (error) {
+          return (error as Error).message
+        }
+      }),
+    ).toMatchInlineSnapshot(`
+      [
+        "["style","color"]: Expected a configured token or a CSS value with the " !custom" suffix.",
+        "["style","padding"]: Expected a configured token or a CSS value with the " !custom" suffix.",
+        "["style","padding"]: Expected a configured token or a CSS value with the " !custom" suffix.",
+        "["style","marginInline"]: Expected a configured token or a CSS value with the " !custom" suffix.",
+      ]
+    `)
+  })
+
   test('ignores incompatible token leaves and CSS comment brackets', () => {
     const result = Graph.compile({
       modules: {

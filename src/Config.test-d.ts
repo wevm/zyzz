@@ -140,6 +140,34 @@ describe('create', () => {
     PublicConfig.create({ strict: true })
   })
 
+  test('accepts CSS-wide and property keywords on token-mapped properties', () => {
+    const { style } = PublicConfig.create({
+      vars: {
+        color: { brand: 'red' },
+        container: { md: '28rem' },
+        spacing: { md: '8px' },
+      },
+    })
+    style({
+      backgroundColor: 'transparent',
+      color: 'inherit',
+      marginInline: 'auto',
+      maxWidth: 'none',
+      outlineColor: 'Highlight',
+      padding: 'unset !important',
+      width: 'fit-content',
+    })
+    style({ borderColor: 'CurrentColor', color: ['brand', 'canvastext'] })
+    // @ts-expect-error Named colors stay outside the color scale.
+    style({ color: 'red' })
+    // @ts-expect-error Padding has no `auto` keyword.
+    style({ padding: 'auto' })
+    // @ts-expect-error Padding has no `none` keyword.
+    style({ padding: 'none' })
+    // @ts-expect-error Lengths still require tokens or `!custom`.
+    style({ marginInline: '7px' })
+  })
+
   test('accepts defaultLayer with and without variable sets', () => {
     const { style, variants } = PublicConfig.create({
       defaultLayer: 'components',

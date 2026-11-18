@@ -794,6 +794,9 @@ export const systemColors = [
 const colorKeywordSet = new Set<string>(
   [...namedColors, ...systemColors].map((value) => value.toLowerCase()),
 )
+const systemColorSet = new Set<string>(
+  systemColors.map((value) => value.toLowerCase()),
+)
 
 const overflow = {
   kind: 'enum',
@@ -868,37 +871,77 @@ export function isLiteral(
   if (!rule) return false
 
   if (typeof value === 'string') {
-    const folded = Lexical.normalize(value)
-      .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
-      .replace(/[ \t\n\r\f]+/g, ' ')
-    if (globals.has(folded)) return true
+    if (isKeyword(property, value)) return true
 
-    if (
-      rule.kind === 'color' &&
-      (colorKeywordSet.has(folded) ||
-        folded === 'transparent' ||
-        folded === 'currentcolor')
-    )
-      return true
-
-    if (
-      'keywords' in rule &&
-      rule.keywords?.some((keyword) => keyword.toLowerCase() === folded)
-    )
-      return true
-
-    if (
-      rule.kind === 'enum' &&
-      rule.values.some((keyword) => keyword.toLowerCase() === folded)
-    )
-      return true
-
-    if ('auto' in rule && rule.auto && folded === 'auto') return true
+    if (rule.kind === 'color' && colorKeywordSet.has(fold(value))) return true
     // Dimension and expression spellings always retain literal precedence.
     if (dimension.test(value) || /[#()]/.test(value)) return true
   }
 
   return rule.kind === 'number' && typeof value === 'number'
+}
+
+/**
+ * Whether a value is a CSS-wide keyword or one of the property's own keywords, which
+ * token-mapped properties accept without ` !custom`. Color properties accept `currentColor`,
+ * `transparent`, and system colors, while named colors such as `red` stay outside the scale.
+ */
+export function isKeyword(property: keyof Properties, value: string): boolean {
+  const folded = fold(value)
+  if (globals.has(folded)) return true
+
+  const rule: Rule | undefined = rules[property as keyof typeof rules]
+  if (!rule) return false
+
+  if (
+    rule.kind === 'color' &&
+    (systemColorSet.has(folded) ||
+      folded === 'transparent' ||
+      folded === 'currentcolor')
+  )
+    return true
+
+  if (
+    'keywords' in rule &&
+    rule.keywords?.some((keyword) => keyword.toLowerCase() === folded)
+  )
+    return true
+
+  if (
+    rule.kind === 'enum' &&
+    rule.values.some((keyword) => keyword.toLowerCase() === folded)
+  )
+    return true
+
+  if ((rule.kind === 'image' || rule.kind === 'url') && folded === 'none')
+    return true
+
+  return 'auto' in rule && rule.auto && folded === 'auto'
+}
+
+/** Keywords accepted by {@link isKeyword}, in their canonical spellings. */
+export type Keyword<property extends keyof Properties> =
+  | Global
+  | (property extends keyof typeof rules
+      ? RuleKeyword<(typeof rules)[property]>
+      : never)
+
+type RuleKeyword<rule> =
+  | (rule extends { auto: true } ? 'auto' : never)
+  | (rule extends { kind: 'color' }
+      ? (typeof systemColors)[number] | 'currentColor' | 'transparent'
+      : never)
+  | (rule extends { kind: 'enum'; values: readonly (infer value)[] }
+      ? value
+      : never)
+  | (rule extends { kind: 'image' | 'url' } ? 'none' : never)
+  | Keywords<rule>
+
+/** Resolves escapes and comments, lowercases ASCII, and collapses CSS whitespace. */
+function fold(value: string): string {
+  return Lexical.normalize(value)
+    .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
+    .replace(/[ \t\n\r\f]+/g, ' ')
 }
 
 /** Serializes public camel-case property names, including numeric legacy spellings. */

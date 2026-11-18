@@ -244,7 +244,7 @@ type NumericNames<names> = names extends `${infer value extends number}`
   ? value
   : never
 
-/** Requires tokens for properties with configured values. */
+/** Requires tokens for properties with configured values, except CSS-wide and property keywords. */
 export type Tokens<
   value,
   tokens,
@@ -265,11 +265,18 @@ export type Tokens<
         ? unknown
         : value extends Atom<Token.Names<tokens, property>>
           ? unknown
-          : value extends number
-            ? `${value}` extends Token.Names<tokens, property>
+          : value extends string
+            ? // Keywords match case-insensitively, as CSS does.
+              Lowercase<value> extends Lowercase<
+                Atom<Literal.Keyword<property>>
+              >
               ? unknown
               : never
-            : never
+            : value extends number
+              ? `${value}` extends Token.Names<tokens, property>
+                ? unknown
+                : never
+              : never
 
 type Importance<value> = value extends readonly unknown[]
   ? { [key in keyof value]: Importance<value[key]> }

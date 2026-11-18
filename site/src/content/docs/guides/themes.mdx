@@ -370,7 +370,7 @@ namespace styles {
 </Tab>
 </Tabs>
 
-`maxWidth` accepts spacing tokens, so the literal `28rem` takes the ` !custom` suffix. The compiler removes the suffix and still checks the CSS value. `borderRadius` has no configured tokens in this config, so it accepts CSS values directly.
+`maxWidth` accepts spacing tokens, so the literal `28rem` takes the ` !custom` suffix, which the compiler removes before checking the CSS value. Keywords such as `auto` and `inherit` need no suffix. `borderRadius` has no configured tokens in this config, so it accepts CSS values directly.
 
 Configured names take precedence over CSS keywords, so with a color token named `red`, `color: 'red'` selects the token and `'red !custom'` selects the CSS color. A value outside the scale fails type checking at the declaration:
 

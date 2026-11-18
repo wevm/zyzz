@@ -216,6 +216,24 @@ const button = style({
 })
 ```
 
+CSS keywords need no suffix: CSS-wide keywords such as `inherit`, the property's own keywords such as `auto` on margins and `none` on `maxWidth`, and `currentColor`, `transparent`, and system colors such as `Highlight` on color properties. Named colors such as `red` and other literals still need ` !custom`.
+
+```ts
+import { defineConfig } from 'zyzz'
+
+const { style } = defineConfig({
+  vars: { color: { text: '#111' }, spacing: { md: '8px' } },
+})
+
+const link = style({
+  // [!code hl:3]
+  // Keywords pass on properties with color and spacing tokens
+  color: 'inherit',
+  marginInline: 'auto',
+  outlineColor: 'Highlight',
+})
+```
+
 Token names take precedence over CSS keywords, so a color token named `red` resolves to the variable while `'red !custom'` means the CSS color. Combine suffixes as `'red !custom !important'`. Properties without configured tokens accept either spelling.
 
 ## Category Fallbacks

@@ -131,110 +131,110 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: card!, name: 'overview' }))
       .toMatchInlineSnapshot(`
-        ".z_default-hZwzVo0 {
+        ".z_OcQLny0 {
           border-radius: var(--z-default-radius-lg, .5rem);
         }
 
-        .z_default-hZwzVo1 {
+        .z_OcQLny1 {
           color: var(--z-default-color-blue-700, #0072f5);
         }
 
-        .z_default-hZwzVo2 {
+        .z_OcQLny2 {
           padding: var(--z-default-spacing-4, 1rem);
         }
 
-        .z_default-hZwzVo3 {
+        .z_OcQLny3 {
           font-family: var(--z-default-typography-heading-20-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-hZwzVo4 {
+        .z_OcQLny4 {
           font-size: var(--z-default-typography-heading-20-fontSize, 20px);
         }
 
-        .z_default-hZwzVo5 {
+        .z_OcQLny5 {
           font-weight: var(--z-default-typography-heading-20-fontWeight, 600);
         }
 
-        .z_default-hZwzVo6 {
+        .z_OcQLny6 {
           letter-spacing: var(--z-default-typography-heading-20-letterSpacing, -.4px);
         }
 
-        .z_default-hZwzVo7 {
+        .z_OcQLny7 {
           line-height: var(--z-default-typography-heading-20-lineHeight, 26px);
         }
         "
       `)
     expect(await build({ example: account!, name: 'walkthrough' }))
       .toMatchInlineSnapshot(`
-        ".z_default-Spuo_V0 {
+        ".z_Vx8tZk0 {
           color: var(--z-default-color-gray-900, light-dark(#4d4d4d, #a1a1a1));
         }
 
-        .z_default-Spuo_V1 {
+        .z_Vx8tZk1 {
           font-family: var(--z-default-typography-copy-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-Spuo_V2 {
+        .z_Vx8tZk2 {
           font-size: var(--z-default-typography-copy-14-fontSize, 14px);
         }
 
-        .z_default-Spuo_V3 {
+        .z_Vx8tZk3 {
           font-weight: var(--z-default-typography-copy-14-fontWeight, 400);
         }
 
-        .z_default-Spuo_V4 {
+        .z_Vx8tZk4 {
           letter-spacing: var(--z-default-typography-copy-14-letterSpacing, 0px);
         }
 
-        .z_default-Spuo_V5 {
+        .z_Vx8tZk5 {
           line-height: var(--z-default-typography-copy-14-lineHeight, 20px);
         }
 
-        .z_default-Spuo_V6 {
+        .z_Vx8tZk6 {
           background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
         }
 
-        .z_default-Spuo_V7 {
+        .z_Vx8tZk7 {
           border-radius: var(--z-default-radius-md, .375rem);
         }
 
-        .z_default-Spuo_V8 {
+        .z_Vx8tZk8 {
           box-shadow: var(--z-default-shadow-sm, 0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a);
         }
 
-        .z_default-Spuo_V9 {
+        .z_Vx8tZk9 {
           color: var(--z-default-color-foreground, light-dark(#171717, #ededed));
         }
 
-        .z_default-Spuo_Va {
+        .z_Vx8tZka {
           display: grid;
         }
 
-        .z_default-Spuo_Vb {
+        .z_Vx8tZkb {
           gap: var(--z-default-spacing-2, .5rem);
         }
 
-        .z_default-Spuo_Vc {
+        .z_Vx8tZkc {
           padding: var(--z-default-spacing-6, 1.5rem);
         }
 
-        .z_default-Spuo_Vd {
+        .z_Vx8tZkd {
           font-family: var(--z-default-typography-heading-20-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-Spuo_Ve {
+        .z_Vx8tZke {
           font-size: var(--z-default-typography-heading-20-fontSize, 20px);
         }
 
-        .z_default-Spuo_Vf {
+        .z_Vx8tZkf {
           font-weight: var(--z-default-typography-heading-20-fontWeight, 600);
         }
 
-        .z_default-Spuo_Vg {
+        .z_Vx8tZkg {
           letter-spacing: var(--z-default-typography-heading-20-letterSpacing, -.4px);
         }
 
-        .z_default-Spuo_Vh {
+        .z_Vx8tZkh {
           line-height: var(--z-default-typography-heading-20-lineHeight, 26px);
         }
         "
@@ -246,11 +246,11 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'colors' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           background-color: var(--z-default-color-background-surface, light-dark(#fff, #0a0a0a));
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           color: var(--z-default-color-foreground, light-dark(#171717, #ededed));
         }
         "
@@ -262,19 +262,19 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'spacing' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           gap: var(--z-default-spacing-px, 1px);
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           padding: var(--z-default-spacing-4, 1rem);
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           height: var(--z-default-spacing-3-5, .875rem);
         }
 
-        .z_default-aTfGk43 {
+        .z_65K-cf3 {
           margin-top: 13px;
         }
         "
@@ -286,19 +286,19 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'fonts' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           font-family: var(--z-default-fontFamily-mono, "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           font-size: var(--z-default-fontSize-sm, .875rem);
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           font-weight: var(--z-default-fontWeight-medium, 500);
         }
 
-        .z_default-aTfGk43 {
+        .z_65K-cf3 {
           line-height: var(--z-default-lineHeight-relaxed, 1.625);
         }
         "
@@ -310,15 +310,15 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'sizes' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           aspect-ratio: var(--z-default-aspect-video, 16 / 9);
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           border-radius: var(--z-default-radius-xl, .75rem);
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           max-width: var(--z-default-container-2xl, 42rem);
         }
         "
@@ -330,11 +330,11 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'effects' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           animation: var(--z-default-animate-spin, z-kid-zyzz_2d_spin 1s linear infinite);
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           box-shadow: var(--z-default-shadow-md, 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a);
         }
         "
@@ -346,11 +346,11 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'references' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           backdrop-filter: blur(var(--z-default-blur-md, 12px));
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           box-shadow: var(--z-default-insetShadow-sm, inset 0 2px 4px #0000000d);
         }
         "
@@ -362,17 +362,17 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'queries' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           display: grid;
         }
 
         @media (width >= 48rem) {
-          .z_default-aTfGk41 {
+          .z_65K-cf1 {
             grid-template-columns: 1fr 1fr;
           }
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           @container (width >= 24rem) {
             gap: var(--z-default-spacing-4, 1rem);
           }
@@ -386,23 +386,23 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'typography' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           font-family: var(--z-default-typography-button-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           font-size: var(--z-default-typography-button-14-fontSize, 14px);
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           font-weight: var(--z-default-typography-button-14-fontWeight, 500);
         }
 
-        .z_default-aTfGk43 {
+        .z_65K-cf3 {
           letter-spacing: var(--z-default-typography-button-14-letterSpacing, 0px);
         }
 
-        .z_default-aTfGk44 {
+        .z_65K-cf4 {
           line-height: var(--z-default-typography-button-14-lineHeight, 20px);
         }
         "
@@ -414,43 +414,43 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'set-variants' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           font-family: var(--z-default-typography-label-14-mono-fontFamily, "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           font-size: var(--z-default-typography-label-14-mono-fontSize, 14px);
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           font-weight: var(--z-default-typography-label-14-mono-fontWeight, 400);
         }
 
-        .z_default-aTfGk43 {
+        .z_65K-cf3 {
           letter-spacing: var(--z-default-typography-label-14-mono-letterSpacing, 0px);
         }
 
-        .z_default-aTfGk44 {
+        .z_65K-cf4 {
           line-height: var(--z-default-typography-label-14-mono-lineHeight, 20px);
         }
 
-        .z_default-aTfGk45 {
+        .z_65K-cf5 {
           font-family: var(--z-default-typography-copy-16-strong-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-aTfGk46 {
+        .z_65K-cf6 {
           font-size: var(--z-default-typography-copy-16-strong-fontSize, 16px);
         }
 
-        .z_default-aTfGk47 {
+        .z_65K-cf7 {
           font-weight: var(--z-default-typography-copy-16-strong-fontWeight, 550);
         }
 
-        .z_default-aTfGk48 {
+        .z_65K-cf8 {
           letter-spacing: var(--z-default-typography-copy-16-strong-letterSpacing, 0px);
         }
 
-        .z_default-aTfGk49 {
+        .z_65K-cf9 {
           line-height: var(--z-default-typography-copy-16-strong-lineHeight, 24px);
         }
         "
@@ -462,43 +462,43 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'overrides' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           font-weight: var(--z-default-fontWeight-medium, 500);
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           font-family: var(--z-default-typography-copy-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           font-size: var(--z-default-typography-copy-14-fontSize, 14px);
         }
 
-        .z_default-aTfGk43 {
+        .z_65K-cf3 {
           letter-spacing: var(--z-default-typography-copy-14-letterSpacing, 0px);
         }
 
-        .z_default-aTfGk44 {
+        .z_65K-cf4 {
           line-height: var(--z-default-typography-copy-14-lineHeight, 20px);
         }
 
-        .z_default-aTfGk45 {
+        .z_65K-cf5 {
           font-family: var(--z-default-typography-label-13-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji") !important;
         }
 
-        .z_default-aTfGk46 {
+        .z_65K-cf6 {
           font-size: var(--z-default-typography-label-13-fontSize, 13px) !important;
         }
 
-        .z_default-aTfGk47 {
+        .z_65K-cf7 {
           font-weight: var(--z-default-typography-label-13-fontWeight, 400) !important;
         }
 
-        .z_default-aTfGk48 {
+        .z_65K-cf8 {
           letter-spacing: var(--z-default-typography-label-13-letterSpacing, 0px) !important;
         }
 
-        .z_default-aTfGk49 {
+        .z_65K-cf9 {
           line-height: var(--z-default-typography-label-13-lineHeight, 16px) !important;
         }
         "
@@ -510,111 +510,111 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'states' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           font-family: var(--z-default-typography-label-14-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
         }
 
-        .z_default-aTfGk41 {
+        .z_65K-cf1 {
           font-size: var(--z-default-typography-label-14-fontSize, 14px);
         }
 
-        .z_default-aTfGk42 {
+        .z_65K-cf2 {
           font-weight: var(--z-default-typography-label-14-fontWeight, 400);
         }
 
-        .z_default-aTfGk43 {
+        .z_65K-cf3 {
           letter-spacing: var(--z-default-typography-label-14-letterSpacing, 0px);
         }
 
-        .z_default-aTfGk44 {
+        .z_65K-cf4 {
           line-height: var(--z-default-typography-label-14-lineHeight, 20px);
         }
 
-        .z_default-aTfGk45 {
+        .z_65K-cf5 {
           &:hover {
             font-family: var(--z-default-typography-label-14-strong-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
           }
         }
 
-        .z_default-aTfGk46 {
+        .z_65K-cf6 {
           &:hover {
             font-size: var(--z-default-typography-label-14-strong-fontSize, 14px);
           }
         }
 
-        .z_default-aTfGk47 {
+        .z_65K-cf7 {
           &:hover {
             font-weight: var(--z-default-typography-label-14-strong-fontWeight, 500);
           }
         }
 
-        .z_default-aTfGk48 {
+        .z_65K-cf8 {
           &:hover {
             letter-spacing: var(--z-default-typography-label-14-strong-letterSpacing, 0px);
           }
         }
 
-        .z_default-aTfGk49 {
+        .z_65K-cf9 {
           &:hover {
             line-height: var(--z-default-typography-label-14-strong-lineHeight, 20px);
           }
         }
 
-        .z_default-aTfGk4a {
+        .z_65K-cfa {
           &:where([data-size="lg"]) {
             font-family: var(--z-default-typography-copy-16-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
           }
         }
 
-        .z_default-aTfGk4b {
+        .z_65K-cfb {
           &:where([data-size="lg"]) {
             font-size: var(--z-default-typography-copy-16-fontSize, 16px);
           }
         }
 
-        .z_default-aTfGk4c {
+        .z_65K-cfc {
           &:where([data-size="lg"]) {
             font-weight: var(--z-default-typography-copy-16-fontWeight, 400);
           }
         }
 
-        .z_default-aTfGk4d {
+        .z_65K-cfd {
           &:where([data-size="lg"]) {
             letter-spacing: var(--z-default-typography-copy-16-letterSpacing, 0px);
           }
         }
 
-        .z_default-aTfGk4e {
+        .z_65K-cfe {
           &:where([data-size="lg"]) {
             line-height: var(--z-default-typography-copy-16-lineHeight, 24px);
           }
         }
 
-        .z_default-aTfGk4f {
+        .z_65K-cff {
           &:where([data-size="sm"]) {
             font-family: var(--z-default-typography-copy-13-fontFamily, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
           }
         }
 
-        .z_default-aTfGk4g {
+        .z_65K-cfg {
           &:where([data-size="sm"]) {
             font-size: var(--z-default-typography-copy-13-fontSize, 13px);
           }
         }
 
-        .z_default-aTfGk4h {
+        .z_65K-cfh {
           &:where([data-size="sm"]) {
             font-weight: var(--z-default-typography-copy-13-fontWeight, 400);
           }
         }
 
-        .z_default-aTfGk4i {
+        .z_65K-cfi {
           &:where([data-size="sm"]) {
             letter-spacing: var(--z-default-typography-copy-13-letterSpacing, 0px);
           }
         }
 
-        .z_default-aTfGk4j {
+        .z_65K-cfj {
           &:where([data-size="sm"]) {
             line-height: var(--z-default-typography-copy-13-lineHeight, 18px);
           }
@@ -628,7 +628,7 @@ describe('Default Theme guide', () => {
 
     expect(await build({ example: example!, name: 'fields' }))
       .toMatchInlineSnapshot(`
-        ".z_default-aTfGk40 {
+        ".z_65K-cf0 {
           font-size: var(--z-default-typography-heading-32-fontSize, 32px);
         }
         "

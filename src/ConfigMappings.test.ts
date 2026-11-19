@@ -334,17 +334,17 @@ describe('create', () => {
     expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
-        "class": "z_library-Zf5JrJ6 z_library-Zf5JrJ7",
+        "class": "z_BSgkUH6 z_BSgkUH7",
       }
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "class": "z_library-r-SNdO0 z_library-r-SNdO1 z-style-library-r-SNdO-staticStyle",
+        "class": "z_spOluV0 z_spOluV1 z-style-library-r-SNdO-staticStyle",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "class": "z_library-Zf5JrJ4 z_library-Zf5JrJ5",
+        "class": "z_BSgkUH4 z_BSgkUH5",
         "style": "--z-library-Zf5JrJ-dynamic-width:8px",
       }
     `)
@@ -468,8 +468,8 @@ describe('create', () => {
       .z-theme-library-extended{--z-library-spacing-sm:8px;}
       .z-theme-library-next{--z-library-spacing-sm:12px;}
       .z-theme-app-theme{--z-app-spacing-sm:12px;}
-      .z_app-Zf5JrJ0{padding-left:var(--z-app-spacing-sm,12px);}
-      .z_app-Zf5JrJ1{padding-right:var(--z-app-spacing-sm,12px);}"
+      .z_ThToWl0{padding-left:var(--z-app-spacing-sm,12px);}
+      .z_ThToWl1{padding-right:var(--z-app-spacing-sm,12px);}"
     `)
   })
   test('accepts quoted aliases and independently validates numeric targets', () => {

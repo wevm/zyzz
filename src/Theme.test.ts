@@ -1173,9 +1173,9 @@ describe('queries', () => {
         .z_scheme-dark{color-scheme:dark;}
         .z_scheme-light{color-scheme:light;}
         .z_scheme-light-dark{color-scheme:light dark;}
-        .z_default-Zf5JrJ0{font-family:var(--z-default-fontFamily-sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
-        .z_default-Zf5JrJ1{font-size:var(--z-default-fontSize-base,1rem);}
-        .z_default-Zf5JrJ2{color:var(--z-default-color-blue-500,light-dark(#99ceff,#0a4380));}"
+        .z_JSvM3v0{font-family:var(--z-default-fontFamily-sans,Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");}
+        .z_JSvM3v1{font-size:var(--z-default-fontSize-base,1rem);}
+        .z_JSvM3v2{color:var(--z-default-color-blue-500,light-dark(#99ceff,#0a4380));}"
       `)
 
       const built = await Esbuild.build({

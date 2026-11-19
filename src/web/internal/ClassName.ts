@@ -1,5 +1,7 @@
 /** Escapes class tokens and shares unit names across a graph's compilations. @module */
 
+import * as Identity from '../../internal/Identity.js'
+
 /** Escapes a generated class token for use as a CSS selector. */
 export function selector(value: string): string {
   return value.replace(
@@ -112,7 +114,7 @@ export function registry(): registry.ReturnType {
           // The underscore keeps unit names apart from readable names and anonymous scopes.
           const name =
             borrowed ??
-            `z_${namespace ? `${namespace}-` : ''}${options.qualifier}${index.toString(36)}`
+            `z_${namespace ? Identity.compact(`${namespace}\n${options.qualifier}`).slice(-6) : options.qualifier}${index.toString(36)}`
 
           if (!names.has(key)) names.set(key, { name, owner: options.owner })
           used.set(key, { borrowed: borrowed !== undefined, name })

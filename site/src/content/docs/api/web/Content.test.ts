@@ -698,9 +698,9 @@ describe('Css API page', () => {
     expect((await run('scope', scope!.source)).output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z_card-0",
+          "card": "z_Yaygxr0",
         },
-        "css": ".z_card-0{padding:1rem;}",
+        "css": ".z_Yaygxr0{padding:1rem;}",
         "vars": {},
       }
     `)

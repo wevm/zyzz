@@ -299,6 +299,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   let scopes: readonly string[]
   let scoped: ((id: unknown) => boolean) | undefined
   let filter: (id: unknown) => boolean
+  // Rolldown calls the transform hook only for ids this filter admits, so dependencies and assets
+  // skip the JavaScript round trip. `configResolved` excludes dependencies once it knows that no
+  // source directory lies inside `node_modules`.
+  const transformFilter = {
+    id: { exclude: [] as RegExp[], include: /\.[cm]?[jt]sx?(?:[?#]|$)/ },
+  }
   let optimizeRuntime = false
   let root: string
 
@@ -2157,6 +2163,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       // The root keeps the `app` namespace, so only bases outside it add source directories.
       directories = [root, ...bases.filter((base) => !contains(root, base))]
 
+      // Dependencies never compile, except the `zyzz/default` source entrypoint.
+      transformFilter.id.exclude.length = 0
+      if (
+        !directories.some((directory) =>
+          directory.split(Path.sep).includes('node_modules'),
+        )
+      )
+        transformFilter.id.exclude.push(
+          /[/\\]node_modules[/\\](?!.*[/\\]src[/\\]default\.[cm]?ts(?:[?#]|$))/,
+        )
+
       // Portable build adapters share this module and do not require Vite.
       const { createFilter } = await import('vite')
       const patterns = [...configFiles, ...(options.exclude ?? [])]
@@ -2444,195 +2461,206 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
       return [...affected]
     },
-    async load(id) {
-      if (!id.startsWith(prefix)) return
-      id = id.split('?', 1)[0]!
+    load: {
+      filter: { id: virtual },
+      async handler(id) {
+        if (!id.startsWith(prefix)) return
+        id = id.split('?', 1)[0]!
 
-      const file =
-        id === sharedId
-          ? undefined
-          : decodeURIComponent(id.slice(prefix.length, -4))
-      let entry =
-        file === undefined
-          ? entries(this.environment).values().next().value
-          : entries(this.environment).get(file)
-      // A pruned JavaScript module can leave its stylesheet loaded in the browser.
-      if (!entry && file && removed.get(this.environment)?.has(file)) return ''
+        const file =
+          id === sharedId
+            ? undefined
+            : decodeURIComponent(id.slice(prefix.length, -4))
+        let entry =
+          file === undefined
+            ? entries(this.environment).values().next().value
+            : entries(this.environment).get(file)
+        // A pruned JavaScript module can leave its stylesheet loaded in the browser.
+        if (!entry && file && removed.get(this.environment)?.has(file))
+          return ''
 
-      // Server rendering links the stylesheets of modules this environment has not transformed
-      // yet, so a development request compiles the module where the browser loads it.
-      if (!entry && this.environment.mode === 'dev') {
-        const anchor =
-          file ??
-          (
-            await discover(this.environment, {
-              asset: async (file) => file,
-              resolve: resolver(this.environment),
-              watch: watcher(this),
-            })
-          )
-            .keys()
-            .next().value
+        // Server rendering links the stylesheets of modules this environment has not transformed
+        // yet, so a development request compiles the module where the browser loads it.
+        if (!entry && this.environment.mode === 'dev') {
+          const anchor =
+            file ??
+            (
+              await discover(this.environment, {
+                asset: async (file) => file,
+                resolve: resolver(this.environment),
+                watch: watcher(this),
+              })
+            )
+              .keys()
+              .next().value
 
-        if (anchor !== undefined && eligible(anchor)) {
+          if (anchor !== undefined && eligible(anchor)) {
+            entry = {
+              compiler: compiler(this.environment),
+              environment: this.environment,
+              file: anchor,
+              files: new Set([anchor]),
+            }
+            entries(this.environment).set(anchor, entry)
+            anchors.get(this.environment)?.delete(anchor)
+          }
+        }
+
+        if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
+
+        const output = await compile(
+          entry,
+          {
+            resolve:
+              this.environment.mode === 'dev'
+                ? resolver(this.environment)
+                : (source, importer) => this.resolve(source, importer),
+            watch: watcher(this),
+            asset: async (file) => {
+              const reference = this.emitFile({
+                type: 'asset',
+                name: Path.basename(file).replace(/[?#%]/g, '_'),
+                source: await Fs.readFile(file),
+              })
+
+              // Vite's CSS asset placeholder preserves its configured base and output naming.
+              return `__VITE_ASSET__${reference}__`
+            },
+          },
+          undefined,
+          id === sharedId,
+        )
+
+        const transport = (css: string) =>
+          this.environment.config.command === 'build'
+            ? AtRules.rename(
+                AtRules.rename(
+                  Namespaces.protect(css),
+                  'font-feature-values',
+                  '-zyzz-ffv-000000000',
+                ),
+                'font-palette-values',
+                '-zyzz-fpv-000000000',
+              )
+            : css
+        if (id === sharedId) {
+          servedShared.set(this.environment, output.graphSharedCss)
+          return {
+            code: transport(output.sharedCss),
+            map: JSON.stringify(output.sharedCssMap),
+          }
+        }
+
+        entry.css = output.css
+        return {
+          code: transport(output.css),
+          map: JSON.stringify(output.cssMap),
+        }
+      },
+    },
+    name: 'zyzz',
+    resolveId: {
+      filter: { id: virtual },
+      handler(id) {
+        if (id.startsWith(prefix)) return id
+      },
+    },
+    transform: {
+      filter: transformFilter,
+      async handler(code, id) {
+        const split = new URLSearchParams(id.split('?')[1]).has('tsr-split')
+        id = normalize(id)
+
+        if (!eligible(id)) return
+
+        const state = entries(this.environment)
+        let entry = state.get(id)
+
+        if (!entry) {
           entry = {
             compiler: compiler(this.environment),
             environment: this.environment,
-            file: anchor,
-            files: new Set([anchor]),
+            file: id,
+            files: new Set([id]),
           }
-          entries(this.environment).set(anchor, entry)
-          anchors.get(this.environment)?.delete(anchor)
+          state.set(id, entry)
+          // The entry supersedes the anchor an earlier edit created, whose closure read the source
+          // from disk rather than from the load hooks.
+          anchors.get(this.environment)?.delete(id)
+          removed.get(this.environment)?.delete(id)
         }
-      }
 
-      if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
+        entry.source = code
 
-      const output = await compile(
-        entry,
-        {
-          resolve:
-            this.environment.mode === 'dev'
-              ? resolver(this.environment)
-              : (source, importer) => this.resolve(source, importer),
-          watch: watcher(this),
-          asset: async (file) => {
-            const reference = this.emitFile({
-              type: 'asset',
-              name: Path.basename(file).replace(/[?#%]/g, '_'),
-              source: await Fs.readFile(file),
-            })
+        const output = await compile(
+          entry,
+          {
+            resolve:
+              this.environment.mode === 'dev'
+                ? resolver(this.environment)
+                : (source, importer) => this.resolve(source, importer),
+            watch: watcher(this),
+            asset: async (file) => {
+              const reference = this.emitFile({
+                type: 'asset',
+                name: Path.basename(file).replace(/[?#%]/g, '_'),
+                source: await Fs.readFile(file),
+              })
 
-            // Vite's CSS asset placeholder preserves its configured base and output naming.
-            return `__VITE_ASSET__${reference}__`
+              // Vite's CSS asset placeholder preserves its configured base and output naming.
+              return `__VITE_ASSET__${reference}__`
+            },
           },
-        },
-        undefined,
-        id === sharedId,
-      )
-
-      const transport = (css: string) =>
-        this.environment.config.command === 'build'
-          ? AtRules.rename(
-              AtRules.rename(
-                Namespaces.protect(css),
-                'font-feature-values',
-                '-zyzz-ffv-000000000',
-              ),
-              'font-palette-values',
-              '-zyzz-fpv-000000000',
-            )
-          : css
-      if (id === sharedId) {
-        servedShared.set(this.environment, output.graphSharedCss)
-        return {
-          code: transport(output.sharedCss),
-          map: JSON.stringify(output.sharedCssMap),
-        }
-      }
-
-      entry.css = output.css
-      return {
-        code: transport(output.css),
-        map: JSON.stringify(output.cssMap),
-      }
-    },
-    name: 'zyzz',
-    resolveId(id) {
-      if (id.startsWith(prefix)) return id
-    },
-    async transform(code, id) {
-      const split = new URLSearchParams(id.split('?')[1]).has('tsr-split')
-      id = normalize(id)
-
-      if (!eligible(id)) return
-
-      const state = entries(this.environment)
-      let entry = state.get(id)
-
-      if (!entry) {
-        entry = {
-          compiler: compiler(this.environment),
-          environment: this.environment,
-          file: id,
-          files: new Set([id]),
-        }
-        state.set(id, entry)
-        // The entry supersedes the anchor an earlier edit created, whose closure read the source
-        // from disk rather than from the load hooks.
-        anchors.get(this.environment)?.delete(id)
-        removed.get(this.environment)?.delete(id)
-      }
-
-      entry.source = code
-
-      const output = await compile(
-        entry,
-        {
-          resolve:
-            this.environment.mode === 'dev'
-              ? resolver(this.environment)
-              : (source, importer) => this.resolve(source, importer),
-          watch: watcher(this),
-          asset: async (file) => {
-            const reference = this.emitFile({
-              type: 'asset',
-              name: Path.basename(file).replace(/[?#%]/g, '_'),
-              source: await Fs.readFile(file),
-            })
-
-            // Vite's CSS asset placeholder preserves its configured base and output naming.
-            return `__VITE_ASSET__${reference}__`
-          },
-        },
-        code,
-      )
-
-      entry.imports = JSON.stringify(output.imports[sourceId(entry.file)])
-      entry.code = output.code
-
-      if (native) return { code: output.code, map: JSON.stringify(output.map) }
-
-      // Keep the CSS dependency even when the current graph has no live rules.
-      // Later edits can introduce styles without changing this import boundary.
-      const offset = prologue(output.code)
-      const sharedImport = `\nimport ${JSON.stringify(sharedId)};\n`
-      // The inserted dependency shifts only generated positions after the prologue.
-      const before = output.code.slice(0, offset)
-      const insertionLine = before.split('\n').length
-      const insertionColumn = before.length - (before.lastIndexOf('\n') + 1)
-      // A build compiles a fixed project, so an empty module sheet stays empty. Importing it
-      // would link an empty stylesheet from every chunk that holds no styled module.
-      const stylesheetImport =
-        this.environment.mode === 'build' && !output.css.trim()
-          ? ''
-          : `\nimport ${JSON.stringify(cssId(id))};`
-
-      const transformed = {
-        code: `${before}${sharedImport}${output.code.slice(offset)}${stylesheetImport}`,
-        map: JSON.stringify({
-          ...output.map,
-          mappings: insert(
-            output.map.mappings,
-            insertionLine - 1,
-            insertionColumn,
-          ),
-        }),
-      }
-
-      if (split) {
-        // TanStack's dead-code elimination does not track TypeScript namespace
-        // bindings. Lower them before splitting, leaving JSX for the framework plugin.
-        const { transformWithOxc } = await import('vite')
-        return transformWithOxc(
-          transformed.code,
-          id,
-          { jsx: 'preserve' },
-          JSON.parse(transformed.map),
+          code,
         )
-      }
 
-      return transformed
+        entry.imports = JSON.stringify(output.imports[sourceId(entry.file)])
+        entry.code = output.code
+
+        if (native)
+          return { code: output.code, map: JSON.stringify(output.map) }
+
+        // Keep the CSS dependency even when the current graph has no live rules.
+        // Later edits can introduce styles without changing this import boundary.
+        const offset = prologue(output.code)
+        const sharedImport = `\nimport ${JSON.stringify(sharedId)};\n`
+        // The inserted dependency shifts only generated positions after the prologue.
+        const before = output.code.slice(0, offset)
+        const insertionLine = before.split('\n').length
+        const insertionColumn = before.length - (before.lastIndexOf('\n') + 1)
+        // A build compiles a fixed project, so an empty module sheet stays empty. Importing it
+        // would link an empty stylesheet from every chunk that holds no styled module.
+        const stylesheetImport =
+          this.environment.mode === 'build' && !output.css.trim()
+            ? ''
+            : `\nimport ${JSON.stringify(cssId(id))};`
+
+        const transformed = {
+          code: `${before}${sharedImport}${output.code.slice(offset)}${stylesheetImport}`,
+          map: JSON.stringify({
+            ...output.map,
+            mappings: insert(
+              output.map.mappings,
+              insertionLine - 1,
+              insertionColumn,
+            ),
+          }),
+        }
+
+        if (split) {
+          // TanStack's dead-code elimination does not track TypeScript namespace
+          // bindings. Lower them before splitting, leaving JSX for the framework plugin.
+          const { transformWithOxc } = await import('vite')
+          return transformWithOxc(
+            transformed.code,
+            id,
+            { jsx: 'preserve' },
+            JSON.parse(transformed.map),
+          )
+        }
+
+        return transformed
+      },
     },
     transformIndexHtml: {
       order: 'post',
@@ -3059,6 +3087,7 @@ const configFiles = [
   '**/vitest.workspace.*',
 ]
 const prefix = '\0zyzz:'
+const virtual = new RegExp(`^${prefix}`)
 const runtime = 'zyzz/runtime'
 const sharedId = `${prefix}shared.css`
 

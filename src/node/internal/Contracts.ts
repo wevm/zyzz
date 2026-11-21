@@ -16,6 +16,25 @@ export function create() {
     { parsed: ReturnType<typeof Syntax.parse>; source: string }
   >()
 
+  let active = 0
+  const queued: (() => void)[] = []
+
+  /**
+   * Runs a module read once fewer than 64 are open. Lookups of nested barrels fan out past any
+   * per-statement batch, so one limit spans every derivation and stays under low descriptor limits.
+   */
+  async function limit<value>(read: () => Promise<value>): Promise<value> {
+    if (active >= 64) await new Promise<void>((resolve) => queued.push(resolve))
+    active++
+
+    try {
+      return await read()
+    } finally {
+      active--
+      queued.shift()?.()
+    }
+  }
+
   async function lookup(
     file: string,
     options: read.Options,
@@ -83,14 +102,29 @@ export function create() {
       return contract
     }
 
-    async function parse(path: string) {
-      const source = await options.read(path)
-      let entry = syntax.get(path)
-      if (entry?.source !== source) {
-        entry = { parsed: Syntax.parse({ moduleId: id(path), source }), source }
-        syntax.set(path, entry)
+    const parsing = new Map<string, Promise<Parsed>>()
+
+    /** Reads and parses a module once per derivation, as concurrent lookups share modules. */
+    function parse(path: string): Promise<Parsed> {
+      let pending = parsing.get(path)
+
+      if (!pending) {
+        pending = (async () => {
+          const source = await limit(() => options.read(path))
+          let entry = syntax.get(path)
+          if (entry?.source !== source) {
+            entry = {
+              parsed: Syntax.parse({ moduleId: id(path), source }),
+              source,
+            }
+            syntax.set(path, entry)
+          }
+          return entry
+        })()
+        parsing.set(path, pending)
       }
-      return entry
+
+      return pending
     }
 
     // Mirrors the Next.js loader: component exports stay runtime code, and the package ships their CSS.
@@ -183,6 +217,79 @@ export function create() {
       return false
     }
 
+    /**
+     * Classifies one import or re-export of a package module. Lookups of sibling statements run
+     * concurrently, and `visit` settles them in source order, so the contract never depends on
+     * scheduling.
+     */
+    async function classify(node: Statement, path: string): Promise<Lookup> {
+      const specifier = node.source.value
+
+      if (
+        (node.type === 'ImportDeclaration'
+          ? node.importKind === 'type'
+          : node.exportKind === 'type') ||
+        ('specifiers' in node &&
+          node.specifiers.length &&
+          node.specifiers.every((specifier) =>
+            specifier.type === 'ImportSpecifier'
+              ? specifier.importKind === 'type'
+              : specifier.type === 'ExportSpecifier' &&
+                specifier.exportKind === 'type',
+          ))
+      )
+        return { type: 'type' }
+      if (
+        specifier === 'zyzz' ||
+        (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
+      )
+        return { type: 'authored' }
+      if (
+        /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(specifier) ||
+        specifier.includes('?')
+      )
+        return { type: 'skipped' }
+
+      const target = await options.resolve(specifier, path)
+      if (
+        !target ||
+        !Path.isAbsolute(target) ||
+        !/\.[cm]?[jt]sx?$/.test(target)
+      )
+        return { type: 'skipped' }
+
+      if (!inside(directory, target)) return { target, type: 'external' }
+
+      if ('specifiers' in node && node.specifiers.length) {
+        const names = node.specifiers.map((item) => {
+          if (item.type === 'ImportDefaultSpecifier') return 'default'
+          if (item.type === 'ImportNamespaceSpecifier') return undefined
+          if (item.type === 'ImportSpecifier')
+            return item.importKind === 'type'
+              ? null
+              : item.imported.type === 'Identifier'
+                ? item.imported.name
+                : item.imported.value
+          if (item.exportKind === 'type') return null
+          return item.local.type === 'Identifier'
+            ? item.local.name
+            : item.local.value
+        })
+        const runtime = await Promise.all(
+          names.map((name) =>
+            name === null
+              ? true
+              : name === undefined
+                ? false
+                : callable(target, name),
+          ),
+        )
+        if (runtime.every(Boolean)) return { type: 'runtime' }
+      }
+
+      return { target, type: 'internal' }
+    }
+
     async function visit(path: string) {
       const moduleId = id(path)
       if (Object.hasOwn(modules, moduleId)) return
@@ -192,86 +299,40 @@ export function create() {
       const links: Record<string, string | null> = Object.create(null)
       imports[moduleId] = links
 
-      for (const node of entry.parsed.program.body) {
-        if (
-          (node.type !== 'ImportDeclaration' &&
-            node.type !== 'ExportNamedDeclaration' &&
-            node.type !== 'ExportAllDeclaration') ||
-          !node.source
-        )
-          continue
+      const nodes = entry.parsed.program.body.filter(
+        (node): node is Statement =>
+          (node.type === 'ImportDeclaration' ||
+            node.type === 'ExportNamedDeclaration' ||
+            node.type === 'ExportAllDeclaration') &&
+          !!node.source,
+      )
+      const lookups: PromiseSettledResult<Lookup>[] = []
 
+      // A barrel re-exports hundreds of modules. Their resolutions, reads, and parses overlap in
+      // batches that stay under low descriptor limits.
+      for (let start = 0; start < nodes.length; start += 64)
+        lookups.push(
+          ...(await Promise.allSettled(
+            nodes.slice(start, start + 64).map((node) => classify(node, path)),
+          )),
+        )
+
+      for (const [index, node] of nodes.entries()) {
         const specifier = node.source.value
+        const lookup = lookups[index]!
+
         links[specifier] = null
-        if (
-          (node.type === 'ImportDeclaration'
-            ? node.importKind === 'type'
-            : node.exportKind === 'type') ||
-          ('specifiers' in node &&
-            node.specifiers.length &&
-            node.specifiers.every((specifier) =>
-              specifier.type === 'ImportSpecifier'
-                ? specifier.importKind === 'type'
-                : specifier.type === 'ExportSpecifier' &&
-                  specifier.exportKind === 'type',
-            ))
-        )
-          continue
-        if (
-          specifier === 'zyzz' ||
-          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/default')
-        ) {
-          authored = true
-          continue
-        }
-        if (
-          /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(specifier) ||
-          specifier.includes('?')
-        )
-          continue
+        if (lookup.status === 'rejected') throw lookup.reason
 
-        const target = await options.resolve(specifier, path)
-        if (
-          !target ||
-          !Path.isAbsolute(target) ||
-          !/\.[cm]?[jt]sx?$/.test(target)
-        )
-          continue
+        const value = lookup.value
 
-        if (!inside(directory, target)) {
-          if (await link(target)) links[specifier] = target
-          continue
-        }
+        if (value.type === 'authored') authored = true
+        if (value.type === 'external' && (await link(value.target)))
+          links[specifier] = value.target
+        if (value.type !== 'internal') continue
 
-        if ('specifiers' in node && node.specifiers.length) {
-          const names = node.specifiers.map((item) => {
-            if (item.type === 'ImportDefaultSpecifier') return 'default'
-            if (item.type === 'ImportNamespaceSpecifier') return undefined
-            if (item.type === 'ImportSpecifier')
-              return item.importKind === 'type'
-                ? null
-                : item.imported.type === 'Identifier'
-                  ? item.imported.name
-                  : item.imported.value
-            if (item.exportKind === 'type') return null
-            return item.local.type === 'Identifier'
-              ? item.local.name
-              : item.local.value
-          })
-          const runtime = await Promise.all(
-            names.map((name) =>
-              name === null
-                ? true
-                : name === undefined
-                  ? false
-                  : callable(target, name),
-            ),
-          )
-          if (runtime.every(Boolean)) continue
-        }
-
-        links[specifier] = id(target)
-        await visit(target)
+        links[specifier] = id(value.target)
+        await visit(value.target)
       }
     }
 
@@ -332,6 +393,25 @@ export declare namespace read {
     ) => Promise<string | undefined>
   }
 }
+
+/** A module's source text with its syntax. */
+type Parsed = { parsed: ReturnType<typeof Syntax.parse>; source: string }
+
+/** How a package module's import contributes to its derived contract. */
+type Lookup =
+  | { readonly target: string; readonly type: 'external' | 'internal' }
+  | { readonly type: 'authored' | 'runtime' | 'skipped' | 'type' }
+
+/** An import or re-export statement with a source specifier. */
+type Statement = Extract<
+  ReturnType<typeof Syntax.parse>['program']['body'][number],
+  {
+    type:
+      | 'ExportAllDeclaration'
+      | 'ExportNamedDeclaration'
+      | 'ImportDeclaration'
+  }
+> & { readonly source: { readonly value: string } }
 
 function inside(directory: string, file: string) {
   const relative = Path.relative(directory, file)

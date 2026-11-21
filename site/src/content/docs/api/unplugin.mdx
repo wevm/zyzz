@@ -67,7 +67,7 @@ const plugin = zyzz.rollup({ reset: true })
 - **Type:** `string{:ts}`
 - **Default:** `process.cwd(){:ts}`
 
-The source directory to compile. Every module under it contributes CSS, including unimported global styles. Hidden directories, `node_modules`, `dist`, `build`, `coverage`, tests, fixtures, and declaration, test, and benchmark modules are skipped.
+The source directory to compile. Every module under it contributes CSS, including unimported global styles. Hidden directories, `node_modules`, `dist`, `build`, `coverage`, the bundler's output directory, paths that `.gitignore` files ignore, tests, fixtures, and declaration, test, and benchmark modules are skipped.
 
 ```ts title="build.ts"
 import { zyzz } from 'zyzz/unplugin'

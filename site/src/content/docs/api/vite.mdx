@@ -171,11 +171,12 @@ Discovery covers the first of these that applies:
 2. The directories that hold a `zyzz.config.*` module, found by name below the Vite root. Place the configuration at the root of the application's source, such as `src/zyzz.config.ts`, so tool configuration and scripts beside `src/` stay out.
 3. The Vite root.
 
-The `zyzz.config.*` search and a root scan skip nested packages: directories below the Vite root that hold their own `package.json`, such as a workspace's examples. [`exclude`](#optionsexclude) removes modules in every case. Adding or moving a `zyzz.config.*` module or a nested `package.json` takes full effect when the server restarts.
+The `zyzz.config.*` search and a root scan skip nested packages: directories below the Vite root that hold their own `package.json`, such as a workspace's examples. Every scan also skips each environment's `build.outDir` and the paths that `.gitignore` files ignore, read from the repository root down, or from the scanned directory outside a repository, so stale bundles beside the sources are never parsed. [`exclude`](#optionsexclude) removes modules in every case. Adding or moving a `zyzz.config.*` module or a nested `package.json` takes full effect when the server restarts.
 
 ```txt
 app/
 ├── examples/web/      # skipped: nested package
+├── dist-preview/      # skipped: listed in .gitignore
 ├── playwright.config.ts  # skipped: outside src/
 ├── src/
 │   ├── global.ts      # discovered

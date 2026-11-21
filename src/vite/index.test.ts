@@ -2691,6 +2691,54 @@ export function unrelated(props: { className?: string | undefined } = {}) {
     }
   })
 
+  test('skips ignored files and build output in discovery', async () => {
+    const { config, root } = await create()
+    const global = (color: string) =>
+      `import { global } from 'zyzz/web'; global({ body: { color: '${color}' } });`
+
+    // Stale bundles from earlier builds sit beside the sources.
+    await Fs.mkdir(Path.join(root, 'bundles'))
+    await Fs.mkdir(Path.join(root, 'out'))
+    await Fs.writeFile(
+      Path.join(root, '.gitignore'),
+      'bundles/\n*.bundle.js\n!kept.bundle.js\n',
+    )
+    await Fs.writeFile(Path.join(root, 'bundles/stale.js'), global('#123456'))
+    await Fs.writeFile(Path.join(root, 'out/index.js'), global('#234567'))
+    await Fs.writeFile(Path.join(root, 'stale.bundle.js'), global('#345678'))
+    await Fs.writeFile(Path.join(root, 'kept.bundle.js'), global('#456789'))
+
+    try {
+      const result = await Vite.build({
+        ...config,
+        build: { outDir: 'out', write: false },
+        resolve: {
+          alias: {
+            ...(config.resolve!.alias as Record<string, string>),
+            'zyzz/web': Path.resolve('src/web/index.ts'),
+          },
+        },
+      })
+      const output = Array.isArray(result) ? result[0]! : result
+      if (!('output' in output)) throw new Error('Unexpected watch build')
+      const css = output.output
+        .flatMap((file) =>
+          file.type === 'asset' && file.fileName.endsWith('.css')
+            ? [String(file.source)]
+            : [],
+        )
+        .join('\n')
+
+      expect(css.includes('#06c')).toMatchInlineSnapshot(`true`)
+      expect(css.includes('#123456')).toMatchInlineSnapshot(`false`)
+      expect(css.includes('#234567')).toMatchInlineSnapshot(`false`)
+      expect(css.includes('#345678')).toMatchInlineSnapshot(`false`)
+      expect(css.includes('#456789')).toMatchInlineSnapshot(`true`)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('skips nested packages in discovery unless included', async () => {
     const { config, root } = await create()
     const example = Path.join(root, 'examples/web')

@@ -12,6 +12,7 @@ import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Catalogs from '../compiler/internal/Catalogs.js'
 import * as ClassName from '../web/internal/ClassName.js'
 import * as Contracts from '../node/internal/Contracts.js'
+import * as Ignores from '../node/internal/Ignores.js'
 import * as Results from '../compiler/internal/Results.js'
 import * as Vite from '../vite/index.js'
 import * as ThemeRules from '../web/internal/Themes.js'
@@ -43,6 +44,8 @@ const portable = createUnplugin<Options | undefined, false>(
     let assets = new Map<string, Uint8Array>()
     let css = ''
     let cssMap = ''
+    // The bundler's output directory, which the scan skips like ignored files.
+    let outdir: string | undefined
     let script = ''
 
     function identity(file: string) {
@@ -113,6 +116,8 @@ const portable = createUnplugin<Options | undefined, false>(
           > = Object.create(null)
           const contracts: Record<string, string> = Object.create(null)
 
+          const ignores = Ignores.create({ roots: [root] })
+
           async function scan(directory: string): Promise<void> {
             directories.add(directory)
             const entries = await Fs.readdir(directory, { withFileTypes: true })
@@ -137,6 +142,11 @@ const portable = createUnplugin<Options | undefined, false>(
                 continue
               const file = Path.join(directory, entry.name)
 
+              if (
+                (entry.isDirectory() && file === outdir) ||
+                ignores.ignored({ directory: entry.isDirectory(), path: file })
+              )
+                continue
               if (entry.isDirectory()) await scan(file)
               else if (
                 entry.isFile() &&
@@ -551,6 +561,7 @@ const portable = createUnplugin<Options | undefined, false>(
             options.absWorkingDir ?? process.cwd(),
             options.outdir,
           )
+          outdir = options.outdir
         },
         setup(build) {
           // Unplugin forwards watchFiles but not watchDirs from its transform hook.

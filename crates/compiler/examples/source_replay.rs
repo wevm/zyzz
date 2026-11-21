@@ -643,6 +643,7 @@ fn contract_roundtrip(text: &str, module_id: &str) -> Value {
         links: &library.links,
         literals: &library.literals,
         module_id,
+        parts: &library.parts,
         stylesheets: &library.stylesheets,
         themes: &library.themes,
     });

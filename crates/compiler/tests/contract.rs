@@ -25,6 +25,7 @@ fn repack(text: &str, module_id: &str) -> String {
         links: &library.links,
         literals: &library.literals,
         module_id,
+        parts: &library.parts,
         stylesheets: &library.stylesheets,
         themes: &library.themes,
     })
@@ -53,6 +54,13 @@ mod write {
         let text = r#"{"exports":{"gap":{"binding":"--z-gap","kind":"variables","variables":{"value":{"name":"--z-gap","type":"length","variable":true}},"source":"library"}},"themes":{},"version":31}"#;
 
         assert_eq!(repack(text, "library.js"), text);
+    }
+
+    #[test]
+    fn parts() {
+        let text = r#"{"parts":{"Tool.Root":"{\"open\":\"boolean\",\"status\":[\"running\",\"done\",\"failed\"]}"},"exports":{},"themes":{},"version":37}"#;
+
+        assert_eq!(repack(text, "ui/index.js"), text);
     }
 
     #[test]

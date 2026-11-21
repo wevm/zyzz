@@ -1,4 +1,5 @@
 /** Exercises real editor completions and rendered Base UI state styles. @module */
+import * as Parts from '../../../test/fixtures/base-ui/Parts.js'
 import { NavigationMenu } from '@base-ui/react/navigation-menu'
 import { Popover } from '@base-ui/react/popover'
 import { Select } from '@base-ui/react/select'
@@ -8,10 +9,13 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import * as Ts from 'typescript-api'
+import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
 import { style as rootStyle } from 'zyzz'
-import { defineConfig, style } from 'zyzz/base-ui/react'
+import { defineConfig, part, style } from 'zyzz/base-ui/react'
 import { Graph, Transform } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
+import { zyzz } from 'zyzz/vite'
 
 const root = Path.resolve(import.meta.dirname, '../../..')
 
@@ -377,4 +381,249 @@ Attribute: \`data-highlighted\`. Presence selector."`)
       }
     },
   )
+
+  test('matches declared part identities in runtime authoring and compilation', () => {
+    const output = Transform.compile({
+      compiler: false,
+      moduleId: 'tool.ts',
+      source: `import { part, style } from 'zyzz/base-ui/react'
+        const Root = part((props: { className?: string }) => null, { open: 'boolean', popupSide: ['top', 'bottom'] })
+        export const root = style(Root, { states: { open: { color: 'red' }, popupSide: { bottom: { marginTop: '4px' } } } })`,
+    })
+    const Root = part((_props: { className?: string }) => null, {
+      open: 'boolean',
+      popupSide: ['top', 'bottom'],
+    })
+    const root = style(Root, {
+      states: {
+        open: { color: 'red' },
+        popupSide: { bottom: { marginTop: '4px' } },
+      },
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-content-_5b__5b__22__26__5b_data_2d_open_5d__22__2c__5b__5b__22_color_22__2c__22_red_22__2c_false_5d__5d__5d__2c__5b__22__26__5b_data_2d_popup_2d_side_3d__5c__22_bottom_5c__22__5d__22__2c__5b__5b__22_marginTop_22__2c__22_4px_22__2c_false_5d__5d__5d__5d_{&[data-open]{color:red;}}
+      .z-content-_5b__5b__22__26__5b_data_2d_open_5d__22__2c__5b__5b__22_color_22__2c__22_red_22__2c_false_5d__5d__5d__2c__5b__22__26__5b_data_2d_popup_2d_side_3d__5c__22_bottom_5c__22__5d__22__2c__5b__5b__22_marginTop_22__2c__22_4px_22__2c_false_5d__5d__5d__5d_{&[data-popup-side="bottom"]{margin-top:4px;}}"
+    `)
+    expect(
+      Object.values(output.classes).includes(root().className),
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      root().className ===
+        rootStyle({
+          selectors: {
+            '&[data-open]': { color: 'red' },
+            '&[data-popup-side="bottom"]': { marginTop: '4px' },
+          },
+        })().className,
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('rejects undeclared components, part states, and values', () => {
+    const compile = (body: string) => () =>
+      Transform.compile({
+        moduleId: 'tool.ts',
+        source: `import { part, style } from 'zyzz/base-ui/react'; import { Card } from './card.js'; const Root = part(() => null, { open: 'boolean', status: ['done'] }); ${body}`,
+      })
+    const Root = part(() => null, { open: 'boolean', status: ['done'] })
+
+    expect(
+      compile(`style(Root, { states: { opne: { color: 'red' } } })`),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: tool.ts:178: Unknown Base UI state: opne.]`,
+    )
+    expect(
+      compile(
+        `style(Root, { states: { status: { failed: { color: 'red' } } } })`,
+      ),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: tool.ts:188: Unknown Base UI state value: status.failed.]`,
+    )
+    expect(
+      compile(`style(Card, { color: 'red' })`),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: tool.ts:160: Components outside Base UI must declare their states with part().]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'dynamic.ts',
+        source: `import { part, style } from 'zyzz/base-ui/react'; const states = { open: 'boolean' } as const; const Root = part(() => null, states); style(Root, { color: 'red' })`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: dynamic.ts:108: Part states require a static object.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'card.ts': `import { part } from 'zyzz/base-ui/react'; export const Card = part(() => null, { Open: 'boolean' })`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: card.ts:82: Invalid part state: Open.]`,
+    )
+    expect(() =>
+      style(Root, { states: { opne: { color: 'red' } } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["states","opne"]: Unknown Base UI state: opne.]`,
+    )
+    expect(() =>
+      style(Root, {
+        states: { status: { failed: { color: 'red' } } },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["states","status","failed"]: Unknown Base UI state value: status.failed.]`,
+    )
+  })
+
+  test('publishes declared parts in library contracts and their namespace re-exports', () => {
+    const library = Graph.compile({
+      modules: {
+        'ui/index.js': Parts.files['dist/index.js'],
+        'ui/Tool.js': Parts.files['dist/Tool.js'],
+      },
+    })
+
+    expect(library.contracts['ui/index.js']).toMatchInlineSnapshot(
+      `"{"parts":{"Tool.Root":"{\\"open\\":\\"boolean\\",\\"status\\":[\\"running\\",\\"done\\",\\"failed\\"]}"},"exports":{},"themes":{},"version":37}"`,
+    )
+
+    const consumer = Graph.compile({
+      contracts: { 'ui/index.js': library.contracts['ui/index.js']! },
+      imports: {
+        'app/design.ts': {
+          '@nanocode/ui': 'ui/index.js',
+          zyzz: null,
+          'zyzz/base-ui/react': null,
+        },
+      },
+      modules: { 'app/design.ts': Parts.sources['design.ts'] },
+    })
+
+    expect(consumer.modules['app/design.ts']!.css).toMatchInlineSnapshot(`
+      ".z-theme-nanocode-nanocode{--z-nanocode-color-rule:rgb(128, 128, 128);--z-nanocode-color-text:rgb(0, 128, 0);--z-nanocode-color-accent:rgb(255, 0, 0);--z-nanocode-color-agent:rgb(0, 0, 255);}
+      .z_nanocode-VvJcjM0{border-color:var(--z-nanocode-color-rule,rgb(128, 128, 128));}
+      .z_nanocode-VvJcjM1{border-style:solid;}
+      .z_nanocode-VvJcjM2{&[data-open]{border-color:var(--z-nanocode-color-text,rgb(0, 128, 0));}}
+      .z_nanocode-VvJcjM3{&[data-status="failed"]{color:var(--z-nanocode-color-accent,rgb(255, 0, 0));}}
+      .z_nanocode-VvJcjM4{&[data-status="running"]{color:var(--z-nanocode-color-agent,rgb(0, 0, 255));}}"
+    `)
+  })
+
+  test.each([true, false])(
+    'renders declared parts imported from an installed package with zyzz build (compiler=%s)',
+    async (compiler) => {
+      const directory = Fs.mkdtempSync(
+        Path.join(root, '.fixture-base-ui-parts-'),
+      )
+      const browser = await chromium.launch()
+
+      try {
+        await Parts.install(directory)
+        Fs.symlinkSync(root, Path.join(directory, 'node_modules/zyzz'), 'dir')
+        Fs.mkdirSync(Path.join(directory, 'src'))
+
+        for (const [name, source] of Object.entries(Parts.sources))
+          Fs.writeFileSync(Path.join(directory, 'src', name), source)
+
+        await using host = await Host.create({
+          compiler,
+          css: false,
+          outDir: Path.join(directory, 'dist'),
+          packageId: 'design',
+          root: Path.join(directory, 'src'),
+        })
+        await host.build()
+        const css = Fs.readFileSync(
+          Path.join(directory, 'dist/zyzz.css'),
+          'utf8',
+        )
+        const bundle = await Esbuild.build({
+          bundle: true,
+          conditions: ['src'],
+          entryPoints: [Path.join(directory, 'dist/page.ts')],
+          format: 'iife',
+          globalName: 'Fixture',
+          write: false,
+        })
+        const page = await browser.newPage()
+        page.setDefaultTimeout(5_000)
+        await page.setContent(`<style>${css}</style><div id="root"></div>`)
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+        await page.evaluate('Fixture.mount(document.getElementById("root"))')
+        const computed = (testId: string, property: string) =>
+          page
+            .getByTestId(testId)
+            .evaluate(
+              (element, name) =>
+                getComputedStyle(element).getPropertyValue(name),
+              property,
+            )
+
+        expect(await computed('running', 'color')).toMatchInlineSnapshot(
+          `"rgb(0, 0, 255)"`,
+        )
+        expect(await computed('failed', 'color')).toMatchInlineSnapshot(
+          `"rgb(255, 0, 0)"`,
+        )
+        expect(await computed('done', 'color')).toMatchInlineSnapshot(
+          `"rgb(0, 0, 0)"`,
+        )
+        expect(
+          await computed('running', 'border-top-color'),
+        ).toMatchInlineSnapshot(`"rgb(0, 128, 0)"`)
+        expect(
+          await computed('failed', 'border-top-color'),
+        ).toMatchInlineSnapshot(`"rgb(128, 128, 128)"`)
+      } finally {
+        await browser.close()
+        Fs.rmSync(directory, { force: true, recursive: true })
+      }
+    },
+  )
+
+  test('builds declared parts imported from an installed package with the Vite plugin', async () => {
+    const directory = Fs.mkdtempSync(
+      Path.join(root, '.fixture-base-ui-parts-vite-'),
+    )
+
+    try {
+      await Parts.install(directory)
+      Fs.symlinkSync(root, Path.join(directory, 'node_modules/zyzz'), 'dir')
+
+      for (const [name, source] of Object.entries(Parts.sources))
+        Fs.writeFileSync(Path.join(directory, name), source)
+
+      Fs.writeFileSync(
+        Path.join(directory, 'index.html'),
+        `<!doctype html><html><head><title>Parts</title></head><body><div id="root"></div><script type="module">import { mount } from './page.ts'; mount(document.getElementById('root'))</script></body></html>`,
+      )
+
+      const result = await Vite.build({
+        build: { minify: false, write: false },
+        configFile: false,
+        logLevel: 'silent',
+        optimizeDeps: { noDiscovery: true },
+        plugins: [zyzz()],
+        root: directory,
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+
+      const sheet = result.output.find(
+        (file) => file.type === 'asset' && file.fileName.endsWith('.css'),
+      )
+      if (!sheet || sheet.type !== 'asset')
+        throw new Error('No stylesheet emitted')
+
+      expect(String(sheet.source)).toMatchInlineSnapshot(`
+        ".z-theme-nanocode-nanocode{--z-nanocode-color-accent:rgb(255, 0, 0);--z-nanocode-color-agent:rgb(0, 0, 255);--z-nanocode-color-rule:rgb(128, 128, 128);--z-nanocode-color-text:rgb(0, 128, 0);}.z_nanocode-VvJcjM0{border-color:var(--z-nanocode-color-rule,rgb(128, 128, 128));}
+        .z_nanocode-VvJcjM1{border-style:solid;}
+        .z_nanocode-VvJcjM2{&[data-open]{border-color:var(--z-nanocode-color-text,rgb(0, 128, 0));}}
+        .z_nanocode-VvJcjM3{&[data-status="failed"]{color:var(--z-nanocode-color-accent,rgb(255, 0, 0));}}
+        .z_nanocode-VvJcjM4{&[data-status="running"]{color:var(--z-nanocode-color-agent,rgb(0, 0, 255));}}"
+      `)
+    } finally {
+      Fs.rmSync(directory, { force: true, recursive: true })
+    }
+  })
 })

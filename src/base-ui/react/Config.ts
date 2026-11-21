@@ -1,15 +1,7 @@
 /** Binds Base UI state authoring to the ordinary variable configuration. @module */
 import * as Authoring from './internal/Authoring.js'
 import * as Config from '../../Config.js'
-import type * as Shorthands from '../../internal/Shorthands.js'
 import type * as Style from './Style.js'
-import type * as Vars from '../../Vars.js'
-
-type Values<options> = options extends { vars: infer values }
-  ? options extends { defaultVars: infer name extends keyof values }
-    ? Vars.Extract<values[name]>
-    : Vars.Extract<values>
-  : {}
 
 /**
  * Creates configured authoring with component-first Base UI styles.
@@ -26,7 +18,7 @@ type Values<options> = options extends { vars: infer values }
  * export const { style, variants, vars } = defineConfig({ id: 'default', vars: tokens })
  * ```
  * @param options - The ordinary defineConfig options, with React output.
- * @returns Configured helpers whose style also accepts imported Base UI parts.
+ * @returns Configured helpers whose style also accepts imported Base UI parts and declared parts.
  */
 export function create<const options extends create.Options = {}>(
   options: Parameters<typeof Config.create<options>>[0] = {} as never,
@@ -56,19 +48,7 @@ export declare namespace create {
     Config.create.ReturnType<options>,
     'style'
   > & {
-    /** Authors ordinary styles and component-aware static Base UI declarations. */
-    readonly style: Config.create.ReturnType<options>['style'] &
-      Style.Factory<
-        Vars.Mapped<
-          Values<options>,
-          options extends { mappings: infer map } ? map : {}
-        >,
-        options extends { layers: readonly (infer layer extends string)[] }
-          ? layer
-          : never,
-        options extends { shorthands: infer map extends Shorthands.Map }
-          ? map
-          : {}
-      >
+    /** Authors ordinary styles and component-aware static Base UI and declared part styles. */
+    readonly style: Style.Factory<options>
   }
 }

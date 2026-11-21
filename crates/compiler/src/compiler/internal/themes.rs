@@ -288,6 +288,8 @@ pub struct Context<'a> {
     pub links: Record<Link>,
     /// Owners of linked calls.
     pub owners: Option<Record<Owner>>,
+    /// Descriptor JSON of imported declared parts, by local name and member path.
+    pub parts: Record<Arc<str>>,
     /// Class names of imported styles, by style name.
     pub style_classes: Option<Record<Arc<str>>>,
 }

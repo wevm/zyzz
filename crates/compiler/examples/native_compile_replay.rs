@@ -662,6 +662,7 @@ fn context<'a, 'j>(decoder: &mut Decoder<'j>, root: &'j Json) -> Outcome<Option<
         libraries,
         links: Record::new(),
         owners: None,
+        parts: Record::new(),
         style_classes: None,
     }))
 }

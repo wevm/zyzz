@@ -52,6 +52,22 @@ export const { style, vars } = defineConfig({
 })
 ```
 
+## Declared Parts
+
+`Parts.ts` installs a package that publishes only compiled JavaScript. Its `Tool.Root` declares `open` and `status` with `part`, and a design system in another package styles it through `defineConfig`. The scenario runs through Graph contracts, `zyzz build`, and the Vite plugin, and renders in Chromium with source rewriting enabled and disabled.
+
+```ts
+import { part } from 'zyzz/base-ui/react'
+
+// A presence state and a valued state, as data-open and data-status.
+export const Root = part(ToolRoot, {
+  open: 'boolean',
+  status: ['running', 'done', 'failed'],
+})
+```
+
+The compiler reads the literal descriptor from a top-level `const` declaration. Named re-exports, `export *`, and namespace re-exports such as `export * as Tool` forward it, and graph contracts publish it as `parts` from version 37. Packages without sidecars derive the same contract from their JavaScript. Untransformed authoring reads the descriptor that `part` attaches under a registered symbol.
+
 ## Synchronization
 
 The pinned Base UI 1.8.0 declarations are the input for `scripts/base-ui.ts`. It follows public component and DataAttributes aliases, reads documented attribute values, and generates component hints, TSDoc links, runtime spellings, and the Rust catalog. CI checks deterministic output and declaration fingerprints without fetching upstream data.
@@ -74,6 +90,7 @@ Base UI 1.8.0 has declaration/runtime discrepancies. Combobox and Autocomplete I
 ## Limits
 
 - **Component references:** The compiler accepts direct imports from the Base UI root or documented component subpaths, including aliases and namespace imports. Local wrappers, dynamic component expressions, and re-exported component aliases are not supported.
+- **Declared parts:** Descriptors must be inline object literals with `'boolean'` or nonempty string-array domains. Parts nested in object literals or TypeScript namespaces, default exports, and computed descriptors are not resolved by the compiler, although untransformed authoring still reads them.
 - **Authoring:** Component-first calls accept static objects. Dynamic callbacks, composition arrays, and component-first variants are not supported. Ordinary style and variants overloads remain available.
 - **Validation:** `states` checks names and finite values. Numeric domains accept finite canonical numeric keys, including zero and negative indices. Toast types accept arbitrary strings with CSS escaping, except NUL. `selectors` supplies whole-key suggestions but accepts arbitrary CSS, including application-owned attributes.
 - **Child hooks:** Menu, Popover, PreviewCard, and Tooltip Viewport `current` and `previous` states target direct-child containers. Their transition attributes can be combined with `selectors`, such as `& > [data-current][data-starting-style]`. They do not describe the viewport element itself.

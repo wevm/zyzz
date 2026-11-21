@@ -1,8 +1,8 @@
 # Unplugin
 
-Compile styles with esbuild, Rollup, or Webpack and emit CSS beside the bundle.
+Compile styles with Bun, esbuild, Rollup, or Webpack and emit CSS beside the bundle.
 
-The `zyzz` object from `zyzz/unplugin` holds one plugin factory per bundler. The esbuild, Rollup, and Webpack factories compile the source root, rewrite authoring calls, and emit a complete stylesheet into the output directory. [Getting Started](/docs/introduction/getting-started?framework=other-bundlers) covers the setup.
+The `zyzz` object from `zyzz/unplugin` holds one plugin factory per bundler. The Bun, esbuild, Rollup, and Webpack factories compile the source root, rewrite authoring calls, and emit a complete stylesheet into the output directory. [Getting Started](/docs/introduction/getting-started?framework=other-bundlers) covers the setup.
 
 ```ts title="build.ts"
 import { build } from 'esbuild'
@@ -22,6 +22,7 @@ await build({
 
 ```ts
 // One factory per bundler
+zyzz.bun(options?)
 zyzz.esbuild(options?)
 zyzz.rollup(options?)
 zyzz.webpack(options?)
@@ -67,7 +68,7 @@ const plugin = zyzz.rollup({ reset: true })
 - **Type:** `string{:ts}`
 - **Default:** `process.cwd(){:ts}`
 
-The source directory to compile. Every module under it contributes CSS, including unimported global styles. Hidden directories, `node_modules`, `dist`, `build`, `coverage`, tests, fixtures, and declaration, test, and benchmark modules are skipped.
+The source directory to compile. Every module under it contributes CSS, including unimported global styles. Hidden directories, `node_modules`, `dist`, `build`, `coverage`, the bundler's output directory, paths that `.gitignore` files ignore, tests, fixtures, and declaration, test, and benchmark modules are skipped.
 
 ```ts title="build.ts"
 import { zyzz } from 'zyzz/unplugin'
@@ -83,7 +84,7 @@ Keep other generated output outside the root. Dependencies are not compiled from
 
 ### plugin
 
-- **Type:** `EsbuildPlugin | RollupPlugin | WebpackPluginInstance{:ts}`
+- **Type:** `BunPlugin | EsbuildPlugin | RollupPlugin | WebpackPluginInstance{:ts}`
 
 A plugin for the factory's bundler that emits these files into its output directory:
 
@@ -100,6 +101,24 @@ The plugins do not modify HTML, so the document loads the stylesheet and script 
 <script src="/zyzz.js"></script>
 <link rel="stylesheet" href="/zyzz.css" />
 ```
+
+## Bun
+
+`zyzz.bun` is also exported as `zyzz` from `zyzz/bun`, and runs in `Bun.build`. The build needs `outdir`, since assets are written to the output directory. Imports resolve through Bun's runtime resolver, as Bun's plugin API does not expose the bundler's.
+
+```ts title="build.ts"
+import { zyzz } from 'zyzz/bun'
+
+await Bun.build({
+  entrypoints: ['src/main.tsx'],
+  // [!code hl:2]
+  // Receives zyzz.css beside the bundle
+  outdir: 'dist',
+  plugins: [zyzz({ root: 'src' })],
+})
+```
+
+Bun bundles the CSS that packed libraries import and lowers its `light-dark()` colors to variables it sets only beside the `color-scheme` declarations it compiles. `zyzz.css` from Bun therefore ends with a rule that selects the light colors elsewhere, as `light-dark()` does by default. Load it after the bundle's own stylesheet.
 
 ## esbuild
 
